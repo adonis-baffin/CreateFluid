@@ -1,7 +1,0 @@
-{
-  "values": [
-    "creategeography:electric_burner",
-    { "id": "creategeography:ember_burner", "required": false },
-    { "id": "creategeography:heat_converter", "required": false }
-  ]
-}

@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8.5",
+  "package": "com.adonis.createfisheryindustry.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "createfisheryindustry.refmap.json",
+  "mixins": [
+    "LightningBoltMixin",
+    "AllArmInteractionPointTypesMixin"
+  ],
+  "client": [],
+  "server": []
+}

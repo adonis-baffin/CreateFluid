@@ -1,6 +1,0 @@
-{
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "creategeography:item/incomplete_heat_upgrade"
-  }
-}
