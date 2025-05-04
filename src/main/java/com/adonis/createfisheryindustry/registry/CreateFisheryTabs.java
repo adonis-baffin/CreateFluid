@@ -1,0 +1,35 @@
+package com.adonis.createfisheryindustry.registry;
+
+import com.adonis.createfisheryindustry.CreateFisheryMod;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
+
+public class CreateFisheryTabs {
+    public static final DeferredRegister<CreativeModeTab> CREATIVE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, CreateFisheryMod.MODID);
+
+    public static final RegistryObject<CreativeModeTab> FISHERY_TAB = CREATIVE_TABS.register("fishery_tab",
+            () -> CreativeModeTab.builder()
+                    .title(Component.translatable("Create Fishery Industry"))
+                    .icon(() -> new ItemStack(CreateFisheryBlocks.MESH_TRAP.get()))
+                    .displayItems((params, output) -> {
+                        // Hard-coded items
+                        output.accept(CreateFisheryBlocks.FRAME_TRAP.get());
+                        output.accept(CreateFisheryBlocks.MESH_TRAP.get());
+                        // Dynamically add other items
+                        for (RegistryObject<Item> item : CreateFisheryItems.ITEMS.getEntries()) {
+                            output.accept(item.get());
+                        }
+                    })
+                    .build());
+
+    public static void register(IEventBus modEventBus) {
+        CREATIVE_TABS.register(modEventBus);
+    }
+}
