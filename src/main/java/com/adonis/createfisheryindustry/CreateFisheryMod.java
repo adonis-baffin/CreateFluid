@@ -1,22 +1,15 @@
 package com.adonis.createfisheryindustry;
 
 import com.adonis.createfisheryindustry.config.CreateFisheryCommonConfig;
-import com.adonis.createfisheryindustry.registry.CreateFisheryBlockEntities;
-import com.adonis.createfisheryindustry.registry.CreateFisheryBlocks;
-import com.adonis.createfisheryindustry.registry.CreateFisheryItems;
-import com.adonis.createfisheryindustry.registry.CreateFisheryTabs;
+import com.adonis.createfisheryindustry.registry.*;
 import com.mojang.logging.LogUtils;
 import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.simibubi.create.foundation.item.ItemDescription;
 import com.simibubi.create.foundation.item.KineticStats;
 import com.simibubi.create.foundation.item.TooltipModifier;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -25,6 +18,8 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.InterModEnqueueEvent;
 import net.minecraftforge.fml.event.lifecycle.InterModProcessEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.config.ModConfig;
 import org.slf4j.Logger;
 
 @Mod(CreateFisheryMod.MODID)
@@ -49,8 +44,11 @@ public class CreateFisheryMod {
 
         CreateFisheryBlocks.register();
         CreateFisheryBlockEntities.register(modEventBus);
+        CreateFisheryEntityTypes.register(modEventBus);
         CreateFisheryItems.register(modEventBus);
         CreateFisheryTabs.register(modEventBus);
+
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, CreateFisheryCommonConfig.CONFIG_SPEC);
 
         modEventBus.addListener(this::setup);
         modEventBus.addListener(this::enqueueIMC);

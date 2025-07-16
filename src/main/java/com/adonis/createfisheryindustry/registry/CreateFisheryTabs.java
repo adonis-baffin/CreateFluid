@@ -8,7 +8,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 public class CreateFisheryTabs {
@@ -16,16 +15,16 @@ public class CreateFisheryTabs {
 
     public static final RegistryObject<CreativeModeTab> FISHERY_TAB = CREATIVE_TABS.register("fishery_tab",
             () -> CreativeModeTab.builder()
-                    .title(Component.translatable("Create Fishery Industry"))
+                    .title(Component.translatable("itemGroup.createfisheryindustry.fishery_tab"))
                     .icon(() -> new ItemStack(CreateFisheryBlocks.MESH_TRAP.get()))
                     .displayItems((params, output) -> {
-                        // Hard-coded items
+                        // 添加方块
                         output.accept(CreateFisheryBlocks.FRAME_TRAP.get());
                         output.accept(CreateFisheryBlocks.MESH_TRAP.get());
-                        // Dynamically add other items
-                        for (RegistryObject<Item> item : CreateFisheryItems.ITEMS.getEntries()) {
-                            output.accept(item.get());
-                        }
+
+                        // 添加物品
+                        output.accept(CreateFisheryItems.WORN_HARPOON.get());
+                        output.accept(CreateFisheryItems.HARPOON.get());
                     })
                     .build());
 

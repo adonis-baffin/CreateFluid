@@ -131,12 +131,6 @@ dependencies {
 
 
     implementation fg.deobf("mezz.jei:jei-1.20.1-forge:15.19.0.85")
-
-//    implementation fg.deobf("dev.latvian.mods:kubejs-forge:2001.6.5-build.17")
-
-//    implementation fg.deobf("dev.latvian.mods:rhino-forge:1902.2.3-build.284")
-//    implementation fg.deobf("dev.architectury:architectury-forge:6.6.92")
-
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
     testAnnotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
