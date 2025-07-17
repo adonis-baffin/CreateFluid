@@ -23,6 +23,7 @@ public class CreateFisheryTabs {
                         output.accept(CreateFisheryBlocks.MESH_TRAP.get());
 
                         // 添加物品
+                        output.accept(CreateFisheryItems.ZINC_SHEET.get());
                         output.accept(CreateFisheryItems.WORN_HARPOON.get());
                         output.accept(CreateFisheryItems.HARPOON.get());
                     })

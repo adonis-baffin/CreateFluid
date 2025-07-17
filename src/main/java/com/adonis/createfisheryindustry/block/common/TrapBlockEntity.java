@@ -4,8 +4,7 @@ import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -28,21 +27,22 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class TrapBlockEntity extends BlockEntity {
-    public static final int INVENTORY_SLOTS = 9; // 可调整的库存槽位数量
+    public static final int INVENTORY_SLOTS = 9;
     protected static final double COLLECTION_RANGE = 1.5;
     protected static final double FISH_PROCESSING_RANGE = 1.5;
     protected final ItemStackHandler inventory;
     protected int processingTicks = 0;
-    private final LazyOptional<IItemHandler> inventoryOptional;
     protected int syncCooldown = 0;
     protected boolean queuedSync = false;
     private static final int SYNC_RATE = 8;
 
+    // Forge的LazyOptional用于能力系统
+    private final LazyOptional<IItemHandler> inventoryOptional;
+
     public TrapBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
         this.inventory = createInventory();
-        this.inventoryOptional = LazyOptional.of(() -> inventory);
-        System.out.println("TrapBlockEntity: Inventory initialized with " + INVENTORY_SLOTS + " slots");
+        this.inventoryOptional = LazyOptional.of(() -> this.inventory);
     }
 
     protected ItemStackHandler createInventory() {
@@ -50,7 +50,7 @@ public abstract class TrapBlockEntity extends BlockEntity {
             @Override
             protected void onContentsChanged(int slot) {
                 setChanged();
-                if (level != null && !level.isClientSide) {
+                if (level != null && !level.isClientSide()) {
                     level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
                     sendData();
                 }
@@ -68,7 +68,7 @@ public abstract class TrapBlockEntity extends BlockEntity {
     }
 
     public boolean insertItem(ItemStack stack) {
-        if (stack.isEmpty() || level == null || level.isClientSide) {
+        if (stack.isEmpty() || level == null || level.isClientSide()) {
             return false;
         }
 
@@ -95,18 +95,17 @@ public abstract class TrapBlockEntity extends BlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        CompoundTag invTag = inventory.serializeNBT();
-        tag.put("Inventory", invTag);
+        CompoundTag inventoryTag = inventory.serializeNBT();
+        tag.put("Inventory", inventoryTag);
         tag.putInt("ProcessingTicks", processingTicks);
-        System.out.println("TrapBlockEntity: Saving inventory NBT at " + worldPosition + ": " + invTag);
     }
 
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
         if (tag.contains("Inventory")) {
-            inventory.deserializeNBT(tag.getCompound("Inventory"));
-            System.out.println("TrapBlockEntity: Loaded inventory NBT at " + worldPosition + ": " + tag.getCompound("Inventory"));
+            CompoundTag inventoryTag = tag.getCompound("Inventory");
+            inventory.deserializeNBT(inventoryTag);
         }
         processingTicks = tag.getInt("ProcessingTicks");
     }
@@ -114,23 +113,19 @@ public abstract class TrapBlockEntity extends BlockEntity {
     @Override
     public CompoundTag getUpdateTag() {
         CompoundTag tag = super.getUpdateTag();
-        tag.put("Inventory", inventory.serializeNBT());
-        tag.putInt("ProcessingTicks", processingTicks);
-        System.out.println("TrapBlockEntity: Sending update tag at " + worldPosition + ": " + tag);
+        saveAdditional(tag);
         return tag;
     }
 
     @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        System.out.println("TrapBlockEntity: Sending update packet at " + worldPosition);
+    public ClientboundBlockEntityDataPacket getUpdatePacket() {
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
     @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        super.handleUpdateTag(tag);
-        System.out.println("TrapBlockEntity: Received update tag at " + worldPosition + ": " + tag);
-        load(tag);
+    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
+        super.onDataPacket(net, pkt);
+        handleUpdateTag(pkt.getTag());
     }
 
     @NotNull
@@ -192,7 +187,7 @@ public abstract class TrapBlockEntity extends BlockEntity {
                     mob.hurt(level.damageSources().generic(), mob.getMaxHealth() * 2);
                     entity.discard();
                 } catch (Exception e) {
-// 记录异常但不中断游戏
+                    // 静默处理异常
                 }
             }
         }
@@ -220,7 +215,6 @@ public abstract class TrapBlockEntity extends BlockEntity {
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
             setChanged();
-            System.out.println("TrapBlockEntity: Triggering sendData at " + worldPosition);
         }
         queuedSync = false;
         syncCooldown = SYNC_RATE;

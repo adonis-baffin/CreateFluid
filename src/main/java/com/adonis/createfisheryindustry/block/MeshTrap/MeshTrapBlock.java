@@ -5,7 +5,6 @@ import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.content.equipment.wrench.WrenchItem;
 import com.simibubi.create.content.kinetics.mechanicalArm.ArmItem;
 import com.simibubi.create.foundation.block.ProperWaterloggedBlock;
-import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -39,6 +38,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.items.ItemHandlerHelper;
+import org.jetbrains.annotations.Nullable;
 
 public class MeshTrapBlock extends Block implements EntityBlock, ProperWaterloggedBlock, IWrenchable {
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
@@ -51,24 +51,23 @@ public class MeshTrapBlock extends Block implements EntityBlock, ProperWaterlogg
     }
 
     // 透明方块相关方法
-
     public boolean isSolidRender(BlockState state, BlockGetter reader, BlockPos pos) {
-        return false; // 防止方块被视为实心，允许透明渲染
+        return false;
     }
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL; // 使用模型渲染，确保透明纹理可见
+        return RenderShape.MODEL;
     }
 
     @Override
     public boolean propagatesSkylightDown(BlockState state, BlockGetter reader, BlockPos pos) {
-        return true; // 允许光线通过
+        return true;
     }
 
     @Override
     public int getLightBlock(BlockState state, BlockGetter world, BlockPos pos) {
-        return 0; // 不阻挡光线
+        return 0;
     }
 
     @Override
@@ -99,16 +98,14 @@ public class MeshTrapBlock extends Block implements EntityBlock, ProperWaterlogg
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        // 如果需要更精确的碰撞箱，可以自定义，例如：
-        // return AllShapes.CASING_12PX.get(state.getValue(FACING));
-        return net.minecraft.world.phys.shapes.Shapes.block(); // 保持完整方块碰撞箱
+        return net.minecraft.world.phys.shapes.Shapes.block();
     }
 
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
         ItemStack stack = player.getItemInHand(hand);
 
-        // 检查玩家是否持有扳手
+        // 处理扳手交互
         if (stack.getItem() instanceof WrenchItem) {
             UseOnContext wrenchContext = new UseOnContext(level, player, hand, stack, hitResult);
             InteractionResult result = player.isShiftKeyDown()
@@ -119,16 +116,17 @@ public class MeshTrapBlock extends Block implements EntityBlock, ProperWaterlogg
             }
         }
 
-        // 检查玩家是否持有动力臂，允许选择交互点
+        // 处理机械臂交互
         if (stack.getItem() instanceof ArmItem) {
             return InteractionResult.PASS;
         }
 
-        // 正常交互逻辑（提取物品）
+        // 客户端直接返回成功
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
         }
 
+        // 获取方块实体
         BlockEntity be = level.getBlockEntity(pos);
         if (!(be instanceof MeshTrapBlockEntity meshTrap)) {
             return InteractionResult.FAIL;
@@ -139,15 +137,19 @@ public class MeshTrapBlock extends Block implements EntityBlock, ProperWaterlogg
             return InteractionResult.FAIL;
         }
 
-        boolean hasItems = false;
+        // 检查是否有物品并尝试提取
+        ItemStack extracted = ItemStack.EMPTY;
+        int totalItems = 0;
+
+        // 先统计总物品数量
         for (int i = 0; i < inventory.getSlots(); i++) {
             ItemStack slotStack = inventory.getStackInSlot(i);
             if (!slotStack.isEmpty()) {
-                hasItems = true;
+                totalItems += slotStack.getCount();
             }
         }
 
-        ItemStack extracted = ItemStack.EMPTY;
+        // 尝试提取物品（从第一个非空槽位提取）
         for (int i = 0; i < inventory.getSlots(); i++) {
             extracted = inventory.extractItem(i, 64, false);
             if (!extracted.isEmpty()) {
@@ -156,10 +158,29 @@ public class MeshTrapBlock extends Block implements EntityBlock, ProperWaterlogg
         }
 
         if (!extracted.isEmpty()) {
+            // 成功提取物品，给予玩家
             ItemHandlerHelper.giveItemToPlayer(player, extracted);
+
+            // 显示提取信息 - 使用简单的文本消息，因为1.20.1可能没有翻译键
+            player.displayClientMessage(
+                    Component.literal("Extracted " + extracted.getCount() + "x " +
+                            Component.translatable(extracted.getDescriptionId()).getString()),
+                    true
+            );
             return InteractionResult.sidedSuccess(false);
         } else {
-            player.displayClientMessage(Component.literal(hasItems ? "Try it again！" : "Trap is empty！"), true);
+            // 没有提取到物品
+            if (totalItems > 0) {
+                player.displayClientMessage(
+                        Component.literal("Extraction failed - try again!"),
+                        true
+                );
+            } else {
+                player.displayClientMessage(
+                        Component.literal("Trap is empty!"),
+                        true
+                );
+            }
             return InteractionResult.CONSUME;
         }
     }
@@ -224,7 +245,8 @@ public class MeshTrapBlock extends Block implements EntityBlock, ProperWaterlogg
             if (stack.isEmpty()) {
                 return 0;
             }
-            return (int) Math.floor((stack.getCount() / (float) stack.getMaxStackSize()) * 14) + 1;
+            int signal = (int) Math.floor((stack.getCount() / (float) stack.getMaxStackSize()) * 14) + 1;
+            return signal;
         }
         return 0;
     }
@@ -249,7 +271,6 @@ public class MeshTrapBlock extends Block implements EntityBlock, ProperWaterlogg
             return InteractionResult.PASS;
         }
 
-        // 更新方块状态
         if (level.setBlock(pos, rotated, 3)) {
             IWrenchable.playRotateSound(level, pos);
             return InteractionResult.SUCCESS;
@@ -268,20 +289,17 @@ public class MeshTrapBlock extends Block implements EntityBlock, ProperWaterlogg
             return InteractionResult.SUCCESS;
         }
 
-        // 触发方块破坏事件
         BlockEvent.BreakEvent event = new BlockEvent.BreakEvent(level, pos, state, player);
         MinecraftForge.EVENT_BUS.post(event);
         if (event.isCanceled()) {
             return InteractionResult.SUCCESS;
         }
 
-        // 非创造模式下掉落物品
         if (player != null && !player.isCreative()) {
             Block.getDrops(state, serverLevel, pos, level.getBlockEntity(pos), player, context.getItemInHand())
                     .forEach(itemStack -> player.getInventory().placeItemBackInInventory(itemStack));
         }
 
-        // 生成破坏粒子并移除方块
         state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, true);
         level.destroyBlock(pos, false);
         IWrenchable.playRemoveSound(level, pos);
@@ -301,10 +319,10 @@ public class MeshTrapBlock extends Block implements EntityBlock, ProperWaterlogg
 
         Direction currentFacing = originalState.getValue(FACING);
         if (currentFacing.getAxis().equals(targetedFace.getAxis())) {
-            return originalState; // 如果点击相同轴上的面，不进行旋转
+            return originalState;
         }
 
         Direction newFacing = currentFacing.getClockWise(targetedFace.getAxis());
-        return originalState.setValue(FACING, newFacing); // 返回更新后的状态
+        return originalState.setValue(FACING, newFacing);
     }
 }

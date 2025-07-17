@@ -25,7 +25,6 @@ public class CreateFisheryBlocks {
                     .mapColor(DyeColor.BROWN)
                     .sound(SoundType.SCAFFOLDING)
                     .noOcclusion())
-
             .transform(axeOrPickaxe())
             .tag(AllTags.AllBlockTags.WINDMILL_SAILS.tag)
             .onRegister(block -> FrameTrapMovementBehaviour.REGISTRY.register(block, new FrameTrapMovementBehaviour()))

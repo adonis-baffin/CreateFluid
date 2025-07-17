@@ -1,14 +1,8 @@
 package com.adonis.createfisheryindustry.block.FrameTrap;
 
+import com.simibubi.create.content.contraptions.bearing.SailBlock;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
-import com.simibubi.create.content.equipment.wrench.WrenchItem;
 import com.simibubi.create.foundation.block.ProperWaterloggedBlock;
-import com.simibubi.create.foundation.block.WrenchableDirectionalBlock;
-import java.util.List;
-import java.util.function.Predicate;
-import net.createmod.catnip.placement.IPlacementHelper;
-import net.createmod.catnip.placement.PlacementHelpers;
-import net.createmod.catnip.placement.PlacementOffset;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -18,7 +12,6 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
@@ -39,11 +32,12 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.level.BlockEvent;
 
-public class FrameTrapBlock extends WrenchableDirectionalBlock implements ProperWaterloggedBlock, IWrenchable {
-    protected static final int PLACEMENT_HELPER_ID = PlacementHelpers.register(new PlacementHelper());
+import java.util.List;
+
+public class FrameTrapBlock extends SailBlock implements ProperWaterloggedBlock, IWrenchable {
 
     public FrameTrapBlock(Properties properties) {
-        super(properties);
+        super(properties, true, null); // true表示这是一个框架类型的sail
         registerDefaultState(defaultBlockState()
                 .setValue(FACING, Direction.SOUTH)
                 .setValue(WATERLOGGED, false));
@@ -51,8 +45,19 @@ public class FrameTrapBlock extends WrenchableDirectionalBlock implements Proper
 
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+        // 首先尝试我们自己的逻辑
+        InteractionResult ourResult = handleFrameTrapInteraction(state, level, pos, player, hand, hitResult);
+        if (ourResult != InteractionResult.PASS) {
+            return ourResult;
+        }
+
+        // 如果我们的逻辑没有处理，则调用父类逻辑
+        return super.use(state, level, pos, player, hand, hitResult);
+    }
+
+    private InteractionResult handleFrameTrapInteraction(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
         ItemStack stack = player.getItemInHand(hand);
-        if (stack.getItem() instanceof WrenchItem) {
+        if (stack.getItem() instanceof com.simibubi.create.content.equipment.wrench.WrenchItem) {
             UseOnContext wrenchContext = new UseOnContext(level, player, hand, stack, hitResult);
             InteractionResult result = player.isShiftKeyDown()
                     ? onSneakWrenched(state, wrenchContext)
@@ -62,15 +67,6 @@ public class FrameTrapBlock extends WrenchableDirectionalBlock implements Proper
                 return InteractionResult.sidedSuccess(level.isClientSide);
             }
         }
-
-        IPlacementHelper placementHelper = PlacementHelpers.get(PLACEMENT_HELPER_ID);
-        if (!player.isShiftKeyDown() && player.mayBuild() && placementHelper.matchesItem(stack)) {
-            placementHelper
-                    .getOffset(player, level, state, pos, hitResult)
-                    .placeInWorld(level, (BlockItem) stack.getItem(), player, hand, hitResult);
-            return InteractionResult.sidedSuccess(level.isClientSide);
-        }
-
         return InteractionResult.PASS;
     }
 
@@ -145,7 +141,7 @@ public class FrameTrapBlock extends WrenchableDirectionalBlock implements Proper
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        BlockState stateForPlacement = defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+        BlockState stateForPlacement = super.getStateForPlacement(context);
         return withWater(stateForPlacement, context);
     }
 
@@ -243,34 +239,5 @@ public class FrameTrapBlock extends WrenchableDirectionalBlock implements Proper
         }
         Direction newFacing = currentFacing.getClockWise(targetedFace.getAxis());
         return originalState.setValue(FACING, newFacing);
-    }
-
-    protected static class PlacementHelper implements IPlacementHelper {
-        @Override
-        public Predicate<ItemStack> getItemPredicate() {
-            return stack -> stack.getItem() instanceof BlockItem blockItem &&
-                    blockItem.getBlock() instanceof FrameTrapBlock;
-        }
-
-        @Override
-        public Predicate<BlockState> getStatePredicate() {
-            return state -> state.getBlock() instanceof FrameTrapBlock;
-        }
-
-        @Override
-        public PlacementOffset getOffset(Player player, Level level, BlockState state, BlockPos pos, BlockHitResult hit) {
-            List<Direction> directions = IPlacementHelper.orderedByDistanceExceptAxis(
-                    pos,
-                    hit.getLocation(),
-                    state.getValue(FrameTrapBlock.FACING).getAxis(),
-                    direction -> level.getBlockState(pos.relative(direction)).canBeReplaced());
-            if (directions.isEmpty()) {
-                return PlacementOffset.fail();
-            } else {
-                return PlacementOffset.success(
-                        pos.relative(directions.get(0)),
-                        placed -> placed.setValue(FACING, state.getValue(FACING)));
-            }
-        }
     }
 }

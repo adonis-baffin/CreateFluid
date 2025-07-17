@@ -5,7 +5,6 @@ import com.adonis.createfisheryindustry.registry.CreateFisheryBlocks;
 import com.simibubi.create.content.kinetics.mechanicalArm.ArmInteractionPoint;
 import com.simibubi.create.content.kinetics.mechanicalArm.ArmInteractionPointType;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -14,6 +13,7 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemHandlerHelper;
 
 public class MeshTrapInteractionPointType extends ArmInteractionPointType {
+
     public MeshTrapInteractionPointType() {
         CreateFisheryMod.LOGGER.debug("Creating MeshTrapInteractionPointType instance");
     }
@@ -33,6 +33,7 @@ public class MeshTrapInteractionPointType extends ArmInteractionPointType {
 }
 
 class MeshTrapInteractionPoint extends ArmInteractionPoint {
+
     public MeshTrapInteractionPoint(ArmInteractionPointType type, Level level, BlockPos pos, BlockState state) {
         super(type, level, pos, state);
         CreateFisheryMod.LOGGER.debug("Initialized MeshTrapInteractionPoint at {}", pos);
