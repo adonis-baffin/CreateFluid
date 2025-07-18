@@ -14,10 +14,4 @@ public class WornHarpoonItem extends Item {
         super(properties);
     }
 
-    @Override
-    public void appendHoverText(ItemStack stack, Level level, List<Component> tooltipComponents, TooltipFlag isAdvanced) {
-        super.appendHoverText(stack, level, tooltipComponents, isAdvanced);
-        tooltipComponents.add(Component.translatable("item.createfisheryindustry.worn_harpoon.tooltip")
-                .withStyle(ChatFormatting.GRAY));
-    }
 }

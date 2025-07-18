@@ -13,16 +13,17 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 public class HarpoonISTER extends BlockEntityWithoutLevelRenderer {
+
+    public static final ResourceLocation HARPOON_TEXTURE = new ResourceLocation(CreateFisheryMod.MODID, "textures/entity/harpoon.png");
     public static final HarpoonISTER RENDERER = new HarpoonISTER(
             Minecraft.getInstance().getBlockEntityRenderDispatcher(),
             Minecraft.getInstance().getEntityModels()
     );
-
-    private static final ResourceLocation HARPOON_TEXTURE = new ResourceLocation(CreateFisheryMod.MODID, "textures/entity/harpoon.png");
 
     private final EntityModelSet modelSet;
     private TridentModel tridentModel;
@@ -33,22 +34,29 @@ public class HarpoonISTER extends BlockEntityWithoutLevelRenderer {
     }
 
     @Override
-    public void onResourceManagerReload(ResourceManager resourceManager) {
+    public void onResourceManagerReload(@NotNull ResourceManager resourceManager) {
         this.tridentModel = new TridentModel(modelSet.bakeLayer(ModelLayers.TRIDENT));
     }
 
     @Override
-    public void renderByItem(ItemStack stack, ItemDisplayContext displayContext, PoseStack matrix, MultiBufferSource renderer,
-                             int light, int overlayLight) {
-        matrix.pushPose();
-        matrix.scale(1, -1, -1);
-        VertexConsumer builder = ItemRenderer.getFoilBufferDirect(renderer, tridentModel.renderType(getTexture(stack)), false, stack.hasFoil());
-        // 1.20.1需要8个参数：PoseStack, VertexConsumer, light, overlay, red, green, blue, alpha
-        tridentModel.renderToBuffer(matrix, builder, light, overlayLight, 1.0F, 1.0F, 1.0F, 1.0F);
-        matrix.popPose();
-    }
+    public void renderByItem(@NotNull ItemStack stack, @NotNull ItemDisplayContext displayContext,
+                             @NotNull PoseStack poseStack, @NotNull MultiBufferSource buffer,
+                             int combinedLight, int combinedOverlay) {
+        poseStack.pushPose();
+        poseStack.scale(1.0F, -1.0F, -1.0F);
 
-    private static ResourceLocation getTexture(ItemStack stack) {
-        return HARPOON_TEXTURE;
+        // 确保模型已初始化，如果没有则创建一个
+        if (this.tridentModel == null) {
+            this.tridentModel = new TridentModel(modelSet.bakeLayer(ModelLayers.TRIDENT));
+        }
+
+        VertexConsumer vertexConsumer = ItemRenderer.getFoilBufferDirect(
+                buffer,
+                tridentModel.renderType(HARPOON_TEXTURE),
+                false,
+                stack.hasFoil()
+        );
+        tridentModel.renderToBuffer(poseStack, vertexConsumer, combinedLight, combinedOverlay, 1.0F, 1.0F, 1.0F, 1.0F);
+        poseStack.popPose();
     }
 }

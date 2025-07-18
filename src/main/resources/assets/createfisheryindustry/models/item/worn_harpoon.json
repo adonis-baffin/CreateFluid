@@ -1,0 +1,6 @@
+{
+  "parent": "item/handheld",
+  "textures": {
+    "layer0": "createfisheryindustry:item/worn_harpoon"
+  }
+}

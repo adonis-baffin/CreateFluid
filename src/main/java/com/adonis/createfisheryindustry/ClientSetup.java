@@ -27,19 +27,26 @@ public class ClientSetup {
             // 注册实体渲染器
             EntityRenderers.register(CreateFisheryEntityTypes.HARPOON.get(), HarpoonRenderer::new);
 
-            // 直接注册鱼叉物品属性，而不是调用HarpoonItem的方法
-            ItemProperties.register(CreateFisheryItems.HARPOON.get(),
-                    new ResourceLocation("createfisheryindustry", "throwing"),
-                    (stack, level, entity, seed) -> {
-                        return entity != null && entity.isUsingItem() && entity.getUseItem() == stack ? 1.0F : 0.0F;
-                    });
+            // 注册鱼叉物品属性
+            registerHarpoonProperties();
 
-            ItemProperties.register(CreateFisheryItems.HARPOON.get(),
-                    new ResourceLocation("createfisheryindustry", "custom_model_data"),
-                    (stack, level, entity, seed) -> {
-                        return entity instanceof net.minecraft.world.entity.player.Player player &&
-                                stack == player.getMainHandItem() && !player.isUsingItem() ? 1.0F : 0.0F;
-                    });
+            CreateFisheryMod.LOGGER.info("Client setup completed: Entity renderers and item properties registered");
         });
+    }
+
+    private static void registerHarpoonProperties() {
+        // 注册投掷属性 - 检测玩家是否正在使用鱼叉
+        ItemProperties.register(
+                CreateFisheryItems.HARPOON.get(),
+                new ResourceLocation("createfisheryindustry", "throwing"),
+                (stack, level, entity, seed) -> {
+                    if (entity != null && entity.isUsingItem() && entity.getUseItem() == stack) {
+                        return 1.0F;
+                    }
+                    return 0.0F;
+                }
+        );
+
+        CreateFisheryMod.LOGGER.info("Harpoon item properties registered successfully");
     }
 }

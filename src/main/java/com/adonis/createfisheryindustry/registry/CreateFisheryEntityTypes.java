@@ -10,7 +10,9 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 public class CreateFisheryEntityTypes {
-    public static final DeferredRegister<EntityType<?>> ENTITY_TYPES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, CreateFisheryMod.MODID);
+
+    public static final DeferredRegister<EntityType<?>> ENTITY_TYPES =
+            DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, CreateFisheryMod.MODID);
 
     public static final RegistryObject<EntityType<HarpoonEntity>> HARPOON = ENTITY_TYPES.register("harpoon",
             () -> EntityType.Builder.<HarpoonEntity>of(HarpoonEntity::new, MobCategory.MISC)
@@ -19,7 +21,7 @@ public class CreateFisheryEntityTypes {
                     .updateInterval(20)
                     .build("harpoon"));
 
-    public static void register(IEventBus modEventBus) {
-        ENTITY_TYPES.register(modEventBus);
+    public static void register(IEventBus eventBus) {
+        ENTITY_TYPES.register(eventBus);
     }
 }

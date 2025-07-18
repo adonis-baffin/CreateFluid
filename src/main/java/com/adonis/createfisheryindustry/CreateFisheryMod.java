@@ -7,6 +7,7 @@ import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.simibubi.create.foundation.item.ItemDescription;
 import com.simibubi.create.foundation.item.KineticStats;
 import com.simibubi.create.foundation.item.TooltipModifier;
+import net.createmod.catnip.lang.FontHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerStartingEvent;
@@ -26,30 +27,35 @@ import org.slf4j.Logger;
 public class CreateFisheryMod {
     public static final String MODID = "createfisheryindustry";
     public static final Logger LOGGER = LogUtils.getLogger();
-    public static final CreateRegistrate REGISTRATE = CreateRegistrate.create(MODID);
+
+    // 使用你自己的模组ID，而不是Create的ID
+    public static final CreateRegistrate REGISTRATE = CreateRegistrate.create(MODID)
+            .setTooltipModifierFactory(item ->
+                    new ItemDescription.Modifier(item, FontHelper.Palette.STANDARD_CREATE)
+                            .andThen(TooltipModifier.mapNull(KineticStats.create(item)))
+            );
 
     public static ResourceLocation asResource(String path) {
         return new ResourceLocation(MODID, path);
     }
 
-    static {
-        REGISTRATE.setTooltipModifierFactory(item -> new ItemDescription.Modifier(item, null)
-                .andThen(TooltipModifier.mapNull(KineticStats.create(item))));
-    }
-
     public CreateFisheryMod() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
+        // 确保在注册其他内容之前设置好registrate
         REGISTRATE.registerEventListeners(modEventBus);
 
+        // 注册所有内容
         CreateFisheryBlocks.register();
         CreateFisheryBlockEntities.register(modEventBus);
         CreateFisheryEntityTypes.register(modEventBus);
         CreateFisheryItems.register(modEventBus);
         CreateFisheryTabs.register(modEventBus);
 
+        // 注册配置
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, CreateFisheryCommonConfig.CONFIG_SPEC);
 
+        // 注册事件监听器
         modEventBus.addListener(this::setup);
         modEventBus.addListener(this::enqueueIMC);
         modEventBus.addListener(this::processIMC);
