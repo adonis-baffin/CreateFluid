@@ -26,8 +26,6 @@ public class CreateFisheryTabs {
                         output.accept(CreateFisheryItems.ZINC_SHEET.get());
                         output.accept(CreateFisheryItems.WORN_HARPOON.get());
                         output.accept(CreateFisheryItems.HARPOON.get());
-                        output.accept(CreateFisheryItems.COPPER_DIVING_LEGGINGS.get());
-                        output.accept(CreateFisheryItems.NETHERITE_DIVING_LEGGINGS.get());
                     })
                     .build());
 

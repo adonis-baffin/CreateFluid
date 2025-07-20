@@ -28,7 +28,6 @@ public class CreateFisheryMod {
     public static final String MODID = "createfisheryindustry";
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    // 使用你自己的模组ID，而不是Create的ID
     public static final CreateRegistrate REGISTRATE = CreateRegistrate.create(MODID)
             .setTooltipModifierFactory(item ->
                     new ItemDescription.Modifier(item, FontHelper.Palette.STANDARD_CREATE)
