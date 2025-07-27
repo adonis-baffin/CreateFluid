@@ -5,7 +5,12 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "createfisheryindustry.refmap.json",
   "mixins": [
-    "AllArmInteractionPointTypesMixin"
+    "AllArmInteractionPointTypesMixin",
+    "DivingSystemMixin",
+    "SuperJumpMarkerMixin",
+    "UnderwaterSprintMixin",
+    "SwimmingPreventionMixin",
+    "SprintProtectionMixin"
   ],
   "client": [],
   "server": []

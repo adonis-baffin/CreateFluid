@@ -3,6 +3,7 @@
 package com.adonis.createfisheryindustry.mixin;
 
 import com.adonis.createfisheryindustry.block.MeshTrap.MeshTrapInteractionPointType;
+import com.adonis.createfisheryindustry.block.TrapNozzle.TrapNozzleInteractionPointType;
 import com.simibubi.create.content.kinetics.mechanicalArm.AllArmInteractionPointTypes;
 import com.simibubi.create.content.kinetics.mechanicalArm.ArmInteractionPointType;
 import java.lang.reflect.Method;
@@ -19,6 +20,7 @@ public class AllArmInteractionPointTypesMixin {
             Method registerMethod = AllArmInteractionPointTypes.class.getDeclaredMethod("register", String.class, ArmInteractionPointType.class);
             registerMethod.setAccessible(true);
             registerMethod.invoke(null, "mesh_trap", new MeshTrapInteractionPointType());
+            registerMethod.invoke(null, "trap_nozzle", new TrapNozzleInteractionPointType());
         } catch (NoSuchMethodException e) {} catch (Exception e) {}
     }
 }

@@ -6,18 +6,17 @@ import com.adonis.createfisheryindustry.CreateFisheryMod;
 import com.adonis.createfisheryindustry.block.FrameTrap.FrameTrapBlock;
 import com.adonis.createfisheryindustry.block.FrameTrap.FrameTrapMovementBehaviour;
 import com.adonis.createfisheryindustry.block.MeshTrap.MeshTrapBlock;
-import com.simibubi.create.AllMovementBehaviours;
+import com.adonis.createfisheryindustry.block.TrapNozzle.TrapNozzleBlock;
 import com.simibubi.create.AllTags;
-import com.simibubi.create.api.behaviour.movement.MovementBehaviour;
 import com.simibubi.create.foundation.data.SharedProperties;
 import com.tterrag.registrate.util.entry.BlockEntry;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.block.SoundType;
-import net.minecraftforge.client.model.generators.ModelProvider;
 
 public class CreateFisheryBlocks {
+
     public static final BlockEntry<FrameTrapBlock> FRAME_TRAP = CreateFisheryMod.REGISTRATE
             .block("frame_trap", FrameTrapBlock::new)
             .initialProperties(SharedProperties::wooden)
@@ -44,11 +43,24 @@ public class CreateFisheryBlocks {
             .simpleItem()
             .register();
 
+    public static final BlockEntry<TrapNozzleBlock> TRAP_NOZZLE = CreateFisheryMod.REGISTRATE
+            .block("trap_nozzle", TrapNozzleBlock::new)
+            .initialProperties(SharedProperties::wooden)
+            .properties(prop -> prop
+                    .mapColor(DyeColor.WHITE)
+                    .sound(SoundType.BAMBOO)
+                    .noOcclusion())
+            .transform(axeOrPickaxe())
+            .blockstate((ctx, prov) -> prov.simpleBlock(ctx.get(), prov.models().cubeAll(ctx.getName(), prov.modLoc("block/trap_nozzle"))))
+            .simpleItem()
+            .register();
+
     public static void register() {}
 
     public static void setupRenderLayers() {
         RenderType cutout = RenderType.cutout();
         ItemBlockRenderTypes.setRenderLayer(FRAME_TRAP.get(), cutout);
         ItemBlockRenderTypes.setRenderLayer(MESH_TRAP.get(), cutout);
+        ItemBlockRenderTypes.setRenderLayer(TRAP_NOZZLE.get(), cutout);
     }
 }

@@ -1,6 +1,7 @@
 package com.adonis.createfisheryindustry;
 
 import com.adonis.createfisheryindustry.config.CreateFisheryCommonConfig;
+import com.adonis.createfisheryindustry.event.SuperJumpFallProtection;
 import com.adonis.createfisheryindustry.registry.*;
 import com.mojang.logging.LogUtils;
 import com.simibubi.create.foundation.data.CreateRegistrate;
@@ -60,11 +61,19 @@ public class CreateFisheryMod {
         modEventBus.addListener(this::processIMC);
         modEventBus.addListener(this::clientInit);
 
+        // 注册潜水装备相关事件到 Forge 事件总线
         MinecraftForge.EVENT_BUS.register(this);
+        MinecraftForge.EVENT_BUS.register(SuperJumpFallProtection.class);
     }
 
     private void setup(final FMLCommonSetupEvent event) {
         LOGGER.info("Create: Fishery Industry is setting up!");
+
+        // 在设置阶段初始化配置
+        event.enqueueWork(() -> {
+            CreateFisheryCommonConfig.onLoad();
+            LOGGER.info("Create: Fishery Industry diving equipment features initialized!");
+        });
     }
 
     private void enqueueIMC(final InterModEnqueueEvent event) {}
@@ -74,12 +83,13 @@ public class CreateFisheryMod {
     private void clientInit(final FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             CreateFisheryBlocks.setupRenderLayers();
+            LOGGER.info("Create: Fishery Industry client setup completed!");
         });
     }
 
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
         CreateFisheryCommonConfig.onLoad();
-        CreateFisheryMod.LOGGER.info("Server starting, ensuring config is loaded.");
+        CreateFisheryMod.LOGGER.info("Server starting, ensuring config is loaded with diving equipment features.");
     }
 }

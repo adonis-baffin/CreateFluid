@@ -28,6 +28,24 @@ public class CreateFisheryItems {
             .properties(p -> p.durability(250))
             .register();
 
+    // 铜质潜水护腿 - 移除durability设置，装甲物品已经有默认耐久度
+    public static final ItemEntry<CopperDivingLeggingsItem> COPPER_DIVING_LEGGINGS = REGISTRATE.item("copper_diving_leggings",
+                    p -> new CopperDivingLeggingsItem(
+                            AllArmorMaterials.COPPER,
+                            p, // 不设置durability，使用装甲材料的默认耐久度
+                            new ResourceLocation(CreateFisheryMod.MODID, "copper_diving_leggings")
+                    ))
+            .register();
+
+    // 下界合金潜水护腿 - 移除durability设置，只保留防火属性
+    public static final ItemEntry<NetheriteDivingLeggingsItem> NETHERITE_DIVING_LEGGINGS = REGISTRATE.item("netherite_diving_leggings",
+                    p -> new NetheriteDivingLeggingsItem(
+                            ArmorMaterials.NETHERITE,
+                            p.fireResistant(), // 只设置防火，不设置durability
+                            new ResourceLocation(CreateFisheryMod.MODID, "netherite_diving_leggings")
+                    ))
+            .register();
+
     public static void register(IEventBus modEventBus) {
     }
 }

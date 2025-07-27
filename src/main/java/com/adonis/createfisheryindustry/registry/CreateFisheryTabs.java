@@ -21,11 +21,14 @@ public class CreateFisheryTabs {
                         // 添加方块
                         output.accept(CreateFisheryBlocks.FRAME_TRAP.get());
                         output.accept(CreateFisheryBlocks.MESH_TRAP.get());
+                        output.accept(CreateFisheryBlocks.TRAP_NOZZLE.get());
 
                         // 添加物品
                         output.accept(CreateFisheryItems.ZINC_SHEET.get());
                         output.accept(CreateFisheryItems.WORN_HARPOON.get());
                         output.accept(CreateFisheryItems.HARPOON.get());
+                        output.accept(CreateFisheryItems.COPPER_DIVING_LEGGINGS.get());
+                        output.accept(CreateFisheryItems.NETHERITE_DIVING_LEGGINGS.get());
                     })
                     .build());
 
