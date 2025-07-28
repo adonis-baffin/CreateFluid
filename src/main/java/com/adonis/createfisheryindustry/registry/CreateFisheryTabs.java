@@ -22,13 +22,15 @@ public class CreateFisheryTabs {
                         output.accept(CreateFisheryBlocks.FRAME_TRAP.get());
                         output.accept(CreateFisheryBlocks.MESH_TRAP.get());
                         output.accept(CreateFisheryBlocks.TRAP_NOZZLE.get());
+                        output.accept(CreateFisheryBlocks.SMART_NOZZLE.get());
+                        output.accept(CreateFisheryBlocks.SMART_MESH.get());
 
                         // 添加物品
-                        output.accept(CreateFisheryItems.ZINC_SHEET.get());
                         output.accept(CreateFisheryItems.WORN_HARPOON.get());
                         output.accept(CreateFisheryItems.HARPOON.get());
                         output.accept(CreateFisheryItems.COPPER_DIVING_LEGGINGS.get());
                         output.accept(CreateFisheryItems.NETHERITE_DIVING_LEGGINGS.get());
+                        output.accept(CreateFisheryItems.ZINC_SHEET.get());
                     })
                     .build());
 

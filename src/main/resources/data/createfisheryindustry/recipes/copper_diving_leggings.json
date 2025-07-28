@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "www",
+    "# #",
+    "w w"
+  ],
+  "key": {
+    "#": {
+      "tag": "forge:plates/zinc"
+    },
+    "w": {
+      "tag": "forge:ingots/copper"
+    }
+  },
+  "result": {
+    "item": "createfisheryindustry:copper_diving_leggings"
+  }
+}

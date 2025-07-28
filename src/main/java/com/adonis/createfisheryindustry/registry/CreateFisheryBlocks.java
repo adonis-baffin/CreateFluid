@@ -6,7 +6,9 @@ import com.adonis.createfisheryindustry.CreateFisheryMod;
 import com.adonis.createfisheryindustry.block.FrameTrap.FrameTrapBlock;
 import com.adonis.createfisheryindustry.block.FrameTrap.FrameTrapMovementBehaviour;
 import com.adonis.createfisheryindustry.block.MeshTrap.MeshTrapBlock;
+import com.adonis.createfisheryindustry.block.SmartMesh.SmartMeshBlock;
 import com.adonis.createfisheryindustry.block.TrapNozzle.TrapNozzleBlock;
+import com.adonis.createfisheryindustry.block.SmartNozzle.SmartNozzleBlock;
 import com.simibubi.create.AllTags;
 import com.simibubi.create.foundation.data.SharedProperties;
 import com.tterrag.registrate.util.entry.BlockEntry;
@@ -55,6 +57,30 @@ public class CreateFisheryBlocks {
             .simpleItem()
             .register();
 
+    public static final BlockEntry<SmartNozzleBlock> SMART_NOZZLE = CreateFisheryMod.REGISTRATE
+            .block("smart_nozzle", SmartNozzleBlock::new)
+            .initialProperties(SharedProperties::wooden)
+            .properties(prop -> prop
+                    .mapColor(DyeColor.GRAY)
+                    .sound(SoundType.NETHER_WOOD)
+                    .noOcclusion())
+            .transform(axeOrPickaxe())
+            .blockstate((ctx, prov) -> prov.simpleBlock(ctx.get(), prov.models().cubeAll(ctx.getName(), prov.modLoc("block/smart_nozzle"))))
+            .simpleItem()
+            .register();
+
+    public static final BlockEntry<SmartMeshBlock> SMART_MESH = CreateFisheryMod.REGISTRATE
+            .block("smart_mesh", SmartMeshBlock::new)
+            .initialProperties(SharedProperties::wooden)
+            .properties(prop -> prop
+                    .mapColor(DyeColor.GRAY)
+                    .sound(SoundType.NETHER_WOOD)
+                    .noOcclusion())
+            .transform(axeOrPickaxe())
+            .blockstate((ctx, prov) -> prov.simpleBlock(ctx.get(), prov.models().cubeAll(ctx.getName(), prov.modLoc("block/smart_mesh"))))
+            .simpleItem()
+            .register();
+
     public static void register() {}
 
     public static void setupRenderLayers() {
@@ -62,5 +88,7 @@ public class CreateFisheryBlocks {
         ItemBlockRenderTypes.setRenderLayer(FRAME_TRAP.get(), cutout);
         ItemBlockRenderTypes.setRenderLayer(MESH_TRAP.get(), cutout);
         ItemBlockRenderTypes.setRenderLayer(TRAP_NOZZLE.get(), cutout);
+        ItemBlockRenderTypes.setRenderLayer(SMART_NOZZLE.get(), cutout);
+        ItemBlockRenderTypes.setRenderLayer(SMART_MESH.get(), cutout);
     }
 }

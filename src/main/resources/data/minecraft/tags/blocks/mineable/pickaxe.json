@@ -1,6 +1,9 @@
 {
   "values": [
     "createfisheryindustry:frame_trap",
-    "createfisheryindustry:mesh_trap"
+    "createfisheryindustry:mesh_trap",
+    "createfisheryindustry:smart_mesh",
+    "createfisheryindustry:smart_nozzle",
+    "createfisheryindustry:trap_nozzle"
   ]
 }
