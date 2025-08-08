@@ -6,6 +6,6 @@ pluginManagement {
         maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
     }
 }
-rootProject.name = "CreateFisheryIndustry-1.20"
+rootProject.name = "CreateFluid-1.20"
 
 

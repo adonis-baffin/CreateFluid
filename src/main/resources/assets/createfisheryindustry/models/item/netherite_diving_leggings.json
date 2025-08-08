@@ -1,6 +1,0 @@
-{
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "createfisheryindustry:item/netherite_diving_leggings"
-  }
-}

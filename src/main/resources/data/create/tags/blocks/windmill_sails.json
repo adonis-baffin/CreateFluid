@@ -1,6 +1,6 @@
 {
   "replace": false,
   "values": [
-    "createfisheryindustry:frame_trap"
+    "fluid:frame_trap"
   ]
 }

@@ -14,8 +14,8 @@ plugins {
 apply plugin: 'org.spongepowered.mixin'
 
 version = project.mod_version
-group = 'com.adonis.createfisheryindustry'// http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = 'createfisheryindustry-1.20'
+group = 'com.adonis.fluid'// http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = 'fluid-1.20'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
@@ -32,7 +32,7 @@ minecraft {
             property 'mixin.env.remapRefMap', 'true'
             property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
             mods {
-                "createfisheryindustry" {
+                "fluid" {
                     source sourceSets.main
                 }
             }
@@ -45,10 +45,10 @@ minecraft {
 
             property 'forge.logging.console.level', 'debug'
 
-            args '--mod', 'createfisheryindustry', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/'), '--existing', file('src/platform-shared/resources/'), '--existing-mod', 'create'
+            args '--mod', 'fluid', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/'), '--existing', file('src/platform-shared/resources/'), '--existing-mod', 'create'
 
             mods {
-                createfisheryindustry {
+                fluid {
                     source sourceSets.main
                 }
             }
@@ -138,14 +138,14 @@ dependencies {
 jar {
     manifest {
         attributes([
-                "Specification-Title"     : "createfisheryindustry",
-                "Specification-Vendor"    : "createfisheryindustry",
+                "Specification-Title"     : "fluid",
+                "Specification-Vendor"    : "fluid",
                 "Specification-Version"   : "1",
                 "Implementation-Title"    : project.name,
                 "Implementation-Version"  : project.jar.archiveVersion,
-                "Implementation-Vendor"   : "createfisheryindustry",
+                "Implementation-Vendor"   : "fluid",
                 "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
-                'MixinConfigs': 'createfisheryindustry.mixins.json'
+                'MixinConfigs': 'fluid.mixins.json'
         ])
     }
 }
@@ -187,8 +187,8 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 mixin {
-    add sourceSets.main, "createfisheryindustry.mixins.refmap.json"
-    config "createfisheryindustry.mixins.json"
+    add sourceSets.main, "fluid.mixins.refmap.json"
+    config "fluid.mixins.json"
 }
 
 configurations.configureEach {

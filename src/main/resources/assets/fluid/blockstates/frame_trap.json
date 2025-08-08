@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "facing=up": { "model": "fluid:block/frame_trap" },
+    "facing=down": { "model": "fluid:block/frame_trap", "x": 180 },
+    "facing=north": { "model": "fluid:block/frame_trap", "x": 90 },
+    "facing=south": { "model": "fluid:block/frame_trap", "x": 90, "y": 180 },
+    "facing=west": { "model": "fluid:block/frame_trap", "x": 90, "y": 270 },
+    "facing=east": { "model": "fluid:block/frame_trap", "x": 90, "y": 90 }
+  }
+}

@@ -7,11 +7,11 @@ license="MIT License"
 
 [[mods]] #mandatory
 
-modId="createfisheryindustry" #mandatory
+modId="fluid" #mandatory
 
 
-displayName="Create Fishery Industry" #mandatory
-logoFile="createfisheryindustry.png" #optional
+displayName="Create Fluid" #mandatory
+logoFile="fluid.png" #optional
 
 credits="adonis" #optional
 
@@ -21,19 +21,19 @@ description='''
 A Create mod addon that allows for automatic fishing and item collection
 '''
 
-[[dependencies.createfisheryindustry]] #optional
+[[dependencies.fluid]] #optional
 modId="forge" #mandatory
 mandatory=true #mandatory
 versionRange="[47, )" #mandatory
 ordering="NONE"
 side="BOTH"
-[[dependencies.createfisheryindustry]]
+[[dependencies.fluid]]
 modId="create" #mandatory
 mandatory=true
 versionRange="[6.0.2,6.1.0)"
 ordering="NONE"
 side="BOTH"
-[[dependencies.createfisheryindustry]]
+[[dependencies.fluid]]
 modId="minecraft"
 mandatory=true
 versionRange="[1.20, 1.20.2]"

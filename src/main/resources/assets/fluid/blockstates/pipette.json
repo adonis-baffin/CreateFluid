@@ -1,0 +1,11 @@
+{
+  "variants": {
+    "ceiling=false": {
+      "model": "fluid:block/pipette/block"
+    },
+    "ceiling=true": {
+      "model": "fluid:block/pipette/block",
+      "x": 180
+    }
+  }
+}

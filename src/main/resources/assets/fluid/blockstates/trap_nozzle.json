@@ -1,0 +1,30 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "fluid:block/trap_nozzle",
+      "x": 180
+    },
+    "facing=east": {
+      "model": "fluid:block/trap_nozzle",
+      "x": 90,
+      "y": 90
+    },
+    "facing=north": {
+      "model": "fluid:block/trap_nozzle",
+      "x": 90
+    },
+    "facing=south": {
+      "model": "fluid:block/trap_nozzle",
+      "x": 90,
+      "y": 180
+    },
+    "facing=up": {
+      "model": "fluid:block/trap_nozzle"
+    },
+    "facing=west": {
+      "model": "fluid:block/trap_nozzle",
+      "x": 90,
+      "y": 270
+    }
+  }
+}
