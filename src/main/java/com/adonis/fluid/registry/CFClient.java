@@ -17,6 +17,9 @@ public class CFClient {
 
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
+        // 首先初始化 PartialModels - 这必须在任何使用它们的代码之前完成
+        CFPartialModels.init();
+
         event.enqueueWork(() -> {
             // 设置方块渲染层
             ItemBlockRenderTypes.setRenderLayer(CFBlock.FRAME_TRAP.get(), RenderType.cutout());
@@ -30,6 +33,18 @@ public class CFClient {
             BlockEntityRenderers.register(CFBlockEntity.SMART_NOZZLE.get(), SmartNozzleRenderer::new);
             BlockEntityRenderers.register(CFBlockEntity.SMART_MESH.get(), SmartMeshRenderer::new);
             BlockEntityRenderers.register(CFBlockEntity.PIPETTE.get(), PipetteRenderer::new);
+
+            // 暂时注释掉Flywheel可视化注册，先让基本渲染工作
+            // 等基本功能正常后再添加Flywheel支持
+            /*
+            try {
+                // Flywheel可视化注册 - 如果需要的话
+                VisualizationManager.get(Minecraft.getInstance().level).addBlockEntityType(
+                    CFBlockEntity.PIPETTE.get(), PipetteVisual::new);
+            } catch (Exception e) {
+                CreateFluid.LOGGER.warn("Failed to register PipetteVisual: " + e.getMessage());
+            }
+            */
         });
     }
 }

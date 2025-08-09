@@ -10,6 +10,7 @@ import com.adonis.fluid.block.SmartMesh.SmartMeshBlock;
 import com.adonis.fluid.block.TrapNozzle.TrapNozzleBlock;
 import com.adonis.fluid.block.SmartNozzle.SmartNozzleBlock;
 import com.adonis.fluid.block.Pipette.PipetteBlock;
+import com.adonis.fluid.config.CFConfig;
 import com.adonis.fluid.item.PipetteItem;
 import com.simibubi.create.AllTags;
 import com.simibubi.create.foundation.data.SharedProperties;
@@ -91,7 +92,7 @@ public class CFBlock {
             .blockstate((ctx, prov) -> {
                 prov.simpleBlock(ctx.get());
             })
-            // 移除了CStress.setImpact(2.0)调用
+            .transform(CreateFluid.STRESS_CONFIG.setImpact(2.0)) // 使用静态应力配置
             .item(PipetteItem::new)
             .build()
             .register();

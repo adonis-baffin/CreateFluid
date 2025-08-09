@@ -1,12 +1,10 @@
 package com.adonis.fluid;
 
 import com.adonis.fluid.config.CFCommonConfig;
+import com.adonis.fluid.config.CFStress;
 import com.adonis.fluid.event.SuperJumpFallProtection;
 import com.adonis.fluid.packet.PipettePlacementPacket;
-import com.adonis.fluid.registry.CFBlock;
-import com.adonis.fluid.registry.CFBlockEntity;
-import com.adonis.fluid.registry.CFItem;
-import com.adonis.fluid.registry.CFTab;
+import com.adonis.fluid.registry.*;
 import com.mojang.logging.LogUtils;
 import com.simibubi.create.AllPackets;
 import com.simibubi.create.foundation.data.CreateRegistrate;
@@ -20,6 +18,7 @@ import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.InterModEnqueueEvent;
@@ -27,6 +26,7 @@ import net.minecraftforge.fml.event.lifecycle.InterModProcessEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.network.simple.SimpleChannel;
 import org.slf4j.Logger;
 
@@ -43,6 +43,11 @@ public class CreateFluid {
                     new ItemDescription.Modifier(item, FontHelper.Palette.STANDARD_CREATE)
                             .andThen(TooltipModifier.mapNull(KineticStats.create(item))));
 
+    // 关键：创建静态的应力配置实例，就像Create Fishery一样
+    public static final CFStress STRESS_CONFIG = new CFStress(MODID);
+
+    private static ForgeConfigSpec stressConfigSpec;
+
     public static ResourceLocation asResource(String path) {
         return new ResourceLocation(MODID, path);
     }
@@ -57,29 +62,37 @@ public class CreateFluid {
         CFItem.register(modEventBus);
         CFTab.register(modEventBus);
 
-        // 注册配置
+        // 注册普通配置
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, CFCommonConfig.CONFIG_SPEC);
+
+        // 关键：按照Create Fishery的方式注册应力配置
+        ForgeConfigSpec.Builder stressBuilder = new ForgeConfigSpec.Builder();
+        STRESS_CONFIG.registerAll(stressBuilder);
+        stressConfigSpec = stressBuilder.build();
+        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, stressConfigSpec, STRESS_CONFIG.getName() + ".toml");
 
         // 注册事件监听器
         modEventBus.addListener(this::setup);
         modEventBus.addListener(this::enqueueIMC);
         modEventBus.addListener(this::processIMC);
         modEventBus.addListener(this::clientInit);
+        modEventBus.addListener(this::onModConfigEvent);
 
         // 注册Forge事件
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(SuperJumpFallProtection.class);
+        MinecraftForge.EVENT_BUS.addListener(this::onServerStarting);
     }
 
     private void setup(final FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
             CFCommonConfig.onLoad();
+            CFPartialModels.init(); // 初始化部分模型
 
             // 注册网络包
             SimpleChannel channel = AllPackets.getChannel();
 
-            // 获取下一个可用的ID
-            int id = 100; // 使用一个安全的起始ID，避免与Create原版包冲突
+            int id = 100;
 
             channel.registerMessage(id++, PipettePlacementPacket.class,
                     (msg, buf) -> msg.write(buf),
@@ -93,18 +106,33 @@ public class CreateFluid {
         });
     }
 
-    private void enqueueIMC(final InterModEnqueueEvent event) {
-        // Inter-mod communication setup
-    }
-
-    private void processIMC(final InterModProcessEvent event) {
-        // Inter-mod communication processing
-    }
+    private void enqueueIMC(final InterModEnqueueEvent event) {}
+    private void processIMC(final InterModProcessEvent event) {}
 
     private void clientInit(final FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             CFBlock.setupRenderLayers();
         });
+    }
+
+    // 关键：处理配置事件
+    private void onModConfigEvent(ModConfigEvent event) {
+        ModConfig config = event.getConfig();
+
+        if (config.getSpec() == CFCommonConfig.CONFIG_SPEC) {
+            if (event instanceof ModConfigEvent.Loading) {
+                CFCommonConfig.onLoad();
+            } else if (event instanceof ModConfigEvent.Reloading) {
+                CFCommonConfig.onReload();
+            }
+        } else if (stressConfigSpec != null && config.getSpec() == stressConfigSpec) {
+            // 应力配置加载/重载时的处理
+            if (event instanceof ModConfigEvent.Loading) {
+                LOGGER.info("Loading stress configuration");
+            } else if (event instanceof ModConfigEvent.Reloading) {
+                LOGGER.info("Reloading stress configuration");
+            }
+        }
     }
 
     @SubscribeEvent
