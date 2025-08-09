@@ -3,17 +3,22 @@ package com.adonis.fluid;
 import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.config.CFStress;
 import com.adonis.fluid.event.SuperJumpFallProtection;
+import com.adonis.fluid.handler.PipetteInteractionPointHandler;
 import com.adonis.fluid.packet.PipettePlacementPacket;
 import com.adonis.fluid.registry.*;
 import com.mojang.logging.LogUtils;
 import com.simibubi.create.AllPackets;
+import com.simibubi.create.api.stress.BlockStressValues;
 import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.simibubi.create.foundation.item.ItemDescription;
 import com.simibubi.create.foundation.item.KineticStats;
 import com.simibubi.create.foundation.item.TooltipModifier;
 import net.createmod.catnip.lang.FontHelper;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -27,7 +32,9 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.simple.SimpleChannel;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.slf4j.Logger;
 
 import java.util.Random;
@@ -43,7 +50,7 @@ public class CreateFluid {
                     new ItemDescription.Modifier(item, FontHelper.Palette.STANDARD_CREATE)
                             .andThen(TooltipModifier.mapNull(KineticStats.create(item))));
 
-    // 关键：创建静态的应力配置实例，就像Create Fishery一样
+    // 关键：创建静态的应力配置实例
     public static final CFStress STRESS_CONFIG = new CFStress(MODID);
 
     private static ForgeConfigSpec stressConfigSpec;
@@ -82,6 +89,11 @@ public class CreateFluid {
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(SuperJumpFallProtection.class);
         MinecraftForge.EVENT_BUS.addListener(this::onServerStarting);
+
+        // 客户端事件注册
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            MinecraftForge.EVENT_BUS.addListener(CreateFluid::onClientTick);
+        }
     }
 
     private void setup(final FMLCommonSetupEvent event) {
@@ -89,20 +101,33 @@ public class CreateFluid {
             CFCommonConfig.onLoad();
             CFPartialModels.init(); // 初始化部分模型
 
+            // 确保应力值提供者被注册
+            BlockStressValues.IMPACTS.registerProvider(STRESS_CONFIG::getImpact);
+            BlockStressValues.CAPACITIES.registerProvider(STRESS_CONFIG::getCapacity);
+
             // 注册网络包
             SimpleChannel channel = AllPackets.getChannel();
 
-            int id = 100;
+            // 使用更高的ID避免冲突
+            int id = 200;
 
             channel.registerMessage(id++, PipettePlacementPacket.class,
                     (msg, buf) -> msg.write(buf),
                     PipettePlacementPacket::new,
-                    (msg, ctxSupplier) -> msg.handle(ctxSupplier.get()));
+                    (msg, ctxSupplier) -> {
+                        NetworkEvent.Context ctx = ctxSupplier.get();
+                        boolean handled = msg.handle(ctx);
+                        ctx.setPacketHandled(handled);
+                    });
 
             channel.registerMessage(id++, PipettePlacementPacket.ClientBoundRequest.class,
                     (msg, buf) -> msg.write(buf),
                     PipettePlacementPacket.ClientBoundRequest::new,
-                    (msg, ctxSupplier) -> msg.handle(ctxSupplier.get()));
+                    (msg, ctxSupplier) -> {
+                        NetworkEvent.Context ctx = ctxSupplier.get();
+                        boolean handled = msg.handle(ctx);
+                        ctx.setPacketHandled(handled);
+                    });
         });
     }
 
@@ -113,6 +138,14 @@ public class CreateFluid {
         event.enqueueWork(() -> {
             CFBlock.setupRenderLayers();
         });
+    }
+
+    // 添加客户端tick处理
+    @OnlyIn(Dist.CLIENT)
+    public static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase == TickEvent.Phase.END) {
+            PipetteInteractionPointHandler.tick();
+        }
     }
 
     // 关键：处理配置事件

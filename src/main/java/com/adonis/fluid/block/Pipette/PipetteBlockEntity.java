@@ -92,6 +92,9 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         this.redstoneLocked = false;
         this.tooltipWarmup = 15;
         this.goggles = false;
+
+        // 添加这行确保初始化完成
+        CreateFluid.LOGGER.debug("PipetteBlockEntity initialized at {}", pos);
     }
 
     @Override
@@ -190,6 +193,20 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         if (!this.heldItem.isEmpty()) {
             Block.popResource(this.level, this.worldPosition, this.heldItem);
         }
+    }
+
+    // 在PipetteBlockEntity类中添加这些public方法
+    public void setInteractionPointTag(ListTag tag) {
+        this.interactionPointTag = tag;
+        this.updateInteractionPoints = true;
+    }
+
+    public void setUpdateInteractionPoints(boolean update) {
+        this.updateInteractionPoints = update;
+    }
+
+    public boolean shouldUpdateInteractionPoints() {
+        return this.updateInteractionPoints;
     }
 
     @Nullable

@@ -17,10 +17,24 @@ public class CFPartialModels {
     public static final PartialModel PIPETTE_HEAD_GOGGLES = block("pipette/head_goggles");
 
     private static PartialModel block(String path) {
-        return PartialModel.of(CreateFluid.asResource("block/" + path)); // 使用.of()方法
+        return PartialModel.of(CreateFluid.asResource("block/" + path));
     }
 
     public static void init() {
-        // 这个方法会在模组加载时调用，确保所有模型都被注册
+        // 确保所有模型都被正确加载
+        CreateFluid.LOGGER.info("Initializing partial models...");
+        try {
+            PIPETTE_BASE.get();
+            PIPETTE_LOWER_ARM.get();
+            PIPETTE_UPPER_ARM.get();
+            PIPETTE_HEAD.get();
+            PIPETTE_TIP.get();
+            PIPETTE_NEEDLE.get();
+            PIPETTE_COG.get();
+            PIPETTE_HEAD_GOGGLES.get();
+            CreateFluid.LOGGER.info("All partial models loaded successfully!");
+        } catch (Exception e) {
+            CreateFluid.LOGGER.error("Failed to load partial models: ", e);
+        }
     }
 }

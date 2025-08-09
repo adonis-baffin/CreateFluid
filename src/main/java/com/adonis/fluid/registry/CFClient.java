@@ -4,10 +4,12 @@ import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.block.SmartNozzle.SmartNozzleRenderer;
 import com.adonis.fluid.block.SmartMesh.SmartMeshRenderer;
 import com.adonis.fluid.block.Pipette.PipetteRenderer;
+import com.adonis.fluid.handler.PipetteInteractionPointHandler;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -17,7 +19,6 @@ public class CFClient {
 
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
-        // 首先初始化 PartialModels - 这必须在任何使用它们的代码之前完成
         CFPartialModels.init();
 
         event.enqueueWork(() -> {
@@ -33,18 +34,17 @@ public class CFClient {
             BlockEntityRenderers.register(CFBlockEntity.SMART_NOZZLE.get(), SmartNozzleRenderer::new);
             BlockEntityRenderers.register(CFBlockEntity.SMART_MESH.get(), SmartMeshRenderer::new);
             BlockEntityRenderers.register(CFBlockEntity.PIPETTE.get(), PipetteRenderer::new);
-
-            // 暂时注释掉Flywheel可视化注册，先让基本渲染工作
-            // 等基本功能正常后再添加Flywheel支持
-            /*
-            try {
-                // Flywheel可视化注册 - 如果需要的话
-                VisualizationManager.get(Minecraft.getInstance().level).addBlockEntityType(
-                    CFBlockEntity.PIPETTE.get(), PipetteVisual::new);
-            } catch (Exception e) {
-                CreateFluid.LOGGER.warn("Failed to register PipetteVisual: " + e.getMessage());
-            }
-            */
         });
+    }
+
+    // 添加客户端tick事件处理（备用方案）
+    @Mod.EventBusSubscriber(modid = CreateFluid.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+    public static class ClientForgeEvents {
+        @SubscribeEvent
+        public static void onClientTick(TickEvent.ClientTickEvent event) {
+            if (event.phase == TickEvent.Phase.END) {
+                PipetteInteractionPointHandler.tick();
+            }
+        }
     }
 }

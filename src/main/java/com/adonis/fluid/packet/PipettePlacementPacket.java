@@ -30,7 +30,9 @@ public class PipettePlacementPacket extends SimplePacketBase {
 
     public PipettePlacementPacket(FriendlyByteBuf buffer) {
         CompoundTag nbt = buffer.readNbt();
-        this.receivedTag = nbt.getList("Points", 10);
+        if (nbt != null) {
+            this.receivedTag = nbt.getList("Points", 10);
+        }
         this.pos = buffer.readBlockPos();
     }
 
@@ -56,7 +58,9 @@ public class PipettePlacementPacket extends SimplePacketBase {
                     BlockEntity blockEntity = world.getBlockEntity(this.pos);
                     if (blockEntity instanceof PipetteBlockEntity) {
                         PipetteBlockEntity pipette = (PipetteBlockEntity)blockEntity;
-                        pipette.interactionPointTag = this.receivedTag;
+                        pipette.setInteractionPointTag(this.receivedTag); // 使用setter方法
+                        pipette.setChanged();
+                        pipette.sendData(); // 同步到客户端
                     }
                 }
             }
@@ -65,7 +69,7 @@ public class PipettePlacementPacket extends SimplePacketBase {
     }
 
     public static class ClientBoundRequest extends SimplePacketBase {
-        BlockPos pos;
+        private BlockPos pos;
 
         public ClientBoundRequest(BlockPos pos) {
             this.pos = pos;
