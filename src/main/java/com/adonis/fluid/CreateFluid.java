@@ -128,6 +128,10 @@ public class CreateFluid {
                         boolean handled = msg.handle(ctx);
                         ctx.setPacketHandled(handled);
                     });
+
+            if (FMLEnvironment.dist == Dist.CLIENT) {
+                // 这里需要使用Create的注册方式，可能需要修改CFBlockEntity的注册
+            }
         });
     }
 

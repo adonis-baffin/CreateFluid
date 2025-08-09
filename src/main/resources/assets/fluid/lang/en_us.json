@@ -3,6 +3,7 @@
   "block.fluid.mesh_trap": "Mesh Trap",
   "block.fluid.trap_nozzle": "Trap Nozzle",
   "block.fluid.smart_mesh": "Smart Mesh",
+  "block.fluid.pipette": "Mechanical Pipette",
   "item.fluid.zinc_sheet": "Zinc Sheet",
   "item.fluid.pneumatic_mechanism": "Pneumatic Mechanism",
   "item.fluid.incomplete_pneumatic_mechanism": "Incomplete Pneumatic Mechanism",

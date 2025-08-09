@@ -5,11 +5,13 @@ import com.adonis.fluid.registry.CFPartialModels;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.simibubi.create.AllPartialModels;
+import com.simibubi.create.content.kinetics.base.IRotate;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 import dev.engine_room.flywheel.api.visualization.VisualizationManager;
 import dev.engine_room.flywheel.lib.transform.PoseTransformStack;
 import dev.engine_room.flywheel.lib.transform.TransformStack;
 import net.createmod.catnip.animation.AnimationTickHolder;
+import net.createmod.catnip.data.Iterate;
 import net.createmod.catnip.render.CachedBuffers;
 import net.createmod.catnip.render.SuperByteBuffer;
 import net.createmod.catnip.theme.Color;
@@ -19,6 +21,8 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.BlockItem;
@@ -30,32 +34,30 @@ public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEnti
 
     public PipetteRenderer(BlockEntityRendererProvider.Context context) {
         super(context);
-        CreateFluid.LOGGER.info("PipetteRenderer constructor called");
     }
 
     @Override
     protected void renderSafe(PipetteBlockEntity be, float pt, PoseStack ms, MultiBufferSource buffer, int light, int overlay) {
-        CreateFluid.LOGGER.info("=== PipetteRenderer.renderSafe called ===");
-        CreateFluid.LOGGER.info("BlockEntity position: {}", be.getBlockPos());
-        CreateFluid.LOGGER.info("BlockEntity class: {}", be.getClass().getSimpleName());
-        CreateFluid.LOGGER.info("Level: {}", be.getLevel());
-        CreateFluid.LOGGER.info("Is client side: {}", be.getLevel() != null ? be.getLevel().isClientSide : "null level");
-
-        // 调用父类方法
-        super.renderSafe(be, pt, ms, buffer, light, overlay);
-        CreateFluid.LOGGER.info("✓ Super.renderSafe completed");
+        CreateFluid.LOGGER.debug("=== PipetteRenderer.renderSafe called ===");
 
         ItemStack item = be.heldItem;
         boolean hasItem = !item.isEmpty();
-        boolean usingFlywheel = VisualizationManager.supportsVisualization(be.getLevel());
+        // 强制使用传统渲染进行测试
+        boolean usingFlywheel = false; // 强制设为false
 
-        CreateFluid.LOGGER.info("Has item: {}, Using Flywheel: {}", hasItem, usingFlywheel);
-        CreateFluid.LOGGER.info("Item: {}", hasItem ? item.toString() : "EMPTY");
+        CreateFluid.LOGGER.debug("Has item: {}, Forced traditional rendering", hasItem);
 
-        // 强制进入渲染路径进行测试
-        CreateFluid.LOGGER.info("Forcing traditional rendering for debugging...");
+        // 总是进行传统渲染
+        {
+            // 1. 手动渲染齿轮
+            BlockState state = this.getRenderedBlockState(be);
+            RenderType type = this.getRenderType(be, state);
+            SuperByteBuffer cogModel = this.getRotatedModel(be, state);
+            CreateFluid.LOGGER.debug("Rendering gear manually...");
+            renderRotatingBuffer(be, cogModel, ms, buffer.getBuffer(type), light);
+            CreateFluid.LOGGER.debug("✓ Gear rendered");
 
-        try {
+            // 2. 渲染机械臂部分
             ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
             BakedModel bakedModel = itemRenderer.getModel(item, be.getLevel(), (LivingEntity)null, 0);
             boolean isBlockItem = hasItem && item.getItem() instanceof BlockItem && bakedModel.isGui3d();
@@ -67,37 +69,82 @@ public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEnti
             PoseTransformStack msr = TransformStack.of(msLocal);
 
             boolean inverted = blockState.getValue(PipetteBlock.CEILING);
-            boolean rave = be.phase == PipetteBlockEntity.Phase.SEARCH_INPUTS && be.getSpeed() != 0.0F;
 
-            CreateFluid.LOGGER.info("Inverted: {}, Rave mode: {}, Goggles: {}", inverted, rave, be.goggles);
-            CreateFluid.LOGGER.info("Phase: {}, Speed: {}", be.phase, be.getSpeed());
+            // 完全禁用跳舞功能
+            boolean rave = false;
 
-            float baseAngle = be.baseAngle.getValue(pt);
-            float lowerArmAngle = be.lowerArmAngle.getValue(pt) - 135.0F;
-            float upperArmAngle = be.upperArmAngle.getValue(pt) - 90.0F;
-            float headAngle = be.headAngle.getValue(pt);
-            int color = 0xFFFFFF;
+            float baseAngle;
+            float lowerArmAngle;
+            float upperArmAngle;
+            float headAngle;
+            int color = 0xFFFFFF; // 固定为白色，不使用彩虹色
 
-            CreateFluid.LOGGER.info("Animation angles - Base: {}, Lower: {}, Upper: {}, Head: {}",
-                    baseAngle, lowerArmAngle, upperArmAngle, headAngle);
+            // 移除跳舞动画，只使用正常动画
+            baseAngle = be.baseAngle.getValue(pt);
+            lowerArmAngle = be.lowerArmAngle.getValue(pt) - 135.0F;
+            upperArmAngle = be.upperArmAngle.getValue(pt) - 90.0F;
+            headAngle = be.headAngle.getValue(pt);
+
+            CreateFluid.LOGGER.debug("Normal animation mode");
+            CreateFluid.LOGGER.debug("Angles: Base={}, Lower={}, Upper={}, Head={}", baseAngle, lowerArmAngle, upperArmAngle, headAngle);
 
             msr.center();
             if (inverted) {
                 msr.rotateXDegrees(180.0F);
             }
 
-            // 强制调用传统渲染
-            CreateFluid.LOGGER.info("Calling renderPipette...");
+            // 渲染机械臂
+            CreateFluid.LOGGER.debug("Rendering arm parts...");
             this.renderPipette(builder, ms, msLocal, msr, blockState, color, baseAngle,
                     lowerArmAngle, upperArmAngle, headAngle, be.goggles, inverted && be.goggles,
                     hasItem, isBlockItem, light);
-            CreateFluid.LOGGER.info("✓ renderPipette completed");
+            CreateFluid.LOGGER.debug("✓ Arm parts rendered");
 
-        } catch (Exception e) {
-            CreateFluid.LOGGER.error("=== renderSafe FAILED ===", e);
+            // 3. 渲染物品
+            if (hasItem) {
+                CreateFluid.LOGGER.debug("Rendering held item...");
+                ms.pushPose();
+                float itemScale = isBlockItem ? 0.5F : 0.625F;
+                msr.rotateXDegrees(90.0F);
+                msLocal.translate(0.0F, isBlockItem ? -0.5625F : -0.625F, 0.0F);
+                msLocal.scale(itemScale, itemScale, itemScale);
+                ms.last().pose().mul(msLocal.last().pose());
+                itemRenderer.render(item, ItemDisplayContext.FIXED, false, ms, buffer, light, overlay, bakedModel);
+                ms.popPose();
+                CreateFluid.LOGGER.debug("✓ Item rendered");
+            }
         }
 
-        CreateFluid.LOGGER.info("=== PipetteRenderer.renderSafe completed ===");
+        CreateFluid.LOGGER.debug("=== PipetteRenderer.renderSafe completed ===");
+    }
+
+    // 添加这些辅助方法（从KineticBlockEntityRenderer复制）
+    public static void renderRotatingBuffer(PipetteBlockEntity be, SuperByteBuffer superBuffer, PoseStack ms, VertexConsumer buffer, int light) {
+        standardKineticRotationTransform(superBuffer, be, light).renderInto(ms, buffer);
+    }
+
+    public static SuperByteBuffer standardKineticRotationTransform(SuperByteBuffer buffer, PipetteBlockEntity be, int light) {
+        BlockPos pos = be.getBlockPos();
+        Direction.Axis axis = ((IRotate)be.getBlockState().getBlock()).getRotationAxis(be.getBlockState());
+        return kineticRotationTransform(buffer, be, axis, getAngleForBe(be, pos, axis), light);
+    }
+
+    public static float getAngleForBe(PipetteBlockEntity be, BlockPos pos, Direction.Axis axis) {
+        float time = AnimationTickHolder.getRenderTime(be.getLevel());
+        float offset = getRotationOffsetForPosition(be, pos, axis);
+        float angle = (time * be.getSpeed() * 3.0F / 10.0F + offset) % 360.0F / 180.0F * 3.1415927F;
+        return angle;
+    }
+
+    public static SuperByteBuffer kineticRotationTransform(SuperByteBuffer buffer, PipetteBlockEntity be, Direction.Axis axis, float angle, int light) {
+        buffer.light(light);
+        buffer.rotateCentered(angle, Direction.get(Direction.AxisDirection.POSITIVE, axis));
+        buffer.color(Color.WHITE);
+        return buffer;
+    }
+
+    public static float getRotationOffsetForPosition(PipetteBlockEntity be, BlockPos pos, Direction.Axis axis) {
+        return (float)be.getRotationAngleOffset(axis);
     }
 
     private void renderPipette(VertexConsumer builder, PoseStack ms, PoseStack msLocal,
@@ -106,94 +153,63 @@ public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEnti
                                float headAngle, boolean goggles, boolean inverted,
                                boolean hasItem, boolean isBlockItem, int light) {
 
-        CreateFluid.LOGGER.info("=== renderPipette method called ===");
-        CreateFluid.LOGGER.info("Angles - Base: {}, Lower: {}, Upper: {}, Head: {}",
-                baseAngle, lowerArmAngle, upperArmAngle, headAngle);
+        SuperByteBuffer base = CachedBuffers.partial(AllPartialModels.ARM_BASE, blockState).light(light);
+        SuperByteBuffer lowerBody = CachedBuffers.partial(AllPartialModels.ARM_LOWER_BODY, blockState).light(light);
+        SuperByteBuffer upperBody = CachedBuffers.partial(AllPartialModels.ARM_UPPER_BODY, blockState).light(light);
+        SuperByteBuffer claw = CachedBuffers.partial(goggles ? AllPartialModels.ARM_CLAW_BASE_GOGGLES : AllPartialModels.ARM_CLAW_BASE, blockState).light(light);
+        SuperByteBuffer upperClawGrip = CachedBuffers.partial(AllPartialModels.ARM_CLAW_GRIP_UPPER, blockState).light(light);
+        SuperByteBuffer lowerClawGrip = CachedBuffers.partial(AllPartialModels.ARM_CLAW_GRIP_LOWER, blockState).light(light);
 
-        try {
-            // 1. 渲染基座
-            CreateFluid.LOGGER.info("Rendering ARM_BASE...");
-            SuperByteBuffer base = CachedBuffers.partial(AllPartialModels.ARM_BASE, blockState).light(light);
-            transformBase(msr, baseAngle);
-            base.transform(msLocal).renderInto(ms, builder);
-            CreateFluid.LOGGER.info("✓ ARM_BASE rendered at base angle: {}", baseAngle);
+        transformBase(msr, baseAngle);
+        base.transform(msLocal).renderInto(ms, builder);
 
-            // 2. 渲染下臂
-            CreateFluid.LOGGER.info("Rendering ARM_LOWER_BODY...");
-            SuperByteBuffer lowerArm = CachedBuffers.partial(AllPartialModels.ARM_LOWER_BODY, blockState).light(light);
-            transformLowerArm(msr, lowerArmAngle);
-            lowerArm.color(color).transform(msLocal).renderInto(ms, builder);
-            CreateFluid.LOGGER.info("✓ ARM_LOWER_BODY rendered at angle: {}", lowerArmAngle);
+        transformLowerArm(msr, lowerArmAngle);
+        lowerBody.color(color).transform(msLocal).renderInto(ms, builder);
 
-            // 3. 渲染上臂
-            CreateFluid.LOGGER.info("Rendering ARM_UPPER_BODY...");
-            SuperByteBuffer upperArm = CachedBuffers.partial(AllPartialModels.ARM_UPPER_BODY, blockState).light(light);
-            transformUpperArm(msr, upperArmAngle);
-            upperArm.color(color).transform(msLocal).renderInto(ms, builder);
-            CreateFluid.LOGGER.info("✓ ARM_UPPER_BODY rendered at angle: {}", upperArmAngle);
+        transformUpperArm(msr, upperArmAngle);
+        upperBody.color(color).transform(msLocal).renderInto(ms, builder);
 
-            // 4. 渲染爪子头部
-            CreateFluid.LOGGER.info("Rendering ARM_CLAW_BASE...");
-            SuperByteBuffer head = CachedBuffers.partial(goggles ? AllPartialModels.ARM_CLAW_BASE_GOGGLES : AllPartialModels.ARM_CLAW_BASE, blockState).light(light);
-            transformHead(msr, headAngle);
-            if (inverted) {
-                msr.rotateZDegrees(180.0F);
-                CreateFluid.LOGGER.info("Applied head inversion");
-            }
-            head.transform(msLocal).renderInto(ms, builder);
-            CreateFluid.LOGGER.info("✓ ARM_CLAW_BASE rendered at angle: {} (goggles: {})", headAngle, goggles);
-
-            // 5. 渲染爪子部分
-            CreateFluid.LOGGER.info("Rendering claw grips...");
-            SuperByteBuffer upperGrip = CachedBuffers.partial(AllPartialModels.ARM_CLAW_GRIP_UPPER, blockState).light(light);
-            SuperByteBuffer lowerGrip = CachedBuffers.partial(AllPartialModels.ARM_CLAW_GRIP_LOWER, blockState).light(light);
-
-            // 上爪
-            msLocal.pushPose();
-            transformClawHalf(msr, hasItem, isBlockItem, 1); // 上爪
-            upperGrip.transform(msLocal).renderInto(ms, builder);
-            msLocal.popPose();
-            CreateFluid.LOGGER.info("✓ Upper claw grip rendered");
-
-            // 下爪
-            msLocal.pushPose();
-            transformClawHalf(msr, hasItem, isBlockItem, -1); // 下爪
-            lowerGrip.transform(msLocal).renderInto(ms, builder);
-            msLocal.popPose();
-            CreateFluid.LOGGER.info("✓ Lower claw grip rendered");
-
-            if (inverted) {
-                msr.rotateZDegrees(180.0F);
-            }
-
-            CreateFluid.LOGGER.info("=== renderPipette completed successfully ===");
-        } catch (Exception e) {
-            CreateFluid.LOGGER.error("=== renderPipette FAILED ===", e);
-            CreateFluid.LOGGER.error("Error at angles - Base: {}, Lower: {}, Upper: {}, Head: {}",
-                    baseAngle, lowerArmAngle, upperArmAngle, headAngle);
-            CreateFluid.LOGGER.error("Stack trace: ", e);
+        transformHead(msr, headAngle);
+        if (inverted) {
+            msr.rotateZDegrees(180.0F);
         }
-    }
+        claw.transform(msLocal).renderInto(ms, builder);
 
-    // 添加爪子变换方法
-    public static void transformClawHalf(TransformStack msr, boolean hasItem, boolean isBlockItem, int flip) {
-        msr.translate(0.0, (double)((float)(-flip) * (hasItem ? (isBlockItem ? 0.1875F : 0.078125F) : 0.0625F)), -0.375);
+        if (inverted) {
+            msr.rotateZDegrees(180.0F);
+        }
+
+        // 渲染爪子
+        int[] var22 = Iterate.positiveAndNegative;
+        for(int flip : var22) {
+            msLocal.pushPose();
+            transformClawHalf(msr, hasItem, isBlockItem, flip);
+            (flip > 0 ? lowerClawGrip : upperClawGrip).transform(msLocal).renderInto(ms, builder);
+            msLocal.popPose();
+        }
     }
 
     private void doItemTransforms(TransformStack msr, float baseAngle, float lowerArmAngle,
                                   float upperArmAngle, float headAngle) {
-        CreateFluid.LOGGER.debug("doItemTransforms called with angles: Base={}, Lower={}, Upper={}, Head={}",
-                baseAngle, lowerArmAngle, upperArmAngle, headAngle);
         transformBase(msr, baseAngle);
         transformLowerArm(msr, lowerArmAngle);
         transformUpperArm(msr, upperArmAngle);
         transformHead(msr, headAngle);
     }
 
-    // 变换方法
-    public static void transformBase(TransformStack msr, float baseAngle) {
-        msr.translate(0.0, 0.25, 0.0);
-        msr.rotateYDegrees(baseAngle);
+    // Create的变换方法
+    public static void transformClawHalf(TransformStack msr, boolean hasItem, boolean isBlockItem, int flip) {
+        msr.translate(0.0, (double)((float)(-flip) * (hasItem ? (isBlockItem ? 0.1875F : 0.078125F) : 0.0625F)), -0.375);
+    }
+
+    public static void transformHead(TransformStack msr, float headAngle) {
+        msr.translate(0.0, 0.0, -0.9375);
+        msr.rotateXDegrees(headAngle - 45.0F);
+    }
+
+    public static void transformUpperArm(TransformStack msr, float upperArmAngle) {
+        msr.translate(0.0, 0.0, -0.875);
+        msr.rotateXDegrees(upperArmAngle - 90.0F);
     }
 
     public static void transformLowerArm(TransformStack msr, float lowerArmAngle) {
@@ -201,22 +217,9 @@ public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEnti
         msr.rotateXDegrees(lowerArmAngle + 135.0F);
     }
 
-    public static void transformUpperArm(TransformStack msr, float upperArmAngle) {
-        msr.translate(0.0, 0.0, -0.75);
-        msr.rotateXDegrees(upperArmAngle - 90.0F);
-    }
-
-    public static void transformHead(TransformStack msr, float headAngle) {
-        msr.translate(0.0, 0.0, -0.8);
-        msr.rotateXDegrees(headAngle - 45.0F);
-    }
-
-    public static void transformTip(TransformStack msr, boolean hasItem, boolean isBlockItem) {
-        msr.translate(0.0, hasItem ? (isBlockItem ? -0.15 : -0.1) : -0.05, -0.3);
-    }
-
-    public static void transformNeedle(TransformStack msr, boolean hasItem, boolean isBlockItem) {
-        msr.translate(0.0, hasItem ? (isBlockItem ? -0.2 : -0.15) : -0.1, -0.1);
+    public static void transformBase(TransformStack msr, float baseAngle) {
+        msr.translate(0.0, 0.25, 0.0);
+        msr.rotateYDegrees(baseAngle);
     }
 
     @Override
@@ -226,7 +229,6 @@ public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEnti
 
     @Override
     protected SuperByteBuffer getRotatedModel(PipetteBlockEntity be, BlockState state) {
-        CreateFluid.LOGGER.debug("getRotatedModel called for COG");
-        return CachedBuffers.partial(CFPartialModels.PIPETTE_COG, state);
+        return CachedBuffers.partial(AllPartialModels.ARM_COG, state);
     }
 }
