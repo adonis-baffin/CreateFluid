@@ -2,39 +2,25 @@ package com.adonis.fluid.registry;
 
 import com.adonis.fluid.CreateFluid;
 import dev.engine_room.flywheel.lib.model.baked.PartialModel;
+import net.minecraft.resources.ResourceLocation;
 
 public class CFPartialModels {
-    // 动力移液器的各个部分
-    public static final PartialModel PIPETTE_BASE = block("pipette/base");
-    public static final PartialModel PIPETTE_LOWER_ARM = block("pipette/lower_arm");
-    public static final PartialModel PIPETTE_UPPER_ARM = block("pipette/upper_arm");
-    public static final PartialModel PIPETTE_HEAD = block("pipette/head");
-    public static final PartialModel PIPETTE_TIP = block("pipette/tip");
-    public static final PartialModel PIPETTE_NEEDLE = block("pipette/needle");
-    public static final PartialModel PIPETTE_COG = block("pipette/cog");
+    // 指向Create的机械臂模型文件
+    public static final PartialModel PIPETTE_BASE = createPartialModel("mechanical_arm/base");
+    public static final PartialModel PIPETTE_LOWER_ARM = createPartialModel("mechanical_arm/lower_body");
+    public static final PartialModel PIPETTE_UPPER_ARM = createPartialModel("mechanical_arm/upper_body");
+    public static final PartialModel PIPETTE_HEAD = createPartialModel("mechanical_arm/claw_base");
+    public static final PartialModel PIPETTE_TIP = createPartialModel("mechanical_arm/upper_claw_grip");
+    public static final PartialModel PIPETTE_NEEDLE = createPartialModel("mechanical_arm/lower_claw_grip");
+    public static final PartialModel PIPETTE_COG = createPartialModel("mechanical_arm/cog");
+    public static final PartialModel PIPETTE_HEAD_GOGGLES = createPartialModel("mechanical_arm/claw_base_goggles");
 
-    // 工程师护目镜版本（可选）
-    public static final PartialModel PIPETTE_HEAD_GOGGLES = block("pipette/head_goggles");
-
-    private static PartialModel block(String path) {
-        return PartialModel.of(CreateFluid.asResource("block/" + path));
+    private static PartialModel createPartialModel(String path) {
+        // 使用Create的命名空间
+        return PartialModel.of(new ResourceLocation("create", "block/" + path));
     }
 
     public static void init() {
-        // 确保所有模型都被正确加载
-        CreateFluid.LOGGER.info("Initializing partial models...");
-        try {
-            PIPETTE_BASE.get();
-            PIPETTE_LOWER_ARM.get();
-            PIPETTE_UPPER_ARM.get();
-            PIPETTE_HEAD.get();
-            PIPETTE_TIP.get();
-            PIPETTE_NEEDLE.get();
-            PIPETTE_COG.get();
-            PIPETTE_HEAD_GOGGLES.get();
-            CreateFluid.LOGGER.info("All partial models loaded successfully!");
-        } catch (Exception e) {
-            CreateFluid.LOGGER.error("Failed to load partial models: ", e);
-        }
+        // 模型已经由Create加载
     }
 }

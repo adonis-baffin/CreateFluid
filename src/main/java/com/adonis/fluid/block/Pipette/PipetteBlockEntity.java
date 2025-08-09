@@ -108,6 +108,11 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
     @Override
     public void tick() {
         super.tick();
+
+        if (this.level.isClientSide && this.level.getGameTime() % 20 == 0) { // 每秒打印一次
+            CreateFluid.LOGGER.info("PipetteBlockEntity tick - Position: {}, Phase: {}, Speed: {}",
+                    this.worldPosition, this.phase, this.getSpeed());
+        }
         this.initInteractionPoints();
         boolean targetReached = this.tickMovementProgress();
         if (this.tooltipWarmup > 0) {
@@ -163,8 +168,11 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             PipetteAngleTarget previousTarget = this.previousTarget;
             PipetteAngleTarget target = targetedInteractionPoint == null ? PipetteAngleTarget.NO_TARGET :
                     this.createAngleTarget(targetedInteractionPoint);
-            this.baseAngle.setValue(AngleHelper.angleLerp(this.chasedPointProgress, this.previousBaseAngle,
-                    target == PipetteAngleTarget.NO_TARGET ? this.previousBaseAngle : target.baseAngle));
+
+            // 修复基座角度插值
+            double currentBaseAngle = AngleHelper.angleLerp(this.chasedPointProgress, this.previousBaseAngle,
+                    target == PipetteAngleTarget.NO_TARGET ? this.previousBaseAngle : target.baseAngle);
+            this.baseAngle.setValue(currentBaseAngle);
 
             if (this.chasedPointProgress < 0.5F) {
                 target = PipetteAngleTarget.NO_TARGET;
@@ -173,9 +181,27 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             }
 
             float progress = this.chasedPointProgress == 1.0F ? 1.0F : this.chasedPointProgress % 0.5F * 2.0F;
-            this.lowerArmAngle.setValue(Mth.lerp(progress, previousTarget.lowerArmAngle, target.lowerArmAngle));
-            this.upperArmAngle.setValue(Mth.lerp(progress, previousTarget.upperArmAngle, target.upperArmAngle));
-            this.headAngle.setValue(AngleHelper.angleLerp(progress, previousTarget.headAngle % 360.0F, target.headAngle % 360.0F));
+
+            // 修复角度插值
+            double lowerAngle = Mth.lerp(progress, previousTarget.lowerArmAngle, target.lowerArmAngle);
+            double upperAngle = Mth.lerp(progress, previousTarget.upperArmAngle, target.upperArmAngle);
+            double headAngleValue = AngleHelper.angleLerp(progress, previousTarget.headAngle % 360.0F, target.headAngle % 360.0F);
+
+            this.lowerArmAngle.setValue(lowerAngle);
+            this.upperArmAngle.setValue(upperAngle);
+            this.headAngle.setValue(headAngleValue);
+
+            // 添加调试日志
+            if (this.level.getGameTime() % 20 == 0) { // 每秒打印一次
+                CreateFluid.LOGGER.info("Animation update - Progress: {}", this.chasedPointProgress);
+                CreateFluid.LOGGER.info("Previous target: Base={}, Lower={}, Upper={}, Head={}",
+                        previousTarget.baseAngle, previousTarget.lowerArmAngle, previousTarget.upperArmAngle, previousTarget.headAngle);
+                CreateFluid.LOGGER.info("Current target: Base={}, Lower={}, Upper={}, Head={}",
+                        target.baseAngle, target.lowerArmAngle, target.upperArmAngle, target.headAngle);
+                CreateFluid.LOGGER.info("Final angles: Base={}, Lower={}, Upper={}, Head={}",
+                        currentBaseAngle, lowerAngle, upperAngle, headAngleValue);
+            }
+
             return false;
         } else {
             return !targetReachedPreviously && this.chasedPointProgress >= 1.0F;

@@ -19,9 +19,13 @@ public class CFClient {
 
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
+        CreateFluid.LOGGER.info("=== CFClient.onClientSetup started ===");
+
+        CreateFluid.LOGGER.info("Initializing CFPartialModels...");
         CFPartialModels.init();
 
         event.enqueueWork(() -> {
+            CreateFluid.LOGGER.info("Setting up render layers...");
             // 设置方块渲染层
             ItemBlockRenderTypes.setRenderLayer(CFBlock.FRAME_TRAP.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(CFBlock.MESH_TRAP.get(), RenderType.cutout());
@@ -29,12 +33,21 @@ public class CFClient {
             ItemBlockRenderTypes.setRenderLayer(CFBlock.SMART_NOZZLE.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(CFBlock.SMART_MESH.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(CFBlock.PIPETTE.get(), RenderType.cutout());
+            CreateFluid.LOGGER.info("✓ Render layers set successfully");
 
             // 注册方块实体渲染器
+            CreateFluid.LOGGER.info("Registering block entity renderers...");
             BlockEntityRenderers.register(CFBlockEntity.SMART_NOZZLE.get(), SmartNozzleRenderer::new);
             BlockEntityRenderers.register(CFBlockEntity.SMART_MESH.get(), SmartMeshRenderer::new);
+
+            CreateFluid.LOGGER.info("Registering PipetteRenderer for block entity type: {}", CFBlockEntity.PIPETTE.get());
             BlockEntityRenderers.register(CFBlockEntity.PIPETTE.get(), PipetteRenderer::new);
+            CreateFluid.LOGGER.info("✓ PipetteRenderer registered successfully");
+
+            CreateFluid.LOGGER.info("✓ All block entity renderers registered successfully");
         });
+
+        CreateFluid.LOGGER.info("=== CFClient.onClientSetup completed ===");
     }
 
     // 添加客户端tick事件处理（备用方案）

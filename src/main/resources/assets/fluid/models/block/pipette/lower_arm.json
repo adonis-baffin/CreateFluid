@@ -1,0 +1,8 @@
+{
+  "credit": "Made with Blockbench",
+  "parent": "create:block/arm/lower_body",
+  "textures": {
+    "0": "create:block/brass_casing",
+    "particle": "create:block/brass_casing"
+  }
+}
