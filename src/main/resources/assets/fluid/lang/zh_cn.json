@@ -4,6 +4,8 @@
   "block.fluid.trap_nozzle": "气捕网",
   "block.fluid.smart_mesh": "智能滤网",
   "block.fluid.pipette": "动力移液器",
+  "block.fluid.fluid_interface": "流体接口",
+  "block.fluid.smart_fluid_interface": "智能流体接口",
   "item.fluid.zinc_sheet": "锌板",
   "item.fluid.pneumatic_mechanism": "气动构件",
   "item.fluid.incomplete_pneumatic_mechanism": "未完成的气动构件",

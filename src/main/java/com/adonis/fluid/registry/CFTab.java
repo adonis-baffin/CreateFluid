@@ -24,6 +24,8 @@ public class CFTab {
                         output.accept(CFBlock.SMART_NOZZLE.get());
                         output.accept(CFBlock.SMART_MESH.get());
                         output.accept(CFBlock.PIPETTE.get());
+                        output.accept(CFBlock.FLUID_INTERFACE.get());
+                        output.accept(CFBlock.SMART_FLUID_INTERFACE.get());
 
 
                         // 添加物品
