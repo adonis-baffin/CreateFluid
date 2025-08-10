@@ -25,7 +25,6 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import org.apache.commons.lang3.mutable.MutableBoolean;
 
 public class PipetteBlock extends KineticBlock implements IBE<PipetteBlockEntity>, ICogWheel {
     public static final BooleanProperty CEILING = BooleanProperty.create("ceiling");
@@ -79,6 +78,8 @@ public class PipetteBlock extends KineticBlock implements IBE<PipetteBlockEntity
     @Override
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         ItemStack heldItem = player.getItemInHand(hand);
+
+        // 护目镜交互
         if (AllItems.GOGGLES.isIn(heldItem)) {
             InteractionResult gogglesResult = this.onBlockEntityUse(world, pos, (be) -> {
                 if (be.goggles) {
@@ -94,19 +95,6 @@ public class PipetteBlock extends KineticBlock implements IBE<PipetteBlockEntity
             }
         }
 
-        MutableBoolean success = new MutableBoolean(false);
-        this.withBlockEntityDo(world, pos, (be) -> {
-            if (!be.heldItem.isEmpty()) {
-                success.setTrue();
-                if (!world.isClientSide) {
-                    player.getInventory().placeItemBackInInventory(be.heldItem);
-                    be.heldItem = ItemStack.EMPTY;
-                    be.phase = PipetteBlockEntity.Phase.SEARCH_INPUTS;
-                    be.setChanged();
-                    be.sendData();
-                }
-            }
-        });
-        return success.booleanValue() ? InteractionResult.SUCCESS : InteractionResult.PASS;
+        return InteractionResult.PASS;
     }
 }

@@ -6,6 +6,8 @@ import com.adonis.fluid.block.SmartMesh.SmartMeshBlockEntity;
 import com.adonis.fluid.block.TrapNozzle.TrapNozzleBlockEntity;
 import com.adonis.fluid.block.SmartNozzle.SmartNozzleBlockEntity;
 import com.adonis.fluid.block.Pipette.PipetteBlockEntity;
+import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlockEntity;
+import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
@@ -38,6 +40,18 @@ public class CFBlockEntity {
             BLOCK_ENTITIES.register("pipette", () -> BlockEntityType.Builder.of(
                     (pos, state) -> new PipetteBlockEntity(CFBlockEntity.PIPETTE.get(), pos, state),
                     CFBlock.PIPETTE.get()).build(null));
+
+    // 新增：流体接口方块实体
+    public static final RegistryObject<BlockEntityType<FluidInterfaceBlockEntity>> FLUID_INTERFACE =
+            BLOCK_ENTITIES.register("fluid_interface", () -> BlockEntityType.Builder.of(
+                    (pos, state) -> new FluidInterfaceBlockEntity(CFBlockEntity.FLUID_INTERFACE.get(), pos, state),
+                    CFBlock.FLUID_INTERFACE.get()).build(null));
+
+    // 新增：智能流体接口方块实体
+    public static final RegistryObject<BlockEntityType<SmartFluidInterfaceBlockEntity>> SMART_FLUID_INTERFACE =
+            BLOCK_ENTITIES.register("smart_fluid_interface", () -> BlockEntityType.Builder.of(
+                    (pos, state) -> new SmartFluidInterfaceBlockEntity(CFBlockEntity.SMART_FLUID_INTERFACE.get(), pos, state),
+                    CFBlock.SMART_FLUID_INTERFACE.get()).build(null));
 
     public static void register(IEventBus modEventBus) {
         BLOCK_ENTITIES.register(modEventBus);

@@ -1,12 +1,11 @@
 package com.adonis.fluid.handler;
 
 import com.adonis.fluid.block.Pipette.PipetteBlockEntity;
-import com.adonis.fluid.packet.PipettePlacementPacket;
+import com.adonis.fluid.content.pipette.FluidInteractionPoint;
+import com.adonis.fluid.packet.PipetteFluidPlacementPacket;
 import com.adonis.fluid.registry.CFBlock;
 import com.simibubi.create.AllItems;
 import com.simibubi.create.AllPackets;
-import com.simibubi.create.content.kinetics.mechanicalArm.ArmInteractionPoint;
-import com.simibubi.create.content.kinetics.mechanicalArm.ArmInteractionPoint.Mode;
 import com.simibubi.create.foundation.utility.CreateLang;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,13 +31,10 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 
 @EventBusSubscriber(value = Dist.CLIENT, bus = EventBusSubscriber.Bus.FORGE)
-public class PipetteInteractionPointHandler {
-    static List<ArmInteractionPoint> currentSelection = new ArrayList<>();
+public class PipetteFluidInteractionPointHandler {
+    static List<FluidInteractionPoint> currentSelection = new ArrayList<>();
     static ItemStack currentItem;
     static long lastBlockPos = -1L;
-
-    public PipetteInteractionPointHandler() {
-    }
 
     @SubscribeEvent
     public static void rightClickingBlocksSelectsThem(PlayerInteractEvent.RightClickBlock event) {
@@ -48,10 +44,10 @@ public class PipetteInteractionPointHandler {
             if (world.isClientSide) {
                 Player player = event.getEntity();
                 if (player == null || !player.isSpectator()) {
-                    ArmInteractionPoint selected = getSelected(pos);
+                    FluidInteractionPoint selected = getSelected(pos);
                     BlockState state = world.getBlockState(pos);
                     if (selected == null) {
-                        ArmInteractionPoint point = ArmInteractionPoint.create(world, pos, state);
+                        FluidInteractionPoint point = FluidInteractionPoint.create(world, pos, state);
                         if (point == null) {
                             return;
                         }
@@ -62,7 +58,7 @@ public class PipetteInteractionPointHandler {
 
                     selected.cycleMode();
                     if (player != null) {
-                        ArmInteractionPoint.Mode mode = selected.getMode();
+                        FluidInteractionPoint.Mode mode = selected.getMode();
                         CreateLang.builder().translate(mode.getTranslationKey(),
                                         CreateLang.blockName(state).style(ChatFormatting.WHITE))
                                 .color(mode.getColor()).sendStatus(player);
@@ -91,10 +87,10 @@ public class PipetteInteractionPointHandler {
     public static void flushSettings(BlockPos pos) {
         if (currentSelection != null) {
             int removed = 0;
-            Iterator<ArmInteractionPoint> iterator = currentSelection.iterator();
+            Iterator<FluidInteractionPoint> iterator = currentSelection.iterator();
 
             while(iterator.hasNext()) {
-                ArmInteractionPoint point = iterator.next();
+                FluidInteractionPoint point = iterator.next();
                 if (!point.getPos().closerThan(pos, PipetteBlockEntity.getRange())) {
                     iterator.remove();
                     ++removed;
@@ -108,8 +104,8 @@ public class PipetteInteractionPointHandler {
             } else {
                 int inputs = 0;
                 int outputs = 0;
-                for (ArmInteractionPoint armInteractionPoint : currentSelection) {
-                    if (armInteractionPoint.getMode() == Mode.DEPOSIT) {
+                for (FluidInteractionPoint point : currentSelection) {
+                    if (point.getMode() == FluidInteractionPoint.Mode.DEPOSIT) {
                         ++outputs;
                     } else {
                         ++inputs;
@@ -122,7 +118,7 @@ public class PipetteInteractionPointHandler {
                 }
             }
 
-            AllPackets.getChannel().sendToServer(new PipettePlacementPacket(currentSelection, pos));
+            AllPackets.getChannel().sendToServer(new PipetteFluidPlacementPacket(currentSelection, pos));
             currentSelection.clear();
             currentItem = null;
         }
@@ -161,8 +157,8 @@ public class PipetteInteractionPointHandler {
                     if (lastBlockPos == -1L || lastBlockPos != pos.asLong()) {
                         currentSelection.clear();
                         PipetteBlockEntity pipette = (PipetteBlockEntity)be;
-                        pipette.inputs.forEach(PipetteInteractionPointHandler::put);
-                        pipette.outputs.forEach(PipetteInteractionPointHandler::put);
+                        pipette.inputs.forEach(PipetteFluidInteractionPointHandler::put);
+                        pipette.outputs.forEach(PipetteFluidInteractionPointHandler::put);
                         lastBlockPos = pos.asLong();
                     }
 
@@ -172,7 +168,6 @@ public class PipetteInteractionPointHandler {
                 }
             }
         } else {
-            // 重置状态当不持有扳手时
             if (lastBlockPos != -1L) {
                 lastBlockPos = -1L;
                 currentSelection.clear();
@@ -180,11 +175,11 @@ public class PipetteInteractionPointHandler {
         }
     }
 
-    private static void drawOutlines(Collection<ArmInteractionPoint> selection) {
-        Iterator<ArmInteractionPoint> iterator = selection.iterator();
+    private static void drawOutlines(Collection<FluidInteractionPoint> selection) {
+        Iterator<FluidInteractionPoint> iterator = selection.iterator();
 
         while(iterator.hasNext()) {
-            ArmInteractionPoint point = iterator.next();
+            FluidInteractionPoint point = iterator.next();
             if (!point.isValid()) {
                 iterator.remove();
             } else {
@@ -201,20 +196,20 @@ public class PipetteInteractionPointHandler {
         }
     }
 
-    private static void put(ArmInteractionPoint point) {
+    private static void put(FluidInteractionPoint point) {
         currentSelection.add(point);
     }
 
-    private static ArmInteractionPoint remove(BlockPos pos) {
-        ArmInteractionPoint result = getSelected(pos);
+    private static FluidInteractionPoint remove(BlockPos pos) {
+        FluidInteractionPoint result = getSelected(pos);
         if (result != null) {
             currentSelection.remove(result);
         }
         return result;
     }
 
-    private static ArmInteractionPoint getSelected(BlockPos pos) {
-        for (ArmInteractionPoint point : currentSelection) {
+    private static FluidInteractionPoint getSelected(BlockPos pos) {
+        for (FluidInteractionPoint point : currentSelection) {
             if (point.getPos().equals(pos)) {
                 return point;
             }

@@ -3,8 +3,8 @@ package com.adonis.fluid;
 import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.config.CFStress;
 import com.adonis.fluid.event.SuperJumpFallProtection;
-import com.adonis.fluid.handler.PipetteInteractionPointHandler;
-import com.adonis.fluid.packet.PipettePlacementPacket;
+import com.adonis.fluid.handler.PipetteFluidInteractionPointHandler;
+import com.adonis.fluid.packet.PipetteFluidPlacementPacket;
 import com.adonis.fluid.registry.*;
 import com.mojang.logging.LogUtils;
 import com.simibubi.create.AllPackets;
@@ -16,7 +16,6 @@ import com.simibubi.create.foundation.item.TooltipModifier;
 import net.createmod.catnip.lang.FontHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
@@ -50,7 +49,6 @@ public class CreateFluid {
                     new ItemDescription.Modifier(item, FontHelper.Palette.STANDARD_CREATE)
                             .andThen(TooltipModifier.mapNull(KineticStats.create(item))));
 
-    // 关键：创建静态的应力配置实例
     public static final CFStress STRESS_CONFIG = new CFStress(MODID);
 
     private static ForgeConfigSpec stressConfigSpec;
@@ -71,8 +69,6 @@ public class CreateFluid {
 
         // 注册普通配置
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, CFCommonConfig.CONFIG_SPEC);
-
-        // 关键：按照Create Fishery的方式注册应力配置
         ForgeConfigSpec.Builder stressBuilder = new ForgeConfigSpec.Builder();
         STRESS_CONFIG.registerAll(stressBuilder);
         stressConfigSpec = stressBuilder.build();
@@ -99,39 +95,32 @@ public class CreateFluid {
     private void setup(final FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
             CFCommonConfig.onLoad();
-            CFPartialModels.init(); // 初始化部分模型
+            CFPartialModels.init();
 
-            // 确保应力值提供者被注册
             BlockStressValues.IMPACTS.registerProvider(STRESS_CONFIG::getImpact);
             BlockStressValues.CAPACITIES.registerProvider(STRESS_CONFIG::getCapacity);
 
-            // 注册网络包
+            // 注册流体网络包
             SimpleChannel channel = AllPackets.getChannel();
-
-            // 使用更高的ID避免冲突
             int id = 200;
 
-            channel.registerMessage(id++, PipettePlacementPacket.class,
+            channel.registerMessage(id++, PipetteFluidPlacementPacket.class,
                     (msg, buf) -> msg.write(buf),
-                    PipettePlacementPacket::new,
+                    PipetteFluidPlacementPacket::new,
                     (msg, ctxSupplier) -> {
                         NetworkEvent.Context ctx = ctxSupplier.get();
                         boolean handled = msg.handle(ctx);
                         ctx.setPacketHandled(handled);
                     });
 
-            channel.registerMessage(id++, PipettePlacementPacket.ClientBoundRequest.class,
+            channel.registerMessage(id++, PipetteFluidPlacementPacket.ClientBoundRequest.class,
                     (msg, buf) -> msg.write(buf),
-                    PipettePlacementPacket.ClientBoundRequest::new,
+                    PipetteFluidPlacementPacket.ClientBoundRequest::new,
                     (msg, ctxSupplier) -> {
                         NetworkEvent.Context ctx = ctxSupplier.get();
                         boolean handled = msg.handle(ctx);
                         ctx.setPacketHandled(handled);
                     });
-
-            if (FMLEnvironment.dist == Dist.CLIENT) {
-                // 这里需要使用Create的注册方式，可能需要修改CFBlockEntity的注册
-            }
         });
     }
 
@@ -144,15 +133,12 @@ public class CreateFluid {
         });
     }
 
-    // 添加客户端tick处理
-    @OnlyIn(Dist.CLIENT)
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {
-            PipetteInteractionPointHandler.tick();
+            PipetteFluidInteractionPointHandler.tick();
         }
     }
 
-    // 关键：处理配置事件
     private void onModConfigEvent(ModConfigEvent event) {
         ModConfig config = event.getConfig();
 
@@ -163,11 +149,8 @@ public class CreateFluid {
                 CFCommonConfig.onReload();
             }
         } else if (stressConfigSpec != null && config.getSpec() == stressConfigSpec) {
-            // 应力配置加载/重载时的处理
             if (event instanceof ModConfigEvent.Loading) {
-                LOGGER.info("Loading stress configuration");
             } else if (event instanceof ModConfigEvent.Reloading) {
-                LOGGER.info("Reloading stress configuration");
             }
         }
     }

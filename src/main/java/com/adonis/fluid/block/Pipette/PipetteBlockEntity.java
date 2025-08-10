@@ -1,11 +1,9 @@
 package com.adonis.fluid.block.Pipette;
 
-import com.adonis.fluid.CreateFluid;
+import com.adonis.fluid.content.pipette.FluidInteractionPoint;
 import com.simibubi.create.api.contraption.transformable.TransformableBlockEntity;
 import com.simibubi.create.content.contraptions.StructureTransform;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
-import com.simibubi.create.content.kinetics.mechanicalArm.*;
-import com.simibubi.create.content.kinetics.mechanicalArm.ArmInteractionPoint.Mode;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.CenteredSideValueBoxTransform;
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.INamedIconOptions;
@@ -36,8 +34,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
@@ -49,14 +45,15 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fluids.FluidStack;
 
 public class PipetteBlockEntity extends KineticBlockEntity implements TransformableBlockEntity {
-    public List<ArmInteractionPoint> inputs = new ArrayList<>();
-    public List<ArmInteractionPoint> outputs = new ArrayList<>();
+    public List<FluidInteractionPoint> inputs = new ArrayList<>();
+    public List<FluidInteractionPoint> outputs = new ArrayList<>();
     public ListTag interactionPointTag = null;
     float chasedPointProgress;
     int chasedPointIndex;
-    public ItemStack heldItem;
+    public FluidStack heldFluid;
     Phase phase;
     public boolean goggles;
     PipetteAngleTarget previousTarget;
@@ -73,9 +70,12 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
     protected int lastOutputIndex = -1;
     protected boolean redstoneLocked;
 
+    // 流体相关设置
+    private static final int TRANSFER_AMOUNT = 1000; // 每次传输的流体量(mB)
+
     public PipetteBlockEntity(BlockEntityType<?> typeIn, BlockPos pos, BlockState state) {
         super(typeIn, pos, state);
-        this.heldItem = ItemStack.EMPTY;
+        this.heldFluid = FluidStack.EMPTY;
         this.phase = Phase.SEARCH_INPUTS;
         this.previousTarget = PipetteAngleTarget.NO_TARGET;
         this.baseAngle = LerpedFloat.angular();
@@ -92,9 +92,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         this.redstoneLocked = false;
         this.tooltipWarmup = 15;
         this.goggles = false;
-
-        // 添加这行确保初始化完成
-        CreateFluid.LOGGER.debug("PipetteBlockEntity initialized at {}", pos);
     }
 
     @Override
@@ -109,10 +106,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
     public void tick() {
         super.tick();
 
-        if (this.level.isClientSide && this.level.getGameTime() % 20 == 0) { // 每秒打印一次
-            CreateFluid.LOGGER.info("PipetteBlockEntity tick - Position: {}, Phase: {}, Speed: {}",
-                    this.worldPosition, this.phase, this.getSpeed());
-        }
         this.initInteractionPoints();
         boolean targetReached = this.tickMovementProgress();
         if (this.tooltipWarmup > 0) {
@@ -121,18 +114,18 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
 
         if (this.chasedPointProgress < 1.0F) {
             if (this.phase == Phase.MOVE_TO_INPUT) {
-                ArmInteractionPoint point = this.getTargetedInteractionPoint();
+                FluidInteractionPoint point = this.getTargetedInteractionPoint();
                 if (point != null) {
                     point.keepAlive();
                 }
             }
         } else if (!this.level.isClientSide) {
             if (this.phase == Phase.MOVE_TO_INPUT) {
-                this.collectItem();
+                this.collectFluid();
             } else if (this.phase == Phase.MOVE_TO_OUTPUT) {
-                this.depositItem();
+                this.depositFluid();
             } else if (this.phase == Phase.SEARCH_INPUTS) {
-                this.searchForItem();
+                this.searchForFluid();
             }
 
             if (targetReached) {
@@ -164,12 +157,11 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         }
 
         if (this.level.isClientSide) {
-            ArmInteractionPoint targetedInteractionPoint = this.getTargetedInteractionPoint();
+            FluidInteractionPoint targetedInteractionPoint = this.getTargetedInteractionPoint();
             PipetteAngleTarget previousTarget = this.previousTarget;
             PipetteAngleTarget target = targetedInteractionPoint == null ? PipetteAngleTarget.NO_TARGET :
                     this.createAngleTarget(targetedInteractionPoint);
 
-            // 修复基座角度插值
             double currentBaseAngle = AngleHelper.angleLerp(this.chasedPointProgress, this.previousBaseAngle,
                     target == PipetteAngleTarget.NO_TARGET ? this.previousBaseAngle : target.baseAngle);
             this.baseAngle.setValue(currentBaseAngle);
@@ -182,7 +174,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
 
             float progress = this.chasedPointProgress == 1.0F ? 1.0F : this.chasedPointProgress % 0.5F * 2.0F;
 
-            // 修复角度插值
             double lowerAngle = Mth.lerp(progress, previousTarget.lowerArmAngle, target.lowerArmAngle);
             double upperAngle = Mth.lerp(progress, previousTarget.upperArmAngle, target.upperArmAngle);
             double headAngleValue = AngleHelper.angleLerp(progress, previousTarget.headAngle % 360.0F, target.headAngle % 360.0F);
@@ -190,17 +181,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             this.lowerArmAngle.setValue(lowerAngle);
             this.upperArmAngle.setValue(upperAngle);
             this.headAngle.setValue(headAngleValue);
-
-            // 添加调试日志
-            if (this.level.getGameTime() % 20 == 0) { // 每秒打印一次
-                CreateFluid.LOGGER.info("Animation update - Progress: {}", this.chasedPointProgress);
-                CreateFluid.LOGGER.info("Previous target: Base={}, Lower={}, Upper={}, Head={}",
-                        previousTarget.baseAngle, previousTarget.lowerArmAngle, previousTarget.upperArmAngle, previousTarget.headAngle);
-                CreateFluid.LOGGER.info("Current target: Base={}, Lower={}, Upper={}, Head={}",
-                        target.baseAngle, target.lowerArmAngle, target.upperArmAngle, target.headAngle);
-                CreateFluid.LOGGER.info("Final angles: Base={}, Lower={}, Upper={}, Head={}",
-                        currentBaseAngle, lowerAngle, upperAngle, headAngleValue);
-            }
 
             return false;
         } else {
@@ -216,12 +196,9 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
     @Override
     public void destroy() {
         super.destroy();
-        if (!this.heldItem.isEmpty()) {
-            Block.popResource(this.level, this.worldPosition, this.heldItem);
-        }
+        // 流体不需要掉落物处理
     }
 
-    // 在PipetteBlockEntity类中添加这些public方法
     public void setInteractionPointTag(ListTag tag) {
         this.interactionPointTag = tag;
         this.updateInteractionPoints = true;
@@ -236,7 +213,7 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
     }
 
     @Nullable
-    private ArmInteractionPoint getTargetedInteractionPoint() {
+    private FluidInteractionPoint getTargetedInteractionPoint() {
         if (this.chasedPointIndex == -1) {
             return null;
         } else if (this.phase == Phase.MOVE_TO_INPUT && this.chasedPointIndex < this.inputs.size()) {
@@ -247,13 +224,12 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         }
     }
 
-    // 创建AngleTarget的辅助方法
-    private PipetteAngleTarget createAngleTarget(ArmInteractionPoint point) {
+    private PipetteAngleTarget createAngleTarget(FluidInteractionPoint point) {
         return new PipetteAngleTarget(this.worldPosition, VecHelper.getCenterOf(point.getPos()),
                 net.minecraft.core.Direction.DOWN, this.isOnCeiling());
     }
 
-    protected void searchForItem() {
+    protected void searchForFluid() {
         if (!this.redstoneLocked) {
             boolean foundInput = false;
             int startIndex = this.selectionMode.get() == SelectionMode.PREFER_FIRST ? 0 : this.lastInputIndex + 1;
@@ -264,16 +240,11 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             }
 
             for(int i = startIndex; i < scanRange; ++i) {
-                ArmInteractionPoint armInteractionPoint = this.inputs.get(i);
-                if (armInteractionPoint.isValid()) {
-                    for(int j = 0; j < armInteractionPoint.getSlotCount(); ++j) {
-                        if (this.getDistributableAmount(armInteractionPoint, j) != 0) {
-                            this.selectIndex(true, i);
-                            foundInput = true;
-                            break;
-                        }
-                    }
-                    if (foundInput) break;
+                FluidInteractionPoint point = this.inputs.get(i);
+                if (point.isValid() && point.canExtract()) {
+                    this.selectIndex(true, i);
+                    foundInput = true;
+                    break;
                 }
             }
 
@@ -288,7 +259,7 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
     }
 
     protected void searchForDestination() {
-        ItemStack held = this.heldItem.copy();
+        FluidStack held = this.heldFluid.copy();
         boolean foundOutput = false;
         int startIndex = this.selectionMode.get() == SelectionMode.PREFER_FIRST ? 0 : this.lastOutputIndex + 1;
         int scanRange = this.selectionMode.get() == SelectionMode.FORCED_ROUND_ROBIN ?
@@ -298,14 +269,11 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         }
 
         for(int i = startIndex; i < scanRange; ++i) {
-            ArmInteractionPoint armInteractionPoint = this.outputs.get(i);
-            if (armInteractionPoint.isValid()) {
-                ItemStack remainder = armInteractionPoint.insert(held, true);
-                if (!remainder.equals(this.heldItem, false)) {
-                    this.selectIndex(false, i);
-                    foundOutput = true;
-                    break;
-                }
+            FluidInteractionPoint point = this.outputs.get(i);
+            if (point.isValid() && point.canInsert(held)) {
+                this.selectIndex(false, i);
+                foundOutput = true;
+                break;
             }
         }
 
@@ -332,58 +300,36 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         this.setChanged();
     }
 
-    protected int getDistributableAmount(ArmInteractionPoint armInteractionPoint, int i) {
-        ItemStack stack = armInteractionPoint.extract(i, true);
-        ItemStack remainder = this.simulateInsertion(stack);
-        return ItemStack.isSameItem(stack, remainder) ? stack.getCount() - remainder.getCount() : stack.getCount();
-    }
-
-    private ItemStack simulateInsertion(ItemStack stack) {
-        for (ArmInteractionPoint armInteractionPoint : this.outputs) {
-            if (armInteractionPoint.isValid()) {
-                stack = armInteractionPoint.insert(stack, true);
-            }
-            if (stack.isEmpty()) {
-                break;
-            }
-        }
-        return stack;
-    }
-
-    protected void depositItem() {
-        ArmInteractionPoint armInteractionPoint = this.getTargetedInteractionPoint();
-        if (armInteractionPoint != null && armInteractionPoint.isValid()) {
-            ItemStack toInsert = this.heldItem.copy();
-            ItemStack remainder = armInteractionPoint.insert(toInsert, false);
-            this.heldItem = remainder;
+    protected void depositFluid() {
+        FluidInteractionPoint point = this.getTargetedInteractionPoint();
+        if (point != null && point.isValid()) {
+            FluidStack toInsert = this.heldFluid.copy();
+            FluidStack remainder = point.insert(toInsert, false);
+            this.heldFluid = remainder;
         }
 
-        this.phase = this.heldItem.isEmpty() ? Phase.SEARCH_INPUTS : Phase.SEARCH_OUTPUTS;
+        this.phase = this.heldFluid.isEmpty() ? Phase.SEARCH_INPUTS : Phase.SEARCH_OUTPUTS;
         this.chasedPointProgress = 0.0F;
         this.chasedPointIndex = -1;
         this.sendData();
         this.setChanged();
     }
 
-    protected void collectItem() {
-        ArmInteractionPoint armInteractionPoint = this.getTargetedInteractionPoint();
-        if (armInteractionPoint != null && armInteractionPoint.isValid()) {
-            for(int i = 0; i < armInteractionPoint.getSlotCount(); ++i) {
-                int amountExtracted = this.getDistributableAmount(armInteractionPoint, i);
-                if (amountExtracted != 0) {
-                    ItemStack prevHeld = this.heldItem;
-                    this.heldItem = armInteractionPoint.extract(i, amountExtracted, false);
-                    this.phase = Phase.SEARCH_OUTPUTS;
-                    this.chasedPointProgress = 0.0F;
-                    this.chasedPointIndex = -1;
-                    this.sendData();
-                    this.setChanged();
-                    if (!ItemStack.isSameItem(this.heldItem, prevHeld)) {
-                        this.level.playSound(null, this.worldPosition, SoundEvents.ITEM_PICKUP,
-                                SoundSource.BLOCKS, 0.125F, 0.5F + CreateFluid.RANDOM.nextFloat() * 0.25F);
-                    }
-                    return;
-                }
+    protected void collectFluid() {
+        FluidInteractionPoint point = this.getTargetedInteractionPoint();
+        if (point != null && point.isValid()) {
+            FluidStack extracted = point.extract(TRANSFER_AMOUNT, false);
+            if (!extracted.isEmpty()) {
+                this.heldFluid = extracted;
+                this.phase = Phase.SEARCH_OUTPUTS;
+                this.chasedPointProgress = 0.0F;
+                this.chasedPointIndex = -1;
+                this.sendData();
+                this.setChanged();
+
+                this.level.playSound(null, this.worldPosition, SoundEvents.BUCKET_FILL,
+                        SoundSource.BLOCKS, 0.125F, 0.5F + this.level.random.nextFloat() * 0.25F);
+                return;
             }
         }
 
@@ -401,7 +347,7 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                 this.redstoneLocked = blockPowered;
                 this.sendData();
                 if (!this.redstoneLocked) {
-                    this.searchForItem();
+                    this.searchForFluid();
                 }
             }
         }
@@ -411,7 +357,7 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
     public void transform(BlockEntity be, StructureTransform transform) {
         if (this.interactionPointTag != null) {
             for (Tag tag : this.interactionPointTag) {
-                ArmInteractionPoint.transformPos((CompoundTag)tag, transform);
+                FluidInteractionPoint.transformPos((CompoundTag)tag, transform);
             }
             this.notifyUpdate();
         }
@@ -457,11 +403,11 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                 this.outputs.clear();
 
                 for (Tag tag : this.interactionPointTag) {
-                    ArmInteractionPoint point = ArmInteractionPoint.deserialize((CompoundTag)tag, this.level, this.worldPosition);
+                    FluidInteractionPoint point = FluidInteractionPoint.deserialize((CompoundTag)tag, this.level, this.worldPosition);
                     if (point != null) {
-                        if (point.getMode() == Mode.DEPOSIT) {
+                        if (point.getMode() == FluidInteractionPoint.Mode.DEPOSIT) {
                             this.outputs.add(point);
-                        } else if (point.getMode() == Mode.TAKE) {
+                        } else if (point.getMode() == FluidInteractionPoint.Mode.TAKE) {
                             this.inputs.add(point);
                         }
                     }
@@ -479,8 +425,8 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             compound.put("InteractionPoints", this.interactionPointTag);
         } else {
             ListTag pointsNBT = new ListTag();
-            this.inputs.stream().map(aip -> aip.serialize(this.worldPosition)).forEach(pointsNBT::add);
-            this.outputs.stream().map(aip -> aip.serialize(this.worldPosition)).forEach(pointsNBT::add);
+            this.inputs.stream().map(fip -> fip.serialize(this.worldPosition)).forEach(pointsNBT::add);
+            this.outputs.stream().map(fip -> fip.serialize(this.worldPosition)).forEach(pointsNBT::add);
             compound.put("InteractionPoints", pointsNBT);
         }
     }
@@ -492,7 +438,7 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         NBTHelper.writeEnum(compound, "Phase", this.phase);
         compound.putBoolean("Powered", this.redstoneLocked);
         compound.putBoolean("Goggles", this.goggles);
-        compound.put("HeldItem", this.heldItem.serializeNBT());
+        compound.put("HeldFluid", this.heldFluid.writeToNBT(new CompoundTag()));
         compound.putInt("TargetPointIndex", this.chasedPointIndex);
         compound.putFloat("MovementProgress", this.chasedPointProgress);
     }
@@ -509,7 +455,7 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         Phase previousPhase = this.phase;
         ListTag interactionPointTagBefore = this.interactionPointTag;
         super.read(compound, clientPacket);
-        this.heldItem = ItemStack.of(compound.getCompound("HeldItem"));
+        this.heldFluid = FluidStack.loadFluidStackFromNBT(compound.getCompound("HeldFluid"));
         this.phase = NBTHelper.readEnum(compound, "Phase", Phase.class);
         this.chasedPointIndex = compound.getInt("TargetPointIndex");
         this.chasedPointProgress = compound.getFloat("MovementProgress");
@@ -529,7 +475,7 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             }
 
             if (previousIndex != this.chasedPointIndex || previousPhase != this.phase) {
-                ArmInteractionPoint previousPoint = null;
+                FluidInteractionPoint previousPoint = null;
                 if (previousPhase == Phase.MOVE_TO_INPUT && previousIndex < this.inputs.size()) {
                     previousPoint = this.inputs.get(previousIndex);
                 }
@@ -544,7 +490,7 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                     this.previousBaseAngle = this.previousTarget.baseAngle;
                 }
 
-                ArmInteractionPoint targetedPoint = this.getTargetedInteractionPoint();
+                FluidInteractionPoint targetedPoint = this.getTargetedInteractionPoint();
                 if (targetedPoint != null) {
                     targetedPoint.updateCachedState();
                 }
@@ -577,10 +523,10 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
     @Override
     public void setLevel(Level level) {
         super.setLevel(level);
-        for (ArmInteractionPoint input : this.inputs) {
+        for (FluidInteractionPoint input : this.inputs) {
             input.setLevel(level);
         }
-        for (ArmInteractionPoint output : this.outputs) {
+        for (FluidInteractionPoint output : this.outputs) {
             output.setLevel(level);
         }
     }

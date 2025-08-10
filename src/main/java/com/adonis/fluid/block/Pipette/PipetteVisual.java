@@ -17,15 +17,9 @@ import dev.engine_room.flywheel.lib.util.RecyclingPoseStack;
 import dev.engine_room.flywheel.lib.visual.SimpleDynamicVisual;
 import java.util.ArrayList;
 import java.util.function.Consumer;
-import net.createmod.catnip.animation.AnimationTickHolder;
 import net.createmod.catnip.data.Iterate;
-import net.createmod.catnip.theme.Color;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.fluids.FluidStack;
 
 public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> implements SimpleDynamicVisual {
     final TransformedInstance base;
@@ -36,7 +30,6 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
     private final ArrayList<TransformedInstance> models;
     private final boolean ceiling;
     private final RecyclingPoseStack poseStack = new RecyclingPoseStack();
-    private boolean wasDancing = false;
     private float baseAngle = Float.NaN;
     private float lowerArmAngle = Float.NaN;
     private float upperArmAngle = Float.NaN;
@@ -71,40 +64,23 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
     }
 
     private void animate(float pt) {
-        if (((PipetteBlockEntity)this.blockEntity).phase == PipetteBlockEntity.Phase.SEARCH_INPUTS && ((PipetteBlockEntity)this.blockEntity).getSpeed() != 0.0F) {
-            this.animateRave(pt);
-            this.wasDancing = true;
-        } else {
-            float baseAngleNow = ((PipetteBlockEntity)this.blockEntity).baseAngle.getValue(pt);
-            float lowerArmAngleNow = ((PipetteBlockEntity)this.blockEntity).lowerArmAngle.getValue(pt);
-            float upperArmAngleNow = ((PipetteBlockEntity)this.blockEntity).upperArmAngle.getValue(pt);
-            float headAngleNow = ((PipetteBlockEntity)this.blockEntity).headAngle.getValue(pt);
+        // 只使用正常动画，移除跳舞功能
+        float baseAngleNow = ((PipetteBlockEntity)this.blockEntity).baseAngle.getValue(pt);
+        float lowerArmAngleNow = ((PipetteBlockEntity)this.blockEntity).lowerArmAngle.getValue(pt);
+        float upperArmAngleNow = ((PipetteBlockEntity)this.blockEntity).upperArmAngle.getValue(pt);
+        float headAngleNow = ((PipetteBlockEntity)this.blockEntity).headAngle.getValue(pt);
 
-            boolean settled = Mth.equal(this.baseAngle, baseAngleNow) && Mth.equal(this.lowerArmAngle, lowerArmAngleNow)
-                    && Mth.equal(this.upperArmAngle, upperArmAngleNow) && Mth.equal(this.headAngle, headAngleNow);
+        boolean settled = Mth.equal(this.baseAngle, baseAngleNow) && Mth.equal(this.lowerArmAngle, lowerArmAngleNow)
+                && Mth.equal(this.upperArmAngle, upperArmAngleNow) && Mth.equal(this.headAngle, headAngleNow);
 
-            this.baseAngle = baseAngleNow;
-            this.lowerArmAngle = lowerArmAngleNow;
-            this.upperArmAngle = upperArmAngleNow;
-            this.headAngle = headAngleNow;
+        this.baseAngle = baseAngleNow;
+        this.lowerArmAngle = lowerArmAngleNow;
+        this.upperArmAngle = upperArmAngleNow;
+        this.headAngle = headAngleNow;
 
-            if (!settled || this.wasDancing) {
-                this.animateArm();
-            }
-
-            this.wasDancing = false;
+        if (!settled) {
+            this.animateArm();
         }
-    }
-
-    private void animateRave(float partialTick) {
-        int ticks = AnimationTickHolder.getTicks(((PipetteBlockEntity)this.blockEntity).getLevel());
-        float renderTick = (float)ticks + partialTick + (float)(((PipetteBlockEntity)this.blockEntity).hashCode() % 64);
-        float baseAngle = renderTick * 10.0F % 360.0F;
-        float lowerArmAngle = Mth.lerp((Mth.sin(renderTick / 4.0F) + 1.0F) / 2.0F, -45.0F, 15.0F);
-        float upperArmAngle = Mth.lerp((Mth.sin(renderTick / 8.0F) + 1.0F) / 4.0F, -45.0F, 95.0F);
-        float headAngle = -lowerArmAngle;
-        int color = Color.rainbowColor(ticks * 100).getRGB();
-        this.updateAngles(baseAngle, lowerArmAngle, upperArmAngle, headAngle, color);
     }
 
     private void animateArm() {
@@ -134,16 +110,15 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
             msr.rotateZDegrees(180.0F);
         }
 
-        ItemStack item = ((PipetteBlockEntity)this.blockEntity).heldItem;
-        ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
-        boolean hasItem = !item.isEmpty();
-        boolean isBlockItem = hasItem && item.getItem() instanceof BlockItem && itemRenderer.getModel(item, Minecraft.getInstance().level, (LivingEntity)null, 0).isGui3d();
+        FluidStack fluid = ((PipetteBlockEntity)this.blockEntity).heldFluid;
+        boolean hasFluid = !fluid.isEmpty();
 
+        // 针头部分 - 保持固定状态
         int[] indices = Iterate.zeroAndOne;
         for(int index : indices) {
             this.poseStack.pushPose();
             int flip = index * 2 - 1;
-            PipetteRenderer.transformClawHalf(msr, hasItem, isBlockItem, flip);
+            PipetteRenderer.transformClawHalf(msr, hasFluid, flip);
             ((TransformedInstance)this.clawGrips.get(index)).setTransform(this.poseStack).setChanged();
             this.poseStack.popPose();
         }

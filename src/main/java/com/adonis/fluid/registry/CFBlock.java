@@ -12,7 +12,7 @@ import com.adonis.fluid.block.TrapNozzle.TrapNozzleBlock;
 import com.adonis.fluid.block.SmartNozzle.SmartNozzleBlock;
 import com.adonis.fluid.block.Pipette.PipetteBlock;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlock; // 添加这个导入
-import com.adonis.fluid.config.CFConfig;
+import com.simibubi.create.foundation.blockEntity.renderer.SmartBlockEntityRenderer;
 import com.adonis.fluid.item.PipetteItem;
 import com.simibubi.create.AllTags;
 import com.simibubi.create.foundation.data.SharedProperties;
@@ -40,6 +40,7 @@ public class CFBlock {
             .simpleItem()
             .register();
 
+    // 流体接口注册
     public static final BlockEntry<FluidInterfaceBlock> FLUID_INTERFACE = CreateFluid.REGISTRATE
             .block("fluid_interface", FluidInterfaceBlock::new)
             .initialProperties(SharedProperties::wooden)
@@ -62,6 +63,7 @@ public class CFBlock {
             .simpleItem()
             .register();
 
+    // 智能流体接口注册
     public static final BlockEntry<SmartFluidInterfaceBlock> SMART_FLUID_INTERFACE = CreateFluid.REGISTRATE
             .block("smart_fluid_interface", SmartFluidInterfaceBlock::new)
             .initialProperties(SharedProperties::wooden)

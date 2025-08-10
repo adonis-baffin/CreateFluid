@@ -4,7 +4,8 @@ import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.block.SmartNozzle.SmartNozzleRenderer;
 import com.adonis.fluid.block.SmartMesh.SmartMeshRenderer;
 import com.adonis.fluid.block.Pipette.PipetteRenderer;
-import com.adonis.fluid.handler.PipetteInteractionPointHandler;
+import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceRenderer;
+import com.adonis.fluid.handler.PipetteFluidInteractionPointHandler;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
@@ -19,13 +20,9 @@ public class CFClient {
 
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
-        CreateFluid.LOGGER.info("=== CFClient.onClientSetup started ===");
-
-        CreateFluid.LOGGER.info("Initializing CFPartialModels...");
         CFPartialModels.init();
 
         event.enqueueWork(() -> {
-            CreateFluid.LOGGER.info("Setting up render layers...");
             // 设置方块渲染层
             ItemBlockRenderTypes.setRenderLayer(CFBlock.FRAME_TRAP.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(CFBlock.MESH_TRAP.get(), RenderType.cutout());
@@ -33,30 +30,24 @@ public class CFClient {
             ItemBlockRenderTypes.setRenderLayer(CFBlock.SMART_NOZZLE.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(CFBlock.SMART_MESH.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(CFBlock.PIPETTE.get(), RenderType.cutout());
-            CreateFluid.LOGGER.info("✓ Render layers set successfully");
+            ItemBlockRenderTypes.setRenderLayer(CFBlock.FLUID_INTERFACE.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(CFBlock.SMART_FLUID_INTERFACE.get(), RenderType.cutout());
 
             // 注册方块实体渲染器
-            CreateFluid.LOGGER.info("Registering block entity renderers...");
             BlockEntityRenderers.register(CFBlockEntity.SMART_NOZZLE.get(), SmartNozzleRenderer::new);
             BlockEntityRenderers.register(CFBlockEntity.SMART_MESH.get(), SmartMeshRenderer::new);
-
-            CreateFluid.LOGGER.info("Registering PipetteRenderer for block entity type: {}", CFBlockEntity.PIPETTE.get());
             BlockEntityRenderers.register(CFBlockEntity.PIPETTE.get(), PipetteRenderer::new);
-            CreateFluid.LOGGER.info("✓ PipetteRenderer registered successfully");
-
-            CreateFluid.LOGGER.info("✓ All block entity renderers registered successfully");
+            BlockEntityRenderers.register(CFBlockEntity.SMART_FLUID_INTERFACE.get(), SmartFluidInterfaceRenderer::new);
         });
-
-        CreateFluid.LOGGER.info("=== CFClient.onClientSetup completed ===");
     }
 
-    // 添加客户端tick事件处理（备用方案）
+    // 客户端tick事件处理
     @Mod.EventBusSubscriber(modid = CreateFluid.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
     public static class ClientForgeEvents {
         @SubscribeEvent
         public static void onClientTick(TickEvent.ClientTickEvent event) {
             if (event.phase == TickEvent.Phase.END) {
-                PipetteInteractionPointHandler.tick();
+                PipetteFluidInteractionPointHandler.tick();
             }
         }
     }
