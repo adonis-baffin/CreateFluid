@@ -99,7 +99,7 @@ public class PipetteFluidInteractionPointHandler {
 
             LocalPlayer player = Minecraft.getInstance().player;
             if (removed > 0) {
-                CreateLang.builder().translate("mechanical_arm.points_outside_range", removed)
+                CreateLang.builder().translate("fluid.mechanical_pipette.points_outside_range", removed)
                         .style(ChatFormatting.RED).sendStatus(player);
             } else {
                 int inputs = 0;
@@ -113,7 +113,7 @@ public class PipetteFluidInteractionPointHandler {
                 }
 
                 if (inputs + outputs > 0) {
-                    CreateLang.builder().translate("mechanical_arm.summary", inputs, outputs)
+                    CreateLang.builder().translate("fluid.mechanical_pipette.summary", inputs, outputs)
                             .style(ChatFormatting.WHITE).sendStatus(player);
                 }
             }

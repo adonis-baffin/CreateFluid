@@ -1,8 +1,8 @@
 package com.adonis.fluid.item;
 
-import com.adonis.fluid.packet.PipettePlacementPacket;
+import com.adonis.fluid.content.pipette.FluidInteractionPoint;
+import com.adonis.fluid.packet.PipetteFluidPlacementPacket;
 import com.simibubi.create.AllPackets;
-import com.simibubi.create.content.kinetics.mechanicalArm.ArmInteractionPoint;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
@@ -25,21 +25,31 @@ public class PipetteItem extends BlockItem {
     public InteractionResult useOn(UseOnContext ctx) {
         Level world = ctx.getLevel();
         BlockPos pos = ctx.getClickedPos();
-        return ArmInteractionPoint.isInteractable(world, pos, world.getBlockState(pos)) ? 
-            InteractionResult.SUCCESS : super.useOn(ctx);
+        BlockState state = world.getBlockState(pos);
+        if (isFluidInteractable(world, pos, state)) {
+            return InteractionResult.SUCCESS;
+        }
+        return super.useOn(ctx);
+    }
+
+    /**
+     * 检查方块是否可以作为流体交互点
+     */
+    private boolean isFluidInteractable(Level world, BlockPos pos, BlockState state) {
+        return FluidInteractionPoint.create(world, pos, state) != null;
     }
 
     @Override
     protected boolean updateCustomBlockEntityTag(BlockPos pos, Level world, Player player, ItemStack stack, BlockState state) {
         if (!world.isClientSide && player instanceof ServerPlayer sp) {
-            AllPackets.getChannel().send(PacketDistributor.PLAYER.with(() -> sp), 
-                new PipettePlacementPacket.ClientBoundRequest(pos));
+            AllPackets.getChannel().send(PacketDistributor.PLAYER.with(() -> sp),
+                    new PipetteFluidPlacementPacket.ClientBoundRequest(pos));
         }
         return super.updateCustomBlockEntityTag(pos, world, player, stack, state);
     }
 
     @Override
     public boolean canAttackBlock(BlockState state, Level world, BlockPos pos, Player player) {
-        return !ArmInteractionPoint.isInteractable(world, pos, state);
+        return !isFluidInteractable(world, pos, state);
     }
 }

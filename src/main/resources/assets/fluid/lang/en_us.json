@@ -22,8 +22,6 @@
   "item.fluid.harpoon": "Harpoon",
   "entity.fluid.harpoon": "Harpoon",
   "entity.fluid.tethered_harpoon": "Tethered Harpoon",
-  "itemGroup.fluid.base": "Create: Fishery Industry",
-  "itemGroup.fluid.fluid_tab": "Create: Fishery Industry",
 
   "create.gui.goggles.mesh_trap_contents": "Mesh Trap Contents",
   "create.gui.goggles.inventory.empty": "Empty",
@@ -136,6 +134,46 @@
   "block.fluid.smart_nozzle.tooltip.condition2": "When right-clicked:",
   "block.fluid.smart_nozzle.tooltip.behaviour2": "Extracts items, up to one stack at a time.",
   "block.fluid.smart_nozzle.tooltip.condition3": "Filter Slot:",
-  "block.fluid.smart_nozzle.tooltip.behaviour3": "Place an item in the filter slot to collect only that type of item. Air flow will ignore non-matching items completely."
+  "block.fluid.smart_nozzle.tooltip.behaviour3": "Place an item in the filter slot to collect only that type of item. Air flow will ignore non-matching items completely.",
 
+  "item.fluid.pipette": "Mechanical Pipette",
+
+  "itemGroup.fluid.main": "Create: Fluid",
+
+  "create.fluid.mechanical_pipette.points_outside_range": "%1$s Fluid Interaction Points were removed because they are now out of range",
+  "create.fluid.mechanical_pipette.summary": "Configured Fluid Points: %1$s Inputs, %2$s Outputs",
+  "create.fluid.mechanical_pipette.no_targets": "No valid fluid targets found. Use the Mechanical Pipette on Fluid Interfaces, Basins, or Beehives to set up fluid interaction points.",
+
+  "block.fluid.fluid_interface.tooltip": "FLUID INTERFACE",
+  "block.fluid.fluid_interface.tooltip.summary": "A _proxy_ block for interfacing with adjacent fluid containers. Can be used to provide _precise positioning_ for automated fluid handling.",
+  "block.fluid.fluid_interface.tooltip.condition1": "When attached to a container",
+  "block.fluid.fluid_interface.tooltip.behaviour1": "Enables _Mechanical Pipettes_ and other automation to interact with the attached container through the interface.",
+  "block.fluid.fluid_interface.tooltip.condition2": "When used by player",
+  "block.fluid.fluid_interface.tooltip.behaviour2": "Allows _direct fluid interaction_ with the attached container using buckets or fluid containers.",
+
+  "block.fluid.smart_fluid_interface.tooltip": "SMART FLUID INTERFACE",
+  "block.fluid.smart_fluid_interface.tooltip.summary": "An _advanced proxy_ block for fluid containers with built-in _filtering capabilities_. Restricts which fluids can pass through.",
+  "block.fluid.smart_fluid_interface.tooltip.condition1": "When configured with filter",
+  "block.fluid.smart_fluid_interface.tooltip.behaviour1": "Only allows _specified fluids_ to be inserted or extracted. Mechanical Pipettes will respect the filter settings.",
+  "block.fluid.smart_fluid_interface.tooltip.condition2": "When attached to a container",
+  "block.fluid.smart_fluid_interface.tooltip.behaviour2": "Functions as a _filtered gateway_ to the attached container, preventing unwanted fluid types.",
+
+  "block.fluid.pipette.tooltip": "MECHANICAL PIPETTE",
+  "block.fluid.pipette.tooltip.summary": "A _kinetic device_ for automated fluid transfer between containers. The fluid equivalent of the Mechanical Arm.",
+  "block.fluid.pipette.tooltip.condition1": "When powered by kinetics",
+  "block.fluid.pipette.tooltip.behaviour1": "_Automatically transfers fluids_ between configured input and output points. Supports _multiple interaction points_ and _selection modes_.",
+  "block.fluid.pipette.tooltip.condition2": "Special Interactions",
+  "block.fluid.pipette.tooltip.behaviour2": "Can _feed lava to Blaze Burners_ automatically and _extract honey from Beehives_ when they're full. Respects _Smart Fluid Interface filters_.",
+  "block.fluid.pipette.tooltip.condition3": "Configuration",
+  "block.fluid.pipette.tooltip.behaviour3": "Use the Pipette on _Fluid Interfaces_, _Basins_, _Beehives_, or _Blaze Burners_ to set up interaction points. Use _Wrench_ to modify selection modes.",
+
+  "fluid.blaze_burner_interaction": "Blaze Burner Fuel Input",
+  "fluid.beehive_interaction": "Beehive Honey Output",
+  "fluid.general_interaction": "Fluid Container Access",
+
+  "create.fluid.mechanical_pipette.extract": "Drain fluid from here",
+  "create.fluid.mechanical_pipette.deposit": "Inject fluid to here",
+
+  "create.create.mechanical_arm.extract_from": "Take items from here",
+  "create.create.mechanical_arm.deposit_to": "Deposit items to here"
 }

@@ -22,8 +22,6 @@
   "item.fluid.harpoon": "鱼叉",
   "entity.fluid.harpoon": "鱼叉",
   "entity.fluid.tethered_harpoon": "带锁链的鱼叉",
-  "itemGroup.fluid.base": "机械动力：渔业",
-  "itemGroup.fluid.fluid_tab": "机械动力：渔业",
 
   "create.gui.goggles.mesh_trap_contents": "捕获网内含：",
   "create.gui.goggles.inventory.empty": "空",
@@ -134,5 +132,45 @@
   "block.fluid.smart_nozzle.tooltip.condition2": "右键点击时：",
   "block.fluid.smart_nozzle.tooltip.behaviour2": "提取物品，一次最多一组。",
   "block.fluid.smart_nozzle.tooltip.condition3": "过滤槽：",
-  "block.fluid.smart_nozzle.tooltip.behaviour3": "在过滤槽中放置物品以仅收集该类型的物品。气流将完全忽略不匹配的物品。"
+  "block.fluid.smart_nozzle.tooltip.behaviour3": "在过滤槽中放置物品以仅收集该类型的物品。气流将完全忽略不匹配的物品。",
+
+  "item.fluid.pipette": "动力移液器",
+
+  "itemGroup.fluid.main": "机械动力：流体",
+
+  "create.fluid.mechanical_pipette.points_outside_range": "%1$s 个流体交互点因超出范围而被移除",
+  "create.fluid.mechanical_pipette.summary": "已配置的流体交互点：%1$s 个输入，%2$s 个输出",
+  "create.fluid.mechanical_pipette.no_targets": "未找到有效的流体目标。请使用动力移液器右键流体接口、工作盆或蜂巢来设置流体交互点。",
+
+  "block.fluid.fluid_interface.tooltip": "流体接口",
+  "block.fluid.fluid_interface.tooltip.summary": "一个用于与相邻流体容器交互的_代理_方块。可用于为自动化流体处理提供_精确定位_。",
+  "block.fluid.fluid_interface.tooltip.condition1": "当连接到容器时",
+  "block.fluid.fluid_interface.tooltip.behaviour1": "使_动力移液器_和其他自动化设备能够通过接口与连接的容器交互。",
+  "block.fluid.fluid_interface.tooltip.condition2": "当玩家使用时",
+  "block.fluid.fluid_interface.tooltip.behaviour2": "允许使用桶或流体容器与连接的容器进行_直接流体交互_。",
+
+  "block.fluid.smart_fluid_interface.tooltip": "智能流体接口",
+  "block.fluid.smart_fluid_interface.tooltip.summary": "一个具有内置_过滤功能_的流体容器_高级代理_方块。限制哪些流体可以通过。",
+  "block.fluid.smart_fluid_interface.tooltip.condition1": "当配置过滤器时",
+  "block.fluid.smart_fluid_interface.tooltip.behaviour1": "只允许_指定的流体_被插入或提取。动力移液器将遵守过滤器设置。",
+  "block.fluid.smart_fluid_interface.tooltip.condition2": "当连接到容器时",
+  "block.fluid.smart_fluid_interface.tooltip.behaviour2": "作为连接容器的_过滤网关_，防止不需要的流体类型通过。",
+
+  "block.fluid.pipette.tooltip": "动力移液器",
+  "block.fluid.pipette.tooltip.summary": "一个用于容器间自动化流体传输的_动力装置_。相当于流体版的动力臂。",
+  "block.fluid.pipette.tooltip.condition1": "当由动力驱动时",
+  "block.fluid.pipette.tooltip.behaviour1": "在配置的输入和输出点之间_自动传输流体_。支持_多个交互点_和_选择模式_。",
+  "block.fluid.pipette.tooltip.condition2": "特殊交互",
+  "block.fluid.pipette.tooltip.behaviour2": "可以_自动向烈焰人燃烧室投喂岩浆_，并在蜂巢满时_提取蜂蜜_。遵守_智能流体接口过滤器_。",
+  "block.fluid.pipette.tooltip.condition3": "配置",
+  "block.fluid.pipette.tooltip.behaviour3": "使用移液器右键_流体接口_、_工作盆_、_蜂巢_或_烈焰人燃烧室_来设置交互点。使用_扳手_修改选择模式。",
+
+  "fluid.blaze_burner_interaction": "烈焰人燃烧室燃料输入",
+  "fluid.beehive_interaction": "蜂巢蜂蜜输出",
+  "fluid.general_interaction": "流体容器访问",
+  "create.fluid.mechanical_pipette.extract": "从此处吸取流体",
+  "create.fluid.mechanical_pipette.deposit": "将流体注入此处",
+
+  "create.create.mechanical_arm.extract_from": "从此处拿取物品",
+  "create.create.mechanical_arm.deposit_to": "将物品存储于此处"
 }

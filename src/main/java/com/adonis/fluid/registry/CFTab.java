@@ -10,33 +10,31 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 
 public class CFTab {
-    public static final DeferredRegister<CreativeModeTab> CREATIVE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, CreateFluid.MODID);
+    public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS =
+            DeferredRegister.create(Registries.CREATIVE_MODE_TAB, CreateFluid.MODID);
 
-    public static final RegistryObject<CreativeModeTab> FLUID_TAB = CREATIVE_TABS.register("fluid_tab",
+    public static final RegistryObject<CreativeModeTab> MAIN_TAB = CREATIVE_MODE_TABS.register("main",
             () -> CreativeModeTab.builder()
-                    .title(Component.translatable("itemGroup.fluid.fluid_tab"))
-                    .icon(() -> new ItemStack(CFBlock.MESH_TRAP.get()))
-                    .displayItems((params, output) -> {
-                        // 添加方块
+                    .title(Component.translatable("itemGroup.fluid.main"))
+                    .icon(() -> new ItemStack(CFBlock.PIPETTE.get()))
+                    .displayItems((parameters, output) -> {
+                        // 动力设备
+                        output.accept(CFBlock.PIPETTE.get());
+
+                        // 流体接口
+                        output.accept(CFBlock.FLUID_INTERFACE.get());
+                        output.accept(CFBlock.SMART_FLUID_INTERFACE.get());
+
+                        // 陷阱系列
                         output.accept(CFBlock.FRAME_TRAP.get());
                         output.accept(CFBlock.MESH_TRAP.get());
                         output.accept(CFBlock.TRAP_NOZZLE.get());
                         output.accept(CFBlock.SMART_NOZZLE.get());
                         output.accept(CFBlock.SMART_MESH.get());
-                        output.accept(CFBlock.PIPETTE.get());
-                        output.accept(CFBlock.FLUID_INTERFACE.get());
-                        output.accept(CFBlock.SMART_FLUID_INTERFACE.get());
-
-
-                        // 添加物品
-                        output.accept(CFItem.WORN_HARPOON.get());
-                        output.accept(CFItem.COPPER_DIVING_LEGGINGS.get());
-                        output.accept(CFItem.NETHERITE_DIVING_LEGGINGS.get());
-                        output.accept(CFItem.ZINC_SHEET.get());
                     })
                     .build());
 
     public static void register(IEventBus modEventBus) {
-        CREATIVE_TABS.register(modEventBus);
+        CREATIVE_MODE_TABS.register(modEventBus);
     }
 }

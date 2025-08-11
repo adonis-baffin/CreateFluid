@@ -239,12 +239,40 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                 scanRange = this.inputs.size();
             }
 
+            // 检查是否有烈焰人燃烧室作为输出端，如果有则优先寻找岩浆
+            boolean hasBlazeBurnerOutput = this.outputs.stream().anyMatch(output -> {
+                BlockState state = this.level.getBlockState(output.getPos());
+                return isBlazeBurner(state);
+            });
+
             for(int i = startIndex; i < scanRange; ++i) {
                 FluidInteractionPoint point = this.inputs.get(i);
                 if (point.isValid() && point.canExtract()) {
-                    this.selectIndex(true, i);
-                    foundInput = true;
-                    break;
+                    // 预检查：模拟取出流体，看是否能被任何输出端接受
+                    FluidStack simulatedFluid = point.extract(TRANSFER_AMOUNT, true);
+
+                    if (!simulatedFluid.isEmpty()) {
+                        // 如果有烈焰人燃烧室输出端，优先选择岩浆
+                        if (hasBlazeBurnerOutput && simulatedFluid.getFluid() == net.minecraft.world.level.material.Fluids.LAVA) {
+                            if (canFluidBeOutputted(simulatedFluid)) {
+                                this.selectIndex(true, i);
+                                foundInput = true;
+                                break;
+                            }
+                        } else if (!hasBlazeBurnerOutput && canFluidBeOutputted(simulatedFluid)) {
+                            // 如果没有烈焰人燃烧室，或者有但这不是岩浆，检查其他输出端
+                            this.selectIndex(true, i);
+                            foundInput = true;
+                            break;
+                        } else if (hasBlazeBurnerOutput && simulatedFluid.getFluid() != net.minecraft.world.level.material.Fluids.LAVA) {
+                            // 有烈焰人燃烧室但这不是岩浆，检查是否有其他输出端可以接受
+                            if (canFluidBeOutputted(simulatedFluid)) {
+                                this.selectIndex(true, i);
+                                foundInput = true;
+                                break;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -256,6 +284,39 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                 this.lastInputIndex = -1;
             }
         }
+    }
+
+    /**
+     * 检查指定的流体是否能被任何输出端接受
+     * 特别考虑烈焰人燃烧室只接受岩浆的情况
+     */
+    private boolean canFluidBeOutputted(FluidStack fluid) {
+        if (fluid.isEmpty()) return false;
+
+        for (FluidInteractionPoint output : this.outputs) {
+            if (output.isValid()) {
+                // 特殊检查：如果输出端是烈焰人燃烧室，只有岩浆可以输出
+                BlockState outputState = this.level.getBlockState(output.getPos());
+                if (isBlazeBurner(outputState)) {
+                    if (fluid.getFluid() != net.minecraft.world.level.material.Fluids.LAVA) {
+                        continue; // 烈焰人燃烧室只接受岩浆
+                    }
+                }
+
+                if (output.canInsert(fluid)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 检查方块是否为烈焰人燃烧室
+     */
+    private boolean isBlazeBurner(BlockState state) {
+        return com.simibubi.create.AllBlocks.BLAZE_BURNER.has(state) ||
+                com.simibubi.create.AllBlocks.LIT_BLAZE_BURNER.has(state);
     }
 
     protected void searchForDestination() {
@@ -306,6 +367,14 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             FluidStack toInsert = this.heldFluid.copy();
             FluidStack remainder = point.insert(toInsert, false);
             this.heldFluid = remainder;
+
+            // 检查是否是向烈焰人燃烧室投喂岩浆，播放特殊音效
+            BlockState outputState = this.level.getBlockState(point.getPos());
+            if (isBlazeBurner(outputState) && toInsert.getFluid() == net.minecraft.world.level.material.Fluids.LAVA) {
+                // 播放烈焰人燃烧室的点火音效
+                this.level.playSound(null, point.getPos(), net.minecraft.sounds.SoundEvents.BLAZE_SHOOT,
+                        net.minecraft.sounds.SoundSource.BLOCKS, 0.25F, 0.75F + this.level.random.nextFloat() * 0.25F);
+            }
         }
 
         this.phase = this.heldFluid.isEmpty() ? Phase.SEARCH_INPUTS : Phase.SEARCH_OUTPUTS;
@@ -320,6 +389,23 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         if (point != null && point.isValid()) {
             FluidStack extracted = point.extract(TRANSFER_AMOUNT, false);
             if (!extracted.isEmpty()) {
+                // 双重检查：确保取出的流体能被输出端接受
+                if (!canFluidBeOutputted(extracted)) {
+                    // 如果不能输出，尝试将流体放回
+                    FluidStack remainder = point.insert(extracted, false);
+                    if (!remainder.isEmpty()) {
+                        // 如果放不回去，只能丢弃了（这种情况应该很少见）
+                        this.heldFluid = remainder;
+                    }
+                    // 回到搜索输入阶段
+                    this.phase = Phase.SEARCH_INPUTS;
+                    this.chasedPointProgress = 0.0F;
+                    this.chasedPointIndex = -1;
+                    this.sendData();
+                    this.setChanged();
+                    return;
+                }
+
                 this.heldFluid = extracted;
                 this.phase = Phase.SEARCH_OUTPUTS;
                 this.chasedPointProgress = 0.0F;
@@ -327,8 +413,17 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                 this.sendData();
                 this.setChanged();
 
-                this.level.playSound(null, this.worldPosition, SoundEvents.BUCKET_FILL,
-                        SoundSource.BLOCKS, 0.125F, 0.5F + this.level.random.nextFloat() * 0.25F);
+                // 检查是否从蜂巢取出蜂蜜，播放特殊音效
+                BlockState inputState = this.level.getBlockState(point.getPos());
+                if (inputState.getBlock() instanceof net.minecraft.world.level.block.BeehiveBlock) {
+                    // 播放收集蜂蜜的音效
+                    this.level.playSound(null, this.worldPosition, net.minecraft.sounds.SoundEvents.BOTTLE_FILL,
+                            SoundSource.BLOCKS, 0.125F, 1.0F);
+                } else {
+                    // 默认的流体收集音效
+                    this.level.playSound(null, this.worldPosition, SoundEvents.BUCKET_FILL,
+                            SoundSource.BLOCKS, 0.125F, 0.5F + this.level.random.nextFloat() * 0.25F);
+                }
                 return;
             }
         }
@@ -515,7 +610,7 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         } else if (!this.outputs.isEmpty()) {
             return false;
         } else {
-            TooltipHelper.addHint(tooltip, "hint.mechanical_arm_no_targets");
+            TooltipHelper.addHint(tooltip, "fluid.mechanical_pipette.no_targets");
             return true;
         }
     }

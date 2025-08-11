@@ -4,6 +4,7 @@ import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.block.SmartNozzle.SmartNozzleRenderer;
 import com.adonis.fluid.block.SmartMesh.SmartMeshRenderer;
 import com.adonis.fluid.block.Pipette.PipetteRenderer;
+import com.adonis.fluid.block.FluidInterface.FluidInterfaceRenderer;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceRenderer;
 import com.adonis.fluid.handler.PipetteFluidInteractionPointHandler;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
@@ -37,6 +38,7 @@ public class CFClient {
             BlockEntityRenderers.register(CFBlockEntity.SMART_NOZZLE.get(), SmartNozzleRenderer::new);
             BlockEntityRenderers.register(CFBlockEntity.SMART_MESH.get(), SmartMeshRenderer::new);
             BlockEntityRenderers.register(CFBlockEntity.PIPETTE.get(), PipetteRenderer::new);
+            BlockEntityRenderers.register(CFBlockEntity.FLUID_INTERFACE.get(), FluidInterfaceRenderer::new);
             BlockEntityRenderers.register(CFBlockEntity.SMART_FLUID_INTERFACE.get(), SmartFluidInterfaceRenderer::new);
         });
     }
