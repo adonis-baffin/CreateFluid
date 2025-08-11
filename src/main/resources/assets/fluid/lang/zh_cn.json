@@ -138,9 +138,7 @@
 
   "itemGroup.fluid.main": "机械动力：流体",
 
-  "create.fluid.mechanical_pipette.points_outside_range": "%1$s 个流体交互点因超出范围而被移除",
-  "create.fluid.mechanical_pipette.summary": "已配置的流体交互点：%1$s 个输入，%2$s 个输出",
-  "create.fluid.mechanical_pipette.no_targets": "未找到有效的流体目标。请使用动力移液器右键流体接口、工作盆或蜂巢来设置流体交互点。",
+
 
   "block.fluid.fluid_interface.tooltip": "流体接口",
   "block.fluid.fluid_interface.tooltip.summary": "一个用于与相邻流体容器交互的_代理_方块。可用于为自动化流体处理提供_精确定位_。",
@@ -168,8 +166,12 @@
   "fluid.blaze_burner_interaction": "烈焰人燃烧室燃料输入",
   "fluid.beehive_interaction": "蜂巢蜂蜜输出",
   "fluid.general_interaction": "流体容器访问",
+
   "create.fluid.mechanical_pipette.extract": "从此处吸取流体",
   "create.fluid.mechanical_pipette.deposit": "将流体注入此处",
+  "create.fluid.mechanical_pipette.points_outside_range": "%1$s 个流体交互点因超出范围而被移除",
+  "create.fluid.mechanical_pipette.summary": "已配置的流体交互点：%1$s 个输入，%2$s 个输出",
+  "create.fluid.mechanical_pipette.no_targets.title": "未找到有效的流体目标。请使用动力移液器右键流体接口、工作盆或蜂巢来设置流体交互点。",
 
   "create.create.mechanical_arm.extract_from": "从此处拿取物品",
   "create.create.mechanical_arm.deposit_to": "将物品存储于此处"
