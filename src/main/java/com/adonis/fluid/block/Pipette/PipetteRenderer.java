@@ -1,6 +1,7 @@
 package com.adonis.fluid.block.Pipette;
 
 import com.adonis.fluid.registry.CFPartialModels;
+import com.adonis.fluid.render.PipetteFluidVisual;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.simibubi.create.AllPartialModels;
@@ -9,22 +10,17 @@ import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 import dev.engine_room.flywheel.lib.transform.PoseTransformStack;
 import dev.engine_room.flywheel.lib.transform.TransformStack;
 import net.createmod.catnip.animation.AnimationTickHolder;
+import net.createmod.catnip.platform.ForgeCatnipServices;
 import net.createmod.catnip.render.CachedBuffers;
 import net.createmod.catnip.render.SuperByteBuffer;
 import net.createmod.catnip.theme.Color;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.fluids.FluidStack;
-import org.joml.Matrix3f;
-import org.joml.Matrix4f;
 
 public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEntity> {
 
@@ -67,111 +63,70 @@ public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEnti
         this.renderPipette(builder, ms, msLocal, msr, blockState, color, baseAngle,
                 lowerArmAngle, upperArmAngle, headAngle, inverted, hasFluid, light);
 
-        // 3. 渲染流体
+        // 3. 渲染流体（如果有的话）
         if (hasFluid) {
-            renderFluid(be, fluid, ms, buffer, light, pt, baseAngle, lowerArmAngle, upperArmAngle, headAngle, inverted);
+            renderPipetteFluid(be, ms, buffer, light, pt, msr);
         }
     }
 
-    private void renderFluid(PipetteBlockEntity be, FluidStack fluidStack, PoseStack ms, MultiBufferSource buffer, int light, float pt,
-                             float baseAngle, float lowerArmAngle, float upperArmAngle, float headAngle, boolean inverted) {
-        if (fluidStack.isEmpty()) return;
-
-        IClientFluidTypeExtensions clientFluid = IClientFluidTypeExtensions.of(fluidStack.getFluid());
-        TextureAtlasSprite stillTexture = Minecraft.getInstance()
-                .getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
-                .apply(clientFluid.getStillTexture(fluidStack));
-
-        int color = clientFluid.getTintColor(fluidStack);
-        float r = ((color >> 16) & 0xFF) / 255.0F;
-        float g = ((color >> 8) & 0xFF) / 255.0F;
-        float b = (color & 0xFF) / 255.0F;
-        float a = ((color >> 24) & 0xFF) / 255.0F;
-        if (a == 0) a = 1.0F;
+    private void renderPipetteFluid(PipetteBlockEntity be, PoseStack ms, MultiBufferSource buffer,
+                                    int light, float pt, PoseTransformStack msr) {
+        FluidStack fluid = be.heldFluid;
+        if (fluid.isEmpty()) return;
 
         ms.pushPose();
 
-        // 复制机械臂的变换
-        TransformStack fluidTransform = TransformStack.of(ms);
-        fluidTransform.center();
+        // 应用移液器头部的变换
+        boolean inverted = be.getBlockState().getValue(PipetteBlock.CEILING);
+        float baseAngle = be.baseAngle.getValue(pt);
+        float lowerArmAngle = be.lowerArmAngle.getValue(pt) - 135.0F;
+        float upperArmAngle = be.upperArmAngle.getValue(pt) - 90.0F;
+        float headAngle = be.headAngle.getValue(pt);
+
+        PoseTransformStack fluidMsr = TransformStack.of(ms);
+        fluidMsr.center();
         if (inverted) {
-            fluidTransform.rotateXDegrees(180.0F);
+            fluidMsr.rotateXDegrees(180.0F);
         }
 
-        // 应用机械臂的旋转
-        transformBase(fluidTransform, baseAngle);
-        transformLowerArm(fluidTransform, lowerArmAngle);
-        transformUpperArm(fluidTransform, upperArmAngle);
-        transformHead(fluidTransform, headAngle);
+        // 应用所有变换以定位到头部
+        transformBase(fluidMsr, baseAngle);
+        transformLowerArm(fluidMsr, lowerArmAngle);
+        transformUpperArm(fluidMsr, upperArmAngle);
+        transformHead(fluidMsr, headAngle);
+        if (inverted) {
+            fluidMsr.rotateZDegrees(180.0F);
+        }
 
-        // 移动到移液器头部内部的正确位置
-        // 根据你的需求调整这个位置
-        fluidTransform.translate(0.0, -0.125, -0.0625); // 调整到合适的位置
-
-        // 根据流体量调整
-        float fillAmount = Math.min(1.0F, (float)fluidStack.getAmount() / 1000.0F);
-
-        VertexConsumer fluidBuilder = buffer.getBuffer(RenderType.translucent());
-
-        // 渲染4x4x4像素的流体立方体
-        renderFluidCube(fluidBuilder, ms, stillTexture, r, g, b, a, fillAmount, light);
+        // 在针头内部渲染流体
+        renderFluidInNeedle(fluid, be.getFluidCapacity(), ms, buffer, light, be.isInjectMode());
 
         ms.popPose();
     }
 
-    private void renderFluidCube(VertexConsumer builder, PoseStack ms, TextureAtlasSprite texture,
-                                 float r, float g, float b, float a, float fillAmount, int light) {
-        PoseStack.Pose pose = ms.last();
-        Matrix4f matrix = pose.pose();
-        Matrix3f normal = pose.normal();
+    private void renderFluidInNeedle(FluidStack fluid, int capacity, PoseStack ms,
+                                     MultiBufferSource buffer, int light, boolean isInjectMode) {
+        float fillFactor = (float) fluid.getAmount() / capacity;
 
-        // 4x4x4 像素 = 1/4 方块大小
-        float size = 0.5F; // 4/16 = 1/4 方块宽度
-        float height = size * fillAmount; // 高度根据流体量调整
-        float halfSize = size / 2.0F;
+        // 针头内部流体渲染
+        float needleRadius = 1.5f / 16f;
+        float needleLength = 4f / 16f;
+        float fluidLength = fillFactor * needleLength;
 
-        float minU = texture.getU0();
-        float maxU = texture.getU1();
-        float minV = texture.getV0();
-        float maxV = texture.getV1();
+        // 根据模式调整位置
+        float zOffset = isInjectMode ?
+                -(needleLength - fluidLength) / 2 :
+                (needleLength - fluidLength) / 2;
 
-        // 前面
-        builder.vertex(matrix, -halfSize, 0, -halfSize).color(r, g, b, a).uv(minU, maxV).uv2(light).normal(normal, 0, 0, -1).endVertex();
-        builder.vertex(matrix, halfSize, 0, -halfSize).color(r, g, b, a).uv(maxU, maxV).uv2(light).normal(normal, 0, 0, -1).endVertex();
-        builder.vertex(matrix, halfSize, height, -halfSize).color(r, g, b, a).uv(maxU, minV).uv2(light).normal(normal, 0, 0, -1).endVertex();
-        builder.vertex(matrix, -halfSize, height, -halfSize).color(r, g, b, a).uv(minU, minV).uv2(light).normal(normal, 0, 0, -1).endVertex();
+        ms.translate(0, 0, zOffset);
 
-        // 后面
-        builder.vertex(matrix, halfSize, 0, halfSize).color(r, g, b, a).uv(minU, maxV).uv2(light).normal(normal, 0, 0, 1).endVertex();
-        builder.vertex(matrix, -halfSize, 0, halfSize).color(r, g, b, a).uv(maxU, maxV).uv2(light).normal(normal, 0, 0, 1).endVertex();
-        builder.vertex(matrix, -halfSize, height, halfSize).color(r, g, b, a).uv(maxU, minV).uv2(light).normal(normal, 0, 0, 1).endVertex();
-        builder.vertex(matrix, halfSize, height, halfSize).color(r, g, b, a).uv(minU, minV).uv2(light).normal(normal, 0, 0, 1).endVertex();
-
-        // 左面
-        builder.vertex(matrix, -halfSize, 0, halfSize).color(r, g, b, a).uv(minU, maxV).uv2(light).normal(normal, -1, 0, 0).endVertex();
-        builder.vertex(matrix, -halfSize, 0, -halfSize).color(r, g, b, a).uv(maxU, maxV).uv2(light).normal(normal, -1, 0, 0).endVertex();
-        builder.vertex(matrix, -halfSize, height, -halfSize).color(r, g, b, a).uv(maxU, minV).uv2(light).normal(normal, -1, 0, 0).endVertex();
-        builder.vertex(matrix, -halfSize, height, halfSize).color(r, g, b, a).uv(minU, minV).uv2(light).normal(normal, -1, 0, 0).endVertex();
-
-        // 右面
-        builder.vertex(matrix, halfSize, 0, -halfSize).color(r, g, b, a).uv(minU, maxV).uv2(light).normal(normal, 1, 0, 0).endVertex();
-        builder.vertex(matrix, halfSize, 0, halfSize).color(r, g, b, a).uv(maxU, maxV).uv2(light).normal(normal, 1, 0, 0).endVertex();
-        builder.vertex(matrix, halfSize, height, halfSize).color(r, g, b, a).uv(maxU, minV).uv2(light).normal(normal, 1, 0, 0).endVertex();
-        builder.vertex(matrix, halfSize, height, -halfSize).color(r, g, b, a).uv(minU, minV).uv2(light).normal(normal, 1, 0, 0).endVertex();
-
-        // 顶面（只在有流体时渲染）
-        if (fillAmount > 0) {
-            builder.vertex(matrix, -halfSize, height, -halfSize).color(r, g, b, a).uv(minU, minV).uv2(light).normal(normal, 0, 1, 0).endVertex();
-            builder.vertex(matrix, halfSize, height, -halfSize).color(r, g, b, a).uv(maxU, minV).uv2(light).normal(normal, 0, 1, 0).endVertex();
-            builder.vertex(matrix, halfSize, height, halfSize).color(r, g, b, a).uv(maxU, maxV).uv2(light).normal(normal, 0, 1, 0).endVertex();
-            builder.vertex(matrix, -halfSize, height, halfSize).color(r, g, b, a).uv(minU, maxV).uv2(light).normal(normal, 0, 1, 0).endVertex();
-        }
-
-        // 底面
-        builder.vertex(matrix, -halfSize, 0, halfSize).color(r, g, b, a).uv(minU, maxV).uv2(light).normal(normal, 0, -1, 0).endVertex();
-        builder.vertex(matrix, halfSize, 0, halfSize).color(r, g, b, a).uv(maxU, maxV).uv2(light).normal(normal, 0, -1, 0).endVertex();
-        builder.vertex(matrix, halfSize, 0, -halfSize).color(r, g, b, a).uv(maxU, minV).uv2(light).normal(normal, 0, -1, 0).endVertex();
-        builder.vertex(matrix, -halfSize, 0, -halfSize).color(r, g, b, a).uv(minU, minV).uv2(light).normal(normal, 0, -1, 0).endVertex();
+        // 使用Forge的流体渲染器
+        ForgeCatnipServices.FLUID_RENDERER.renderFluidBox(
+                fluid,
+                -needleRadius, -needleRadius, -fluidLength / 2,
+                needleRadius, needleRadius, fluidLength / 2,
+                buffer, ms, light, true, false
+        );
     }
 
     private void renderPipette(VertexConsumer builder, PoseStack ms, PoseStack msLocal,
@@ -185,7 +140,7 @@ public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEnti
         // 使用自定义的移液器模型
         SuperByteBuffer lowerBody = CachedBuffers.partial(CFPartialModels.PIPETTE_LOWER_ARM, blockState).light(light);
         SuperByteBuffer upperBody = CachedBuffers.partial(CFPartialModels.PIPETTE_UPPER_ARM, blockState).light(light);
-        SuperByteBuffer head = CachedBuffers.partial(CFPartialModels.PIPETTE_HEAD, blockState).light(light); // 包含整个头部
+        SuperByteBuffer head = CachedBuffers.partial(CFPartialModels.PIPETTE_HEAD, blockState).light(light);
 
         transformBase(msr, baseAngle);
         base.transform(msLocal).renderInto(ms, builder);
@@ -203,7 +158,7 @@ public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEnti
         head.transform(msLocal).renderInto(ms, builder);
     }
 
-    // 静态辅助方法
+    // 其他方法保持不变...
     public static void renderRotatingBuffer(PipetteBlockEntity be, SuperByteBuffer superBuffer, PoseStack ms, VertexConsumer buffer, int light) {
         standardKineticRotationTransform(superBuffer, be, light).renderInto(ms, buffer);
     }

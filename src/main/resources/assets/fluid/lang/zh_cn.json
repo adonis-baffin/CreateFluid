@@ -167,12 +167,18 @@
   "fluid.beehive_interaction": "蜂巢蜂蜜输出",
   "fluid.general_interaction": "流体容器访问",
 
-  "create.fluid.mechanical_pipette.extract": "从此处吸取流体",
-  "create.fluid.mechanical_pipette.deposit": "将流体注入此处",
-  "create.fluid.mechanical_pipette.points_outside_range": "%1$s 个流体交互点因超出范围而被移除",
+  "create.fluid.mechanical_pipette.extract": "从%1$s吸取流体",
+  "create.fluid.mechanical_pipette.deposit": "将流体注入%1$s",
+  "create.fluid.mechanical_pipette.points_outside_range": "由于距离限制，%1$s 个已选定的交互点已被移除。",
   "create.fluid.mechanical_pipette.summary": "已配置的流体交互点：%1$s 个输入，%2$s 个输出",
-  "create.fluid.mechanical_pipette.no_targets.title": "未找到有效的流体目标。请使用动力移液器右键流体接口、工作盆或蜂巢来设置流体交互点。",
+  "create.fluid.mechanical_pipette.no_targets.title": "没有目标",
+  "create.fluid.mechanical_pipette.no_targets": "看起来这个_动力移液器_没有被分配任何_目标_。_手持动力移液器_，_右击_选取传送带、置物台、漏斗或其他元件来设置目标。",
 
-  "create.create.mechanical_arm.extract_from": "从此处拿取物品",
-  "create.create.mechanical_arm.deposit_to": "将物品存储于此处"
+
+  "create.create.mechanical_arm.extract_from": "从 %1$s 中拿取物品",
+  "create.create.mechanical_arm.deposit_to": "将物品存储至 %1$s",
+
+  "create.hint.mechanical_arm_no_targets": "看起来这个_动力臂_没有被分配任何_目标_。_手持动力臂_，_右击_选取传送带、置物台、漏斗或其他元件来设置目标。",
+  "create.hint.mechanical_arm_no_targets.title": "没有目标",
+  "create.create.mechanical_arm.points_outside_range": "由于距离限制，%1$s 个已选定的交互点已被移除。"
 }

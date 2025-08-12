@@ -72,6 +72,7 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
 
     // 流体相关设置
     private static final int TRANSFER_AMOUNT = 1000; // 每次传输的流体量(mB)
+    private static final int FLUID_CAPACITY = 1000;  // 移液器流体容量(mB)
 
     public PipetteBlockEntity(BlockEntityType<?> typeIn, BlockPos pos, BlockState state) {
         super(typeIn, pos, state);
@@ -93,6 +94,82 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         this.tooltipWarmup = 15;
         this.goggles = false;
     }
+
+    // ==================== 流体渲染支持方法 ====================
+
+    /**
+     * 获取移液器的流体容量
+     * @return 移液器能容纳的最大流体量(mB)
+     */
+    public int getFluidCapacity() {
+        return FLUID_CAPACITY;
+    }
+
+    /**
+     * 检查移液器是否处于注射模式
+     * 当移液器正在寻找输出目标或移动到输出目标时，认为是注射模式
+     * @return true表示注射模式，false表示抽取模式
+     */
+    public boolean isInjectMode() {
+        return this.phase == Phase.SEARCH_OUTPUTS || this.phase == Phase.MOVE_TO_OUTPUT;
+    }
+
+    /**
+     * 检查移液器是否正在工作（移动中）
+     * @return true表示正在移动，false表示静止或搜索中
+     */
+    public boolean isWorking() {
+        return this.phase == Phase.MOVE_TO_INPUT || this.phase == Phase.MOVE_TO_OUTPUT;
+    }
+
+    /**
+     * 获取当前的工作进度（0.0-1.0）
+     * @return 当前工作进度
+     */
+    public float getWorkProgress() {
+        return this.chasedPointProgress;
+    }
+
+    /**
+     * 获取移液器当前持有的流体
+     * @return 当前持有的流体堆栈
+     */
+    public FluidStack getHeldFluid() {
+        return this.heldFluid.copy();
+    }
+
+    /**
+     * 检查移液器是否持有流体
+     * @return true表示持有流体，false表示空的
+     */
+    public boolean hasFluid() {
+        return !this.heldFluid.isEmpty();
+    }
+
+    /**
+     * 获取流体填充比例
+     * @return 0.0-1.0的填充比例
+     */
+    public float getFluidFillRatio() {
+        if (this.heldFluid.isEmpty()) return 0.0f;
+        return (float) this.heldFluid.getAmount() / FLUID_CAPACITY;
+    }
+
+    /**
+     * 获取当前工作阶段的描述（用于调试）
+     * @return 阶段描述字符串
+     */
+    public String getPhaseDescription() {
+        switch (this.phase) {
+            case SEARCH_INPUTS: return "Searching for input";
+            case MOVE_TO_INPUT: return "Moving to input";
+            case SEARCH_OUTPUTS: return "Searching for output";
+            case MOVE_TO_OUTPUT: return "Moving to output";
+            default: return "Unknown";
+        }
+    }
+
+    // ==================== 原有方法保持不变 ====================
 
     @Override
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {

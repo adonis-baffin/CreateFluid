@@ -8,6 +8,7 @@
 		"3": "fluid:block/smart_pipe_2",
 		"particle": "fluid:block/pipes2"
 	},
+	"render_type": "minecraft:cutout",
 	"elements": [
 		{
 			"from": [3, 3, 14],

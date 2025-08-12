@@ -1,5 +1,6 @@
 package com.adonis.fluid.block.Pipette;
 
+import com.adonis.fluid.render.PipetteFluidVisual;
 import com.google.common.collect.Lists;
 import com.simibubi.create.AllPartialModels;
 import com.simibubi.create.content.kinetics.base.SingleAxisRotatingVisual;
@@ -30,6 +31,12 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
     private final ArrayList<TransformedInstance> models;
     private final boolean ceiling;
     private final RecyclingPoseStack poseStack = new RecyclingPoseStack();
+
+    // 流体渲染相关
+    private final PipetteFluidVisual fluidVisual;
+    private TransformedInstance fluidInstance;
+    private FluidStack lastFluid = FluidStack.EMPTY;
+
     private float baseAngle = Float.NaN;
     private float lowerArmAngle = Float.NaN;
     private float upperArmAngle = Float.NaN;
@@ -48,6 +55,9 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
         this.clawGrips = Lists.newArrayList(new TransformedInstance[]{clawGrip1, clawGrip2});
         this.models = Lists.newArrayList(new TransformedInstance[]{this.base, this.lowerBody, this.upperBody, this.claw, clawGrip1, clawGrip2});
 
+        // 初始化流体渲染
+        this.fluidVisual = new PipetteFluidVisual(context);
+
         this.ceiling = (Boolean)this.blockState.getValue(PipetteBlock.CEILING);
         PoseTransformStack msr = TransformStack.of(this.poseStack);
         msr.translate(this.getVisualPosition());
@@ -60,11 +70,12 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
     }
 
     public void beginFrame(DynamicVisual.Context ctx) {
+        fluidVisual.begin();
         this.animate(ctx.partialTick());
+        fluidVisual.end();
     }
 
     private void animate(float pt) {
-        // 只使用正常动画，移除跳舞功能
         float baseAngleNow = ((PipetteBlockEntity)this.blockEntity).baseAngle.getValue(pt);
         float lowerArmAngleNow = ((PipetteBlockEntity)this.blockEntity).lowerArmAngle.getValue(pt);
         float upperArmAngleNow = ((PipetteBlockEntity)this.blockEntity).upperArmAngle.getValue(pt);
@@ -81,6 +92,69 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
         if (!settled) {
             this.animateArm();
         }
+
+        // 更新流体渲染
+        this.updateFluidRendering(pt);
+    }
+
+    private void updateFluidRendering(float pt) {
+        FluidStack currentFluid = ((PipetteBlockEntity)this.blockEntity).heldFluid;
+
+        // 检查流体是否发生变化
+        if (!FluidStack.areFluidStackTagsEqual(currentFluid, lastFluid) ||
+                currentFluid.getAmount() != lastFluid.getAmount()) {
+
+            // 删除旧的流体实例
+            if (fluidInstance != null) {
+                fluidInstance.delete();
+                fluidInstance = null;
+            }
+
+            // 创建新的流体实例
+            if (!currentFluid.isEmpty()) {
+                fluidInstance = fluidVisual.createFluidInstance(currentFluid);
+                if (fluidInstance != null) {
+                    models.add(fluidInstance);
+                }
+            }
+
+            lastFluid = currentFluid.copy();
+        }
+
+        // 更新流体位置和效果
+        if (fluidInstance != null && !currentFluid.isEmpty()) {
+            updateFluidTransform(currentFluid, pt);
+        }
+    }
+
+    private void updateFluidTransform(FluidStack fluid, float pt) {
+        if (fluidInstance == null) return;
+
+        this.poseStack.pushPose();
+        PoseTransformStack msr = TransformStack.of(this.poseStack);
+
+        // 应用所有移液器的变换
+        PipetteRenderer.transformBase(msr, this.baseAngle);
+        PipetteRenderer.transformLowerArm(msr, this.lowerArmAngle - 135.0F);
+        PipetteRenderer.transformUpperArm(msr, this.upperArmAngle - 90.0F);
+        PipetteRenderer.transformHead(msr, this.headAngle);
+
+        if (this.ceiling && ((PipetteBlockEntity)this.blockEntity).goggles) {
+            msr.rotateZDegrees(180.0F);
+        }
+
+        // 设置流体在针头中的渲染
+        fluidVisual.setupPipetteFluid(
+                fluidInstance,
+                fluid,
+                ((PipetteBlockEntity)this.blockEntity).getFluidCapacity(),
+                ((PipetteBlockEntity)this.blockEntity).isInjectMode()
+        );
+
+        // 应用变换
+        fluidInstance.setTransform(this.poseStack).setChanged();
+
+        this.poseStack.popPose();
     }
 
     private void animateArm() {
@@ -139,6 +213,7 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
     protected void _delete() {
         super._delete();
         this.models.forEach(AbstractInstance::delete);
+        this.fluidVisual.delete();
     }
 
     public void collectCrumblingInstances(Consumer<Instance> consumer) {

@@ -5,12 +5,7 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "fluid.refmap.json",
   "mixins": [
-    "AllArmInteractionPointTypesMixin",
-    "DivingSystemMixin",
-    "SuperJumpMarkerMixin",
-    "UnderwaterSprintMixin",
-    "SwimmingPreventionMixin",
-    "SprintProtectionMixin"
+    "AllArmInteractionPointTypesMixin"
   ],
   "client": [],
   "server": []

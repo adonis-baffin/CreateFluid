@@ -22,19 +22,6 @@ public class CFCommonConfig {
     public static final ForgeConfigSpec.DoubleValue FISHING_SUCCESS_RATE;
     public static final ForgeConfigSpec.DoubleValue LAVA_FISHING_SUCCESS_RATE;
 
-    // 潜水装备配置
-    public static final ForgeConfigSpec.DoubleValue DIVING_BASE_JUMP_POWER;
-    public static final ForgeConfigSpec.DoubleValue DIVING_SPRINT_JUMP_POWER;
-    public static final ForgeConfigSpec.IntValue DIVING_JUMP_COOLDOWN;
-    public static final ForgeConfigSpec.DoubleValue DIVING_JUMP_HUNGER_COST;
-    public static final ForgeConfigSpec.DoubleValue DIVING_COPPER_SPRINT_SPEED;
-    public static final ForgeConfigSpec.DoubleValue DIVING_NETHERITE_SPRINT_SPEED;
-    public static final ForgeConfigSpec.DoubleValue DIVING_SPRINT_HUNGER_COST;
-    public static final ForgeConfigSpec.IntValue DIVING_SPRINT_DOUBLE_CLICK_WINDOW;
-    public static final ForgeConfigSpec.BooleanValue DIVING_PREVENT_FALL_DAMAGE;
-    public static final ForgeConfigSpec.IntValue DIVING_MIN_HUNGER_LEVEL;
-    public static final ForgeConfigSpec.DoubleValue DIVING_SPRINT_FOV_MULTIPLIER;
-
     private static List<ResourceLocation> cachedWhitelist = new ArrayList<>();
     private static List<ResourceLocation> cachedBlacklist = new ArrayList<>();
     private static long lastWhitelistUpdate = 0;
@@ -104,88 +91,13 @@ public class CFCommonConfig {
         FISHING_SUCCESS_RATE = builder
                 .comment("Base success rate for normal (water) fishing attempts (0.0 to 1.0)",
                         "Default: 0.4 (40% chance), 1.0 = always succeed, 0.0 = never succeed")
-                .defineInRange("fishingSuccessRate", 0.4, 0.0, 1.0);
+                .defineInRange("fishingSuccessRate Kaiser", 0.4, 0.0, 1.0);
 
         LAVA_FISHING_SUCCESS_RATE = builder
                 .comment("Base success rate for lava fishing attempts (0.0 to 1.0)",
                         "Default: 0.3 (30% chance, harder than water fishing)")
                 .defineInRange("lavaFishingSuccessRate", 0.3, 0.0, 1.0);
 
-        builder.pop();
-
-        // 潜水装备配置部分
-        builder.comment("Diving Equipment settings")
-                .push("divingEquipment");
-
-        builder.comment("Jump Enhancement settings")
-                .push("jump");
-
-        DIVING_BASE_JUMP_POWER = builder
-                .comment("Base jump power when wearing diving equipment in fluids",
-                        "Default: 1.0 (higher = stronger jump)")
-                .defineInRange("baseJumpPower", 1.0, 0.1, 2.0);
-
-        DIVING_SPRINT_JUMP_POWER = builder
-                .comment("Jump power when sprinting with diving equipment in fluids",
-                        "Default: 1.0 (higher = stronger jump)")
-                .defineInRange("sprintJumpPower", 1.0, 0.1, 2.0);
-
-        DIVING_JUMP_COOLDOWN = builder
-                .comment("Cooldown between enhanced jumps in ticks (20 ticks = 1 second)",
-                        "Default: 10")
-                .defineInRange("jumpCooldown", 10, 0, 100);
-
-        DIVING_JUMP_HUNGER_COST = builder
-                .comment("Hunger cost per enhanced jump",
-                        "Default: 0.05 (1.0 = 1 full hunger point)")
-                .defineInRange("jumpHungerCost", 0.05, 0.0, 1.0);
-
-        builder.pop();
-
-        builder.comment("Sprint Enhancement settings")
-                .push("sprint");
-
-        DIVING_COPPER_SPRINT_SPEED = builder
-                .comment("Sprint speed multiplier for Copper Diving Leggings",
-                        "Default: 0.01 (higher = faster movement)")
-                .defineInRange("copperSprintSpeed", 0.01, 0.0, 0.5);
-
-        DIVING_NETHERITE_SPRINT_SPEED = builder
-                .comment("Sprint speed multiplier for Netherite Diving Leggings",
-                        "Default: 0.01 (higher = faster movement)")
-                .defineInRange("netheriteSprintSpeed", 0.01, 0.0, 0.5);
-
-        DIVING_SPRINT_HUNGER_COST = builder
-                .comment("Hunger cost per second while sprinting underwater",
-                        "Default: 0.1 (1.0 = 1 full hunger point per second)")
-                .defineInRange("sprintHungerCostPerSecond", 0.1, 0.0, 1.0);
-
-        DIVING_SPRINT_DOUBLE_CLICK_WINDOW = builder
-                .comment("Time window for double-clicking W to start sprint (in ticks)",
-                        "Default: 7")
-                .defineInRange("sprintDoubleClickWindow", 7, 1, 20);
-
-        builder.pop();
-
-        builder.comment("General Diving Equipment settings")
-                .push("general");
-
-        DIVING_PREVENT_FALL_DAMAGE = builder
-                .comment("Prevent fall damage from enhanced jumps",
-                        "Default: true")
-                .define("preventFallDamage", true);
-
-        DIVING_MIN_HUNGER_LEVEL = builder
-                .comment("Minimum hunger level required for sprint/jump enhancements (0-20)",
-                        "Default: 6 (3 hunger bars)")
-                .defineInRange("minHungerLevel", 6, 0, 20);
-
-        DIVING_SPRINT_FOV_MULTIPLIER = builder
-                .comment("FOV multiplier when underwater sprinting (1.0 = no effect, 1.01 = default sprint effect)",
-                        "Default: 1.01")
-                .defineInRange("sprintFovMultiplier", 1.01, 1.0, 2.0);
-
-        builder.pop();
         builder.pop();
 
         CONFIG_SPEC = builder.build();
@@ -350,128 +262,6 @@ public class CFCommonConfig {
             return LAVA_FISHING_SUCCESS_RATE.get();
         } catch (IllegalStateException e) {
             return 0.3;
-        }
-    }
-
-    // 潜水装备配置获取方法
-    public static double getDivingBaseJumpPower() {
-        if (!isConfigLoaded) {
-            return 1.0;
-        }
-        try {
-            return DIVING_BASE_JUMP_POWER.get();
-        } catch (IllegalStateException e) {
-            return 1.0;
-        }
-    }
-
-    public static double getDivingSprintJumpPower() {
-        if (!isConfigLoaded) {
-            return 1.0;
-        }
-        try {
-            return DIVING_SPRINT_JUMP_POWER.get();
-        } catch (IllegalStateException e) {
-            return 1.0;
-        }
-    }
-
-    public static int getDivingJumpCooldown() {
-        if (!isConfigLoaded) {
-            return 10;
-        }
-        try {
-            return DIVING_JUMP_COOLDOWN.get();
-        } catch (IllegalStateException e) {
-            return 10;
-        }
-    }
-
-    public static double getDivingJumpHungerCost() {
-        if (!isConfigLoaded) {
-            return 0.05;
-        }
-        try {
-            return DIVING_JUMP_HUNGER_COST.get();
-        } catch (IllegalStateException e) {
-            return 0.05;
-        }
-    }
-
-    public static double getDivingCopperSprintSpeed() {
-        if (!isConfigLoaded) {
-            return 0.01;
-        }
-        try {
-            return DIVING_COPPER_SPRINT_SPEED.get();
-        } catch (IllegalStateException e) {
-            return 0.01;
-        }
-    }
-
-    public static double getDivingNetheriteSprintSpeed() {
-        if (!isConfigLoaded) {
-            return 0.01;
-        }
-        try {
-            return DIVING_NETHERITE_SPRINT_SPEED.get();
-        } catch (IllegalStateException e) {
-            return 0.01;
-        }
-    }
-
-    public static double getDivingSprintFovMultiplier() {
-        if (!isConfigLoaded) {
-            return 1.01;
-        }
-        try {
-            return DIVING_SPRINT_FOV_MULTIPLIER.get();
-        } catch (IllegalStateException e) {
-            return 1.01;
-        }
-    }
-
-    public static double getDivingSprintHungerCost() {
-        if (!isConfigLoaded) {
-            return 0.1;
-        }
-        try {
-            return DIVING_SPRINT_HUNGER_COST.get();
-        } catch (IllegalStateException e) {
-            return 0.1;
-        }
-    }
-
-    public static int getDivingSprintDoubleClickWindow() {
-        if (!isConfigLoaded) {
-            return 7;
-        }
-        try {
-            return DIVING_SPRINT_DOUBLE_CLICK_WINDOW.get();
-        } catch (IllegalStateException e) {
-            return 7;
-        }
-    }
-
-    public static boolean shouldPreventDivingFallDamage() {
-        if (!isConfigLoaded) {
-            return true;
-        }
-        try {
-            return DIVING_PREVENT_FALL_DAMAGE.get();
-        } catch (IllegalStateException e) {
-            return true;
-        }
-    }
-
-    public static int getDivingMinHungerLevel() {
-        if (!isConfigLoaded) {
-            return 6;
-        }
-        try {
-            return DIVING_MIN_HUNGER_LEVEL.get();
-        } catch (IllegalStateException e) {
-            return 6;
         }
     }
 }

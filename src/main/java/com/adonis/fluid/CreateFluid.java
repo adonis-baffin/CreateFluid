@@ -2,7 +2,6 @@ package com.adonis.fluid;
 
 import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.config.CFStress;
-import com.adonis.fluid.event.SuperJumpFallProtection;
 import com.adonis.fluid.handler.PipetteFluidInteractionPointHandler;
 import com.adonis.fluid.packet.PipetteFluidPlacementPacket;
 import com.adonis.fluid.registry.*;
@@ -83,7 +82,6 @@ public class CreateFluid {
 
         // 注册Forge事件
         MinecraftForge.EVENT_BUS.register(this);
-        MinecraftForge.EVENT_BUS.register(SuperJumpFallProtection.class);
         MinecraftForge.EVENT_BUS.addListener(this::onServerStarting);
 
         // 客户端事件注册
