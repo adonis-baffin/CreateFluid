@@ -21,6 +21,10 @@ public class CFCommonConfig {
     public static final ForgeConfigSpec.DoubleValue LAVA_FISHING_COOLDOWN_MULTIPLIER;
     public static final ForgeConfigSpec.DoubleValue FISHING_SUCCESS_RATE;
     public static final ForgeConfigSpec.DoubleValue LAVA_FISHING_SUCCESS_RATE;
+    public static final ForgeConfigSpec.IntValue AQUEDUCT_TRANSFER_RATE;
+    public static final ForgeConfigSpec.IntValue WATER_SOURCE_FILL_RATE;
+    public static final ForgeConfigSpec.IntValue MAX_AQUEDUCT_LENGTH;
+    public static final ForgeConfigSpec.BooleanValue PRIORITIZE_AQUEDUCT;
 
     private static List<ResourceLocation> cachedWhitelist = new ArrayList<>();
     private static List<ResourceLocation> cachedBlacklist = new ArrayList<>();
@@ -97,6 +101,27 @@ public class CFCommonConfig {
                 .comment("Base success rate for lava fishing attempts (0.0 to 1.0)",
                         "Default: 0.3 (30% chance, harder than water fishing)")
                 .defineInRange("lavaFishingSuccessRate", 0.3, 0.0, 1.0);
+
+        builder.pop();
+
+        builder.comment("Aqueduct system settings")
+                .push("aqueduct");
+
+        AQUEDUCT_TRANSFER_RATE = builder
+                .comment("Transfer rate for aqueduct system in mB per tick")
+                .defineInRange("transferRate", 50, 1, 1000);
+
+        WATER_SOURCE_FILL_RATE = builder
+                .comment("Fill rate from water source blocks in mB per tick")
+                .defineInRange("waterFillRate", 50, 1, 1000);
+
+        MAX_AQUEDUCT_LENGTH = builder
+                .comment("Maximum length of a single aqueduct network")
+                .defineInRange("maxLength", 256, 16, 1024);
+
+        PRIORITIZE_AQUEDUCT = builder
+                .comment("Whether aqueduct transfer takes priority over pipe transfer")
+                .define("prioritizeAqueduct", true);
 
         builder.pop();
 

@@ -8,6 +8,7 @@ import com.adonis.fluid.block.SmartNozzle.SmartNozzleBlockEntity;
 import com.adonis.fluid.block.Pipette.PipetteBlockEntity;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlockEntity;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlockEntity;
+import com.adonis.fluid.block.aqueduct.AqueductBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
@@ -52,6 +53,13 @@ public class CFBlockEntity {
             BLOCK_ENTITIES.register("smart_fluid_interface", () -> BlockEntityType.Builder.of(
                     (pos, state) -> new SmartFluidInterfaceBlockEntity(CFBlockEntity.SMART_FLUID_INTERFACE.get(), pos, state),
                     CFBlock.SMART_FLUID_INTERFACE.get()).build(null));
+
+    // 在CFBlockEntity类中添加水渠方块实体注册
+
+    public static final RegistryObject<BlockEntityType<AqueductBlockEntity>> AQUEDUCT =
+            BLOCK_ENTITIES.register("aqueduct", () -> BlockEntityType.Builder.of(
+                    (pos, state) -> new AqueductBlockEntity(CFBlockEntity.AQUEDUCT.get(), pos, state),
+                    CFBlock.AQUEDUCT.get()).build(null));
 
     public static void register(IEventBus modEventBus) {
         BLOCK_ENTITIES.register(modEventBus);

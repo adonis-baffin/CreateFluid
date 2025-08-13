@@ -12,6 +12,7 @@ import com.adonis.fluid.block.TrapNozzle.TrapNozzleBlock;
 import com.adonis.fluid.block.SmartNozzle.SmartNozzleBlock;
 import com.adonis.fluid.block.Pipette.PipetteBlock;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlock; // 添加这个导入
+import com.adonis.fluid.block.aqueduct.AqueductBlock;
 import com.simibubi.create.foundation.blockEntity.renderer.SmartBlockEntityRenderer;
 import com.adonis.fluid.item.PipetteItem;
 import com.simibubi.create.AllTags;
@@ -84,6 +85,30 @@ public class CFBlock {
                         });
             })
             .simpleItem()
+            .register();
+
+    public static final BlockEntry<AqueductBlock> AQUEDUCT = CreateFluid.REGISTRATE
+            .block("aqueduct", AqueductBlock::new)
+            .initialProperties(SharedProperties::stone)
+            .properties(p -> p
+                    .mapColor(DyeColor.GRAY)
+                    .sound(SoundType.STONE)
+                    .noOcclusion())
+            .transform(axeOrPickaxe())
+            .blockstate((ctx, prov) -> {
+                prov.getVariantBuilder(ctx.get())
+                        .forAllStates(state -> {
+                            Direction dir = state.getValue(AqueductBlock.FACING);
+                            int yRot = (int) dir.toYRot();
+                            return ConfiguredModel.builder()
+                                    .modelFile(prov.models().getExistingFile(prov.modLoc("block/aqueduct")))
+                                    .rotationY(yRot)
+                                    .build();
+                        });
+            })
+            .item()
+            .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), prov.modLoc("block/aqueduct")))
+            .build()
             .register();
 
     public static final BlockEntry<MeshTrapBlock> MESH_TRAP = CreateFluid.REGISTRATE
