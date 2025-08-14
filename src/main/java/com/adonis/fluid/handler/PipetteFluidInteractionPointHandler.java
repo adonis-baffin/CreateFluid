@@ -27,6 +27,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 
@@ -36,44 +37,68 @@ public class PipetteFluidInteractionPointHandler {
     static ItemStack currentItem;
     static long lastBlockPos = -1L;
 
-    @SubscribeEvent
+    // 提高优先级，确保在置物台处理之前执行
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public static void rightClickingBlocksSelectsThem(PlayerInteractEvent.RightClickBlock event) {
-        if (currentItem != null) {
-            BlockPos pos = event.getPos();
-            Level world = event.getLevel();
-            if (world.isClientSide) {
-                Player player = event.getEntity();
-                if (player == null || !player.isSpectator()) {
-                    FluidInteractionPoint selected = getSelected(pos);
-                    BlockState state = world.getBlockState(pos);
-                    if (selected == null) {
-                        FluidInteractionPoint point = FluidInteractionPoint.create(world, pos, state);
-                        if (point == null) {
-                            return;
-                        }
+        if (event.getLevel().isClientSide) {
+            System.out.println("Right click event: item = " + event.getItemStack().getItem());
+            System.out.println("Is pipette item? " + CFBlock.PIPETTE.isIn(event.getItemStack()));
+            System.out.println("Current item: " + currentItem);
+        }
+        // 检查是否手持移液器方块物品
+        if (!CFBlock.PIPETTE.isIn(event.getItemStack())) {
+            return;
+        }
 
-                        selected = point;
-                        put(point);
-                    }
+        // 将 currentItem 赋值移到这里
+        if (currentItem == null || !ItemStack.matches(currentItem, event.getItemStack())) {
+            currentItem = event.getItemStack();
+        }
 
-                    selected.cycleMode();
-                    if (player != null) {
-                        FluidInteractionPoint.Mode mode = selected.getMode();
-                        CreateLang.builder().translate(mode.getTranslationKey(),
-                                        CreateLang.blockName(state).style(ChatFormatting.WHITE))
-                                .color(mode.getColor()).sendStatus(player);
-                    }
+        BlockPos pos = event.getPos();
+        Level world = event.getLevel();
 
-                    event.setCanceled(true);
-                    event.setCancellationResult(InteractionResult.SUCCESS);
+        if (world.isClientSide) {
+            Player player = event.getEntity();
+            if (player != null && !player.isSpectator()) {
+                BlockState state = world.getBlockState(pos);
+
+                // 检查是否可以创建流体交互点
+                FluidInteractionPoint point = FluidInteractionPoint.create(world, pos, state);
+                if (point == null) {
+                    return;
                 }
+
+                FluidInteractionPoint selected = getSelected(pos);
+                if (selected == null) {
+                    selected = point;
+                    put(point);
+                }
+
+                selected.cycleMode();
+
+                // 发送状态消息
+                FluidInteractionPoint.Mode mode = selected.getMode();
+                CreateLang.builder().translate(mode.getTranslationKey(),
+                                CreateLang.blockName(state).style(ChatFormatting.WHITE))
+                        .color(mode.getColor()).sendStatus(player);
+
+                event.setCanceled(true);
+                event.setCancellationResult(InteractionResult.SUCCESS);
+            }
+        } else {
+            // 服务端也要取消事件，防止置物台处理
+            BlockState state = world.getBlockState(pos);
+            if (FluidInteractionPoint.create(world, pos, state) != null) {
+                event.setCanceled(true);
+                event.setCancellationResult(InteractionResult.SUCCESS);
             }
         }
     }
 
     @SubscribeEvent
     public static void leftClickingBlocksDeselectsThem(PlayerInteractEvent.LeftClickBlock event) {
-        if (currentItem != null) {
+        if (currentItem != null && CFBlock.PIPETTE.isIn(currentItem)) {
             if (event.getLevel().isClientSide) {
                 BlockPos pos = event.getPos();
                 if (remove(pos) != null) {
@@ -83,6 +108,7 @@ public class PipetteFluidInteractionPointHandler {
             }
         }
     }
+
 
     public static void flushSettings(BlockPos pos) {
         if (currentSelection != null) {
@@ -130,15 +156,14 @@ public class PipetteFluidInteractionPointHandler {
             ItemStack heldItemMainhand = player.getMainHandItem();
             if (!CFBlock.PIPETTE.isIn(heldItemMainhand)) {
                 currentItem = null;
+                currentSelection.clear();
             } else {
                 if (heldItemMainhand != currentItem) {
                     currentSelection.clear();
                     currentItem = heldItemMainhand;
                 }
-
                 drawOutlines(currentSelection);
             }
-
             checkForWrench(heldItemMainhand);
         }
     }
@@ -196,7 +221,7 @@ public class PipetteFluidInteractionPointHandler {
         }
     }
 
-    private static void put(FluidInteractionPoint point) {
+    public static void put(FluidInteractionPoint point) {
         currentSelection.add(point);
     }
 
@@ -208,7 +233,7 @@ public class PipetteFluidInteractionPointHandler {
         return result;
     }
 
-    private static FluidInteractionPoint getSelected(BlockPos pos) {
+    public static FluidInteractionPoint getSelected(BlockPos pos) {
         for (FluidInteractionPoint point : currentSelection) {
             if (point.getPos().equals(pos)) {
                 return point;

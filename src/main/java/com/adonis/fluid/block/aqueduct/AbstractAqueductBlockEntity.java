@@ -3,12 +3,16 @@ package com.adonis.fluid.block.aqueduct;
 import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.content.aqueduct.AqueductBehaviour;
 import com.adonis.fluid.content.aqueduct.AqueductPropagator;
+import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.simibubi.create.foundation.fluid.SmartFluidTank;
+import com.simibubi.create.foundation.utility.CreateLang;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
@@ -21,7 +25,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity {
+public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity implements IHaveGoggleInformation {
 
     protected SmartFluidTank tank;
     protected LazyOptional<IFluidHandler> fluidCapability;
@@ -102,6 +106,12 @@ public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity {
         if (!level.isClientSide) {
             AqueductPropagator.notifyNetworkUpdate(level, worldPosition);
         }
+    }
+
+    @Override
+    public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
+        // 使用与Create流体储罐相同的显示方式
+        return this.containedFluidTooltip(tooltip, isPlayerSneaking, this.getCapability(ForgeCapabilities.FLUID_HANDLER));
     }
 
     @Override

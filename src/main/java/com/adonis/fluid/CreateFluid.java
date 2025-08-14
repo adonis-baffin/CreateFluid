@@ -90,6 +90,7 @@ public class CreateFluid {
         }
     }
 
+    // 在 CreateFluid.java 的 setup 方法中，添加粒子包的注册
     private void setup(final FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
             CFCommonConfig.onLoad();
@@ -114,6 +115,16 @@ public class CreateFluid {
             channel.registerMessage(id++, PipetteFluidPlacementPacket.ClientBoundRequest.class,
                     (msg, buf) -> msg.write(buf),
                     PipetteFluidPlacementPacket.ClientBoundRequest::new,
+                    (msg, ctxSupplier) -> {
+                        NetworkEvent.Context ctx = ctxSupplier.get();
+                        boolean handled = msg.handle(ctx);
+                        ctx.setPacketHandled(handled);
+                    });
+
+            // 添加粒子包的注册
+            channel.registerMessage(id++, com.adonis.fluid.packet.PipetteParticlePacket.class,
+                    (msg, buf) -> msg.write(buf),
+                    com.adonis.fluid.packet.PipetteParticlePacket::new,
                     (msg, ctxSupplier) -> {
                         NetworkEvent.Context ctx = ctxSupplier.get();
                         boolean handled = msg.handle(ctx);

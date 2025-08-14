@@ -1,0 +1,41 @@
+package com.adonis.fluid.networking;
+
+import com.adonis.fluid.packet.PipetteFluidPlacementPacket;
+import com.adonis.fluid.packet.PipetteParticlePacket;
+import com.simibubi.create.AllPackets;
+import net.minecraftforge.network.simple.SimpleChannel;
+
+public class CFNetworking {
+
+    public static void register() {
+        SimpleChannel channel = AllPackets.getChannel();
+        int id = 200;
+
+        // 注册交互点配置包
+        channel.registerMessage(id++, PipetteFluidPlacementPacket.class,
+                (msg, buf) -> msg.write(buf),
+                PipetteFluidPlacementPacket::new,
+                (msg, ctxSupplier) -> {
+                    msg.handle(ctxSupplier.get());
+                    ctxSupplier.get().setPacketHandled(true);
+                });
+
+        // 注册客户端请求包
+        channel.registerMessage(id++, PipetteFluidPlacementPacket.ClientBoundRequest.class,
+                (msg, buf) -> msg.write(buf),
+                PipetteFluidPlacementPacket.ClientBoundRequest::new,
+                (msg, ctxSupplier) -> {
+                    msg.handle(ctxSupplier.get());
+                    ctxSupplier.get().setPacketHandled(true);
+                });
+
+        // 注册粒子效果包
+        channel.registerMessage(id++, PipetteParticlePacket.class,
+                (msg, buf) -> msg.write(buf),
+                PipetteParticlePacket::new,
+                (msg, ctxSupplier) -> {
+                    msg.handle(ctxSupplier.get());
+                    ctxSupplier.get().setPacketHandled(true);
+                });
+    }
+}

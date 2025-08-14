@@ -17,6 +17,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.network.PacketDistributor;
 
 public class PipetteItem extends BlockItem {
+
     public PipetteItem(Block block, Item.Properties properties) {
         super(block, properties);
     }
@@ -26,30 +27,35 @@ public class PipetteItem extends BlockItem {
         Level world = ctx.getLevel();
         BlockPos pos = ctx.getClickedPos();
         BlockState state = world.getBlockState(pos);
-        if (isFluidInteractable(world, pos, state)) {
+
+        // 检查是否可以作为流体交互点
+        if (FluidInteractionPoint.create(world, pos, state) != null) {
+            // 事件处理器会处理选择逻辑
+            // 这里只返回 SUCCESS 来阻止放置
             return InteractionResult.SUCCESS;
         }
+
+        // 否则正常放置移液器
         return super.useOn(ctx);
     }
 
-    /**
-     * 检查方块是否可以作为流体交互点
-     */
-    private boolean isFluidInteractable(Level world, BlockPos pos, BlockState state) {
-        return FluidInteractionPoint.create(world, pos, state) != null;
-    }
-
     @Override
-    protected boolean updateCustomBlockEntityTag(BlockPos pos, Level world, Player player, ItemStack stack, BlockState state) {
+    protected boolean updateCustomBlockEntityTag(BlockPos pos, Level world, Player player,
+                                                 ItemStack stack, BlockState state) {
+        // 放置移液器后，向客户端请求配置
         if (!world.isClientSide && player instanceof ServerPlayer sp) {
-            AllPackets.getChannel().send(PacketDistributor.PLAYER.with(() -> sp),
-                    new PipetteFluidPlacementPacket.ClientBoundRequest(pos));
+            AllPackets.getChannel().send(
+                    PacketDistributor.PLAYER.with(() -> sp),
+                    new PipetteFluidPlacementPacket.ClientBoundRequest(pos)
+            );
         }
+
         return super.updateCustomBlockEntityTag(pos, world, player, stack, state);
     }
 
     @Override
     public boolean canAttackBlock(BlockState state, Level world, BlockPos pos, Player player) {
-        return !isFluidInteractable(world, pos, state);
+        // 防止破坏可交互的方块
+        return FluidInteractionPoint.create(world, pos, state) == null;
     }
 }

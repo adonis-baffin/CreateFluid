@@ -5,8 +5,6 @@ import com.adonis.fluid.content.pipette.FluidInteractionPoint;
 import com.adonis.fluid.handler.PipetteFluidInteractionPointHandler;
 import com.simibubi.create.foundation.networking.SimplePacketBase;
 import java.util.Collection;
-import java.util.Objects;
-import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -19,50 +17,45 @@ import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 
 public class PipetteFluidPlacementPacket extends SimplePacketBase {
-    private Collection<FluidInteractionPoint> points;
-    private ListTag receivedTag;
+    private ListTag pointsTag;
     private BlockPos pos;
 
     public PipetteFluidPlacementPacket(Collection<FluidInteractionPoint> points, BlockPos pos) {
-        this.points = points;
         this.pos = pos;
+        this.pointsTag = new ListTag();
+        points.stream()
+                .map(point -> point.serialize(pos))
+                .forEach(this.pointsTag::add);
     }
 
     public PipetteFluidPlacementPacket(FriendlyByteBuf buffer) {
-        CompoundTag nbt = buffer.readNbt();
-        if (nbt != null) {
-            this.receivedTag = nbt.getList("Points", 10);
-        }
         this.pos = buffer.readBlockPos();
+        CompoundTag nbt = buffer.readNbt();
+        this.pointsTag = nbt != null ? nbt.getList("Points", 10) : new ListTag();
     }
 
     @Override
     public void write(FriendlyByteBuf buffer) {
+        buffer.writeBlockPos(pos);
         CompoundTag nbt = new CompoundTag();
-        ListTag pointsNBT = new ListTag();
-        Stream<CompoundTag> stream = this.points.stream().map(fip -> fip.serialize(this.pos));
-        Objects.requireNonNull(pointsNBT);
-        stream.forEach(pointsNBT::add);
-        nbt.put("Points", pointsNBT);
+        nbt.put("Points", pointsTag);
         buffer.writeNbt(nbt);
-        buffer.writeBlockPos(this.pos);
     }
 
     @Override
     public boolean handle(NetworkEvent.Context context) {
         context.enqueueWork(() -> {
             ServerPlayer player = context.getSender();
-            if (player != null) {
-                Level world = player.level();
-                if (world != null && world.isLoaded(this.pos)) {
-                    BlockEntity blockEntity = world.getBlockEntity(this.pos);
-                    if (blockEntity instanceof PipetteBlockEntity) {
-                        PipetteBlockEntity pipette = (PipetteBlockEntity)blockEntity;
-                        pipette.setInteractionPointTag(this.receivedTag);
-                        pipette.setChanged();
-                        pipette.sendData();
-                    }
-                }
+            if (player == null) return;
+
+            Level world = player.level();
+            if (!world.isLoaded(pos)) return;
+
+            BlockEntity be = world.getBlockEntity(pos);
+            if (be instanceof PipetteBlockEntity pipette) {
+                pipette.setInteractionPointTag(pointsTag);
+                pipette.setChanged();
+                pipette.sendData();
             }
         });
         return true;
@@ -81,14 +74,14 @@ public class PipetteFluidPlacementPacket extends SimplePacketBase {
 
         @Override
         public void write(FriendlyByteBuf buffer) {
-            buffer.writeBlockPos(this.pos);
+            buffer.writeBlockPos(pos);
         }
 
         @Override
         public boolean handle(NetworkEvent.Context context) {
             context.enqueueWork(() -> {
                 DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-                    PipetteFluidInteractionPointHandler.flushSettings(this.pos);
+                    PipetteFluidInteractionPointHandler.flushSettings(pos);
                 });
             });
             return true;

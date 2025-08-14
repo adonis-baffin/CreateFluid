@@ -1,6 +1,7 @@
 package com.adonis.fluid.content.pipette;
 
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlockEntity;
+import com.adonis.fluid.content.pipette.DepotFluidInteractionPoint;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlockEntity;
 import com.adonis.fluid.registry.CFBlock;
 import com.simibubi.create.AllBlocks;
@@ -21,10 +22,10 @@ import javax.annotation.Nullable;
 import java.util.Optional;
 
 public class FluidInteractionPoint {
-    private BlockPos pos;
-    private Direction face;
-    private Mode mode;
-    private Level level;
+    protected BlockPos pos;  // 改为 protected
+    protected Direction face;  // 改为 protected
+    protected Mode mode;  // 改为 protected
+    protected Level level;  // 改为 protected
     private long lastKnownValid = -1;
 
     public FluidInteractionPoint(Level level, BlockPos pos, BlockState state) {
@@ -42,28 +43,40 @@ public class FluidInteractionPoint {
         }
     }
 
+    @Nullable
     public static FluidInteractionPoint create(Level level, BlockPos pos, BlockState state) {
-        // 检查是否为支持的方块类型
+        // 优先检查是否为置物台
+        if (com.simibubi.create.AllBlocks.DEPOT.has(state)) {
+            return new DepotFluidInteractionPoint(level, pos, state);
+        }
+
+        // 检查其他有效的流体方块
         if (isValidFluidBlock(state)) {
             return new FluidInteractionPoint(level, pos, state);
         }
+
         return null;
     }
 
     private static boolean isValidFluidBlock(BlockState state) {
-        // 支持工作盆、流体接口、智能流体接口
-        if (AllBlocks.BASIN.has(state) ||
+        // 支持置物台（虽然上面已经处理了，但这里也加上以确保完整性）
+        if (com.simibubi.create.AllBlocks.DEPOT.has(state)) {
+            return true;
+        }
+
+        // 支持工作盆、流体接口等
+        if (com.simibubi.create.AllBlocks.BASIN.has(state) ||
                 CFBlock.FLUID_INTERFACE.has(state) ||
                 CFBlock.SMART_FLUID_INTERFACE.has(state)) {
             return true;
         }
 
-        // 支持烈焰人燃烧室（作为输出端，接受岩浆）
+        // 支持烈焰人燃烧室
         if (isBlazeBurner(state)) {
             return true;
         }
 
-        // 直接支持蜂巢/蜂箱（作为输入端，提供蜂蜜）
+        // 支持蜂巢/蜂箱
         if (isBeehive(state)) {
             return true;
         }
