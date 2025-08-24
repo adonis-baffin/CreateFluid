@@ -1,38 +1,32 @@
-
-modLoader="javafml" #mandatory
-
+modLoader="javafml"
 loaderVersion="[47,)"
-
 license="MIT License"
 
-[[mods]] #mandatory
-
-modId="fluid" #mandatory
-
-
-displayName="Create Fluid" #mandatory
-logoFile="fluid.png" #optional
-
-credits="adonis" #optional
-
-authors="adonis" #optional
-
+[[mods]]
+modId="fluid"
+version="1.0.0"
+displayName="Create Fluid"
+logoFile="fluid.png"
+credits="adonis"
+authors="adonis"
 description='''
 A Create mod addon that allows for automatic fishing and item collection
 '''
 
-[[dependencies.fluid]] #optional
-modId="forge" #mandatory
-mandatory=true #mandatory
-versionRange="[47, )" #mandatory
+[[dependencies.fluid]]
+modId="forge"
+mandatory=true
+versionRange="[47, )"
 ordering="NONE"
 side="BOTH"
+
 [[dependencies.fluid]]
-modId="create" #mandatory
+modId="create"
 mandatory=true
 versionRange="[6.0.2,6.1.0)"
 ordering="NONE"
 side="BOTH"
+
 [[dependencies.fluid]]
 modId="minecraft"
 mandatory=true

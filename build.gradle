@@ -54,8 +54,6 @@ minecraft {
             }
         }
     }
-
-    //runs.each { run -> run.taskName = project.name + (run.taskName.startsWith("run") ? run.taskName.substring(3) : run.taskName) }
 }
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
@@ -87,8 +85,6 @@ repositories {
     }
 
     maven {
-        // location of the maven that hosts JEI files since January 2023
-        // location of the maven for Vazkii's mods
         name = "Jared's maven"
         url = "https://maven.blamejared.com/"
     }
@@ -152,10 +148,7 @@ jar {
 
 // 确保重新混淆
 jar.finalizedBy('reobfJar')
-// ... existing code ...
-
 jar.finalizedBy('reobfJar')
-
 task sourcesJar(type: Jar, dependsOn: classes) {
     archiveClassifier = 'sources'
     from sourceSets.main.allSource

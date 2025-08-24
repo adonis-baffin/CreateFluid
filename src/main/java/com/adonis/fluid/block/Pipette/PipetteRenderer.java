@@ -7,6 +7,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.simibubi.create.AllPartialModels;
 import com.simibubi.create.content.kinetics.base.IRotate;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
+import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 import dev.engine_room.flywheel.lib.transform.PoseTransformStack;
 import dev.engine_room.flywheel.lib.transform.TransformStack;
 import net.createmod.catnip.animation.AnimationTickHolder;
@@ -59,9 +60,9 @@ public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEnti
             msr.rotateXDegrees(180.0F);
         }
 
-        // 渲染移液器部件
+        // 渲染移液器部件 - 传递 be 参数
         this.renderPipette(builder, ms, msLocal, msr, blockState, color, baseAngle,
-                lowerArmAngle, upperArmAngle, headAngle, inverted, hasFluid, light);
+                lowerArmAngle, upperArmAngle, headAngle, inverted, hasFluid, light, be);
 
         // 3. 渲染流体（如果有的话）
         if (hasFluid) {
@@ -132,7 +133,8 @@ public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEnti
     private void renderPipette(VertexConsumer builder, PoseStack ms, PoseStack msLocal,
                                TransformStack msr, BlockState blockState, int color,
                                float baseAngle, float lowerArmAngle, float upperArmAngle,
-                               float headAngle, boolean inverted, boolean hasFluid, int light) {
+                               float headAngle, boolean inverted, boolean hasFluid, int light,
+                               PipetteBlockEntity be) { // 添加 be 参数
 
         // 使用Create的底座模型
         SuperByteBuffer base = CachedBuffers.partial(CFPartialModels.PIPETTE_BASE, blockState).light(light);
@@ -140,17 +142,28 @@ public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEnti
         // 使用自定义的移液器模型
         SuperByteBuffer lowerBody = CachedBuffers.partial(CFPartialModels.PIPETTE_LOWER_ARM, blockState).light(light);
         SuperByteBuffer upperBody = CachedBuffers.partial(CFPartialModels.PIPETTE_UPPER_ARM, blockState).light(light);
-        SuperByteBuffer head = CachedBuffers.partial(CFPartialModels.PIPETTE_HEAD, blockState).light(light);
 
+        // 根据流体量选择对应的头部模型
+        int fluidAmount = 0;
+        if (be != null && !be.heldFluid.isEmpty()) {
+            fluidAmount = be.heldFluid.getAmount();
+        }
+        PartialModel headModel = CFPartialModels.getPipetteHeadForFluidAmount(fluidAmount);
+        SuperByteBuffer head = CachedBuffers.partial(headModel, blockState).light(light);
+
+        // 渲染底座
         transformBase(msr, baseAngle);
         base.transform(msLocal).renderInto(ms, builder);
 
+        // 渲染下臂
         transformLowerArm(msr, lowerArmAngle);
         lowerBody.color(color).transform(msLocal).renderInto(ms, builder);
 
+        // 渲染上臂
         transformUpperArm(msr, upperArmAngle);
         upperBody.color(color).transform(msLocal).renderInto(ms, builder);
 
+        // 渲染头部（带流体量指示器）
         transformHead(msr, headAngle);
         if (inverted) {
             msr.rotateZDegrees(180.0F);
@@ -158,7 +171,6 @@ public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEnti
         head.transform(msLocal).renderInto(ms, builder);
     }
 
-    // 其他方法保持不变...
     public static void renderRotatingBuffer(PipetteBlockEntity be, SuperByteBuffer superBuffer, PoseStack ms, VertexConsumer buffer, int light) {
         standardKineticRotationTransform(superBuffer, be, light).renderInto(ms, buffer);
     }
