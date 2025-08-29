@@ -90,7 +90,6 @@ public class CreateFluid {
         }
     }
 
-    // 在 CreateFluid.java 的 setup 方法中，添加粒子包的注册
     private void setup(final FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
             CFCommonConfig.onLoad();

@@ -38,7 +38,8 @@ public class AqueductBlockEntity extends AbstractAqueductBlockEntity {
         // 获取或创建网络
         AqueductNetwork network = AqueductNetworkManager.getInstance().getOrCreateNetwork(level, worldPosition);
         if (network != null) {
-            network.requestTransfer(worldPosition);
+            // 网络会自动处理传输，不需要主动请求
+            // 网络的tick方法会被NetworkManager调用
         }
     }
 

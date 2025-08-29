@@ -32,15 +32,21 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
 
 public abstract class AbstractAqueductBlock extends HorizontalDirectionalBlock
         implements IBE<AbstractAqueductBlockEntity>, IWrenchable, SimpleWaterloggedBlock {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractAqueductBlock.class);
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final BooleanProperty LOCKED = BooleanProperty.create("locked");
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
-    // U型槽形状定义
+    // U型槽形状定义 - 梯形设计
     protected static final VoxelShape BASE = Block.box(0, 0, 0, 16, 4, 16);
     protected static final VoxelShape WALL_NORTH = Block.box(0, 0, 0, 16, 12, 2);
     protected static final VoxelShape WALL_SOUTH = Block.box(0, 0, 14, 16, 12, 16);
@@ -50,6 +56,16 @@ public abstract class AbstractAqueductBlock extends HorizontalDirectionalBlock
     // 各朝向的完整形状
     protected static final VoxelShape SHAPE_NORTH_SOUTH = Shapes.or(BASE, WALL_WEST, WALL_EAST);
     protected static final VoxelShape SHAPE_EAST_WEST = Shapes.or(BASE, WALL_NORTH, WALL_SOUTH);
+
+    // 形状缓存
+    private static final VoxelShape[] SHAPE_CACHE = new VoxelShape[4];
+
+    static {
+        SHAPE_CACHE[Direction.NORTH.get2DDataValue()] = SHAPE_NORTH_SOUTH;
+        SHAPE_CACHE[Direction.SOUTH.get2DDataValue()] = SHAPE_NORTH_SOUTH;
+        SHAPE_CACHE[Direction.EAST.get2DDataValue()] = SHAPE_EAST_WEST;
+        SHAPE_CACHE[Direction.WEST.get2DDataValue()] = SHAPE_EAST_WEST;
+    }
 
     public AbstractAqueductBlock(Properties properties) {
         super(properties);
@@ -67,16 +83,28 @@ public abstract class AbstractAqueductBlock extends HorizontalDirectionalBlock
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         Direction facing = state.getValue(FACING);
-        return (facing == Direction.NORTH || facing == Direction.SOUTH) ? SHAPE_NORTH_SOUTH : SHAPE_EAST_WEST;
+        return SHAPE_CACHE[facing.get2DDataValue()];
     }
 
     @Override
+    @Nullable
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         Level level = context.getLevel();
         BlockPos pos = context.getClickedPos();
         Direction facing = context.getHorizontalDirection();
 
         // 智能放置：检测相邻水渠并对齐
+        facing = getAlignedDirection(level, pos, facing);
+
+        FluidState fluidState = level.getFluidState(pos);
+        boolean waterlogged = fluidState.getType() == Fluids.WATER;
+
+        return this.defaultBlockState()
+                .setValue(FACING, facing)
+                .setValue(WATERLOGGED, waterlogged);
+    }
+
+    private Direction getAlignedDirection(Level level, BlockPos pos, Direction defaultFacing) {
         for (Direction dir : Direction.Plane.HORIZONTAL) {
             BlockPos adjacentPos = pos.relative(dir);
             BlockState adjacentState = level.getBlockState(adjacentPos);
@@ -85,18 +113,11 @@ public abstract class AbstractAqueductBlock extends HorizontalDirectionalBlock
                 Direction adjacentFacing = adjacentState.getValue(FACING);
                 // 如果相邻水渠的方向与当前方向平行，则对齐
                 if (adjacentFacing.getAxis() == dir.getAxis()) {
-                    facing = adjacentFacing;
-                    break;
+                    return adjacentFacing;
                 }
             }
         }
-
-        FluidState fluidState = context.getLevel().getFluidState(context.getClickedPos());
-        boolean waterlogged = fluidState.getType() == Fluids.WATER;
-
-        return this.defaultBlockState()
-                .setValue(FACING, facing)
-                .setValue(WATERLOGGED, waterlogged);
+        return defaultFacing;
     }
 
     @Override
@@ -107,25 +128,34 @@ public abstract class AbstractAqueductBlock extends HorizontalDirectionalBlock
         // 流体容器交互
         if (!heldItem.isEmpty() && FluidUtil.getFluidHandler(heldItem).isPresent()) {
             if (!level.isClientSide) {
-                InteractionResult result = onBlockEntityUse(level, pos, be -> {
-                    IFluidHandler tankHandler = be.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, null)
-                            .orElse(null);
-                    if (tankHandler == null) return InteractionResult.PASS;
-
-                    // 尝试填充或抽取流体
-                    boolean success = FluidUtil.interactWithFluidHandler(player, hand, tankHandler);
-                    if (success) {
-                        level.playSound(null, pos, SoundEvents.BUCKET_EMPTY, SoundSource.BLOCKS, 1.0F, 1.0F);
-                        return InteractionResult.SUCCESS;
-                    }
-                    return InteractionResult.PASS;
-                });
-                return result;
+                return handleFluidInteraction(level, pos, player, hand);
             }
             return InteractionResult.SUCCESS;
         }
 
         return InteractionResult.PASS;
+    }
+
+    private InteractionResult handleFluidInteraction(Level level, BlockPos pos, Player player, InteractionHand hand) {
+        return onBlockEntityUse(level, pos, be -> {
+            try {
+                IFluidHandler tankHandler = be.getCapability(
+                                net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, null)
+                        .orElse(null);
+
+                if (tankHandler == null) return InteractionResult.PASS;
+
+                boolean success = FluidUtil.interactWithFluidHandler(player, hand, tankHandler);
+                if (success) {
+                    level.playSound(null, pos, SoundEvents.BUCKET_EMPTY, SoundSource.BLOCKS, 1.0F, 1.0F);
+                    return InteractionResult.SUCCESS;
+                }
+                return InteractionResult.PASS;
+            } catch (Exception e) {
+                LOGGER.error("Error handling fluid interaction at {}", pos, e);
+                return InteractionResult.PASS;
+            }
+        });
     }
 
     @Override
@@ -152,14 +182,17 @@ public abstract class AbstractAqueductBlock extends HorizontalDirectionalBlock
     public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block,
                                 BlockPos fromPos, boolean isMoving) {
         if (!level.isClientSide) {
-            // 红石信号检测
-            boolean powered = level.hasNeighborSignal(pos);
-            boolean locked = state.getValue(LOCKED);
+            updateRedstoneState(state, level, pos);
+        }
+    }
 
-            if (powered != locked) {
-                level.setBlock(pos, state.setValue(LOCKED, powered), 3);
-                withBlockEntityDo(level, pos, be -> be.setLocked(powered));
-            }
+    private void updateRedstoneState(BlockState state, Level level, BlockPos pos) {
+        boolean powered = level.hasNeighborSignal(pos);
+        boolean locked = state.getValue(LOCKED);
+
+        if (powered != locked) {
+            level.setBlock(pos, state.setValue(LOCKED, powered), 3);
+            withBlockEntityDo(level, pos, be -> be.setLocked(powered));
         }
     }
 
@@ -167,7 +200,6 @@ public abstract class AbstractAqueductBlock extends HorizontalDirectionalBlock
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!level.isClientSide) {
-            // 通知网络管理器
             AqueductPropagator.onAqueductPlaced(level, pos);
         }
     }
@@ -176,10 +208,8 @@ public abstract class AbstractAqueductBlock extends HorizontalDirectionalBlock
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
             if (!level.isClientSide) {
-                // 通知网络管理器
                 AqueductPropagator.onAqueductRemoved(level, pos);
             }
-            // IBE的默认移除行为
             IBE.onRemove(state, level, pos, newState);
         }
     }
