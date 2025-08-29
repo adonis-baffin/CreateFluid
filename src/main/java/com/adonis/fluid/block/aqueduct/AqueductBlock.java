@@ -47,7 +47,6 @@ public class AqueductBlock extends AbstractAqueductBlock {
                                  net.minecraft.world.InteractionHand hand, BlockHitResult ray) {
         ItemStack heldItem = player.getItemInHand(hand);
 
-        // 放置辅助
         IPlacementHelper placementHelper = PlacementHelpers.get(placementHelperId);
         if (placementHelper.matchesItem(heldItem)) {
             return placementHelper.getOffset(player, world, state, pos, ray)
@@ -96,27 +95,23 @@ public class AqueductBlock extends AbstractAqueductBlock {
         @Override
         public PlacementOffset getOffset(Player player, Level world, BlockState state, BlockPos pos,
                                          BlockHitResult ray) {
-            // 获取现有水渠的朝向
             Direction facing = state.getValue(FACING);
 
-            // 优先在水渠的输入或输出方向放置
-            List<Direction> directions = IPlacementHelper.orderedByDistanceExceptAxis(
-                    pos, ray.getLocation(), Direction.Axis.Y,
-                    dir -> {
-                        // 只允许在水渠的前后方向放置
-                        if (dir != facing && dir != facing.getOpposite()) {
-                            return false;
-                        }
-                        return world.getBlockState(pos.relative(dir)).canBeReplaced();
-                    }
-            );
+            // 只允许在水渠的前后方向放置
+            Direction[] validDirections = new Direction[] { facing, facing.getOpposite() };
 
-            if (directions.isEmpty()) {
-                return PlacementOffset.fail();
+            for (Direction dir : validDirections) {
+                BlockPos targetPos = pos.relative(dir);
+                BlockState targetState = world.getBlockState(targetPos);
+
+                if (targetState.canBeReplaced()) {
+                    // 返回与现有水渠相同朝向的放置
+                    return PlacementOffset.success(targetPos,
+                            s -> s.setValue(FACING, facing));
+                }
             }
 
-            return PlacementOffset.success(pos.relative(directions.get(0)),
-                    s -> s.setValue(FACING, facing)); // 保持相同朝向
+            return PlacementOffset.fail();
         }
     }
 }

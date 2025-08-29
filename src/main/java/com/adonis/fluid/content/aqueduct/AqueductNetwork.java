@@ -1,6 +1,7 @@
 package com.adonis.fluid.content.aqueduct;
 
 import com.adonis.fluid.block.aqueduct.AbstractAqueductBlockEntity;
+import com.adonis.fluid.block.aqueduct.AqueductBlockEntity;
 import com.adonis.fluid.config.CFCommonConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -21,26 +22,23 @@ public class AqueductNetwork {
     private final Level level;
     private final List<AqueductNode> nodes;
     private final Direction flowDirection;
-    private final Set<BlockPos> inputSources;
-    private final Set<BlockPos> outputSources;
+
+    private int inputNodeIndex = -1;
+    private int outputNodeIndex = -1;
+    private int currentFillingIndex = -1;  // 当前正在填充的节点索引
+    private boolean bridgeMode = false;
 
     private NetworkState state = NetworkState.IDLE;
     private int transferRate;
     private int tickCounter = 0;
 
-    // 桥接模式标志
-    private boolean bridgeMode = false;
-    private boolean allMiddleFull = false;
-
-    // 缓存
     private final Map<BlockPos, AqueductNode> nodeMap = new HashMap<>();
+    private final Set<BlockPos> controlledNodes = new HashSet<>();
 
     public AqueductNetwork(Level level, List<AqueductNode> nodes, Direction flowDirection) {
         this.level = level;
         this.nodes = new ArrayList<>(nodes);
         this.flowDirection = flowDirection;
-        this.inputSources = new HashSet<>();
-        this.outputSources = new HashSet<>();
         this.transferRate = CFCommonConfig.AQUEDUCT_TRANSFER_RATE.get();
 
         for (AqueductNode node : nodes) {
@@ -51,26 +49,19 @@ public class AqueductNetwork {
     }
 
     private void identifySources() {
-        // 更新所有节点的状态
-        for (AqueductNode node : nodes) {
-            node.updateState();
-        }
+        inputNodeIndex = -1;
+        outputNodeIndex = -1;
 
-        // 清空旧的源
-        inputSources.clear();
-        outputSources.clear();
-
-        // 识别输入和输出源
         for (int i = 0; i < nodes.size(); i++) {
             AqueductNode node = nodes.get(i);
+            node.updateState();
 
             if (node.hasFluidSource()) {
-                if (node.isInputSource()) {
-                    inputSources.add(node.getPos());
-                    LOGGER.debug("Found input source at {}", node.getPos());
-                } else if (node.isOutputSource()) {
-                    outputSources.add(node.getPos());
-                    LOGGER.debug("Found output source at {}", node.getPos());
+                if (node.isInputSource() && inputNodeIndex == -1) {
+                    inputNodeIndex = i;
+                }
+                if (node.isOutputSource() && outputNodeIndex == -1) {
+                    outputNodeIndex = i;
                 }
             }
         }
@@ -78,167 +69,148 @@ public class AqueductNetwork {
 
     public void tick() {
         if (++tickCounter % 2 != 0) return;
-
-        if (isPaused() || !isValid()) return;
+        if (!isValid()) return;
 
         try {
-            // 每20tick重新识别源（1秒）
             if (tickCounter % 20 == 0) {
                 identifySources();
             }
 
-            updateBridgeMode();
-
-            if (hasInputAndOutput()) {
-                if (bridgeMode) {
-                    executeBridgedTransfer();
-                } else {
-                    executeNormalTransfer();
-                }
-            } else if (hasOnlyInput()) {
-                executeInputOnlyTransfer();
-            } else if (hasOnlyOutput()) {
-                executeOutputOnlyTransfer();
+            if (inputNodeIndex >= 0) {
+                handlePumpDrivenFlow();
             } else {
-                executePassiveFlow();
+                clearNetworkControl();
+                executeSequentialFilling();
             }
+
         } catch (Exception e) {
             LOGGER.error("Error during network tick", e);
             invalidate();
         }
     }
 
-    private void updateBridgeMode() {
-        if (!hasInputAndOutput()) {
-            bridgeMode = false;
-            allMiddleFull = false;
-            return;
-        }
-
-        // 检查所有节点（不只是中间节点）是否都满了
-        boolean checkFull = true;
-        for (AqueductNode node : nodes) {
-            if (!node.isFull()) {
-                checkFull = false;
-                break;
-            }
-        }
-
-        allMiddleFull = checkFull;
-        bridgeMode = allMiddleFull;
-
-        if (bridgeMode) {
-            LOGGER.debug("Bridge mode activated for network");
-        }
-    }
-
-    private void executeBridgedTransfer() {
-        // 桥接模式：直接从外部输入源传输到外部输出源
-        // 这里不是从水渠传输，而是让外部源直接交互
-
-        // 由于水渠已满，外部输入源应该直接向外部输出源传输
-        // 但这需要外部系统（如Create的管道）自己处理
-        // 水渠网络只是作为通道
-
-        // 保持水渠满状态
-        for (AqueductNode node : nodes) {
-            maintainFullState(node);
-        }
-    }
-
-    private void executeNormalTransfer() {
-        // 正常传输：从输入填充到输出
-
-        // 1. 从外部输入源填充第一个节点
-        for (BlockPos inputPos : inputSources) {
-            AqueductNode inputNode = nodeMap.get(inputPos);
-            if (inputNode != null && !inputNode.isFull()) {
-                // 这个节点会自己从外部源获取流体（通过其capability）
-            }
-        }
-
-        // 2. 顺序传输
+    private void executeSequentialFilling() {
+        // 普通顺序填充
         for (int i = 0; i < nodes.size() - 1; i++) {
             AqueductNode current = nodes.get(i);
             AqueductNode next = nodes.get(i + 1);
 
-            if (canTransfer(current, next)) {
-                transferBetweenNodes(current, next);
-            }
-        }
-
-        // 3. 输出到外部
-        for (BlockPos outputPos : outputSources) {
-            AqueductNode outputNode = nodeMap.get(outputPos);
-            if (outputNode != null && outputNode.hasFluid()) {
-                // 这个节点会自己向外部槽排放流体（通过其capability）
-            }
-        }
-    }
-
-    private void executeInputOnlyTransfer() {
-        // 只有输入：填充所有节点
-        for (int i = 0; i < nodes.size() - 1; i++) {
-            AqueductNode current = nodes.get(i);
-            AqueductNode next = nodes.get(i + 1);
-
-            if (canTransfer(current, next)) {
-                transferBetweenNodes(current, next);
-            }
-        }
-    }
-
-    private void executeOutputOnlyTransfer() {
-        // 只有输出：从最后的有流体节点开始排放
-        for (int i = nodes.size() - 1; i > 0; i--) {
-            AqueductNode current = nodes.get(i);
-            AqueductNode prev = nodes.get(i - 1);
-
-            if (canTransfer(prev, current)) {
-                transferBetweenNodes(prev, current);
-            }
-        }
-    }
-
-    private void executePassiveFlow() {
-        // 被动流动：每个节点尝试向下游传输
-        for (int i = 0; i < nodes.size() - 1; i++) {
-            AqueductNode current = nodes.get(i);
-            AqueductNode next = nodes.get(i + 1);
-
-            if (canTransfer(current, next)) {
-                transferBetweenNodes(current, next);
-            }
-        }
-    }
-
-    private void maintainFullState(AqueductNode node) {
-        BlockEntity be = level.getBlockEntity(node.getPos());
-        if (!(be instanceof AbstractAqueductBlockEntity)) return;
-
-        AbstractAqueductBlockEntity aqueduct = (AbstractAqueductBlockEntity) be;
-
-        // 如果不满，尝试补充
-        if (!node.isFull()) {
-            FluidStack currentFluid = aqueduct.getFluid();
-            if (!currentFluid.isEmpty()) {
-                int toFill = aqueduct.getSpace();
-                if (toFill > 0) {
-                    FluidStack fillStack = currentFluid.copy();
-                    fillStack.setAmount(toFill);
-                    aqueduct.getTank().fill(fillStack, IFluidHandler.FluidAction.EXECUTE);
+            if (current.hasFluid() && current.getFluidAmount() > 0 && !next.isFull()) {
+                if (canTransfer(current, next)) {
+                    transferBetweenNodes(current, next);
+                    return;
                 }
             }
         }
     }
 
+    private void handlePumpDrivenFlow() {
+        // 检查桥接模式
+        if (outputNodeIndex >= 0 && checkBridgeMode()) {
+            bridgeMode = true;
+            // 桥接模式：标记所有节点为受控，停止内部传输
+            markAllControlled();
+            return;
+        }
+
+        bridgeMode = false;
+
+        // 初始化当前填充索引
+        if (currentFillingIndex == -1) {
+            currentFillingIndex = inputNodeIndex;
+        }
+
+        // 确保当前填充节点已满
+        if (currentFillingIndex < nodes.size()) {
+            AqueductNode currentNode = nodes.get(currentFillingIndex);
+
+            if (!currentNode.isFull()) {
+                // 当前节点未满，继续填充
+                // 标记从输入到当前节点的所有节点为受控
+                markControlledRange(inputNodeIndex, currentFillingIndex);
+
+                // 如果这不是输入节点，从前一个节点传输
+                if (currentFillingIndex > inputNodeIndex) {
+                    AqueductNode prevNode = nodes.get(currentFillingIndex - 1);
+                    if (prevNode.hasFluid() && prevNode.isFull()) {
+                        transferBetweenNodes(prevNode, currentNode);
+                    }
+                }
+                return;
+            }
+
+            // 当前节点已满，移动到下一个
+            currentFillingIndex++;
+
+            // 如果还有节点要填充
+            if (currentFillingIndex < nodes.size()) {
+                // 标记从输入到当前位置的所有节点为受控
+                markControlledRange(inputNodeIndex, currentFillingIndex);
+
+                // 开始填充新节点
+                AqueductNode newTarget = nodes.get(currentFillingIndex);
+                AqueductNode sourceNode = nodes.get(currentFillingIndex - 1);
+
+                if (!newTarget.isFull() && sourceNode.isFull()) {
+                    transferBetweenNodes(sourceNode, newTarget);
+                }
+            } else {
+                // 所有节点都满了
+                markAllControlled();
+            }
+        }
+    }
+
+    private boolean checkBridgeMode() {
+        if (inputNodeIndex < 0 || outputNodeIndex < 0) return false;
+
+        for (int i = inputNodeIndex; i <= outputNodeIndex && i < nodes.size(); i++) {
+            if (!nodes.get(i).isFull()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void markControlledRange(int start, int end) {
+        // 清除旧的控制
+        clearNetworkControl();
+
+        // 标记新的控制范围
+        for (int i = start; i <= end && i < nodes.size(); i++) {
+            BlockPos pos = nodes.get(i).getPos();
+            controlledNodes.add(pos);
+
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof AqueductBlockEntity aqueduct) {
+                aqueduct.setNetworkControlled(true);
+            }
+        }
+    }
+
+    private void markAllControlled() {
+        if (inputNodeIndex >= 0) {
+            int end = outputNodeIndex >= 0 ? outputNodeIndex : nodes.size() - 1;
+            markControlledRange(inputNodeIndex, end);
+        }
+    }
+
+    private void clearNetworkControl() {
+        for (BlockPos pos : controlledNodes) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof AqueductBlockEntity aqueduct) {
+                aqueduct.setNetworkControlled(false);
+            }
+        }
+        controlledNodes.clear();
+    }
+
     private boolean canTransfer(AqueductNode from, AqueductNode to) {
         if (from == null || to == null) return false;
         if (from.isLocked() || to.isLocked()) return false;
-        if (!from.hasFluid()) return false;
+        if (!from.hasFluid() || from.getFluidAmount() <= 0) return false;
         if (to.isFull()) return false;
 
-        // 检查流体兼容性
         FluidStack fromFluid = from.getFluid();
         FluidStack toFluid = to.getFluid();
 
@@ -263,7 +235,6 @@ public class AqueductNetwork {
         FluidStack fluid = fromAqueduct.getFluid();
         if (fluid.isEmpty()) return;
 
-        // 计算传输量
         int toTransfer = Math.min(
                 Math.min(transferRate, fluid.getAmount()),
                 toAqueduct.getSpace()
@@ -274,7 +245,6 @@ public class AqueductNetwork {
         FluidStack transferStack = fluid.copy();
         transferStack.setAmount(toTransfer);
 
-        // 检查目标是否可以接收
         IFluidHandler toHandler = toAqueduct.getCapability(
                         net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, null)
                 .orElse(null);
@@ -285,33 +255,23 @@ public class AqueductNetwork {
                 transferStack.setAmount(filled);
                 fromAqueduct.getTank().drain(transferStack, IFluidHandler.FluidAction.EXECUTE);
                 toHandler.fill(transferStack, IFluidHandler.FluidAction.EXECUTE);
-
-                LOGGER.trace("Transferred {} mB from {} to {}",
-                        filled, from.getPos(), to.getPos());
             }
         }
     }
 
-    // Getter methods
-    private boolean hasInputAndOutput() {
-        return !inputSources.isEmpty() && !outputSources.isEmpty();
+    public boolean isNodeControlled(BlockPos pos) {
+        return controlledNodes.contains(pos);
     }
 
-    private boolean hasOnlyInput() {
-        return !inputSources.isEmpty() && outputSources.isEmpty();
-    }
-
-    private boolean hasOnlyOutput() {
-        return inputSources.isEmpty() && !outputSources.isEmpty();
-    }
-
-    private boolean isPaused() {
-        return state == NetworkState.PAUSED;
+    public boolean isBridgeMode() {
+        return bridgeMode;
     }
 
     public void invalidate() {
         state = NetworkState.INVALID;
+        clearNetworkControl();
         nodeMap.clear();
+        currentFillingIndex = -1;
     }
 
     public boolean isValid() {
@@ -319,15 +279,11 @@ public class AqueductNetwork {
     }
 
     public List<BlockPos> getNodePositions() {
-        List<BlockPos> positions = new ArrayList<>(nodes.size());
+        List<BlockPos> positions = new ArrayList<>();
         for (AqueductNode node : nodes) {
             positions.add(node.getPos());
         }
         return positions;
-    }
-
-    public boolean isBridgeMode() {
-        return bridgeMode;
     }
 
     public enum NetworkState {

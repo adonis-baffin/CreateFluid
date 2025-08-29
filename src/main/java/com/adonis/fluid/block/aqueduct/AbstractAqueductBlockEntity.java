@@ -8,7 +8,7 @@ import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.simibubi.create.foundation.fluid.SmartFluidTank;
-import net.createmod.catnip.animation.LerpedFloat;  // 修正导入
+import net.createmod.catnip.animation.LerpedFloat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -36,21 +36,18 @@ public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity imple
     protected SmartFluidTank tank;
     protected LazyOptional<IFluidHandler> fluidCapability;
     protected AqueductBehaviour aqueductBehaviour;
-
-    // 使用LerpedFloat来平滑流体动画
     protected LerpedFloat fluidLevel;
 
-    // 客户端动画
     @OnlyIn(Dist.CLIENT)
     protected FluidFlowAnimation flowAnimation;
 
     protected boolean locked = false;
-    protected int transferCooldown = 0;
-    protected static final int CAPACITY = 1000; // 1 bucket
+    public int transferCooldown = 0;
+    protected static final int CAPACITY = 1000;
 
-    // 性能优化：缓存方向
     private Direction cachedFlowDirection = null;
     private boolean flowDirectionDirty = true;
+    private boolean needsSync = false;
 
     public AbstractAqueductBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -58,9 +55,22 @@ public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity imple
         tank = new SmartFluidTank(CAPACITY, this::onFluidStackChanged);
         fluidCapability = LazyOptional.of(() -> new AqueductFluidHandler());
         fluidLevel = LerpedFloat.linear().startWithValue(0);
+    }
 
-        if (level != null && level.isClientSide) {
-            flowAnimation = new FluidFlowAnimation();
+    @Override
+    public void onLoad() {
+        super.onLoad();
+
+        if (level.isClientSide) {
+            // 客户端初始化
+            if (flowAnimation == null) {
+                flowAnimation = new FluidFlowAnimation();
+            }
+            // 强制请求同步
+            requestModelDataUpdate();
+        } else {
+            // 服务端加载后立即同步
+            needsSync = true;
         }
     }
 
@@ -72,12 +82,12 @@ public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity imple
 
     protected void onFluidStackChanged(FluidStack newFluid) {
         if (!level.isClientSide) {
-            // 更新流体等级动画
             float targetLevel = tank.getFluidAmount() / (float) tank.getCapacity();
             fluidLevel.chase(targetLevel, 0.25, LerpedFloat.Chaser.LINEAR);
 
             setChanged();
             sendData();
+            needsSync = false;
         }
     }
 
@@ -85,13 +95,18 @@ public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity imple
     public void tick() {
         super.tick();
 
-        // 更新流体动画
         fluidLevel.tickChaser();
 
         if (level.isClientSide) {
             tickClient();
         } else {
             tickServer();
+
+            // 确保同步
+            if (needsSync) {
+                sendData();
+                needsSync = false;
+            }
         }
     }
 
@@ -179,29 +194,49 @@ public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity imple
     @Override
     protected void write(CompoundTag tag, boolean clientPacket) {
         super.write(tag, clientPacket);
-        tag.put("TankContent", tank.writeToNBT(new CompoundTag()));
+
+        // 保存tank内容
+        tag.put("Tank", tank.writeToNBT(new CompoundTag()));
         tag.putBoolean("Locked", locked);
         tag.putInt("TransferCooldown", transferCooldown);
+
+        // 保存流体动画状态
         tag.put("FluidLevel", fluidLevel.writeNBT());
 
-        if (clientPacket && flowAnimation != null) {
-            tag.putFloat("FlowProgress", flowAnimation.getProgress());
+        // 客户端数据包
+        if (clientPacket) {
+            tag.putFloat("CurrentLevel", getFluidLevel());
         }
     }
 
     @Override
     protected void read(CompoundTag tag, boolean clientPacket) {
         super.read(tag, clientPacket);
-        tank.readFromNBT(tag.getCompound("TankContent"));
+
+        // 读取tank内容
+        if (tag.contains("Tank")) {
+            tank.readFromNBT(tag.getCompound("Tank"));
+        }
+
         locked = tag.getBoolean("Locked");
         transferCooldown = tag.getInt("TransferCooldown");
 
+        // 读取流体动画状态
         if (tag.contains("FluidLevel")) {
             fluidLevel.readNBT(tag.getCompound("FluidLevel"), clientPacket);
         }
 
-        if (clientPacket && flowAnimation != null && tag.contains("FlowProgress")) {
-            flowAnimation.setProgress(tag.getFloat("FlowProgress"));
+        // 客户端处理
+        if (clientPacket) {
+            if (tag.contains("CurrentLevel")) {
+                float level = tag.getFloat("CurrentLevel");
+                fluidLevel.startWithValue(level);
+            }
+
+            // 确保客户端动画初始化
+            if (level != null && level.isClientSide && flowAnimation == null) {
+                flowAnimation = new FluidFlowAnimation();
+            }
         }
     }
 
@@ -221,7 +256,6 @@ public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity imple
     }
 
     protected class AqueductFluidHandler implements IFluidHandler {
-        // 实现保持不变
         @Override
         public int getTanks() {
             return 1;
