@@ -49,6 +49,10 @@ public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity imple
     private boolean flowDirectionDirty = true;
     private boolean needsSync = false;
 
+    // 延迟同步机制
+    private int syncDelayTicks = -1;
+    private static final int INITIAL_SYNC_DELAY = 5; // 延迟5个tick进行初始同步
+
     public AbstractAqueductBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
 
@@ -66,11 +70,12 @@ public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity imple
             if (flowAnimation == null) {
                 flowAnimation = new FluidFlowAnimation();
             }
-            // 强制请求同步
-            requestModelDataUpdate();
         } else {
-            // 服务端加载后立即同步
-            needsSync = true;
+            // 服务端：设置延迟同步
+            if (!tank.isEmpty()) {
+                syncDelayTicks = INITIAL_SYNC_DELAY;
+                needsSync = true;
+            }
         }
     }
 
@@ -102,8 +107,19 @@ public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity imple
         } else {
             tickServer();
 
-            // 确保同步
-            if (needsSync) {
+            // 处理延迟同步
+            if (syncDelayTicks > 0) {
+                syncDelayTicks--;
+                if (syncDelayTicks == 0 && !tank.isEmpty()) {
+                    // 执行延迟同步
+                    sendData();
+                    level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+                    needsSync = false;
+                }
+            }
+
+            // 常规同步检查
+            if (needsSync && syncDelayTicks <= 0) {
                 sendData();
                 needsSync = false;
             }
@@ -203,9 +219,12 @@ public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity imple
         // 保存流体动画状态
         tag.put("FluidLevel", fluidLevel.writeNBT());
 
-        // 客户端数据包
+        // 客户端数据包 - 总是发送完整数据
         if (clientPacket) {
             tag.putFloat("CurrentLevel", getFluidLevel());
+            if (!tank.isEmpty()) {
+                tag.put("ClientFluid", tank.getFluid().writeToNBT(new CompoundTag()));
+            }
         }
     }
 
@@ -215,7 +234,20 @@ public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity imple
 
         // 读取tank内容
         if (tag.contains("Tank")) {
+            FluidStack oldFluid = tank.getFluid().copy();
             tank.readFromNBT(tag.getCompound("Tank"));
+
+            // 无论客户端还是服务端，如果流体改变都更新动画级别
+            if (!oldFluid.isFluidEqual(tank.getFluid()) ||
+                    oldFluid.getAmount() != tank.getFluidAmount()) {
+                float newLevel = tank.getFluidAmount() / (float) tank.getCapacity();
+                fluidLevel.startWithValue(newLevel);
+
+                // 服务端触发更新
+                if (!level.isClientSide) {
+                    onFluidStackChanged(tank.getFluid());
+                }
+            }
         }
 
         locked = tag.getBoolean("Locked");
@@ -228,13 +260,44 @@ public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity imple
 
         // 客户端处理
         if (clientPacket) {
-            if (tag.contains("CurrentLevel")) {
-                float level = tag.getFloat("CurrentLevel");
-                fluidLevel.startWithValue(level);
+            // 读取客户端流体数据
+            if (tag.contains("ClientFluid")) {
+                FluidStack clientFluid = FluidStack.loadFluidStackFromNBT(tag.getCompound("ClientFluid"));
+                if (!clientFluid.isEmpty()) {
+                    // 检查流体是否改变
+                    boolean fluidChanged = !clientFluid.isFluidEqual(tank.getFluid()) ||
+                            clientFluid.getAmount() != tank.getFluidAmount();
+                    tank.setFluid(clientFluid);
+
+                    // 更新流体级别
+                    float newLevel = clientFluid.getAmount() / (float) tank.getCapacity();
+                    fluidLevel.startWithValue(newLevel);
+
+                    // 如果流体改变了，请求渲染更新
+                    if (fluidChanged && this.level != null && this.level.isClientSide) {
+                        requestModelDataUpdate();
+                        // 触发重新渲染
+                        this.level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 8);
+                    }
+                }
+            } else if (tag.contains("CurrentLevel")) {
+                // 如果没有流体数据但有液位，说明tank被清空了
+                float currentLevel = tag.getFloat("CurrentLevel");
+                if (currentLevel == 0 && !tank.isEmpty()) {
+                    tank.setFluid(FluidStack.EMPTY);
+                    fluidLevel.startWithValue(0);
+                    if (this.level != null && this.level.isClientSide) {
+                        requestModelDataUpdate();
+                        this.level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 8);
+                    }
+                } else {
+                    // 更新液位动画
+                    fluidLevel.startWithValue(currentLevel);
+                }
             }
 
             // 确保客户端动画初始化
-            if (level != null && level.isClientSide && flowAnimation == null) {
+            if (this.level != null && this.level.isClientSide && flowAnimation == null) {
                 flowAnimation = new FluidFlowAnimation();
             }
         }

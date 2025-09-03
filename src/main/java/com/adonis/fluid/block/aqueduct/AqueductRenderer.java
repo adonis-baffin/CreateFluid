@@ -74,19 +74,22 @@ public class AqueductRenderer extends SmartBlockEntityRenderer<AbstractAqueductB
                                        int light, int color) {
         float wallThickness = 2f / 16f;
 
+        // 底部较窄，顶部较宽
         float bottomMinX = 4.5f / 16f;
         float bottomMaxX = 11.5f / 16f;
         float topMinX = wallThickness + 0.5f/16f;
         float topMaxX = 1f - wallThickness - 0.5f/16f;
 
-        // Z方向是对的，保持0到1
-        float zMin = 0f;
-        float zMax = 1f;
+        // Z方向保持小边距，避免Z-fighting
+        float zMin = 1f / 16f;
+        float zMax = 15f / 16f;
 
+        // 顶面
         FluidRenderHelper.renderStillTiledFace(Direction.UP,
                 topMinX, zMin, topMaxX, zMax, topY,
                 builder, ms, light, color, texture);
 
+        // 底面
         if (bottomY > 0) {
             FluidRenderHelper.renderStillTiledFace(Direction.DOWN,
                     bottomMinX, zMin, bottomMaxX, zMax, bottomY,
@@ -103,19 +106,22 @@ public class AqueductRenderer extends SmartBlockEntityRenderer<AbstractAqueductB
                                      int light, int color) {
         float wallThickness = 2f / 16f;
 
+        // 底部较窄，顶部较宽
         float bottomMinZ = 4.5f / 16f;
         float bottomMaxZ = 11.5f / 16f;
         float topMinZ = wallThickness + 0.5f/16f;
         float topMaxZ = 1f - wallThickness - 0.5f/16f;
 
-        // X方向改为和Z一样：0到1
-        float xMin = 0f;
-        float xMax = 1f;
+        // X方向保持小边距，避免Z-fighting
+        float xMin = 1f / 16f;
+        float xMax = 15f / 16f;
 
+        // 顶面
         FluidRenderHelper.renderStillTiledFace(Direction.UP,
                 xMin, topMinZ, xMax, topMaxZ, topY,
                 builder, ms, light, color, texture);
 
+        // 底面
         if (bottomY > 0) {
             FluidRenderHelper.renderStillTiledFace(Direction.DOWN,
                     xMin, bottomMinZ, xMax, bottomMaxZ, bottomY,
@@ -141,7 +147,7 @@ public class AqueductRenderer extends SmartBlockEntityRenderer<AbstractAqueductB
         float minV = texture.getV0();
         float maxV = texture.getV1();
 
-        // 西侧斜面
+        // 西侧斜面 - 保持原始正确版本
         renderQuad(builder, ms,
                 topMinX, topY, zMax,
                 topMinX, topY, zMin,
@@ -150,7 +156,7 @@ public class AqueductRenderer extends SmartBlockEntityRenderer<AbstractAqueductB
                 minU, minV, maxU, maxV,
                 r * 0.6f, g * 0.6f, b * 0.6f, a, light);
 
-        // 东侧斜面
+        // 东侧斜面 - 调整顶点顺序
         renderQuad(builder, ms,
                 topMaxX, topY, zMin,
                 topMaxX, topY, zMax,
@@ -159,23 +165,27 @@ public class AqueductRenderer extends SmartBlockEntityRenderer<AbstractAqueductB
                 minU, minV, maxU, maxV,
                 r * 0.6f, g * 0.6f, b * 0.6f, a, light);
 
-        // 北侧端面
-        renderQuad(builder, ms,
-                topMinX, topY, zMin,
-                topMaxX, topY, zMin,
-                bottomMaxX, bottomY, zMin,
-                bottomMinX, bottomY, zMin,
-                minU, minV, maxU, maxV,
-                r * 0.8f, g * 0.8f, b * 0.8f, a, light);
+        // 北侧端面（仅在需要时渲染）
+        if (zMin > 0) {
+            renderQuad(builder, ms,
+                    topMinX, topY, zMin,
+                    topMaxX, topY, zMin,
+                    bottomMaxX, bottomY, zMin,
+                    bottomMinX, bottomY, zMin,
+                    minU, minV, maxU, maxV,
+                    r * 0.8f, g * 0.8f, b * 0.8f, a, light);
+        }
 
-        // 南侧端面
-        renderQuad(builder, ms,
-                topMaxX, topY, zMax,
-                topMinX, topY, zMax,
-                bottomMinX, bottomY, zMax,
-                bottomMaxX, bottomY, zMax,
-                minU, minV, maxU, maxV,
-                r * 0.8f, g * 0.8f, b * 0.8f, a, light);
+        // 南侧端面（仅在需要时渲染）
+        if (zMax < 1) {
+            renderQuad(builder, ms,
+                    topMaxX, topY, zMax,
+                    topMinX, topY, zMax,
+                    bottomMinX, bottomY, zMax,
+                    bottomMaxX, bottomY, zMax,
+                    minU, minV, maxU, maxV,
+                    r * 0.8f, g * 0.8f, b * 0.8f, a, light);
+        }
     }
 
     private void renderEastWestSides(VertexConsumer builder, PoseStack ms, TextureAtlasSprite texture,
@@ -192,41 +202,45 @@ public class AqueductRenderer extends SmartBlockEntityRenderer<AbstractAqueductB
         float minV = texture.getV0();
         float maxV = texture.getV1();
 
-        // 北侧斜面
+        // 北侧斜面（从之前成功的版本推导）
         renderQuad(builder, ms,
-                xMax, topY, topMinZ,
                 xMin, topY, topMinZ,
-                xMin, bottomY, bottomMinZ,
+                xMax, topY, topMinZ,
                 xMax, bottomY, bottomMinZ,
+                xMin, bottomY, bottomMinZ,
                 minU, minV, maxU, maxV,
                 r * 0.6f, g * 0.6f, b * 0.6f, a, light);
 
-        // 南侧斜面
+        // 南侧斜面（从之前成功的版本推导）
         renderQuad(builder, ms,
-                xMin, topY, topMaxZ,
-                xMax, topY, topMaxZ,
-                xMax, bottomY, bottomMaxZ,
                 xMin, bottomY, bottomMaxZ,
+                xMax, bottomY, bottomMaxZ,
+                xMax, topY, topMaxZ,
+                xMin, topY, topMaxZ,
                 minU, minV, maxU, maxV,
                 r * 0.6f, g * 0.6f, b * 0.6f, a, light);
 
-        // 西侧端面
-        renderQuad(builder, ms,
-                xMin, topY, topMinZ,
-                xMin, topY, topMaxZ,
-                xMin, bottomY, bottomMaxZ,
-                xMin, bottomY, bottomMinZ,
-                minU, minV, maxU, maxV,
-                r * 0.8f, g * 0.8f, b * 0.8f, a, light);
+        // 西侧端面（仅在需要时渲染）
+        if (xMin > 0) {
+            renderQuad(builder, ms,
+                    xMin, bottomY, bottomMinZ,
+                    xMin, bottomY, bottomMaxZ,
+                    xMin, topY, topMaxZ,
+                    xMin, topY, topMinZ,
+                    minU, minV, maxU, maxV,
+                    r * 0.8f, g * 0.8f, b * 0.8f, a, light);
+        }
 
-        // 东侧端面
-        renderQuad(builder, ms,
-                xMax, topY, topMaxZ,
-                xMax, topY, topMinZ,
-                xMax, bottomY, bottomMinZ,
-                xMax, bottomY, bottomMaxZ,
-                minU, minV, maxU, maxV,
-                r * 0.8f, g * 0.8f, b * 0.8f, a, light);
+        // 东侧端面（仅在需要时渲染）
+        if (xMax < 1) {
+            renderQuad(builder, ms,
+                    xMax, topY, topMinZ,
+                    xMax, topY, topMaxZ,
+                    xMax, bottomY, bottomMaxZ,
+                    xMax, bottomY, bottomMinZ,
+                    minU, minV, maxU, maxV,
+                    r * 0.8f, g * 0.8f, b * 0.8f, a, light);
+        }
     }
 
     private void renderQuad(VertexConsumer builder, PoseStack ms,
@@ -239,16 +253,26 @@ public class AqueductRenderer extends SmartBlockEntityRenderer<AbstractAqueductB
         var pose = ms.last().pose();
         var normal = ms.last().normal();
 
-        float nx = (y2 - y1) * (z3 - z1) - (z2 - z1) * (y3 - y1);
-        float ny = (z2 - z1) * (x3 - x1) - (x2 - x1) * (z3 - z1);
-        float nz = (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1);
+        // 计算法线（使用前两条边的叉积）
+        float e1x = x2 - x1;
+        float e1y = y2 - y1;
+        float e1z = z2 - z1;
+        float e2x = x4 - x1;
+        float e2y = y4 - y1;
+        float e2z = z4 - z1;
+
+        float nx = e1y * e2z - e1z * e2y;
+        float ny = e1z * e2x - e1x * e2z;
+        float nz = e1x * e2y - e1y * e2x;
+
         float length = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
-        if (length > 0) {
+        if (length > 0.0001f) {
             nx /= length;
             ny /= length;
             nz /= length;
         }
 
+        // 添加四个顶点
         builder.vertex(pose, x1, y1, z1)
                 .color(r, g, b, a)
                 .uv(minU, minV)
