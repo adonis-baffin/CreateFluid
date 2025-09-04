@@ -2,6 +2,7 @@ package com.adonis.fluid.block.aqueduct;
 
 import com.adonis.fluid.registry.CFBlockEntity;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
+import com.simibubi.create.foundation.block.IBE;
 import net.createmod.catnip.placement.IPlacementHelper;
 import net.createmod.catnip.placement.PlacementHelpers;
 import net.createmod.catnip.placement.PlacementOffset;
@@ -62,6 +63,13 @@ public class AqueductBlock extends AbstractAqueductBlock {
 
         if (!level.isClientSide) {
             checkForWaterSource(level, pos, state);
+        }
+    }
+
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (!state.is(newState.getBlock())) {
+            IBE.onRemove(state, level, pos, newState);
         }
     }
 

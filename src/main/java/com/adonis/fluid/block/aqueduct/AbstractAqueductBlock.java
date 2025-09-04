@@ -1,6 +1,5 @@
 package com.adonis.fluid.block.aqueduct;
 
-import com.adonis.fluid.content.aqueduct.AqueductPropagator;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.foundation.block.IBE;
 import net.minecraft.core.BlockPos;
@@ -169,9 +168,6 @@ public abstract class AbstractAqueductBlock extends HorizontalDirectionalBlock
             Direction newFacing = currentFacing.getOpposite();
             level.setBlock(pos, state.setValue(FACING, newFacing), 3);
 
-            // 通知网络更新
-            withBlockEntityDo(level, pos, AbstractAqueductBlockEntity::notifyNetworkUpdate);
-
             level.playSound(null, pos, SoundEvents.ITEM_FRAME_ROTATE_ITEM, SoundSource.BLOCKS, 0.5F, 1.0F);
             return InteractionResult.SUCCESS;
         }
@@ -199,8 +195,10 @@ public abstract class AbstractAqueductBlock extends HorizontalDirectionalBlock
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
+
         if (!level.isClientSide) {
-            AqueductPropagator.onAqueductPlaced(level, pos);
+            // 通知相邻水渠更新
+            notifyNeighborAqueducts(level, pos);
         }
     }
 
@@ -208,9 +206,23 @@ public abstract class AbstractAqueductBlock extends HorizontalDirectionalBlock
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
             if (!level.isClientSide) {
-                AqueductPropagator.onAqueductRemoved(level, pos);
+                // 通知相邻水渠更新
+                notifyNeighborAqueducts(level, pos);
             }
             IBE.onRemove(state, level, pos, newState);
+        }
+    }
+
+    private void notifyNeighborAqueducts(Level level, BlockPos pos) {
+        // 通知前后的水渠更新状态
+        for (Direction dir : Direction.Plane.HORIZONTAL) {
+            BlockPos neighborPos = pos.relative(dir);
+            BlockState neighborState = level.getBlockState(neighborPos);
+
+            if (neighborState.getBlock() instanceof AbstractAqueductBlock) {
+                // 触发邻居水渠的方块实体更新
+                level.sendBlockUpdated(neighborPos, neighborState, neighborState, 3);
+            }
         }
     }
 
