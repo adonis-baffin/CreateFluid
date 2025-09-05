@@ -1,7 +1,6 @@
 package com.adonis.fluid.block.aqueduct;
 
 import com.adonis.fluid.registry.CFBlockEntity;
-import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.foundation.block.IBE;
 import net.createmod.catnip.placement.IPlacementHelper;
 import net.createmod.catnip.placement.PlacementHelpers;
@@ -13,14 +12,11 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
 
-import java.util.List;
 import java.util.function.Predicate;
 
 public class AqueductBlock extends AbstractAqueductBlock {
@@ -61,29 +57,60 @@ public class AqueductBlock extends AbstractAqueductBlock {
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
 
-        if (!level.isClientSide) {
-            checkForWaterSource(level, pos, state);
+        if (!level.isClientSide && !oldState.is(state.getBlock())) {
+            // 通知水渠方块它被放置了
+            withBlockEntityDo(level, pos, be -> {
+                if (be instanceof AqueductBlockEntity aqueduct) {
+                    aqueduct.onBlockPlaced();
+                }
+            });
+
+            // 通知相邻水渠更新
+            notifyNeighborAqueducts(level, pos);
         }
     }
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
+            if (!level.isClientSide) {
+                // 通知水渠方块它将被移除
+                withBlockEntityDo(level, pos, be -> {
+                    if (be instanceof AqueductBlockEntity aqueduct) {
+                        aqueduct.onBlockRemoved();
+                    }
+                });
+
+                // 通知相邻水渠更新
+                notifyNeighborAqueducts(level, pos);
+            }
+
+            // 调用IBE的默认移除逻辑
             IBE.onRemove(state, level, pos, newState);
         }
     }
 
-    private void checkForWaterSource(Level level, BlockPos pos, BlockState state) {
-        Direction inputDir = state.getValue(FACING).getOpposite();
-        BlockPos sourcePos = pos.relative(inputDir);
+    private void notifyNeighborAqueducts(Level level, BlockPos pos) {
+        // 通知前后的水渠更新状态
+        for (Direction dir : Direction.Plane.HORIZONTAL) {
+            BlockPos neighborPos = pos.relative(dir);
+            BlockState neighborState = level.getBlockState(neighborPos);
 
-        if (level.getBlockState(sourcePos).getBlock() == Fluids.WATER.defaultFluidState().createLegacyBlock().getBlock()) {
-            withBlockEntityDo(level, pos, be -> {
-                if (be instanceof AqueductBlockEntity) {
-                    ((AqueductBlockEntity) be).setHasWaterSource(true);
-                }
-            });
+            if (neighborState.getBlock() instanceof AbstractAqueductBlock) {
+                // 触发邻居水渠的重新检查
+                level.sendBlockUpdated(neighborPos, neighborState, neighborState, 3);
+
+                // 如果邻居是水渠，让它重新检查流体源
+                withBlockEntityDo(level, neighborPos, be -> {
+                    if (be instanceof AqueductBlockEntity neighbor) {
+                        neighbor.checkFluidSource();
+                    }
+                });
+            }
         }
+
+        // 触发系统重新检查
+        AqueductBlockEntity.triggerSystemRecheck();
     }
 
     @MethodsReturnNonnullByDefault

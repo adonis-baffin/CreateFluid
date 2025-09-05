@@ -10,6 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
@@ -37,57 +38,66 @@ public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity imple
     @OnlyIn(Dist.CLIENT)
     protected com.adonis.fluid.content.aqueduct.FluidFlowAnimation flowAnimation;
 
-    protected boolean locked = false;
-    protected int transferCooldown = 0;
+    protected boolean locked = false; // 红石锁定
     protected static final int CAPACITY = 1000;
 
-    // 控制状态
-    protected boolean isBeingFilled = false; // 是否正在被填充
-    protected boolean hasInputPump = false; // 是否有输入泵
-    protected boolean hasOutputPump = false; // 是否有输出泵
+    // 工作状态
+    protected WorkingState workingState = WorkingState.IDLE;
+    protected BlockPos workingPartner = null; // 结对工作的伙伴
+    protected int transferCooldown = 0;
 
-    // 初始化标记
-    private boolean needsInitialSync = false;
-    private int initialSyncDelay = 0;
+    // 数据同步
+    private boolean dataLoaded = false;
+    private CompoundTag pendingTankData = null;
+
+    public enum WorkingState {
+        IDLE,        // 空闲
+        SOURCE,      // 作为源头输出
+        TARGET       // 作为目标接收
+    }
 
     public AbstractAqueductBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
+        initializeTank();
+        fluidLevel = LerpedFloat.linear().startWithValue(0);
+    }
 
+    private void initializeTank() {
         tank = new SmartFluidTank(CAPACITY, this::onFluidStackChanged);
         fluidCapability = LazyOptional.of(() -> new AqueductFluidHandler());
-        fluidLevel = LerpedFloat.linear().startWithValue(0);
     }
 
     @Override
     public void onLoad() {
         super.onLoad();
 
-        if (level.isClientSide) {
-            if (flowAnimation == null) {
-                flowAnimation = new com.adonis.fluid.content.aqueduct.FluidFlowAnimation();
-            }
-            // 客户端立即更新流体级别
+        // 延迟加载tank数据
+        if (!dataLoaded && pendingTankData != null) {
+            tank.readFromNBT(pendingTankData);
+            pendingTankData = null;
+            dataLoaded = true;
+
             float currentLevel = tank.getFluidAmount() / (float) tank.getCapacity();
             fluidLevel.startWithValue(currentLevel);
-        } else {
-            // 服务端：标记需要初始同步
-            if (!tank.isEmpty()) {
-                needsInitialSync = true;
-                initialSyncDelay = 2; // 延迟2tick发送初始数据
+
+            if (!level.isClientSide) {
+                sendData();
             }
+        }
+
+        if (level.isClientSide && flowAnimation == null) {
+            flowAnimation = new com.adonis.fluid.content.aqueduct.FluidFlowAnimation();
         }
     }
 
     @Override
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
-        // 可以添加行为
     }
 
     protected void onFluidStackChanged(FluidStack newFluidStack) {
         if (!level.isClientSide) {
             float targetLevel = tank.getFluidAmount() / (float) tank.getCapacity();
             fluidLevel.chase(targetLevel, 0.25, LerpedFloat.Chaser.LINEAR);
-
             setChanged();
             sendData();
         }
@@ -103,16 +113,6 @@ public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity imple
             tickClient();
         } else {
             tickServer();
-
-            // 处理初始同步
-            if (needsInitialSync && initialSyncDelay > 0) {
-                initialSyncDelay--;
-                if (initialSyncDelay == 0) {
-                    sendData();
-                    level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-                    needsInitialSync = false;
-                }
-            }
         }
     }
 
@@ -126,9 +126,102 @@ public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity imple
         if (transferCooldown > 0) {
             transferCooldown--;
         }
+
+        // 工作状态处理
+        if (workingState == WorkingState.SOURCE && workingPartner != null) {
+            // 作为源头，向伙伴传输
+            performTransferToPartner();
+        }
     }
 
-    protected abstract void performTransfer();
+    // 执行向伙伴传输
+    private void performTransferToPartner() {
+        if (workingPartner == null || tank.isEmpty()) {
+            clearWorkingState();
+            return;
+        }
+
+        BlockEntity partnerBE = level.getBlockEntity(workingPartner);
+        if (!(partnerBE instanceof AbstractAqueductBlockEntity partner)) {
+            clearWorkingState();
+            return;
+        }
+
+        // 检查伙伴是否还在接收状态
+        if (partner.workingState != WorkingState.TARGET) {
+            clearWorkingState();
+            return;
+        }
+
+        // 执行传输
+        int transferRate = getTransferRate();
+        int canDrain = Math.min(transferRate, tank.getFluidAmount());
+        int canFill = Math.min(canDrain, partner.getSpace());
+
+        if (canFill <= 0) {
+            // 伙伴满了，结束工作
+            clearWorkingState();
+            partner.clearWorkingState();
+            return;
+        }
+
+        FluidStack toTransfer = tank.getFluid().copy();
+        toTransfer.setAmount(canFill);
+
+        tank.drain(toTransfer, IFluidHandler.FluidAction.EXECUTE);
+        partner.tank.fill(toTransfer, IFluidHandler.FluidAction.EXECUTE);
+
+        // 如果自己空了，结束工作
+        if (tank.isEmpty()) {
+            clearWorkingState();
+            partner.clearWorkingState();
+        }
+    }
+
+    // 清除工作状态
+    public void clearWorkingState() {
+        workingState = WorkingState.IDLE;
+        workingPartner = null;
+        setChanged();
+    }
+
+    // 设置为源头状态
+    public void setAsSource(BlockPos partner) {
+        workingState = WorkingState.SOURCE;
+        workingPartner = partner;
+        setChanged();
+    }
+
+    // 设置为目标状态
+    public void setAsTarget(BlockPos partner) {
+        workingState = WorkingState.TARGET;
+        workingPartner = partner;
+        setChanged();
+    }
+
+    // 检查是否在工作状态
+    public boolean isWorking() {
+        return workingState != WorkingState.IDLE;
+    }
+
+    // 检查是否可以作为源头
+    public boolean canBeSource() {
+        return !locked && !tank.isEmpty() && workingState == WorkingState.IDLE;
+    }
+
+    // 检查是否可以作为目标
+    public boolean canBeTarget(FluidStack fluid) {
+        if (locked || workingState != WorkingState.IDLE) return false;
+        if (tank.isEmpty()) return true;
+        if (tank.getFluidAmount() >= tank.getCapacity()) return false;
+        return tank.getFluid().isFluidEqual(fluid);
+    }
+
+    // 检查能否跳过（满且流体相同）
+    public boolean canSkip(FluidStack fluid) {
+        if (locked || workingState != WorkingState.IDLE) return false;
+        return tank.getFluidAmount() >= tank.getCapacity() && tank.getFluid().isFluidEqual(fluid);
+    }
 
     public Direction getFlowDirection() {
         return getBlockState().getValue(AbstractAqueductBlock.FACING);
@@ -141,6 +234,9 @@ public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity imple
     public void setLocked(boolean locked) {
         if (this.locked != locked) {
             this.locked = locked;
+            if (locked && isWorking()) {
+                clearWorkingState();
+            }
             setChanged();
         }
     }
@@ -188,22 +284,28 @@ public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity imple
     protected void write(CompoundTag tag, boolean clientPacket) {
         super.write(tag, clientPacket);
 
-        // 总是保存tank数据
-        tag.put("Tank", tank.writeToNBT(new CompoundTag()));
-        tag.putBoolean("Locked", locked);
-        tag.putInt("TransferCooldown", transferCooldown);
-        tag.putBoolean("IsBeingFilled", isBeingFilled);
-        tag.putBoolean("HasInputPump", hasInputPump);
-        tag.putBoolean("HasOutputPump", hasOutputPump);
+        // 保存tank数据
+        CompoundTag tankData = new CompoundTag();
+        tank.writeToNBT(tankData);
+        tag.put("Tank", tankData);
 
-        // 保存流体级别状态
+        // 保存状态
+        tag.putBoolean("Locked", locked);
+        tag.putInt("WorkingState", workingState.ordinal());
+
+        if (workingPartner != null) {
+            tag.putLong("WorkingPartner", workingPartner.asLong());
+        }
+
+        // 保存流体级别
         tag.put("FluidLevel", fluidLevel.writeNBT());
 
         if (clientPacket) {
-            // 客户端数据包 - 确保发送完整数据
             tag.putFloat("CurrentLevel", getFluidLevel());
             if (!tank.isEmpty()) {
-                tag.put("ClientFluid", tank.getFluid().writeToNBT(new CompoundTag()));
+                CompoundTag fluidTag = new CompoundTag();
+                tank.getFluid().writeToNBT(fluidTag);
+                tag.put("ClientFluid", fluidTag);
             }
         }
     }
@@ -214,14 +316,27 @@ public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity imple
 
         // 读取tank数据
         if (tag.contains("Tank")) {
-            tank.readFromNBT(tag.getCompound("Tank"));
+            if (tank == null) {
+                initializeTank();
+            }
+            pendingTankData = tag.getCompound("Tank");
+            // 如果已经加载到世界中，直接读取数据
+            if (level != null) {
+                tank.readFromNBT(pendingTankData);
+                pendingTankData = null;
+                dataLoaded = true;
+            }
         }
 
         locked = tag.getBoolean("Locked");
-        transferCooldown = tag.getInt("TransferCooldown");
-        isBeingFilled = tag.getBoolean("IsBeingFilled");
-        hasInputPump = tag.getBoolean("HasInputPump");
-        hasOutputPump = tag.getBoolean("HasOutputPump");
+
+        if (tag.contains("WorkingState")) {
+            workingState = WorkingState.values()[tag.getInt("WorkingState")];
+        }
+
+        if (tag.contains("WorkingPartner")) {
+            workingPartner = BlockPos.of(tag.getLong("WorkingPartner"));
+        }
 
         // 读取流体级别
         if (tag.contains("FluidLevel")) {
@@ -229,7 +344,6 @@ public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity imple
         }
 
         if (clientPacket) {
-            // 客户端处理
             if (tag.contains("ClientFluid")) {
                 FluidStack clientFluid = FluidStack.loadFluidStackFromNBT(tag.getCompound("ClientFluid"));
                 if (!clientFluid.isEmpty()) {
@@ -245,20 +359,8 @@ public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity imple
                 fluidLevel.startWithValue(currentLevel);
             }
 
-            // 确保客户端动画初始化
             if (level != null && level.isClientSide && flowAnimation == null) {
                 flowAnimation = new com.adonis.fluid.content.aqueduct.FluidFlowAnimation();
-            }
-
-            // 触发渲染更新
-            if (level != null) {
-                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 8);
-            }
-        } else {
-            // 服务端：加载后立即同步
-            if (!tank.isEmpty()) {
-                needsInitialSync = true;
-                initialSyncDelay = 2;
             }
         }
     }
@@ -302,13 +404,12 @@ public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity imple
 
         @Override
         public int fill(FluidStack resource, FluidAction action) {
-            if (locked) return 0;
+            // 工作状态下不允许外部填充
+            if (locked || isWorking()) return 0;
 
             int filled = AbstractAqueductBlockEntity.this.tank.fill(resource, action);
             if (filled > 0 && action.execute()) {
                 AbstractAqueductBlockEntity.this.transferCooldown = 2;
-                // 标记正在被填充
-                AbstractAqueductBlockEntity.this.isBeingFilled = true;
             }
             return filled;
         }
@@ -316,20 +417,16 @@ public abstract class AbstractAqueductBlockEntity extends SmartBlockEntity imple
         @Nonnull
         @Override
         public FluidStack drain(FluidStack resource, FluidAction action) {
-            if (locked) return FluidStack.EMPTY;
-            // 如果正在被填充且没有输出泵，不允许排出
-            if (isBeingFilled && !hasOutputPump) return FluidStack.EMPTY;
-
+            // 工作状态下不允许外部排出
+            if (locked || isWorking()) return FluidStack.EMPTY;
             return AbstractAqueductBlockEntity.this.tank.drain(resource, action);
         }
 
         @Nonnull
         @Override
         public FluidStack drain(int maxDrain, FluidAction action) {
-            if (locked) return FluidStack.EMPTY;
-            // 如果正在被填充且没有输出泵，不允许排出
-            if (isBeingFilled && !hasOutputPump) return FluidStack.EMPTY;
-
+            // 工作状态下不允许外部排出
+            if (locked || isWorking()) return FluidStack.EMPTY;
             return AbstractAqueductBlockEntity.this.tank.drain(maxDrain, action);
         }
     }
