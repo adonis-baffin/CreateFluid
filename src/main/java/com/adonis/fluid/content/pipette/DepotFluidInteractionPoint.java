@@ -21,14 +21,12 @@ public class DepotFluidInteractionPoint extends FluidInteractionPoint {
     @Override
     public boolean isValid() {
         if (level == null || !level.isLoaded(pos)) {
-            System.out.println("DepotPoint invalid: level or chunk not loaded");
             return false;
         }
 
         // 检查是否仍然是置物台
         BlockState currentState = level.getBlockState(pos);
         if (!com.simibubi.create.AllBlocks.DEPOT.has(currentState)) {
-            System.out.println("DepotPoint invalid: not a depot block");
             return false;
         }
 
@@ -36,7 +34,6 @@ public class DepotFluidInteractionPoint extends FluidInteractionPoint {
         DepotBehaviour behaviour = BlockEntityBehaviour.get(level, pos, DepotBehaviour.TYPE);
         boolean hasBehaviour = behaviour != null;
         if (!hasBehaviour) {
-            System.out.println("DepotPoint invalid: no DepotBehaviour");
         }
         return hasBehaviour;
     }
@@ -63,13 +60,11 @@ public class DepotFluidInteractionPoint extends FluidInteractionPoint {
 
         DepotBehaviour behaviour = getDepotBehaviour();
         if (behaviour == null) {
-            System.out.println("hasItemForFilling: no behaviour");
             return false;
         }
 
         ItemStack heldItem = behaviour.getHeldItemStack();
         if (heldItem.isEmpty()) {
-            System.out.println("hasItemForFilling: empty item");
             return false;
         }
 
@@ -77,7 +72,6 @@ public class DepotFluidInteractionPoint extends FluidInteractionPoint {
         boolean canBeFilled = com.simibubi.create.content.fluids.spout.FillingBySpout
                 .canItemBeFilled(level, heldItem);
 
-        System.out.println("hasItemForFilling: " + heldItem + " can be filled? " + canBeFilled);
         return canBeFilled;
     }
 

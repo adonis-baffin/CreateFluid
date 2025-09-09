@@ -16,7 +16,7 @@ public class CFTab {
     public static final RegistryObject<CreativeModeTab> MAIN_TAB = CREATIVE_MODE_TABS.register("main",
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.fluid.main"))
-                    .icon(() -> new ItemStack(CFBlock.PIPETTE.get()))
+                    .icon(() -> new ItemStack(CFBlock.SMART_FLUID_INTERFACE.get()))
                     .displayItems((parameters, output) -> {
                         // 动力设备
                         output.accept(CFBlock.PIPETTE.get());

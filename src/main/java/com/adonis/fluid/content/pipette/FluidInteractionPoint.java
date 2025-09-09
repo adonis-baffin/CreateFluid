@@ -50,6 +50,15 @@ public class FluidInteractionPoint {
             return new DepotFluidInteractionPoint(level, pos, state);
         }
 
+        // 检查是否为传送带
+        if (com.simibubi.create.AllBlocks.BELT.has(state)) {
+            // 只有能传输物品的传送带才创建交互点
+            if (com.simibubi.create.content.kinetics.belt.BeltBlock.canTransportObjects(state)) {
+                return new BeltFluidInteractionPoint(level, pos, state);
+            }
+            return null;
+        }
+
         // 检查其他有效的流体方块
         if (isValidFluidBlock(state)) {
             return new FluidInteractionPoint(level, pos, state);
@@ -59,7 +68,12 @@ public class FluidInteractionPoint {
     }
 
     private static boolean isValidFluidBlock(BlockState state) {
-        // 支持置物台（虽然上面已经处理了，但这里也加上以确保完整性）
+        // 添加传送带支持
+        if (com.simibubi.create.AllBlocks.BELT.has(state)) {
+            return true;
+        }
+
+        // 支持置物台
         if (com.simibubi.create.AllBlocks.DEPOT.has(state)) {
             return true;
         }

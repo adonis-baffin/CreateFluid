@@ -41,9 +41,6 @@ public class PipetteFluidInteractionPointHandler {
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void rightClickingBlocksSelectsThem(PlayerInteractEvent.RightClickBlock event) {
         if (event.getLevel().isClientSide) {
-            System.out.println("Right click event: item = " + event.getItemStack().getItem());
-            System.out.println("Is pipette item? " + CFBlock.PIPETTE.isIn(event.getItemStack()));
-            System.out.println("Current item: " + currentItem);
         }
         // 检查是否手持移液器方块物品
         if (!CFBlock.PIPETTE.isIn(event.getItemStack())) {
