@@ -519,7 +519,7 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             return;
         }
 
-        // 处理传送带注液
+// 处理传送带注液
         if (point instanceof BeltFluidInteractionPoint beltPoint) {
             if (!beltPoint.lockItemForProcessing(this.heldFluid)) {
                 this.phase = Phase.SEARCH_OUTPUTS;
@@ -530,29 +530,32 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                 return;
             }
 
-            ItemStack itemOnBelt = beltPoint.getLockedItem();
-            if (itemOnBelt != null && !itemOnBelt.isEmpty()) {
-                int requiredAmount = com.simibubi.create.content.fluids.spout.FillingBySpout
-                        .getRequiredAmountForItem(this.level, itemOnBelt, this.heldFluid);
+            // 获取所需流体量
+            int requiredAmount = beltPoint.getRequiredAmount(this.heldFluid);
 
-                if (requiredAmount > 0 && requiredAmount <= this.heldFluid.getAmount()) {
-                    ItemStack result = beltPoint.processLockedItem(this.heldFluid);
+            if (requiredAmount > 0 && requiredAmount <= this.heldFluid.getAmount()) {
+                // 执行注液（不会消耗流体）
+                ItemStack result = beltPoint.processLockedItem(this.heldFluid);
 
-                    if (!result.isEmpty()) {
-                        this.heldFluid.shrink(requiredAmount);
+                if (!result.isEmpty()) {
+                    // 只在这里消耗流体一次
+                    this.heldFluid.shrink(requiredAmount);
 
-                        this.level.playSound(null, point.getPos(),
-                                com.simibubi.create.AllSoundEvents.SPOUTING.getMainEvent(),
-                                net.minecraft.sounds.SoundSource.BLOCKS,
-                                0.75F, 0.9F + 0.2F * this.level.random.nextFloat());
+                    // 播放音效
+                    this.level.playSound(null, point.getPos(),
+                            com.simibubi.create.AllSoundEvents.SPOUTING.getMainEvent(),
+                            net.minecraft.sounds.SoundSource.BLOCKS,
+                            0.75F, 0.9F + 0.2F * this.level.random.nextFloat());
 
-                        if (!this.level.isClientSide) {
-                            sendFillingParticles(point.getPos(), this.heldFluid);
-                        }
+                    // 发送粒子效果
+                    if (!this.level.isClientSide) {
+                        sendFillingParticles(point.getPos(), this.heldFluid);
                     }
                 }
+            } else {
+                // 如果条件不满足，解锁物品
+                beltPoint.unlockItem();
             }
-            beltPoint.unlockItem();
         }
         // 处理置物台注液
         else if (point instanceof DepotFluidInteractionPoint depotPoint) {
