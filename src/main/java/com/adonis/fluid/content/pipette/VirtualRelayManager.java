@@ -1,7 +1,6 @@
 package com.adonis.fluid.content.pipette;
 
 import com.simibubi.create.AllBlocks;
-import com.simibubi.create.AllPackets;
 import com.simibubi.create.content.kinetics.belt.behaviour.BeltProcessingBehaviour;
 import com.simibubi.create.content.kinetics.belt.behaviour.TransportedItemStackHandlerBehaviour;
 import com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack;
@@ -13,7 +12,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.items.ItemHandlerHelper;
-import net.minecraftforge.network.PacketDistributor;
 
 import java.lang.ref.WeakReference;
 import java.util.*;
@@ -85,9 +83,10 @@ public class VirtualRelayManager {
                 return BeltProcessingBehaviour.ProcessingResult.PASS;
             }
 
-            // 检查流体是否足够
+            // 检查流体是否足够（只检查单个物品的需求）
+            ItemStack singleItem = ItemHandlerHelper.copyStackWithSize(transported.stack, 1);
             int required = FillingBySpout.getRequiredAmountForItem(
-                    workstation.getLevel(), transported.stack, fluid);
+                    workstation.getLevel(), singleItem, fluid);
 
             if (required == -1 || required > fluid.getAmount()) {
                 return BeltProcessingBehaviour.ProcessingResult.PASS;
@@ -99,9 +98,7 @@ public class VirtualRelayManager {
             waitingForFluid = false;
 
             // 触发移液器动画
-            if (processor instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
-                pipette.startBeltProcessing(beltSegmentPos);
-            }
+            processor.notifyProcessingStarted(beltSegmentPos);
 
             return BeltProcessingBehaviour.ProcessingResult.HOLD;
         }
@@ -127,8 +124,9 @@ public class VirtualRelayManager {
                     return BeltProcessingBehaviour.ProcessingResult.HOLD;
                 }
 
+                ItemStack singleItem = ItemHandlerHelper.copyStackWithSize(transported.stack, 1);
                 int required = FillingBySpout.getRequiredAmountForItem(
-                        workstation.getLevel(), transported.stack, fluid);
+                        workstation.getLevel(), singleItem, fluid);
 
                 if (required == -1 || required > fluid.getAmount()) {
                     currentlyProcessing = null;
@@ -139,77 +137,90 @@ public class VirtualRelayManager {
                 // 开始处理
                 waitingForFluid = false;
                 localProcessingTicks = FILLING_TIME;
-
-                // 触发移液器动画
-                if (processor instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
-                    pipette.startBeltProcessing(beltSegmentPos);
-                }
+                processor.notifyProcessingStarted(beltSegmentPos);
             }
 
             // 处理计时
             if (localProcessingTicks > 0) {
                 localProcessingTicks--;
 
-                // 在倒计时第5个tick执行填充（参考SpoutBlockEntity）
+                // 在倒计时第5个tick执行填充（与原版相同）
                 if (localProcessingTicks == 5) {
                     FluidStack fluid = processor.getHeldFluid();
+                    Level level = workstation.getLevel();
 
-                    // 检查是否批量处理
-                    boolean bulk = canProcessInBulk() || transported.stack.getCount() == 1;
+                    // 始终逐个处理，除非是单个物品
+                    boolean isSingle = transported.stack.getCount() == 1;
 
-                    // 准备要处理的物品
-                    ItemStack toProcess = bulk ? transported.stack :
-                            ItemHandlerHelper.copyStackWithSize(transported.stack, 1);
-
-                    int required = FillingBySpout.getRequiredAmountForItem(
-                            workstation.getLevel(), toProcess, fluid);
+                    // 获取单个物品的流体需求
+                    ItemStack singleItem = ItemHandlerHelper.copyStackWithSize(transported.stack, 1);
+                    int required = FillingBySpout.getRequiredAmountForItem(level, singleItem, fluid);
 
                     if (required > 0 && required <= fluid.getAmount()) {
-                        // 执行填充
-                        ItemStack out = FillingBySpout.fillItem(
-                                workstation.getLevel(), required, toProcess, fluid);
+                        // 使用FillingBySpout执行填充
+                        // 注意：fillItem会消耗传入的ItemStack
+                        ItemStack toFill = transported.stack.copy();
+                        toFill.setCount(1);
 
-                        if (!out.isEmpty()) {
+                        ItemStack filledResult = FillingBySpout.fillItem(
+                                level, required, toFill, fluid.copy());
+
+                        if (!filledResult.isEmpty()) {
                             // 清除风扇处理数据
                             transported.clearFanProcessingData();
 
+                            // 准备输出列表
                             List<TransportedItemStack> outList = new ArrayList<>();
+                            TransportedItemStack resultStack = transported.copy();
+                            resultStack.stack = filledResult;
+                            outList.add(resultStack);
 
-                            // 创建输出物品
-                            TransportedItemStack result = transported.copy();
-                            result.stack = out;
-                            outList.add(result);
+                            // 消耗流体
+                            fluid.shrink(required);
+                            processor.syncFluid(fluid);
 
-                            if (bulk) {
-                                // 批量处理 - 替换整个堆
+                            if (isSingle) {
+                                // 单个物品：直接替换
                                 handler.handleProcessingOnItem(transported,
                                         TransportedItemStackHandlerBehaviour.TransportedResult.convertTo(outList));
                             } else {
-                                // 逐个处理 - 保留剩余物品
-                                TransportedItemStack left = transported.copy();
-                                left.stack.shrink(1);
+                                // 多个物品：减少原堆栈，保留剩余
+                                transported.stack.shrink(1);
 
-                                if (left.stack.isEmpty()) {
-                                    handler.handleProcessingOnItem(transported,
-                                            TransportedItemStackHandlerBehaviour.TransportedResult.convertTo(outList));
-                                } else {
-                                    handler.handleProcessingOnItem(transported,
-                                            TransportedItemStackHandlerBehaviour.TransportedResult.convertToAndLeaveHeld(outList, left));
+                                TransportedItemStack leftover = null;
+                                if (!transported.stack.isEmpty()) {
+                                    leftover = transported.copy();
+                                    leftover.stack = transported.stack.copy();
                                 }
-                            }
 
-                            // 同步流体
-                            processor.syncFluid(fluid);
+                                handler.handleProcessingOnItem(transported,
+                                        TransportedItemStackHandlerBehaviour.TransportedResult
+                                                .convertToAndLeaveHeld(outList, leftover));
+                            }
 
                             // 发送粒子效果
                             if (processor instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
                                 pipette.sendBeltProcessingEffects(beltSegmentPos, fluid);
                             }
+
+                            // 如果还有剩余物品且有足够流体，继续处理
+                            if (!isSingle && !transported.stack.isEmpty()) {
+                                int nextRequired = FillingBySpout.getRequiredAmountForItem(
+                                        level, ItemHandlerHelper.copyStackWithSize(transported.stack, 1), fluid);
+
+                                if (nextRequired > 0 && nextRequired <= fluid.getAmount()) {
+                                    // 重置计时器继续处理下一个
+                                    localProcessingTicks = FILLING_TIME;
+                                    return BeltProcessingBehaviour.ProcessingResult.HOLD;
+                                }
+                            }
                         }
                     }
                 }
 
-                return BeltProcessingBehaviour.ProcessingResult.HOLD;
+                if (localProcessingTicks > 0) {
+                    return BeltProcessingBehaviour.ProcessingResult.HOLD;
+                }
             }
 
             // 处理完成
@@ -217,22 +228,15 @@ public class VirtualRelayManager {
             localProcessingTicks = -1;
 
             // 通知移液器
-            if (processor instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
-                pipette.finishBeltProcessing(beltSegmentPos);
-            }
+            processor.notifyProcessingCompleted(beltSegmentPos);
 
             return BeltProcessingBehaviour.ProcessingResult.PASS;
-        }
-
-        private boolean canProcessInBulk() {
-            // 可以配置是否批量处理
-            return false; // 默认逐个处理
         }
 
         private void applyToItems(float maxDistance,
                                   java.util.function.Function<TransportedItemStack,
                                           TransportedItemStackHandlerBehaviour.TransportedResult> processFunction) {
-            // 处理物品的回调 - 虚拟中继器无需实际应用到所有物品，因此为空实现
+            // 虚拟中继器无需实际应用到所有物品
         }
 
         public BeltProcessingBehaviour getProcessingBehaviour() {
@@ -248,16 +252,15 @@ public class VirtualRelayManager {
         }
     }
 
+    // 以下方法保持不变
     public static void registerWorkstation(BlockPos workstationPos, Level level, int range) {
         if (!(level.getBlockEntity(workstationPos) instanceof IRemoteFluidProcessor processor)) {
             return;
         }
 
-        // 获取移液器的交互点
         if (processor instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
             Set<BlockPos> relayPositions = new HashSet<>();
 
-            // 只为配置为输出端的传送带创建中继器
             for (FluidInteractionPoint output : pipette.outputs) {
                 BlockPos outputPos = output.getPos();
                 BlockState state = level.getBlockState(outputPos);
