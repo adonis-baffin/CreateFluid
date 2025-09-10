@@ -1,10 +1,10 @@
 package com.adonis.fluid.block.Pipette;
 
-import com.adonis.fluid.content.pipette.BeltFluidInteractionPoint;
-import com.adonis.fluid.content.pipette.DepotFluidInteractionPoint;
-import com.adonis.fluid.content.pipette.FluidInteractionPoint;
+import com.adonis.fluid.content.pipette.*;
+import com.simibubi.create.AllPackets;
 import com.simibubi.create.api.contraption.transformable.TransformableBlockEntity;
 import com.simibubi.create.content.contraptions.StructureTransform;
+import com.simibubi.create.content.fluids.spout.FillingBySpout;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.logistics.depot.DepotBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
@@ -16,20 +16,14 @@ import com.simibubi.create.foundation.item.TooltipHelper;
 import com.simibubi.create.foundation.utility.CreateLang;
 import com.simibubi.create.infrastructure.config.AllConfigs;
 import dev.engine_room.flywheel.lib.visualization.VisualizationHelper;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Stream;
-import javax.annotation.Nullable;
 import net.createmod.catnip.animation.LerpedFloat;
 import net.createmod.catnip.lang.Lang;
 import net.createmod.catnip.math.AngleHelper;
 import net.createmod.catnip.math.VecHelper;
 import net.createmod.catnip.nbt.NBTHelper;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
-import net.minecraft.core.Direction.Axis;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -40,7 +34,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -48,12 +41,16 @@ import net.minecraft.world.level.chunk.ChunkSource;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.items.ItemStackHandler;
+import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.network.PacketDistributor;
 
-public class PipetteBlockEntity extends KineticBlockEntity implements TransformableBlockEntity {
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
+
+public class PipetteBlockEntity extends KineticBlockEntity implements TransformableBlockEntity, IRemoteFluidProcessor {
+    // 字段定义
     public List<FluidInteractionPoint> inputs = new ArrayList<>();
     public List<FluidInteractionPoint> outputs = new ArrayList<>();
     public ListTag interactionPointTag = null;
@@ -63,11 +60,11 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
     Phase phase;
     public boolean goggles;
     PipetteAngleTarget previousTarget;
-    LerpedFloat lowerArmAngle;
-    LerpedFloat upperArmAngle;
-    LerpedFloat baseAngle;
-    LerpedFloat headAngle;
-    LerpedFloat clawAngle;
+    public LerpedFloat lowerArmAngle;
+    public LerpedFloat upperArmAngle;
+    public LerpedFloat baseAngle;
+    public LerpedFloat headAngle;
+    public LerpedFloat clawAngle;
     float previousBaseAngle;
     boolean updateInteractionPoints;
     int tooltipWarmup;
@@ -75,10 +72,23 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
     protected int lastInputIndex = -1;
     protected int lastOutputIndex = -1;
     protected boolean redstoneLocked;
+    private ItemStack processingItem = ItemStack.EMPTY;
+    private ItemStack processingResult = ItemStack.EMPTY;
+    private int processingTicks = 0;
+    private static final int PROCESSING_TIME = 20;
+    private VirtualRelayManager.VirtualRelay activeRelay = null;
 
-    // 流体相关设置
-    private static final int TRANSFER_AMOUNT = 1000; // 每次传输的流体量(mB)
-    private static final int FLUID_CAPACITY = 1000;  // 移液器流体容量(mB)
+    // 添加传送带处理相关字段
+    private boolean processingBelt = false;
+    private BlockPos processingBeltPos = null;
+    private int beltProcessingTicks = 0;
+
+    // 流体相关常量
+    private static final int TRANSFER_AMOUNT = 1000;
+    private static final int FLUID_CAPACITY = 1000;
+
+    private BlockPos pendingBeltRequest = null;
+    private ItemStack pendingBeltItem = ItemStack.EMPTY;
 
     public PipetteBlockEntity(BlockEntityType<?> typeIn, BlockPos pos, BlockState state) {
         super(typeIn, pos, state);
@@ -101,7 +111,7 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         this.goggles = false;
     }
 
-    // ==================== 流体渲染支持方法 ====================
+    // ==================== 流体渲染支持方法（这些是缺失的方法） ====================
 
     /**
      * 获取移液器的流体容量
@@ -152,6 +162,85 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         return !this.heldFluid.isEmpty();
     }
 
+    @Override
+    public void startFluidProcessing(ItemStack stack, VirtualRelayManager.VirtualRelay relay) {
+        System.out.println("[PipetteBlockEntity] startFluidProcessing for: " + stack);
+
+        // 只处理单个物品
+        ItemStack singleItem = stack.copy();
+        singleItem.setCount(1);
+
+        processingItem = singleItem;
+        activeRelay = relay;
+        processingTicks = 0;
+
+        // 计算填充结果
+        int required = com.simibubi.create.content.fluids.spout.FillingBySpout
+                .getRequiredAmountForItem(level, singleItem, heldFluid);
+
+        System.out.println("[PipetteBlockEntity] Required fluid: " + required + "mB");
+
+        if (required > 0 && required <= heldFluid.getAmount()) {
+            FluidStack fluidForFilling = heldFluid.copy();
+            fluidForFilling.setAmount(required);
+
+            // 执行填充
+            processingResult = com.simibubi.create.content.fluids.spout.FillingBySpout
+                    .fillItem(level, required, singleItem, fluidForFilling);
+
+            System.out.println("[PipetteBlockEntity] Fill result: " + processingResult);
+
+            if (!processingResult.isEmpty()) {
+                // 消耗流体
+                heldFluid.shrink(required);
+                System.out.println("[PipetteBlockEntity] Fluid consumed, remaining: " + heldFluid.getAmount());
+            }
+        } else {
+            processingResult = singleItem;
+        }
+
+        sendData();
+    }
+
+    @Override
+    public boolean isFluidProcessingComplete() {
+        return processingTicks >= PROCESSING_TIME;
+    }
+
+    @Override
+    public ItemStack getFluidProcessingResult() {
+        System.out.println("[PipetteBlockEntity] getFluidProcessingResult: " + processingResult);
+        return processingResult.copy();
+    }
+
+    @Override
+    public void notifyProcessingStarted(BlockPos beltPos) {
+        System.out.println("[PipetteBlockEntity] Processing started at belt " + beltPos);
+        // 可以在这里触发移液器移动到传送带的动画
+        startBeltProcessing(beltPos);
+    }
+
+    @Override
+    public void notifyProcessingCompleted(BlockPos beltPos) {
+        System.out.println("[PipetteBlockEntity] Processing completed at belt " + beltPos);
+
+        processingItem = ItemStack.EMPTY;
+        processingResult = ItemStack.EMPTY;
+        processingTicks = 0;
+        activeRelay = null;
+
+        // 完成传送带处理
+        finishBeltProcessing(beltPos);
+
+        // 如果流体空了，切换到搜索输入状态
+        if (heldFluid.isEmpty()) {
+            phase = Phase.SEARCH_INPUTS;
+            chasedPointProgress = 0.0F;
+            chasedPointIndex = -1;
+            sendData();
+        }
+    }
+
     /**
      * 获取流体填充比例
      * @return 0.0-1.0的填充比例
@@ -161,21 +250,119 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         return (float) this.heldFluid.getAmount() / FLUID_CAPACITY;
     }
 
-    /**
-     * 获取当前工作阶段的描述（用于调试）
-     * @return 阶段描述字符串
-     */
-    public String getPhaseDescription() {
-        switch (this.phase) {
-            case SEARCH_INPUTS: return "Searching for input";
-            case MOVE_TO_INPUT: return "Moving to input";
-            case SEARCH_OUTPUTS: return "Searching for output";
-            case MOVE_TO_OUTPUT: return "Moving to output";
-            default: return "Unknown";
+    // ==================== 生命周期方法 ====================
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (!level.isClientSide) {
+            // 注册虚拟中继器
+            VirtualRelayManager.registerWorkstation(worldPosition, level, getRange());
         }
     }
 
-    // ==================== 原有方法保持不变 ====================
+    @Override
+    public void invalidate() {
+        super.invalidate();
+        if (!level.isClientSide) {
+            // 注销虚拟中继器
+            VirtualRelayManager.unregisterWorkstation(worldPosition);
+        }
+    }
+
+    @Override
+    public void destroy() {
+        super.destroy();
+        if (!level.isClientSide) {
+            // 注销虚拟中继器
+            VirtualRelayManager.unregisterWorkstation(worldPosition);
+        }
+    }
+
+    // ==================== IRemoteFluidProcessor 接口实现 ====================
+
+    @Override
+    public boolean canProcessFluidItem(ItemStack stack) {
+        // 检查是否有流体
+        if (heldFluid.isEmpty()) {
+            return false;
+        }
+
+        // 检查物品是否可以被填充
+        if (!com.simibubi.create.content.fluids.spout.FillingBySpout.canItemBeFilled(level, stack)) {
+            return false;
+        }
+
+        // 检查流体量是否足够
+        int required = com.simibubi.create.content.fluids.spout.FillingBySpout
+                .getRequiredAmountForItem(level, stack, heldFluid);
+
+        return required > 0 && required <= heldFluid.getAmount();
+    }
+
+    @Override
+    public void syncFluid(FluidStack fluid) {
+        this.heldFluid = fluid.copy();
+        sendData();
+        setChanged();
+    }
+
+    @Override
+    public boolean requestFluidForItem(ItemStack stack, BlockPos sourcePos) {
+        System.out.println("[PipetteBlockEntity] Fluid requested for " + stack + " at " + sourcePos);
+
+        // 如果已经有流体，直接返回true
+        if (!heldFluid.isEmpty()) {
+            int required = FillingBySpout.getRequiredAmountForItem(level, stack, heldFluid);
+            if (required > 0 && required <= heldFluid.getAmount()) {
+                return true;
+            }
+        }
+
+        // 检查是否能找到合适的流体源
+        for (FluidInteractionPoint input : inputs) {
+            if (input.isValid() && input.canExtract()) {
+                FluidStack simulatedFluid = input.extract(TRANSFER_AMOUNT, true);
+
+                if (!simulatedFluid.isEmpty()) {
+                    int required = FillingBySpout.getRequiredAmountForItem(level, stack, simulatedFluid);
+                    if (required > 0 && required <= simulatedFluid.getAmount()) {
+                        // 找到了合适的流体，记录请求并触发取液
+                        pendingBeltRequest = sourcePos;
+                        pendingBeltItem = stack.copy();
+
+                        // 立即触发取液
+                        phase = Phase.MOVE_TO_INPUT;
+                        chasedPointIndex = inputs.indexOf(input);
+                        chasedPointProgress = 0.0F;
+                        lastInputIndex = chasedPointIndex;
+
+                        sendData();
+                        setChanged();
+
+                        System.out.println("[PipetteBlockEntity] Found suitable fluid source, moving to collect");
+                        return true;
+                    }
+                }
+            }
+        }
+
+        System.out.println("[PipetteBlockEntity] No suitable fluid source found");
+        return false;
+    }
+
+    @Override
+    public void onFluidProcessingComplete() {
+        // 可以留空或添加日志
+        System.out.println("[PipetteBlockEntity] Fluid processing complete");
+    }
+
+    @Override
+    public int getProcessingRange() {
+        return getRange();
+    }
+
+    // ==================== 行为添加 ====================
 
     @Override
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
@@ -185,9 +372,29 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         behaviours.add(this.selectionMode);
     }
 
+    // ==================== 主要的tick方法 ====================
+
     @Override
     public void tick() {
         super.tick();
+
+        // 添加：更新处理计时器
+        if (!level.isClientSide && processingItem != ItemStack.EMPTY) {
+            processingTicks++;
+        }
+
+        // 处理传送带动画
+        if (processingBelt && beltProcessingTicks > 0) {
+            beltProcessingTicks--;
+
+            // 在合适的时机播放音效
+            if (beltProcessingTicks == 15) {
+                level.playSound(null, processingBeltPos,
+                        com.simibubi.create.AllSoundEvents.SPOUTING.getMainEvent(),
+                        net.minecraft.sounds.SoundSource.BLOCKS,
+                        0.75F, 0.9F + 0.2F * level.random.nextFloat());
+            }
+        }
 
         this.initInteractionPoints();
         boolean targetReached = this.tickMovementProgress();
@@ -226,6 +433,8 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             }
         }
     }
+
+    // ==================== 其他所有原有方法保持不变 ====================
 
     @Override
     protected AABB createRenderBoundingBox() {
@@ -276,12 +485,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         return this.hasLevel() && state.getOptionalValue(PipetteBlock.CEILING).orElse(false);
     }
 
-    @Override
-    public void destroy() {
-        super.destroy();
-        // 流体不需要掉落物处理
-    }
-
     public void setInteractionPointTag(ListTag tag) {
         this.interactionPointTag = tag;
         this.updateInteractionPoints = true;
@@ -311,20 +514,16 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         return new PipetteAngleTarget(this.worldPosition, VecHelper.getCenterOf(point.getPos()),
                 net.minecraft.core.Direction.DOWN, this.isOnCeiling());
     }
-    /**
-     * 检查指定的流体是否能被任何输出端接受
-     * 特别考虑烈焰人燃烧室只接受岩浆的情况
-     */
+
     private boolean canFluidBeOutputted(FluidStack fluid) {
         if (fluid.isEmpty()) return false;
 
         for (FluidInteractionPoint output : this.outputs) {
             if (output.isValid()) {
-                // 特殊检查：如果输出端是烈焰人燃烧室，只有岩浆可以输出
                 BlockState outputState = this.level.getBlockState(output.getPos());
                 if (isBlazeBurner(outputState)) {
                     if (fluid.getFluid() != net.minecraft.world.level.material.Fluids.LAVA) {
-                        continue; // 烈焰人燃烧室只接受岩浆
+                        continue;
                     }
                 }
 
@@ -336,9 +535,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         return false;
     }
 
-    /**
-     * 检查方块是否为烈焰人燃烧室
-     */
     private boolean isBlazeBurner(BlockState state) {
         return com.simibubi.create.AllBlocks.BLAZE_BURNER.has(state) ||
                 com.simibubi.create.AllBlocks.LIT_BLAZE_BURNER.has(state);
@@ -346,6 +542,28 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
 
     protected void searchForFluid() {
         if (!this.redstoneLocked) {
+            // 只在有活跃的非传送带输出端时主动搜索流体
+            boolean hasActiveNonBeltOutput = false;
+
+            for (FluidInteractionPoint output : this.outputs) {
+                if (com.simibubi.create.AllBlocks.BELT.has(level.getBlockState(output.getPos()))) {
+                    continue; // 跳过传送带
+                }
+
+                if (output instanceof DepotFluidInteractionPoint depotPoint) {
+                    if (depotPoint.hasItemForFilling()) {
+                        hasActiveNonBeltOutput = true;
+                        break;
+                    }
+                }
+            }
+
+            // 只有在有活跃的非传送带输出时才主动取液
+            if (!hasActiveNonBeltOutput) {
+                return;
+            }
+
+            // 执行正常的搜索逻辑...
             boolean foundInput = false;
             int startIndex = this.selectionMode.get() == SelectionMode.PREFER_FIRST ? 0 : this.lastInputIndex + 1;
             int scanRange = this.selectionMode.get() == SelectionMode.FORCED_ROUND_ROBIN ?
@@ -354,39 +572,15 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                 scanRange = this.inputs.size();
             }
 
-            // 检查是否有烈焰人燃烧室作为输出端，如果有则优先寻找岩浆
-            boolean hasBlazeBurnerOutput = this.outputs.stream().anyMatch(output -> {
-                BlockState state = this.level.getBlockState(output.getPos());
-                return isBlazeBurner(state);
-            });
-
             for(int i = startIndex; i < scanRange; ++i) {
                 FluidInteractionPoint point = this.inputs.get(i);
                 if (point.isValid() && point.canExtract()) {
-                    // 预检查：模拟取出流体，看是否能被任何输出端接受
                     FluidStack simulatedFluid = point.extract(TRANSFER_AMOUNT, true);
 
-                    if (!simulatedFluid.isEmpty()) {
-                        // 如果有烈焰人燃烧室输出端，优先选择岩浆
-                        if (hasBlazeBurnerOutput && simulatedFluid.getFluid() == net.minecraft.world.level.material.Fluids.LAVA) {
-                            if (canFluidBeOutputted(simulatedFluid)) {
-                                this.selectIndex(true, i);
-                                foundInput = true;
-                                break;
-                            }
-                        } else if (!hasBlazeBurnerOutput && canFluidBeOutputted(simulatedFluid)) {
-                            // 如果没有烈焰人燃烧室，或者有但这不是岩浆，检查其他输出端
-                            this.selectIndex(true, i);
-                            foundInput = true;
-                            break;
-                        } else if (hasBlazeBurnerOutput && simulatedFluid.getFluid() != net.minecraft.world.level.material.Fluids.LAVA) {
-                            // 有烈焰人燃烧室但这不是岩浆，检查是否有其他输出端可以接受
-                            if (canFluidBeOutputted(simulatedFluid)) {
-                                this.selectIndex(true, i);
-                                foundInput = true;
-                                break;
-                            }
-                        }
+                    if (!simulatedFluid.isEmpty() && canFluidBeOutputted(simulatedFluid)) {
+                        this.selectIndex(true, i);
+                        foundInput = true;
+                        break;
                     }
                 }
             }
@@ -405,92 +599,29 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         FluidStack held = this.heldFluid.copy();
         boolean foundOutput = false;
 
-        if (!this.level.isClientSide) {
-            System.out.println("Searching for destination with fluid: " + held);
-            System.out.println("Number of outputs: " + this.outputs.size());
-        }
+        // 传送带上的物品会被虚拟中继器自动处理，不需要移液器主动寻找
+        // 只寻找其他类型的输出端（置物台、流体罐等）
 
-        // 新增：首先检查传送带上需要注液的物品
         for (int i = 0; i < this.outputs.size(); i++) {
             FluidInteractionPoint point = this.outputs.get(i);
 
-            if (point instanceof BeltFluidInteractionPoint beltPoint) {
-                if (beltPoint.isValid() && beltPoint.hasItemForFilling(held)) {
-                    if (!this.level.isClientSide) {
-                        System.out.println("Found item on belt at " + point.getPos() + " that needs filling");
-                    }
-                    this.selectIndex(false, i);
-                    foundOutput = true;
-                    break;
-                }
+            // 跳过传送带
+            if (com.simibubi.create.AllBlocks.BELT.has(level.getBlockState(point.getPos()))) {
+                continue;
+            }
+
+            // 处理其他输出端...
+            if (point.isValid() && point.canInsert(held)) {
+                this.selectIndex(false, i);
+                foundOutput = true;
+                break;
             }
         }
 
-        // 原有逻辑：检查置物台
+        // 如果没有找到非传送带的输出端，保持等待状态
         if (!foundOutput) {
-            for (int i = 0; i < this.outputs.size(); i++) {
-                FluidInteractionPoint point = this.outputs.get(i);
-
-                if (!this.level.isClientSide) {
-                    System.out.println("Checking output " + i + " at " + point.getPos() +
-                            ", type: " + point.getClass().getSimpleName());
-                }
-
-                if (point instanceof DepotFluidInteractionPoint depotPoint) {
-                    if (depotPoint.isValid() && depotPoint.hasItemForFilling()) {
-                        ItemStack itemOnDepot = depotPoint.getHeldItem();
-                        if (itemOnDepot != null && !itemOnDepot.isEmpty()) {
-                            int required = com.simibubi.create.content.fluids.spout.FillingBySpout
-                                    .getRequiredAmountForItem(this.level, itemOnDepot, held);
-
-                            if (!this.level.isClientSide) {
-                                System.out.println("Depot has item: " + itemOnDepot +
-                                        ", required fluid: " + required);
-                            }
-
-                            if (required > 0 && required <= held.getAmount()) {
-                                this.selectIndex(false, i);
-                                foundOutput = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // 保持原有的其他输出端检查逻辑
-        if (!foundOutput) {
-            int startIndex = this.selectionMode.get() == SelectionMode.PREFER_FIRST ? 0 : this.lastOutputIndex + 1;
-            int scanRange = this.selectionMode.get() == SelectionMode.FORCED_ROUND_ROBIN ?
-                    this.lastOutputIndex + 2 : this.outputs.size();
-            if (scanRange > this.outputs.size()) {
-                scanRange = this.outputs.size();
-            }
-
-            for(int i = startIndex; i < scanRange; ++i) {
-                FluidInteractionPoint point = this.outputs.get(i);
-
-                // 跳过已经检查过的传送带和置物台
-                if (point instanceof DepotFluidInteractionPoint ||
-                        point instanceof BeltFluidInteractionPoint) {
-                    continue;
-                }
-
-                if (point.isValid() && point.canInsert(held)) {
-                    this.selectIndex(false, i);
-                    foundOutput = true;
-                    break;
-                }
-            }
-
-            if (!foundOutput && this.selectionMode.get() == SelectionMode.ROUND_ROBIN) {
-                this.lastOutputIndex = -1;
-            }
-        }
-
-        if (this.lastOutputIndex == this.outputs.size() - 1) {
-            this.lastOutputIndex = -1;
+            // 不要设置phase为SEARCH_OUTPUTS，保持当前状态
+            // 让虚拟中继器处理传送带上的物品
         }
     }
 
@@ -519,53 +650,12 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             return;
         }
 
-// 处理传送带注液
-        if (point instanceof BeltFluidInteractionPoint beltPoint) {
-            if (!beltPoint.lockItemForProcessing(this.heldFluid)) {
-                this.phase = Phase.SEARCH_OUTPUTS;
-                this.chasedPointProgress = 0.0F;
-                this.chasedPointIndex = -1;
-                this.sendData();
-                this.setChanged();
-                return;
-            }
-
-            // 获取所需流体量
-            int requiredAmount = beltPoint.getRequiredAmount(this.heldFluid);
-
-            if (requiredAmount > 0 && requiredAmount <= this.heldFluid.getAmount()) {
-                // 执行注液（不会消耗流体）
-                ItemStack result = beltPoint.processLockedItem(this.heldFluid);
-
-                if (!result.isEmpty()) {
-                    // 只在这里消耗流体一次
-                    this.heldFluid.shrink(requiredAmount);
-
-                    // 播放音效
-                    this.level.playSound(null, point.getPos(),
-                            com.simibubi.create.AllSoundEvents.SPOUTING.getMainEvent(),
-                            net.minecraft.sounds.SoundSource.BLOCKS,
-                            0.75F, 0.9F + 0.2F * this.level.random.nextFloat());
-
-                    // 发送粒子效果
-                    if (!this.level.isClientSide) {
-                        sendFillingParticles(point.getPos(), this.heldFluid);
-                    }
-                }
-            } else {
-                // 如果条件不满足，解锁物品
-                beltPoint.unlockItem();
-            }
-        }
-        // 处理置物台注液
-        else if (point instanceof DepotFluidInteractionPoint depotPoint) {
+        if (point instanceof DepotFluidInteractionPoint depotPoint) {
             DepotBehaviour behaviour = BlockEntityBehaviour.get(level, point.getPos(), DepotBehaviour.TYPE);
             if (behaviour == null) return;
 
             ItemStack itemOnDepot = behaviour.getHeldItemStack();
-
             if (itemOnDepot != null && !itemOnDepot.isEmpty()) {
-                // 检查单个物品的注液需求
                 ItemStack singleItem = itemOnDepot.copy();
                 singleItem.setCount(1);
 
@@ -573,31 +663,21 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                         .getRequiredAmountForItem(this.level, singleItem, this.heldFluid);
 
                 if (requiredAmount > 0 && requiredAmount <= this.heldFluid.getAmount()) {
-                    if (!this.level.isClientSide) {
-                        System.out.println("Processing filling: " + itemOnDepot.getCount() + " " + itemOnDepot.getItem());
-                        System.out.println("Required fluid: " + requiredAmount);
-                    }
-
-                    // 创建单个物品用于处理
                     ItemStack toProcess = itemOnDepot.copy();
                     toProcess.setCount(1);
 
                     FluidStack fluidForFilling = this.heldFluid.copy();
                     fluidForFilling.setAmount(requiredAmount);
 
-                    // 执行注液
                     ItemStack result = com.simibubi.create.content.fluids.spout.FillingBySpout
                             .fillItem(this.level, requiredAmount, toProcess, fluidForFilling);
 
                     if (!result.isEmpty()) {
-                        // 减少主槽位的物品数量（只处理了1个）
                         itemOnDepot.shrink(1);
 
-                        // 如果主槽位空了，清除它
                         if (itemOnDepot.isEmpty()) {
                             behaviour.setHeldItem(null);
                         } else {
-                            // 更新主槽位的数量
                             com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack updatedStack =
                                     new com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack(itemOnDepot);
                             updatedStack.beltPosition = 0.5f;
@@ -605,20 +685,17 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                             behaviour.setHeldItem(updatedStack);
                         }
 
-                        // 将产物添加到处理输出缓冲区
                         try {
                             java.lang.reflect.Field bufferField = DepotBehaviour.class.getDeclaredField("processingOutputBuffer");
                             bufferField.setAccessible(true);
                             net.minecraftforge.items.ItemStackHandler outputBuffer =
                                     (net.minecraftforge.items.ItemStackHandler) bufferField.get(behaviour);
 
-                            // 尝试将结果插入输出缓冲区
                             ItemStack remainder = result.copy();
                             for (int slot = 0; slot < outputBuffer.getSlots() && !remainder.isEmpty(); slot++) {
                                 remainder = outputBuffer.insertItem(slot, remainder, false);
                             }
 
-                            // 如果输出缓冲区满了，掉落剩余物品
                             if (!remainder.isEmpty()) {
                                 net.minecraft.world.phys.Vec3 dropPos =
                                         net.createmod.catnip.math.VecHelper.getCenterOf(point.getPos());
@@ -630,15 +707,8 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                                         remainder
                                 );
                             }
-
-                            if (!this.level.isClientSide) {
-                                System.out.println("Added result to output buffer: " + result);
-                                System.out.println("Remaining in main slot: " + itemOnDepot.getCount());
-                            }
-
                         } catch (Exception e) {
                             e.printStackTrace();
-                            // 如果反射失败，回退到原来的行为
                             com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack newTIS =
                                     new com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack(result);
                             newTIS.beltPosition = 0.5f;
@@ -646,28 +716,21 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                             behaviour.setHeldItem(newTIS);
                         }
 
-                        // 通知更新
                         behaviour.blockEntity.notifyUpdate();
-
-                        // 减少持有的流体
                         this.heldFluid.shrink(requiredAmount);
 
-                        // 播放注液音效
                         this.level.playSound(null, point.getPos(),
                                 com.simibubi.create.AllSoundEvents.SPOUTING.getMainEvent(),
                                 net.minecraft.sounds.SoundSource.BLOCKS,
                                 0.75F, 0.9F + 0.2F * this.level.random.nextFloat());
 
-                        // 发送粒子效果
                         if (!this.level.isClientSide) {
                             sendFillingParticles(point.getPos(), this.heldFluid);
                         }
                     }
                 }
             }
-        }
-        // 其他交互点的处理
-        else {
+        } else {
             FluidStack toInsert = this.heldFluid.copy();
             FluidStack remainder = point.insert(toInsert, false);
             this.heldFluid = remainder;
@@ -683,8 +746,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
     private void sendFillingParticles(BlockPos targetPos, FluidStack fluid) {
         if (this.level.isClientSide) return;
 
-        // 置物台高度是 13/16 格，粒子应该在置物台表面上方
-        // 13/16 = 0.8125
         Vec3 particlePos = VecHelper.getCenterOf(targetPos).add(0, 0.8125, 0);
 
         com.simibubi.create.AllPackets.getChannel().send(
@@ -698,25 +759,32 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
     protected void collectFluid() {
         FluidInteractionPoint point = this.getTargetedInteractionPoint();
         if (point != null && point.isValid()) {
-            FluidStack extracted = point.extract(TRANSFER_AMOUNT, false);
-            if (!extracted.isEmpty()) {
-                // 双重检查：确保取出的流体能被输出端接受
-                if (!canFluidBeOutputted(extracted)) {
-                    // 如果不能输出，尝试将流体放回
-                    FluidStack remainder = point.insert(extracted, false);
-                    if (!remainder.isEmpty()) {
-                        // 如果放不回去，只能丢弃了（这种情况应该很少见）
-                        this.heldFluid = remainder;
-                    }
-                    // 回到搜索输入阶段
+            // 如果这是响应传送带请求的取液
+            if (pendingBeltRequest != null && !pendingBeltItem.isEmpty()) {
+                // 取标准量（1000mB），不是只取需要的量
+                FluidStack extracted = point.extract(TRANSFER_AMOUNT, false);
+                if (!extracted.isEmpty()) {
+                    this.heldFluid = extracted;
+
+                    // 保持流体供后续使用
                     this.phase = Phase.SEARCH_INPUTS;
                     this.chasedPointProgress = 0.0F;
                     this.chasedPointIndex = -1;
+
+                    pendingBeltRequest = null;
+                    pendingBeltItem = ItemStack.EMPTY;
+
                     this.sendData();
                     this.setChanged();
+
+                    System.out.println("[PipetteBlockEntity] Collected " + extracted.getAmount() + "mB for belt");
                     return;
                 }
+            }
 
+            // 正常的取液逻辑（为置物台等）
+            FluidStack extracted = point.extract(TRANSFER_AMOUNT, false);
+            if (!extracted.isEmpty()) {
                 this.heldFluid = extracted;
                 this.phase = Phase.SEARCH_OUTPUTS;
                 this.chasedPointProgress = 0.0F;
@@ -724,17 +792,9 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                 this.sendData();
                 this.setChanged();
 
-                // 检查是否从蜂巢取出蜂蜜，播放特殊音效
-                BlockState inputState = this.level.getBlockState(point.getPos());
-                if (inputState.getBlock() instanceof net.minecraft.world.level.block.BeehiveBlock) {
-                    // 播放收集蜂蜜的音效
-                    this.level.playSound(null, this.worldPosition, net.minecraft.sounds.SoundEvents.BOTTLE_FILL,
-                            SoundSource.BLOCKS, 0.125F, 1.0F);
-                } else {
-                    // 默认的流体收集音效
-                    this.level.playSound(null, this.worldPosition, SoundEvents.BUCKET_FILL,
-                            SoundSource.BLOCKS, 0.125F, 0.5F + this.level.random.nextFloat() * 0.25F);
-                }
+                // 播放音效
+                this.level.playSound(null, this.worldPosition, SoundEvents.BUCKET_FILL,
+                        SoundSource.BLOCKS, 0.125F, 0.5F + this.level.random.nextFloat() * 0.25F);
                 return;
             }
         }
@@ -820,6 +880,12 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                 }
 
                 this.updateInteractionPoints = false;
+
+                // 更新虚拟中继器（只为配置的输出端创建）
+                if (!level.isClientSide) {
+                    VirtualRelayManager.updateWorkstationRelays(worldPosition, level);
+                }
+
                 this.sendData();
                 this.setChanged();
             }
@@ -847,6 +913,12 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         compound.put("HeldFluid", this.heldFluid.writeToNBT(new CompoundTag()));
         compound.putInt("TargetPointIndex", this.chasedPointIndex);
         compound.putFloat("MovementProgress", this.chasedPointProgress);
+
+        if (clientPacket && processingBelt) {
+            compound.putBoolean("ProcessingBelt", true);
+            compound.putLong("ProcessingBeltPos", processingBeltPos.asLong());
+            compound.putInt("BeltProcessingTicks", beltProcessingTicks);
+        }
     }
 
     @Override
@@ -871,11 +943,16 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         this.goggles = compound.getBoolean("Goggles");
 
         if (clientPacket) {
+            processingBelt = compound.getBoolean("ProcessingBelt");
+            if (processingBelt) {
+                processingBeltPos = BlockPos.of(compound.getLong("ProcessingBeltPos"));
+                beltProcessingTicks = compound.getInt("BeltProcessingTicks");
+            }
+
             if (hadGoggles != this.goggles) {
                 DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> VisualizationHelper.queueUpdate(this));
             }
 
-            boolean ceiling = this.isOnCeiling();
             if (interactionPointTagBefore == null || interactionPointTagBefore.size() != this.interactionPointTag.size()) {
                 this.updateInteractionPoints = true;
             }
@@ -977,13 +1054,63 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         public Vec3 getLocalOffset(LevelAccessor level, BlockPos pos, BlockState state) {
             int yPos = state.getValue(PipetteBlock.CEILING) ? 13 : 3;
             Vec3 location = VecHelper.voxelSpace(8.0, yPos, 15.5);
-            location = VecHelper.rotateCentered(location, AngleHelper.horizontalAngle(this.getSide()), Axis.Y);
+            location = VecHelper.rotateCentered(location, AngleHelper.horizontalAngle(this.getSide()), Direction.Axis.Y);
             return location;
         }
 
         @Override
         public float getScale() {
             return super.getScale();
+        }
+    }
+
+    // 添加传送带处理方法
+
+    // 开始传送带处理
+    public void startBeltProcessing(BlockPos beltPos) {
+        this.processingBelt = true;
+        this.processingBeltPos = beltPos;
+        this.beltProcessingTicks = 20;
+
+        // 触发移动到传送带位置
+        for (int i = 0; i < outputs.size(); i++) {
+            if (outputs.get(i).getPos().equals(beltPos)) {
+                this.phase = Phase.MOVE_TO_OUTPUT;
+                this.chasedPointIndex = i;
+                this.chasedPointProgress = 0.0F;
+                break;
+            }
+        }
+
+        sendData();
+    }
+
+    // 完成传送带处理
+    public void finishBeltProcessing(BlockPos beltPos) {
+        this.processingBelt = false;
+        this.processingBeltPos = null;
+        this.beltProcessingTicks = 0;
+
+        // 如果流体用完了，回到搜索输入
+        if (heldFluid.isEmpty()) {
+            this.phase = Phase.SEARCH_INPUTS;
+            this.chasedPointProgress = 0.0F;
+            this.chasedPointIndex = -1;
+        }
+
+        sendData();
+    }
+
+    // 发送粒子效果
+    public void sendBeltProcessingEffects(BlockPos beltPos, FluidStack fluid) {
+        if (!level.isClientSide) {
+            net.minecraft.world.phys.Vec3 particlePos =
+                    net.createmod.catnip.math.VecHelper.getCenterOf(beltPos).add(0, 0.5, 0);
+
+            AllPackets.getChannel().send(
+                    PacketDistributor.TRACKING_CHUNK.with(() -> level.getChunkAt(beltPos)),
+                    new com.adonis.fluid.packet.PipetteParticlePacket(particlePos, fluid)
+            );
         }
     }
 }

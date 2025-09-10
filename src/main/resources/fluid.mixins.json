@@ -6,7 +6,8 @@
   "refmap": "fluid.refmap.json",
   "mixins": [
     "AllArmInteractionPointTypesMixin",
-    "accessor.DepotBehaviourAccessor"
+    "accessor.DepotBehaviourAccessor",
+    "BeltInventoryMixin"
   ],
   "client": [],
   "server": []

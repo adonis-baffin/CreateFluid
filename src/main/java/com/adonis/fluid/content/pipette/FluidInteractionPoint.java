@@ -1,7 +1,6 @@
 package com.adonis.fluid.content.pipette;
 
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlockEntity;
-import com.adonis.fluid.content.pipette.DepotFluidInteractionPoint;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlockEntity;
 import com.adonis.fluid.registry.CFBlock;
 import com.simibubi.create.AllBlocks;
@@ -19,42 +18,44 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Optional;
 
 public class FluidInteractionPoint {
-    protected BlockPos pos;  // 改为 protected
-    protected Direction face;  // 改为 protected
-    protected Mode mode;  // 改为 protected
-    protected Level level;  // 改为 protected
+    protected BlockPos pos;
+    protected Direction face;
+    protected Mode mode;
+    protected Level level;
     private long lastKnownValid = -1;
 
     public FluidInteractionPoint(Level level, BlockPos pos, BlockState state) {
         this.level = level;
         this.pos = pos;
-        this.face = Direction.UP; // 默认从上方访问
+        this.face = Direction.UP;
 
         // 根据方块类型设置默认模式
         if (isBlazeBurner(state)) {
-            this.mode = Mode.DEPOSIT; // 烈焰人燃烧室只能作为输出端
+            this.mode = Mode.DEPOSIT;
         } else if (isBeehive(state)) {
-            this.mode = Mode.TAKE; // 蜂巢只能作为输入端
+            this.mode = Mode.TAKE;
+        } else if (AllBlocks.BELT.has(state)) {
+            // 传送带默认作为输出端（接收流体）
+            this.mode = Mode.DEPOSIT;
         } else {
-            this.mode = Mode.DEPOSIT; // 其他方块默认为存放模式
+            this.mode = Mode.DEPOSIT;
         }
     }
 
     @Nullable
     public static FluidInteractionPoint create(Level level, BlockPos pos, BlockState state) {
         // 优先检查是否为置物台
-        if (com.simibubi.create.AllBlocks.DEPOT.has(state)) {
+        if (AllBlocks.DEPOT.has(state)) {
             return new DepotFluidInteractionPoint(level, pos, state);
         }
 
-        // 检查是否为传送带
-        if (com.simibubi.create.AllBlocks.BELT.has(state)) {
+        // 传送带创建普通的交互点（用于选择），实际处理由虚拟中继器完成
+        if (AllBlocks.BELT.has(state)) {
             // 只有能传输物品的传送带才创建交互点
             if (com.simibubi.create.content.kinetics.belt.BeltBlock.canTransportObjects(state)) {
-                return new BeltFluidInteractionPoint(level, pos, state);
+                return new FluidInteractionPoint(level, pos, state);
             }
             return null;
         }
@@ -68,18 +69,18 @@ public class FluidInteractionPoint {
     }
 
     private static boolean isValidFluidBlock(BlockState state) {
-        // 添加传送带支持
-        if (com.simibubi.create.AllBlocks.BELT.has(state)) {
+        // 支持传送带
+        if (AllBlocks.BELT.has(state)) {
             return true;
         }
 
         // 支持置物台
-        if (com.simibubi.create.AllBlocks.DEPOT.has(state)) {
+        if (AllBlocks.DEPOT.has(state)) {
             return true;
         }
 
         // 支持工作盆、流体接口等
-        if (com.simibubi.create.AllBlocks.BASIN.has(state) ||
+        if (AllBlocks.BASIN.has(state) ||
                 CFBlock.FLUID_INTERFACE.has(state) ||
                 CFBlock.SMART_FLUID_INTERFACE.has(state)) {
             return true;
@@ -98,18 +99,11 @@ public class FluidInteractionPoint {
         return false;
     }
 
-    /**
-     * 检查是否为烈焰人燃烧室
-     */
     private static boolean isBlazeBurner(BlockState state) {
-        // 使用Create的AllBlocks来检查
-        return com.simibubi.create.AllBlocks.BLAZE_BURNER.has(state) ||
-                com.simibubi.create.AllBlocks.LIT_BLAZE_BURNER.has(state);
+        return AllBlocks.BLAZE_BURNER.has(state) ||
+                AllBlocks.LIT_BLAZE_BURNER.has(state);
     }
 
-    /**
-     * 检查是否为蜂巢或蜂箱
-     */
     private static boolean isBeehive(BlockState state) {
         return state.getBlock() instanceof net.minecraft.world.level.block.BeehiveBlock;
     }
@@ -121,6 +115,16 @@ public class FluidInteractionPoint {
         if (gameTime == lastKnownValid) return true;
 
         BlockState state = level.getBlockState(pos);
+
+        // 传送带的特殊处理 - 始终有效（由虚拟中继器处理实际功能）
+        if (AllBlocks.BELT.has(state)) {
+            if (com.simibubi.create.content.kinetics.belt.BeltBlock.canTransportObjects(state)) {
+                lastKnownValid = gameTime;
+                return true;
+            }
+            return false;
+        }
+
         boolean valid = isValidFluidBlock(state) &&
                 level.getBlockEntity(pos) != null &&
                 getFluidHandler() != null;
@@ -134,15 +138,21 @@ public class FluidInteractionPoint {
 
     @Nullable
     private IFluidHandler getFluidHandler() {
-        BlockEntity be = level.getBlockEntity(pos);
         BlockState state = level.getBlockState(pos);
 
-        // 特殊处理：烈焰人燃烧室（只接受岩浆）
+        // 传送带不提供流体处理器（由虚拟中继器处理）
+        if (AllBlocks.BELT.has(state)) {
+            return null;
+        }
+
+        BlockEntity be = level.getBlockEntity(pos);
+
+        // 特殊处理：烈焰人燃烧室
         if (isBlazeBurner(state)) {
             return new BlazeBurnerFluidHandler(level, pos, state);
         }
 
-        // 特殊处理：蜂巢/蜂箱（只提供蜂蜜）
+        // 特殊处理：蜂巢/蜂箱
         if (isBeehive(state)) {
             return new BeehiveFluidHandler(level, pos, state);
         }
@@ -154,6 +164,11 @@ public class FluidInteractionPoint {
     }
 
     public FluidStack extract(int maxAmount, boolean simulate) {
+        // 传送带不能抽取流体
+        if (AllBlocks.BELT.has(level.getBlockState(pos))) {
+            return FluidStack.EMPTY;
+        }
+
         IFluidHandler handler = getFluidHandler();
         if (handler == null) return FluidStack.EMPTY;
 
@@ -161,6 +176,12 @@ public class FluidInteractionPoint {
     }
 
     public FluidStack insert(FluidStack stack, boolean simulate) {
+        // 传送带的注液由虚拟中继器处理
+        if (AllBlocks.BELT.has(level.getBlockState(pos))) {
+            // 返回原流体表示无法直接插入（需要通过虚拟中继器）
+            return stack;
+        }
+
         IFluidHandler handler = getFluidHandler();
         if (handler == null) return stack;
 
@@ -171,45 +192,47 @@ public class FluidInteractionPoint {
     }
 
     public boolean canExtract() {
+        // 传送带不能抽取
+        if (AllBlocks.BELT.has(level.getBlockState(pos))) {
+            return false;
+        }
+
         IFluidHandler handler = getFluidHandler();
         if (handler == null) return false;
 
-        // 尝试抽取少量流体来检查是否可以抽取
-        // 对于智能流体接口，这会自动应用过滤逻辑
         return !handler.drain(1, IFluidHandler.FluidAction.SIMULATE).isEmpty();
     }
 
     public boolean canInsert(FluidStack stack) {
+        // 传送带始终显示可以接收（实际由虚拟中继器判断）
+        if (AllBlocks.BELT.has(level.getBlockState(pos))) {
+            return this.mode == Mode.DEPOSIT;
+        }
+
         IFluidHandler handler = getFluidHandler();
         if (handler == null) return false;
 
-        // 对于智能流体接口，这会自动应用过滤逻辑
         return handler.fill(stack, IFluidHandler.FluidAction.SIMULATE) > 0;
     }
 
-    /**
-     * 检查是否可以抽取特定的流体类型
-     * 这对智能流体接口的过滤特别有用
-     */
-    public boolean canExtractFluid(FluidStack fluidType) {
-        IFluidHandler handler = getFluidHandler();
-        if (handler == null) return false;
-
-        // 创建一个小量的测试流体
-        FluidStack testStack = fluidType.copy();
-        testStack.setAmount(1);
-
-        return !handler.drain(testStack, IFluidHandler.FluidAction.SIMULATE).isEmpty();
-    }
-
     public void cycleMode() {
-        // 烈焰人燃烧室只能作为输出端，不允许切换模式
-        if (isBlazeBurner(level.getBlockState(pos))) {
+        BlockState state = level.getBlockState(pos);
+
+        // 烈焰人燃烧室只能作为输出端
+        if (isBlazeBurner(state)) {
             return;
         }
 
-        // 蜂巢只能作为输入端，不允许切换模式
-        if (isBeehive(level.getBlockState(pos))) {
+        // 蜂巢只能作为输入端
+        if (isBeehive(state)) {
+            return;
+        }
+
+        // 传送带只能作为输出端（接收流体）
+        if (AllBlocks.BELT.has(state)) {
+            if (this.mode != Mode.DEPOSIT) {
+                this.mode = Mode.DEPOSIT;
+            }
             return;
         }
 
@@ -258,7 +281,13 @@ public class FluidInteractionPoint {
         if (point != null) {
             if (nbt.contains("Mode")) {
                 try {
-                    point.mode = Mode.valueOf(nbt.getString("Mode"));
+                    Mode deserializedMode = Mode.valueOf(nbt.getString("Mode"));
+                    // 传送带强制为DEPOSIT模式
+                    if (AllBlocks.BELT.has(state)) {
+                        point.mode = Mode.DEPOSIT;
+                    } else {
+                        point.mode = deserializedMode;
+                    }
                 } catch (IllegalArgumentException e) {
                     point.mode = Mode.DEPOSIT;
                 }
@@ -281,7 +310,6 @@ public class FluidInteractionPoint {
 
         if (nbt.contains("Face")) {
             Direction face = Direction.valueOf(nbt.getString("Face"));
-            // 先镜像，后旋转
             face = transform.mirrorFacing(face);
             face = transform.rotateFacing(face);
             nbt.putString("Face", face.name());
@@ -309,9 +337,7 @@ public class FluidInteractionPoint {
         }
     }
 
-    /**
-     * 烈焰人燃烧室的特殊流体处理器 - 只接受岩浆
-     */
+    // 内部类：烈焰人燃烧室流体处理器
     private static class BlazeBurnerFluidHandler implements IFluidHandler {
         private final Level level;
         private final BlockPos pos;
@@ -331,46 +357,40 @@ public class FluidInteractionPoint {
         @Nonnull
         @Override
         public FluidStack getFluidInTank(int tank) {
-            return FluidStack.EMPTY; // 烈焰人燃烧室不存储流体
+            return FluidStack.EMPTY;
         }
 
         @Override
         public int getTankCapacity(int tank) {
-            return 1000; // 每次可接受1000mB岩浆
+            return 1000;
         }
 
         @Override
         public boolean isFluidValid(int tank, @Nonnull FluidStack stack) {
-            // 只接受岩浆
             return stack.getFluid() == net.minecraft.world.level.material.Fluids.LAVA;
         }
 
         @Override
         public int fill(FluidStack resource, FluidAction action) {
-            // 只接受岩浆
             if (!isFluidValid(0, resource)) {
                 return 0;
             }
 
-            // 模拟用岩浆桶
             net.minecraft.world.item.ItemStack lavaBucket = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.LAVA_BUCKET);
 
             try {
-                // 直接调用Create的BlazeBurnerBlock.tryInsert方法
                 net.minecraft.world.InteractionResultHolder<net.minecraft.world.item.ItemStack> result =
                         com.simibubi.create.content.processing.burner.BlazeBurnerBlock.tryInsert(
                                 state, level, pos, lavaBucket, true, false, true);
 
                 if (result.getResult() == net.minecraft.world.InteractionResult.SUCCESS) {
                     if (action.execute()) {
-                        // 实际执行插入
                         com.simibubi.create.content.processing.burner.BlazeBurnerBlock.tryInsert(
                                 state, level, pos, lavaBucket, true, false, false);
                     }
                     return Math.min(resource.getAmount(), 1000);
                 }
             } catch (Exception e) {
-                // 如果调用失败，静默处理
                 return 0;
             }
 
@@ -380,19 +400,17 @@ public class FluidInteractionPoint {
         @Nonnull
         @Override
         public FluidStack drain(FluidStack resource, FluidAction action) {
-            return FluidStack.EMPTY; // 不支持抽取
+            return FluidStack.EMPTY;
         }
 
         @Nonnull
         @Override
         public FluidStack drain(int maxDrain, FluidAction action) {
-            return FluidStack.EMPTY; // 不支持抽取
+            return FluidStack.EMPTY;
         }
     }
 
-    /**
-     * 蜂巢的特殊流体处理器 - 只提供蜂蜜
-     */
+    // 内部类：蜂巢流体处理器
     private static class BeehiveFluidHandler implements IFluidHandler {
         private final Level level;
         private final BlockPos pos;
@@ -404,24 +422,15 @@ public class FluidInteractionPoint {
             this.state = state;
         }
 
-        /**
-         * 获取蜂蜜流体 - 目前使用水作为占位符
-         * TODO: 可以替换为真正的蜂蜜流体（如果Create或其他模组提供）
-         */
         private net.minecraft.world.level.material.Fluid getHoneyFluid() {
-            // 尝试获取Create的蜂蜜流体，如果没有则使用水
             try {
-                // 检查是否有Create的蜂蜜流体
                 net.minecraft.resources.ResourceLocation honeyLocation = new net.minecraft.resources.ResourceLocation("create", "honey");
                 net.minecraft.world.level.material.Fluid honeyFluid = net.minecraftforge.registries.ForgeRegistries.FLUIDS.getValue(honeyLocation);
                 if (honeyFluid != null && honeyFluid != net.minecraft.world.level.material.Fluids.EMPTY) {
                     return honeyFluid;
                 }
             } catch (Exception ignored) {
-                // 如果获取失败，使用水作为后备
             }
-
-            // 后备选项：使用水代表蜂蜜
             return net.minecraft.world.level.material.Fluids.WATER;
         }
 
@@ -433,32 +442,30 @@ public class FluidInteractionPoint {
         @Nonnull
         @Override
         public FluidStack getFluidInTank(int tank) {
-            // 如果蜂蜜等级为满，返回蜂蜜，否则返回空
             if (isHoneyFull()) {
-                return new FluidStack(getHoneyFluid(), 250); // 250mB蜂蜜，相当于一瓶蜂蜜
+                return new FluidStack(getHoneyFluid(), 250);
             }
             return FluidStack.EMPTY;
         }
 
         @Override
         public int getTankCapacity(int tank) {
-            return 250; // 一次提供250mB蜂蜜
+            return 250;
         }
 
         @Override
         public boolean isFluidValid(int tank, @Nonnull FluidStack stack) {
-            return false; // 蜂巢不接受流体输入
+            return false;
         }
 
         @Override
         public int fill(FluidStack resource, FluidAction action) {
-            return 0; // 不支持填充
+            return 0;
         }
 
         @Nonnull
         @Override
         public FluidStack drain(FluidStack resource, FluidAction action) {
-            // 只允许抽取蜂蜜
             if (!resource.isEmpty() && resource.getFluid() == getHoneyFluid()) {
                 return drain(resource.getAmount(), action);
             }
@@ -476,12 +483,10 @@ public class FluidInteractionPoint {
             FluidStack result = new FluidStack(getHoneyFluid(), drainAmount);
 
             if (action.execute()) {
-                // 重置蜂蜜等级
                 try {
                     net.minecraft.world.level.block.BeehiveBlock beehiveBlock = (net.minecraft.world.level.block.BeehiveBlock) state.getBlock();
                     beehiveBlock.resetHoneyLevel(level, state, pos);
                 } catch (Exception e) {
-                    // 如果重置失败，尝试直接设置方块状态
                     level.setBlock(pos, state.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.LEVEL_HONEY, 0), 3);
                 }
             }
@@ -489,9 +494,6 @@ public class FluidInteractionPoint {
             return result;
         }
 
-        /**
-         * 检查蜂蜜是否满级
-         */
         private boolean isHoneyFull() {
             try {
                 BlockState currentState = level.getBlockState(pos);
