@@ -28,11 +28,7 @@ public class BeltInventoryMixin {
 
         VirtualRelayManager.VirtualRelay relay = VirtualRelayManager.getRelayAt(checkPos);
         if (relay != null) {
-            System.out.println("[BeltInventoryMixin] Returning virtual relay for segment " + segment);
             cir.setReturnValue(relay.getProcessingBehaviour());
         }
     }
-
-    // 删除 getTransportedItemStackHandlerAtSegment 的注入！
-    // 让传送带使用自己的handler
 }

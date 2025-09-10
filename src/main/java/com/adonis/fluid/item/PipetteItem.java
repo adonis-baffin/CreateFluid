@@ -30,8 +30,6 @@ public class PipetteItem extends BlockItem {
 
         // 检查是否可以作为流体交互点
         if (FluidInteractionPoint.create(world, pos, state) != null) {
-            // 事件处理器会处理选择逻辑
-            // 这里只返回 SUCCESS 来阻止放置
             return InteractionResult.SUCCESS;
         }
 

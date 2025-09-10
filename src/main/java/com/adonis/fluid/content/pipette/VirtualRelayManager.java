@@ -57,26 +57,20 @@ public class VirtualRelayManager {
 
         private BeltProcessingBehaviour.ProcessingResult onItemReceived(TransportedItemStack transported,
                                                                         TransportedItemStackHandlerBehaviour handler) {
-            System.out.println("[VirtualRelay] onItemReceived: " + transported.stack);
-
             BlockEntity workstation = workstationRef.get();
             if (!(workstation instanceof IRemoteFluidProcessor processor)) {
-                System.out.println("[VirtualRelay] Workstation is not IRemoteFluidProcessor");
                 return BeltProcessingBehaviour.ProcessingResult.PASS;
             }
 
             // 检查物品是否可以被填充
             if (!FillingBySpout.canItemBeFilled(workstation.getLevel(), transported.stack)) {
-                System.out.println("[VirtualRelay] Item cannot be filled: " + transported.stack);
                 return BeltProcessingBehaviour.ProcessingResult.PASS;
             }
 
             // 检查是否有流体
             FluidStack fluid = processor.getHeldFluid();
-            System.out.println("[VirtualRelay] Current fluid: " + fluid);
 
             if (fluid.isEmpty()) {
-                System.out.println("[VirtualRelay] No fluid, requesting from pipette");
                 // 请求取液
                 if (processor.requestFluidForItem(transported.stack, beltSegmentPos)) {
                     currentlyProcessing = transported;
@@ -91,10 +85,7 @@ public class VirtualRelayManager {
             int required = FillingBySpout.getRequiredAmountForItem(
                     workstation.getLevel(), singleItem, fluid);
 
-            System.out.println("[VirtualRelay] Required fluid: " + required + "mB, Available: " + fluid.getAmount() + "mB");
-
             if (required == -1 || required > fluid.getAmount()) {
-                System.out.println("[VirtualRelay] Not enough fluid");
                 return BeltProcessingBehaviour.ProcessingResult.PASS;
             }
 
@@ -106,7 +97,6 @@ public class VirtualRelayManager {
             // 触发移液器动画
             processor.notifyProcessingStarted(beltSegmentPos);
 
-            System.out.println("[VirtualRelay] Starting processing, timer set to " + FILLING_TIME);
             return BeltProcessingBehaviour.ProcessingResult.HOLD;
         }
 
@@ -118,7 +108,6 @@ public class VirtualRelayManager {
 
             // 检查handler是否有效
             if (handler == null) {
-                System.out.println("[VirtualRelay] ERROR: Handler is null!");
                 currentlyProcessing = null;
                 localProcessingTicks = -1;
                 waitingForFluid = false;
@@ -127,7 +116,6 @@ public class VirtualRelayManager {
 
             BlockEntity workstation = workstationRef.get();
             if (!(workstation instanceof IRemoteFluidProcessor processor)) {
-                System.out.println("[VirtualRelay] ERROR: Workstation lost!");
                 currentlyProcessing = null;
                 waitingForFluid = false;
                 localProcessingTicks = -1;
@@ -155,7 +143,6 @@ public class VirtualRelayManager {
                 waitingForFluid = false;
                 localProcessingTicks = FILLING_TIME;
                 processor.notifyProcessingStarted(beltSegmentPos);
-                System.out.println("[VirtualRelay] Fluid arrived, starting processing");
             }
 
             // 处理计时
@@ -167,14 +154,8 @@ public class VirtualRelayManager {
                     FluidStack fluid = processor.getHeldFluid();
                     Level level = workstation.getLevel();
 
-                    System.out.println("[VirtualRelay] === FILL PROCESS AT TICK 5 ===");
-                    System.out.println("[VirtualRelay] Current fluid: " + fluid);
-                    System.out.println("[VirtualRelay] Current item stack: " + transported.stack);
-                    System.out.println("[VirtualRelay] Item count: " + transported.stack.getCount());
-
                     // 判断是否批量处理
                     boolean bulk = canProcessInBulk() || transported.stack.getCount() == 1;
-                    System.out.println("[VirtualRelay] Processing mode: " + (bulk ? "BULK" : "SINGLE"));
 
                     // 准备要处理的物品
                     ItemStack toProcess;
@@ -184,31 +165,19 @@ public class VirtualRelayManager {
                         toProcess = ItemHandlerHelper.copyStackWithSize(transported.stack, 1);
                     }
 
-                    System.out.println("[VirtualRelay] Item to process: " + toProcess + " (count: " + toProcess.getCount() + ")");
-
                     // 获取流体需求
                     int required = FillingBySpout.getRequiredAmountForItem(level, toProcess, fluid);
-                    System.out.println("[VirtualRelay] Required fluid: " + required + "mB, Available: " + fluid.getAmount() + "mB");
 
                     if (required > 0 && required <= fluid.getAmount()) {
                         // 创建流体副本用于填充
                         FluidStack fluidForFilling = fluid.copy();
                         fluidForFilling.setAmount(required);
 
-                        System.out.println("[VirtualRelay] Calling FillingBySpout.fillItem with:");
-                        System.out.println("  - Item: " + toProcess);
-                        System.out.println("  - Fluid: " + fluidForFilling);
-                        System.out.println("  - Required: " + required);
-
                         // 执行填充（FillingBySpout.fillItem会消耗传入的ItemStack）
                         ItemStack filledResult = FillingBySpout.fillItem(
                                 level, required, toProcess, fluidForFilling);
 
-                        System.out.println("[VirtualRelay] Fill result: " + filledResult);
-
                         if (!filledResult.isEmpty()) {
-                            System.out.println("[VirtualRelay] Fill successful, result: " + filledResult);
-
                             // 清除风扇处理数据
                             transported.clearFanProcessingData();
 
@@ -218,19 +187,12 @@ public class VirtualRelayManager {
                             resultTransported.stack = filledResult;
                             outList.add(resultTransported);
 
-                            System.out.println("[VirtualRelay] Output list prepared with: " + filledResult);
-
                             // 从移液器消耗流体
                             fluid.shrink(required);
                             processor.syncFluid(fluid);
-                            System.out.println("[VirtualRelay] Fluid consumed, remaining: " + fluid.getAmount() + "mB");
-
-                            System.out.println("[VirtualRelay] Handler type: " + handler.getClass().getName());
-                            System.out.println("[VirtualRelay] Handler BE: " + handler.blockEntity);
 
                             if (bulk) {
                                 // 批量处理：完全替换
-                                System.out.println("[VirtualRelay] BULK: Replacing entire stack");
                                 TransportedItemStackHandlerBehaviour.TransportedResult result =
                                         TransportedItemStackHandlerBehaviour.TransportedResult.convertTo(outList);
                                 handler.handleProcessingOnItem(transported, result);
@@ -243,17 +205,13 @@ public class VirtualRelayManager {
                                     leftover = transported.copy();
                                     leftover.stack = transported.stack.copy();
                                     leftover.stack.shrink(1);
-                                    System.out.println("[VirtualRelay] SINGLE: Creating leftover with " + leftover.stack.getCount() + " items");
                                 }
 
-                                System.out.println("[VirtualRelay] SINGLE: Replacing with result and leftover");
                                 TransportedItemStackHandlerBehaviour.TransportedResult result =
                                         TransportedItemStackHandlerBehaviour.TransportedResult
                                                 .convertToAndLeaveHeld(outList, leftover);
                                 handler.handleProcessingOnItem(transported, result);
                             }
-
-                            System.out.println("[VirtualRelay] Handler.handleProcessingOnItem called");
 
                             // 发送粒子效果
                             if (processor instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
@@ -268,18 +226,11 @@ public class VirtualRelayManager {
                                 if (nextRequired > 0 && nextRequired <= fluid.getAmount()) {
                                     // 重置计时器继续处理
                                     localProcessingTicks = FILLING_TIME;
-                                    System.out.println("[VirtualRelay] Continuing to process next item");
                                     return BeltProcessingBehaviour.ProcessingResult.HOLD;
                                 }
                             }
-                        } else {
-                            System.out.println("[VirtualRelay] ERROR: Fill result was empty!");
                         }
-                    } else {
-                        System.out.println("[VirtualRelay] ERROR: Cannot process - not enough fluid or invalid requirement");
                     }
-
-                    System.out.println("[VirtualRelay] === END FILL PROCESS ===");
                 }
 
                 if (localProcessingTicks > 0) {
@@ -288,7 +239,6 @@ public class VirtualRelayManager {
             }
 
             // 处理完成
-            System.out.println("[VirtualRelay] Processing completed");
             currentlyProcessing = null;
             localProcessingTicks = -1;
 
@@ -328,12 +278,10 @@ public class VirtualRelayManager {
                 if (AllBlocks.BELT.has(state)) {
                     BlockPos relayPos = outputPos.above(2);
 
-                    if (canPlaceRelayAt(level, relayPos)) {
-                        VirtualRelay relay = new VirtualRelay(outputPos, workstationPos, level);
-                        activeRelays.put(relayPos, relay);
-                        relayPositions.add(relayPos);
-                        System.out.println("[VirtualRelayManager] Registered relay at " + relayPos + " for belt at " + outputPos);
-                    }
+                    // 强制创建虚拟中继器，无视任何阻碍
+                    VirtualRelay relay = new VirtualRelay(outputPos, workstationPos, level);
+                    activeRelays.put(relayPos, relay);
+                    relayPositions.add(relayPos);
                 }
             }
 
@@ -345,29 +293,13 @@ public class VirtualRelayManager {
     public static void unregisterWorkstation(BlockPos workstationPos) {
         Set<BlockPos> relayPositions = workstationToRelays.remove(workstationPos);
         if (relayPositions != null) {
-            relayPositions.forEach(pos -> {
-                activeRelays.remove(pos);
-                System.out.println("[VirtualRelayManager] Unregistered relay at " + pos);
-            });
+            relayPositions.forEach(activeRelays::remove);
         }
     }
 
-    // 检查是否可以在指定位置放置中继器
+    // 检查是否可以在指定位置放置中继器（现在总是返回true）
     private static boolean canPlaceRelayAt(Level level, BlockPos pos) {
-        BlockState state = level.getBlockState(pos);
-        if (state.isAir()) {
-            return true;
-        }
-
-        BlockEntity be = level.getBlockEntity(pos);
-        if (be != null) {
-            if (com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour.get(
-                    level, pos, BeltProcessingBehaviour.TYPE) != null) {
-                return false;
-            }
-        }
-
-        return activeRelays.containsKey(pos);
+        return true;
     }
 
     // 获取指定位置的中继器

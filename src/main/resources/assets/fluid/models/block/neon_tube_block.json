@@ -1,0 +1,9 @@
+{
+  "parent": "fluid:block/tube",
+  "textures": {
+    "all": "fluid:block/neon_tube",
+    "particle": "fluid:block/anvil",
+    "0": "fluid:block/neon_tube"
+  },
+  "render_type": "translucent"
+}

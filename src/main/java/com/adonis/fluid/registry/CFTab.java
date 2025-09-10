@@ -16,8 +16,12 @@ public class CFTab {
     public static final RegistryObject<CreativeModeTab> MAIN_TAB = CREATIVE_MODE_TABS.register("main",
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.fluid.main"))
-                    .icon(() -> new ItemStack(CFBlock.SMART_FLUID_INTERFACE.get()))
+                    .icon(() -> new ItemStack(CFItem.BATON.get()))
                     .displayItems((parameters, output) -> {
+
+                        // 物品
+                        output.accept(CFItem.BATON.get());
+
                         // 动力设备
                         output.accept(CFBlock.PIPETTE.get());
 
@@ -25,12 +29,6 @@ public class CFTab {
                         output.accept(CFBlock.FLUID_INTERFACE.get());
                         output.accept(CFBlock.SMART_FLUID_INTERFACE.get());
 
-                        // 陷阱系列
-                        output.accept(CFBlock.FRAME_TRAP.get());
-                        output.accept(CFBlock.MESH_TRAP.get());
-                        output.accept(CFBlock.TRAP_NOZZLE.get());
-                        output.accept(CFBlock.SMART_NOZZLE.get());
-                        output.accept(CFBlock.SMART_MESH.get());
                     })
                     .build());
 

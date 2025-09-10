@@ -1,5 +1,6 @@
 package com.adonis.fluid.registry;
 
+import com.adonis.fluid.item.BatonItem;
 import com.adonis.fluid.item.WornHarpoonItem;
 import com.tterrag.registrate.util.entry.ItemEntry;
 import net.minecraft.world.item.Item;
@@ -18,7 +19,11 @@ public class CFItem {
             .properties(p -> p.stacksTo(64))
             .register();
 
+    public static final ItemEntry<BatonItem> BATON = REGISTRATE
+            .item("baton", BatonItem::new)
+            .properties(p -> p.stacksTo(1))
+            .register();
+
     public static void register(IEventBus modEventBus) {
-        // Items are registered through REGISTRATE
     }
 }

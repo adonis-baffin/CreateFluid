@@ -7,8 +7,11 @@
   "mixins": [
     "AllArmInteractionPointTypesMixin",
     "accessor.DepotBehaviourAccessor",
-    "BeltInventoryMixin"
+    "BeltInventoryMixin",
+    "ArmPlacementPacketMixin"
   ],
-  "client": [],
+  "client": [
+    "accessor.ArmBlockEntityAccessor"
+  ],
   "server": []
 }

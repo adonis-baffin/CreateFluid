@@ -53,9 +53,35 @@ public class PipetteFluidPlacementPacket extends SimplePacketBase {
 
             BlockEntity be = world.getBlockEntity(pos);
             if (be instanceof PipetteBlockEntity pipette) {
+                System.out.println("[SERVER] PipetteFluidPlacementPacket 处理中");
+                System.out.println("[SERVER] 目标位置: " + pos);
+                System.out.println("[SERVER] 点数: " + pointsTag.size());
+
+                // 清空现有的交互点
+                pipette.inputs.clear();
+                pipette.outputs.clear();
+
+                // 设置交互点标签
                 pipette.setInteractionPointTag(pointsTag);
+
+                // 重置移动状态
+                pipette.resetMovementState();
+
+                // 使用强制重新加载方法
+                pipette.forceReloadInteractionPoints();
+
+                // 标记更改
                 pipette.setChanged();
+
+                // 发送数据
                 pipette.sendData();
+
+                // 延迟发送方块更新
+                world.getServer().execute(() -> {
+                    world.sendBlockUpdated(pos, pipette.getBlockState(), pipette.getBlockState(), 3);
+                });
+
+                System.out.println("[SERVER] 移液器更新完成 - 输入: " + pipette.inputs.size() + ", 输出: " + pipette.outputs.size());
             }
         });
         return true;
