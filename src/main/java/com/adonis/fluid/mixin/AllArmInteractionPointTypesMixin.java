@@ -1,11 +1,5 @@
-
-
 package com.adonis.fluid.mixin;
 
-import com.adonis.fluid.block.MeshTrap.MeshTrapInteractionPointType;
-import com.adonis.fluid.block.SmartMesh.SmartMeshInteractionPointType;
-import com.adonis.fluid.block.SmartNozzle.SmartNozzleInteractionPointType;
-import com.adonis.fluid.block.TrapNozzle.TrapNozzleInteractionPointType;
 import com.simibubi.create.content.kinetics.mechanicalArm.AllArmInteractionPointTypes;
 import com.simibubi.create.content.kinetics.mechanicalArm.ArmInteractionPointType;
 import java.lang.reflect.Method;
@@ -21,10 +15,7 @@ public class AllArmInteractionPointTypesMixin {
         try {
             Method registerMethod = AllArmInteractionPointTypes.class.getDeclaredMethod("register", String.class, ArmInteractionPointType.class);
             registerMethod.setAccessible(true);
-            registerMethod.invoke(null, "mesh_trap", new MeshTrapInteractionPointType());
-            registerMethod.invoke(null, "trap_nozzle", new TrapNozzleInteractionPointType());
-            registerMethod.invoke(null, "smart_nozzle", new SmartNozzleInteractionPointType());
-            registerMethod.invoke(null, "smart_mesh", new SmartMeshInteractionPointType());
+
         } catch (NoSuchMethodException e) {} catch (Exception e) {}
     }
 }

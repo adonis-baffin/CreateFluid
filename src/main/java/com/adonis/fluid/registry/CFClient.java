@@ -1,8 +1,6 @@
 package com.adonis.fluid.registry;
 
 import com.adonis.fluid.CreateFluid;
-import com.adonis.fluid.block.SmartNozzle.SmartNozzleRenderer;
-import com.adonis.fluid.block.SmartMesh.SmartMeshRenderer;
 import com.adonis.fluid.block.Pipette.PipetteRenderer;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceRenderer;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceRenderer;
@@ -25,20 +23,12 @@ public class CFClient {
         CFPartialModels.init();
 
         event.enqueueWork(() -> {
-            // 设置方块渲染层
-            ItemBlockRenderTypes.setRenderLayer(CFBlock.FRAME_TRAP.get(), RenderType.cutout());
-            ItemBlockRenderTypes.setRenderLayer(CFBlock.MESH_TRAP.get(), RenderType.cutout());
-            ItemBlockRenderTypes.setRenderLayer(CFBlock.TRAP_NOZZLE.get(), RenderType.cutout());
-            ItemBlockRenderTypes.setRenderLayer(CFBlock.SMART_NOZZLE.get(), RenderType.cutout());
-            ItemBlockRenderTypes.setRenderLayer(CFBlock.SMART_MESH.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(CFBlock.PIPETTE.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(CFBlock.FLUID_INTERFACE.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(CFBlock.SMART_FLUID_INTERFACE.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(CFBlock.AQUEDUCT.get(), RenderType.cutout());
 
             // 注册方块实体渲染器
-            BlockEntityRenderers.register(CFBlockEntity.SMART_NOZZLE.get(), SmartNozzleRenderer::new);
-            BlockEntityRenderers.register(CFBlockEntity.SMART_MESH.get(), SmartMeshRenderer::new);
             BlockEntityRenderers.register(CFBlockEntity.PIPETTE.get(), PipetteRenderer::new);
             BlockEntityRenderers.register(CFBlockEntity.FLUID_INTERFACE.get(), FluidInterfaceRenderer::new);
             BlockEntityRenderers.register(CFBlockEntity.SMART_FLUID_INTERFACE.get(), SmartFluidInterfaceRenderer::new);

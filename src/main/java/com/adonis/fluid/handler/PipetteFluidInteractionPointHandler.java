@@ -37,17 +37,12 @@ public class PipetteFluidInteractionPointHandler {
     static ItemStack currentItem;
     static long lastBlockPos = -1L;
 
-    // 提高优先级，确保在置物台处理之前执行
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void rightClickingBlocksSelectsThem(PlayerInteractEvent.RightClickBlock event) {
-        if (event.getLevel().isClientSide) {
-        }
-        // 检查是否手持移液器方块物品
         if (!CFBlock.PIPETTE.isIn(event.getItemStack())) {
             return;
         }
 
-        // 将 currentItem 赋值移到这里
         if (currentItem == null || !ItemStack.matches(currentItem, event.getItemStack())) {
             currentItem = event.getItemStack();
         }
@@ -60,7 +55,6 @@ public class PipetteFluidInteractionPointHandler {
             if (player != null && !player.isSpectator()) {
                 BlockState state = world.getBlockState(pos);
 
-                // 检查是否可以创建流体交互点
                 FluidInteractionPoint point = FluidInteractionPoint.create(world, pos, state);
                 if (point == null) {
                     return;
@@ -74,7 +68,6 @@ public class PipetteFluidInteractionPointHandler {
 
                 selected.cycleMode();
 
-                // 发送状态消息
                 FluidInteractionPoint.Mode mode = selected.getMode();
                 CreateLang.builder().translate(mode.getTranslationKey(),
                                 CreateLang.blockName(state).style(ChatFormatting.WHITE))
@@ -84,7 +77,6 @@ public class PipetteFluidInteractionPointHandler {
                 event.setCancellationResult(InteractionResult.SUCCESS);
             }
         } else {
-            // 服务端也要取消事件，防止置物台处理
             BlockState state = world.getBlockState(pos);
             if (FluidInteractionPoint.create(world, pos, state) != null) {
                 event.setCanceled(true);
@@ -105,7 +97,6 @@ public class PipetteFluidInteractionPointHandler {
             }
         }
     }
-
 
     public static void flushSettings(BlockPos pos) {
         if (currentSelection != null) {
@@ -151,17 +142,57 @@ public class PipetteFluidInteractionPointHandler {
         Player player = Minecraft.getInstance().player;
         if (player != null) {
             ItemStack heldItemMainhand = player.getMainHandItem();
-            if (!CFBlock.PIPETTE.isIn(heldItemMainhand)) {
-                currentItem = null;
-                currentSelection.clear();
-            } else {
+
+            // 处理移液器方块物品
+            if (CFBlock.PIPETTE.isIn(heldItemMainhand)) {
                 if (heldItemMainhand != currentItem) {
                     currentSelection.clear();
                     currentItem = heldItemMainhand;
                 }
                 drawOutlines(currentSelection);
+            } else {
+                currentItem = null;
+                // 不要在这里清除currentSelection，因为扳手可能在使用
             }
-            checkForWrench(heldItemMainhand);
+
+            // 独立处理扳手
+            if (AllItems.WRENCH.isIn(heldItemMainhand)) {
+                HitResult objectMouseOver = Minecraft.getInstance().hitResult;
+                if (objectMouseOver instanceof BlockHitResult result) {
+                    BlockPos pos = result.getBlockPos();
+                    BlockEntity be = Minecraft.getInstance().level.getBlockEntity(pos);
+
+                    if (be instanceof PipetteBlockEntity pipette) {
+                        // 如果位置改变或者是第一次，重新加载
+                        if (lastBlockPos != pos.asLong()) {
+                            currentSelection.clear();
+                            pipette.inputs.forEach(PipetteFluidInteractionPointHandler::put);
+                            pipette.outputs.forEach(PipetteFluidInteractionPointHandler::put);
+                            lastBlockPos = pos.asLong();
+                        }
+                        // 每tick都绘制，保持显示
+                        drawOutlines(currentSelection);
+                    } else {
+                        // 看其他方块时清除
+                        if (lastBlockPos != -1L) {
+                            lastBlockPos = -1L;
+                            currentSelection.clear();
+                        }
+                    }
+                } else {
+                    // 没看任何方块时清除
+                    if (lastBlockPos != -1L) {
+                        lastBlockPos = -1L;
+                        currentSelection.clear();
+                    }
+                }
+            } else if (currentItem == null) {
+                // 既不拿移液器也不拿扳手时才清除
+                if (lastBlockPos != -1L) {
+                    lastBlockPos = -1L;
+                    currentSelection.clear();
+                }
+            }
         }
     }
 
@@ -172,24 +203,34 @@ public class PipetteFluidInteractionPointHandler {
                 BlockHitResult result = (BlockHitResult)objectMouseOver;
                 BlockPos pos = result.getBlockPos();
                 BlockEntity be = Minecraft.getInstance().level.getBlockEntity(pos);
-                if (!(be instanceof PipetteBlockEntity)) {
-                    lastBlockPos = -1L;
-                    currentSelection.clear();
-                } else {
-                    if (lastBlockPos == -1L || lastBlockPos != pos.asLong()) {
+
+                if (be instanceof PipetteBlockEntity) {
+                    // 每次检查都刷新显示
+                    if (lastBlockPos != pos.asLong()) {
                         currentSelection.clear();
                         PipetteBlockEntity pipette = (PipetteBlockEntity)be;
                         pipette.inputs.forEach(PipetteFluidInteractionPointHandler::put);
                         pipette.outputs.forEach(PipetteFluidInteractionPointHandler::put);
                         lastBlockPos = pos.asLong();
                     }
-
+                    // 持续绘制轮廓
+                    drawOutlines(currentSelection);
+                } else {
+                    // 不再看着移液器时清除
                     if (lastBlockPos != -1L) {
-                        drawOutlines(currentSelection);
+                        lastBlockPos = -1L;
+                        currentSelection.clear();
                     }
+                }
+            } else {
+                // 没有看着任何方块时清除
+                if (lastBlockPos != -1L) {
+                    lastBlockPos = -1L;
+                    currentSelection.clear();
                 }
             }
         } else {
+            // 不拿扳手时清除
             if (lastBlockPos != -1L) {
                 lastBlockPos = -1L;
                 currentSelection.clear();

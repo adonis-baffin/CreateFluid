@@ -1,10 +1,6 @@
 package com.adonis.fluid.registry;
 
 import com.adonis.fluid.CreateFluid;
-import com.adonis.fluid.block.MeshTrap.MeshTrapBlockEntity;
-import com.adonis.fluid.block.SmartMesh.SmartMeshBlockEntity;
-import com.adonis.fluid.block.TrapNozzle.TrapNozzleBlockEntity;
-import com.adonis.fluid.block.SmartNozzle.SmartNozzleBlockEntity;
 import com.adonis.fluid.block.Pipette.PipetteBlockEntity;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlockEntity;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlockEntity;
@@ -18,24 +14,6 @@ import net.minecraftforge.registries.RegistryObject;
 public class CFBlockEntity {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, CreateFluid.MODID);
-
-    public static final RegistryObject<BlockEntityType<MeshTrapBlockEntity>> MESH_TRAP =
-            BLOCK_ENTITIES.register("mesh_trap", () -> BlockEntityType.Builder.of(
-                    MeshTrapBlockEntity::new, CFBlock.MESH_TRAP.get()).build(null));
-
-    public static final RegistryObject<BlockEntityType<TrapNozzleBlockEntity>> TRAP_NOZZLE =
-            BLOCK_ENTITIES.register("trap_nozzle", () -> BlockEntityType.Builder.of(
-                    (pos, state) -> new TrapNozzleBlockEntity(CFBlockEntity.TRAP_NOZZLE.get(), pos, state),
-                    CFBlock.TRAP_NOZZLE.get()).build(null));
-
-    public static final RegistryObject<BlockEntityType<SmartNozzleBlockEntity>> SMART_NOZZLE =
-            BLOCK_ENTITIES.register("smart_nozzle", () -> BlockEntityType.Builder.of(
-                    (pos, state) -> new SmartNozzleBlockEntity(CFBlockEntity.SMART_NOZZLE.get(), pos, state),
-                    CFBlock.SMART_NOZZLE.get()).build(null));
-
-    public static final RegistryObject<BlockEntityType<SmartMeshBlockEntity>> SMART_MESH =
-            BLOCK_ENTITIES.register("smart_mesh", () -> BlockEntityType.Builder.of(
-                    SmartMeshBlockEntity::new, CFBlock.SMART_MESH.get()).build(null));
 
     public static final RegistryObject<BlockEntityType<PipetteBlockEntity>> PIPETTE =
             BLOCK_ENTITIES.register("pipette", () -> BlockEntityType.Builder.of(

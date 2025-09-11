@@ -28,7 +28,6 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.fluids.FluidStack;
 
 public class PipetteBlock extends KineticBlock implements IBE<PipetteBlockEntity>, ICogWheel {
     public static final BooleanProperty CEILING = BooleanProperty.create("ceiling");
