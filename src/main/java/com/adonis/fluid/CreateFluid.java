@@ -129,6 +129,15 @@ public class CreateFluid {
                         boolean handled = msg.handle(ctx);
                         ctx.setPacketHandled(handled);
                     });
+
+            channel.registerMessage(id++, com.adonis.fluid.packet.QuartzLampTogglePacket.class,
+                    (msg, buf) -> msg.write(buf),
+                    com.adonis.fluid.packet.QuartzLampTogglePacket::new,
+                    (msg, ctxSupplier) -> {
+                        NetworkEvent.Context ctx = ctxSupplier.get();
+                        boolean handled = msg.handle(ctx);
+                        ctx.setPacketHandled(handled);
+                    });
         });
     }
 

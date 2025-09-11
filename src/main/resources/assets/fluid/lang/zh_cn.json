@@ -2,6 +2,7 @@
   "block.fluid.pipette": "动力移液器",
   "block.fluid.fluid_interface": "流体接口",
   "block.fluid.smart_fluid_interface": "智能流体接口",
+  "item.fluid.honeycomb_mold": "蜜脾模具",
   "item.fluid.baton": "指挥棒",
   "item.fluid.baton.tooltip.summary": "用于配置动力臂和移液器的交互点",
   "item.fluid.baton.tooltip.control1": "右键动力臂/移液器",
@@ -42,10 +43,6 @@
   "block.fluid.pipette.tooltip.condition3": "配置",
   "block.fluid.pipette.tooltip.behaviour3": "使用移液器右键_流体接口_、_工作盆_、_蜂巢_或_烈焰人燃烧室_来设置交互点。使用_扳手_修改选择模式。",
 
-  "fluid.blaze_burner_interaction": "烈焰人燃烧室燃料输入",
-  "fluid.beehive_interaction": "蜂巢蜂蜜输出",
-  "fluid.general_interaction": "流体容器访问",
-
   "create.fluid.mechanical_pipette.extract": "从%1$s吸取流体",
   "create.fluid.mechanical_pipette.deposit": "将流体注入%1$s",
   "create.fluid.mechanical_pipette.points_outside_range": "由于距离限制，%1$s 个已选定的交互点已被移除。",
@@ -59,5 +56,14 @@
 
   "create.hint.mechanical_arm_no_targets": "看起来这个_动力臂_没有被分配任何_目标_。_手持动力臂_，_右击_选取传送带、置物台、漏斗或其他元件来设置目标。",
   "create.hint.mechanical_arm_no_targets.title": "没有目标",
-  "create.create.mechanical_arm.points_outside_range": "由于距离限制，%1$s 个已选定的交互点已被移除。"
+  "create.create.mechanical_arm.points_outside_range": "由于距离限制，%1$s 个已选定的交互点已被移除。",
+
+  "create.fluid.baton.arm.dance_started": "动力臂开始跳舞",
+  "create.fluid.baton.arm.dance_stopped": "动力臂停止跳舞",
+  "create.fluid.baton.ejector.click_to_set": "点击设置目标位置",
+  "create.fluid.baton.ejector.target_set": "目标位置已设置",
+  "create.fluid.baton.ejector.no_target": "未设置目标位置",
+  "create.fluid.baton.ejector.invalid_target": "无效的目标位置",
+  "create.fluid.baton.ejector.target_cleared": "目标位置已清除",
+  "create.fluid.baton.interaction_point_removed": "交互点已移除"
 }

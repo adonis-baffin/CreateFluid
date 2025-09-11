@@ -2,6 +2,7 @@
   "block.fluid.pipette": "Mechanical Pipette",
   "block.fluid.fluid_interface": "Fluid Interface",
   "block.fluid.smart_fluid_interface": "Smart Fluid Interface",
+  "item.fluid.honeycomb_mold": "Honeycomb Mold",
   "item.fluid.baton": "Conductor's Baton",
   "item.fluid.baton.tooltip.summary": "Used to configure interaction points for Mechanical Arms and Pipettes",
   "item.fluid.baton.tooltip.control1": "Right-Click on Arm/Pipette",
@@ -40,10 +41,6 @@
   "block.fluid.pipette.tooltip.condition3": "Configuration",
   "block.fluid.pipette.tooltip.behaviour3": "Use the Pipette on _Fluid Interfaces_, _Basins_, _Beehives_, or _Blaze Burners_ to set up interaction points. Use _Wrench_ to modify selection modes.",
 
-  "fluid.blaze_burner_interaction": "Blaze Burner Fuel Input",
-  "fluid.beehive_interaction": "Beehive Honey Output",
-  "fluid.general_interaction": "Fluid Container Access",
-
   "create.fluid.mechanical_pipette.extract": "Drain fluid from %1$s",
   "create.fluid.mechanical_pipette.deposit": "Inject fluid to %1$s",
   "create.fluid.mechanical_pipette.points_outside_range": "%1$s Fluid Interaction Points were removed because they are now out of range",
@@ -61,5 +58,14 @@
   "create.create.mechanical_arm.selection_mode.forced_round_robin": "Forced Round Robin",
   "create.create.mechanical_arm.selection_mode.prefer_first": "Prefer First Target",
   "create.create.mechanical_arm.selection_mode.round_robin": "Round Robin",
-  "create.create.mechanical_arm.summary": "Mechanical Arm has %1$s input(s) and %2$s output(s)."
+  "create.create.mechanical_arm.summary": "Mechanical Arm has %1$s input(s) and %2$s output(s).",
+
+  "create.fluid.baton.arm.dance_started": "Arm started dancing",
+  "create.fluid.baton.arm.dance_stopped": "Arm stopped dancing",
+  "create.fluid.baton.ejector.click_to_set": "Click to set target position",
+  "create.fluid.baton.ejector.target_set": "Target position set",
+  "create.fluid.baton.ejector.no_target": "No target position set",
+  "create.fluid.baton.ejector.invalid_target": "Invalid target position",
+  "create.fluid.baton.ejector.target_cleared": "Target position cleared",
+  "create.fluid.baton.interaction_point_removed": "Interaction point removed"
 }

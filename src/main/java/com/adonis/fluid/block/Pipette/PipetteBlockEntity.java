@@ -513,21 +513,47 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                         break;
                     }
                 }
-                // 检查其他可以接受流体的输出端（如工作盆）- 移除流体检查
+                // 检查其他可以接受流体的输出端（如工作盆）
                 else if (output.isValid()) {
                     hasValidNonBeltOutput = true;
                     break;
                 }
             }
 
-            // 只有在有非传送带的有效输出目标时才取液
+            // 只有在有非传送带的有效输出目标时才继续
             if (!hasValidNonBeltOutput) {
                 return;
             }
 
-            // 只有在有非传送带的有效输出目标时才取液
-            if (!hasValidNonBeltOutput) {
-                return;
+            // 新增：先检查自身是否已有可用流体
+            if (!this.heldFluid.isEmpty()) {
+                // 检查自身流体是否能满足任何输出需求
+                for (FluidInteractionPoint output : this.outputs) {
+                    // 跳过传送带
+                    if (com.simibubi.create.AllBlocks.BELT.has(level.getBlockState(output.getPos()))) {
+                        continue;
+                    }
+
+                    // 检查置物台上的物品
+                    if (output instanceof DepotFluidInteractionPoint depotPoint) {
+                        if (depotPoint.hasItemForFilling() && depotPoint.canInsert(this.heldFluid)) {
+                            // 自身流体可以满足需求，直接切换到搜索输出阶段
+                            this.phase = Phase.SEARCH_OUTPUTS;
+                            this.chasedPointProgress = 0.0F;
+                            this.chasedPointIndex = -1;
+                            searchForDestination();  // 立即搜索输出目标
+                            return;
+                        }
+                    }
+                    // 检查其他输出端（如工作盆）
+                    else if (output.isValid() && output.canInsert(this.heldFluid)) {
+                        this.phase = Phase.SEARCH_OUTPUTS;
+                        this.chasedPointProgress = 0.0F;
+                        this.chasedPointIndex = -1;
+                        searchForDestination();
+                        return;
+                    }
+                }
             }
 
             // 搜索可用的输入源

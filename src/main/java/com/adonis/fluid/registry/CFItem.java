@@ -13,6 +13,11 @@ public class CFItem {
             .properties(p -> p.stacksTo(1))
             .register();
 
+    public static final ItemEntry<BatonItem> HONEYCOMB_MOLD = REGISTRATE
+            .item("honeycomb_mold", BatonItem::new)
+            .properties(p -> p.stacksTo(64))
+            .register();
+
     public static void register(IEventBus modEventBus) {
     }
 }

@@ -25,16 +25,44 @@
 		},
 		{
 			"name": "Rod Bottom Core",
-			"from": [6.5, 7, 6.5],
+			"from": [6.5, 9, 6.5],
 			"to": [9.5, 27, 9.5],
-			"rotation": {"angle": 45, "axis": "y", "origin": [8, 8, 8]},
+			"rotation": {"angle": 45, "axis": "y", "origin": [8, 10, 8]},
 			"faces": {
-				"north": {"uv": [9, 2.5, 10.5, 12.5], "texture": "#8"},
-				"east": {"uv": [9, 2.5, 10.5, 12.5], "texture": "#8"},
-				"south": {"uv": [9, 2.5, 10.5, 12.5], "texture": "#8"},
-				"west": {"uv": [9, 2.5, 10.5, 12.5], "texture": "#8"},
-				"up": {"uv": [11, 2, 14, 5], "texture": "#8"},
+				"north": {"uv": [9, 2.5, 10.5, 11.5], "texture": "#8"},
+				"east": {"uv": [9, 2.5, 10.5, 11.5], "texture": "#8"},
+				"south": {"uv": [9, 2.5, 10.5, 11.5], "texture": "#8"},
+				"west": {"uv": [9, 2.5, 10.5, 11.5], "texture": "#8"},
+				"up": {"uv": [11, 3.5, 12.5, 5], "texture": "#8"},
 				"down": {"uv": [11, 2, 14, 5], "texture": "#8"}
+			}
+		},
+		{
+			"name": "Rod Bottom Core",
+			"from": [7.2, 9, 7.2],
+			"to": [8.8, 27, 8.8],
+			"rotation": {"angle": 45, "axis": "y", "origin": [8, 10, 8]},
+			"faces": {
+				"north": {"uv": [0, 14, 10, 15], "texture": "#8"},
+				"east": {"uv": [0, 14, 10, 15], "texture": "#8"},
+				"south": {"uv": [0, 14, 10, 15], "texture": "#8"},
+				"west": {"uv": [0, 14, 10, 15], "texture": "#8"},
+				"up": {"uv": [0, 14, 1, 15], "texture": "#8"},
+				"down": {"uv": [0, 14, 1, 15], "texture": "#8"}
+			}
+		},
+		{
+			"name": "Rod Bottom Core",
+			"from": [7.5, 10, 7.5],
+			"to": [8.5, 26, 8.5],
+			"rotation": {"angle": 45, "axis": "y", "origin": [8, 11, 8]},
+			"faces": {
+				"north": {"uv": [0, 15, 10, 16], "texture": "#8"},
+				"east": {"uv": [0, 15, 10, 16], "rotation": 90, "texture": "#8"},
+				"south": {"uv": [0, 15, 10, 16], "rotation": 90, "texture": "#8"},
+				"west": {"uv": [0, 15, 10, 16], "texture": "#8"},
+				"up": {"uv": [0, 15, 1, 16], "texture": "#8"},
+				"down": {"uv": [0, 15, 1, 16], "texture": "#8"}
 			}
 		},
 		{
@@ -65,16 +93,30 @@
 			}
 		},
 		{
+			"name": "Rod Top Core",
+			"from": [6.5, 7, 6.5],
+			"to": [9.5, 9, 9.5],
+			"rotation": {"angle": 45, "axis": "y", "origin": [8, -12, 8]},
+			"faces": {
+				"north": {"uv": [4, 12, 7, 14], "texture": "#6"},
+				"east": {"uv": [11, 12, 14, 14], "texture": "#6"},
+				"south": {"uv": [4, 12, 7, 14], "texture": "#6"},
+				"west": {"uv": [11, 12, 14, 14], "texture": "#6"},
+				"up": {"uv": [12, 1, 15, 4], "texture": "#6"},
+				"down": {"uv": [12, 1, 15, 4], "texture": "#6"}
+			}
+		},
+		{
 			"name": "Cap",
 			"from": [6, 30, 6],
 			"to": [10, 31, 10],
 			"faces": {
-				"north": {"uv": [0, 0, 4, 1], "texture": "#4"},
-				"east": {"uv": [0, 0, 4, 1], "texture": "#4"},
-				"south": {"uv": [0, 0, 4, 1], "texture": "#4"},
-				"west": {"uv": [0, 0, 4, 1], "texture": "#4"},
-				"up": {"uv": [7, 10, 11, 14], "texture": "#4"},
-				"down": {"uv": [7, 10, 11, 14], "texture": "#4"}
+				"north": {"uv": [0, 0, 4, 1], "texture": "#5"},
+				"east": {"uv": [0, 0, 4, 1], "texture": "#5"},
+				"south": {"uv": [0, 0, 4, 1], "texture": "#5"},
+				"west": {"uv": [0, 0, 4, 1], "texture": "#5"},
+				"up": {"uv": [7, 10, 11, 14], "texture": "#5"},
+				"down": {"uv": [7, 10, 11, 14], "texture": "#5"}
 			}
 		},
 		{

@@ -25,28 +25,13 @@ public class BatonItem extends Item {
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
-        Level level = context.getLevel();
-        BlockPos pos = context.getClickedPos();
-        BlockState state = level.getBlockState(pos);
-
-        // Check if this block can be an interaction point
-        if (canBeInteractionPoint(level, pos, state)) {
-            // Prevent placing the baton on interaction points
-            return InteractionResult.SUCCESS;
-        }
-
-        // Check if it's an arm or pipette
-        if (level.getBlockEntity(pos) instanceof com.simibubi.create.content.kinetics.mechanicalArm.ArmBlockEntity ||
-                level.getBlockEntity(pos) instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity) {
-            return InteractionResult.SUCCESS;
-        }
-
+        // 不需要特殊处理，让事件监听器处理
         return InteractionResult.PASS;
     }
 
     @Override
     public boolean canAttackBlock(BlockState state, Level world, BlockPos pos, Player player) {
-        // In selection mode, completely prevent breaking
+        // 在选择模式下，完全阻止破坏
         if (BatonInteractionHandler.isInSelectionMode()) {
             return false;
         }
@@ -55,16 +40,16 @@ public class BatonItem extends Item {
 
     @Override
     public boolean onBlockStartBreak(ItemStack itemstack, BlockPos pos, Player player) {
-        // Double insurance: also prevent at break start
+        // 双重保险：在开始破坏时也阻止
         if (BatonInteractionHandler.isInSelectionMode()) {
-            return true; // Return true to prevent breaking
+            return true; // 返回true阻止破坏
         }
         return false;
     }
 
     @Override
     public boolean mineBlock(ItemStack stack, Level level, BlockState state, BlockPos pos, net.minecraft.world.entity.LivingEntity entity) {
-        // Triple insurance: prevent during mining
+        // 三重保险：在挖掘期间阻止
         if (BatonInteractionHandler.isInSelectionMode()) {
             return false;
         }
@@ -73,7 +58,7 @@ public class BatonItem extends Item {
 
     @Override
     public float getDestroySpeed(ItemStack stack, BlockState state) {
-        // In selection mode, destroy speed is 0
+        // 在选择模式下，破坏速度为0
         if (BatonInteractionHandler.isInSelectionMode()) {
             return 0.0F;
         }
@@ -82,25 +67,13 @@ public class BatonItem extends Item {
 
     @Override
     public boolean canPerformAction(ItemStack stack, ToolAction toolAction) {
-        // Don't allow any tool actions
-        return false;
-    }
-
-    private boolean canBeInteractionPoint(Level level, BlockPos pos, BlockState state) {
-        // Check for arm interaction points
-        if (com.simibubi.create.content.kinetics.mechanicalArm.ArmInteractionPoint.isInteractable(level, pos, state)) {
-            return true;
-        }
-        // Check for pipette interaction points
-        if (com.adonis.fluid.content.pipette.FluidInteractionPoint.create(level, pos, state) != null) {
-            return true;
-        }
+        // 不允许任何工具动作
         return false;
     }
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
-        // Right-click in air to exit selection mode
+        // 在空中右键退出选择模式
         if (level.isClientSide && BatonInteractionHandler.isInSelectionMode()) {
             BatonInteractionHandler.cancelSelection();
             return InteractionResultHolder.success(player.getItemInHand(hand));

@@ -28,6 +28,7 @@ public class CFTab {
                         // 流体接口
                         output.accept(CFBlock.FLUID_INTERFACE.get());
                         output.accept(CFBlock.SMART_FLUID_INTERFACE.get());
+                        output.accept(CFItem.HONEYCOMB_MOLD.get());
 
                     })
                     .build());
