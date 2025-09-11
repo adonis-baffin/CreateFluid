@@ -31,6 +31,7 @@ public class VirtualRelayManager {
         private int localProcessingTicks = -1;
         private boolean waitingForFluid = false;
         private static final int FILLING_TIME = 20;
+        private boolean pipetteReady = false;
 
         public VirtualRelay(BlockPos beltPos, BlockPos workstationPos, Level level) {
             this.beltSegmentPos = beltPos;
@@ -108,6 +109,7 @@ public class VirtualRelayManager {
                 currentlyProcessing = null;
                 localProcessingTicks = -1;
                 waitingForFluid = false;
+                pipetteReady = false;
                 return BeltProcessingBehaviour.ProcessingResult.PASS;
             }
 
@@ -116,20 +118,9 @@ public class VirtualRelayManager {
                 currentlyProcessing = null;
                 waitingForFluid = false;
                 localProcessingTicks = -1;
+                pipetteReady = false;
                 return BeltProcessingBehaviour.ProcessingResult.PASS;
             }
-
-            // 获取移液器的转速来计算延迟
-            float speed = 64f; // 默认速度
-            if (workstation instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
-                speed = Math.abs(pipette.getSpeed());
-            }
-
-            // 根据转速计算处理时间
-            // 基础时间20tick，根据转速调整：转速越高，处理越快
-            float speedMultiplier = 64f / Math.max(1f, speed);
-            int baseTime = 20;
-            int totalProcessingTime = Math.max(10, Math.round(baseTime * speedMultiplier));
 
             // 等待流体阶段
             if (waitingForFluid) {
@@ -141,32 +132,42 @@ public class VirtualRelayManager {
 
                 if (!fluid.isEmpty() && required > 0 && required <= fluid.getAmount()) {
                     waitingForFluid = false;
-                    localProcessingTicks = totalProcessingTime;
+                    pipetteReady = false;  // 重置移液器就绪标志
                     processor.notifyProcessingStarted(beltSegmentPos);
                 }
                 return BeltProcessingBehaviour.ProcessingResult.HOLD;
             }
 
-            // 处理阶段
+            // 等待移液器到达传送带位置
+            if (!pipetteReady) {
+                if (processor instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
+                    // 使用公开的方法检查移液器状态
+                    // isInjectMode() 表示正在输出模式
+                    // getWorkProgress() >= 1.0F 表示已经到达目标
+                    if (pipette.isInjectMode() && pipette.getWorkProgress() >= 1.0F) {
+                        // 移液器已经到达，可以开始处理
+                        pipetteReady = true;
+                        localProcessingTicks = 10;  // 短暂的注液动画时间
+                    }
+                }
+                return BeltProcessingBehaviour.ProcessingResult.HOLD;
+            }
+
+            // 执行加工阶段
             if (localProcessingTicks > 0) {
                 localProcessingTicks--;
 
-                // 动态计算粒子和加工的时机，保持相对位置
-                int particleTick = Math.max(totalProcessingTime / 2, 5);
-                int processTick = Math.max(totalProcessingTime / 4, 2);
-
                 // 发送粒子效果
-                if (localProcessingTicks == particleTick) {
+                if (localProcessingTicks == 8) {
                     BlockEntity ws = workstationRef.get();
                     if (ws instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
-                        // 使用流体副本，确保即使是最后一次加工也有粒子
                         FluidStack fluidForParticles = pipette.getHeldFluid().copy();
                         pipette.sendBeltProcessingEffects(beltSegmentPos, fluidForParticles);
                     }
                 }
 
                 // 执行实际填充
-                if (localProcessingTicks == processTick) {
+                if (localProcessingTicks == 3) {
                     FluidStack fluid = processor.getHeldFluid();
                     Level level = workstation.getLevel();
 
@@ -219,18 +220,15 @@ public class VirtualRelayManager {
                                 handler.handleProcessingOnItem(transported, result);
                             }
 
-                            // 处理下一个物品时也使用动态计算的时间
+                            // 检查是否还有下一个物品需要处理
                             if (!bulk && transported.stack.getCount() > 1) {
                                 ItemStack nextSingle = ItemHandlerHelper.copyStackWithSize(transported.stack, 1);
                                 int nextRequired = FillingBySpout.getRequiredAmountForItem(level, nextSingle, fluid);
 
                                 if (nextRequired > 0 && nextRequired <= fluid.getAmount()) {
-                                    // 重新计算速度（可能已经改变）
-                                    if (workstation instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
-                                        speed = Math.abs(pipette.getSpeed());
-                                    }
-                                    speedMultiplier = 64f / Math.max(1f, speed);
-                                    localProcessingTicks = Math.max(10, Math.round(baseTime * speedMultiplier));
+                                    // 移液器已经在位置上，可以直接开始下一个
+                                    pipetteReady = true;
+                                    localProcessingTicks = 10;
                                     return BeltProcessingBehaviour.ProcessingResult.HOLD;
                                 }
                             }
@@ -247,8 +245,12 @@ public class VirtualRelayManager {
             currentlyProcessing = null;
             localProcessingTicks = -1;
             waitingForFluid = false;
+            pipetteReady = false;
 
-            processor.notifyProcessingCompleted(beltSegmentPos);
+            // 通知移液器立即开始下一个工作循环
+            if (processor instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
+                pipette.onBeltProcessingFinished(beltSegmentPos);
+            }
 
             return BeltProcessingBehaviour.ProcessingResult.PASS;
         }

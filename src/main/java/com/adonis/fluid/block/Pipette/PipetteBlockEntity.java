@@ -228,14 +228,7 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         processingTicks = 0;
         activeRelay = null;
 
-        finishBeltProcessing(beltPos);
-
-        if (heldFluid.isEmpty()) {
-            phase = Phase.SEARCH_INPUTS;
-            chasedPointProgress = 0.0F;
-            chasedPointIndex = -1;
-            sendData();
-        }
+        // 不在这里处理状态切换，让onBeltProcessingFinished处理
     }
 
     public float getFluidFillRatio() {
@@ -508,7 +501,7 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             boolean hasValidNonBeltOutput = false;
 
             for (FluidInteractionPoint output : this.outputs) {
-                // 跳过传送带 - 传送带不应触发主动取液
+                // 跳过传送带
                 if (com.simibubi.create.AllBlocks.BELT.has(level.getBlockState(output.getPos()))) {
                     continue;
                 }
@@ -520,11 +513,16 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                         break;
                     }
                 }
-                // 检查其他可以接受流体的输出端（如工作盆）
-                else if (output.isValid() && !heldFluid.isEmpty() && output.canInsert(heldFluid)) {
+                // 检查其他可以接受流体的输出端（如工作盆）- 移除流体检查
+                else if (output.isValid()) {
                     hasValidNonBeltOutput = true;
                     break;
                 }
+            }
+
+            // 只有在有非传送带的有效输出目标时才取液
+            if (!hasValidNonBeltOutput) {
+                return;
             }
 
             // 只有在有非传送带的有效输出目标时才取液
@@ -581,6 +579,32 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                 break;
             }
         }
+    }
+
+    public void onBeltProcessingFinished(BlockPos beltPos) {
+        // 完成传送带处理
+        this.processingBelt = false;
+        this.processingBeltPos = null;
+        this.beltProcessingTicks = 0;
+
+        // 立即决定下一步动作
+        if (!heldFluid.isEmpty()) {
+            // 还有流体，立即搜索其他输出
+            this.phase = Phase.SEARCH_OUTPUTS;
+            this.chasedPointProgress = 0.0F;
+            this.chasedPointIndex = -1;
+
+            // 立即执行搜索
+            searchForDestination();
+        } else {
+            // 没有流体了，回到搜索输入
+            this.phase = Phase.SEARCH_INPUTS;
+            this.chasedPointProgress = 0.0F;
+            this.chasedPointIndex = -1;
+        }
+
+        sendData();
+        setChanged();
     }
 
     private void selectIndex(boolean input, int index) {
