@@ -11,7 +11,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.minecraftforge.common.ToolAction;
+
+import java.util.function.Consumer;
 
 public class BatonItem extends Item {
     public BatonItem(Properties properties) {
@@ -43,7 +48,6 @@ public class BatonItem extends Item {
     public boolean canAttackBlock(BlockState state, Level world, BlockPos pos, Player player) {
         // In selection mode, completely prevent breaking
         if (BatonInteractionHandler.isInSelectionMode()) {
-            System.out.println("[DEBUG] canAttackBlock - blocking in selection mode");
             return false;
         }
         return true;
@@ -53,7 +57,6 @@ public class BatonItem extends Item {
     public boolean onBlockStartBreak(ItemStack itemstack, BlockPos pos, Player player) {
         // Double insurance: also prevent at break start
         if (BatonInteractionHandler.isInSelectionMode()) {
-            System.out.println("[DEBUG] onBlockStartBreak - blocking in selection mode");
             return true; // Return true to prevent breaking
         }
         return false;
@@ -63,7 +66,6 @@ public class BatonItem extends Item {
     public boolean mineBlock(ItemStack stack, Level level, BlockState state, BlockPos pos, net.minecraft.world.entity.LivingEntity entity) {
         // Triple insurance: prevent during mining
         if (BatonInteractionHandler.isInSelectionMode()) {
-            System.out.println("[DEBUG] mineBlock - blocking in selection mode");
             return false;
         }
         return super.mineBlock(stack, level, state, pos, entity);
@@ -104,5 +106,15 @@ public class BatonItem extends Item {
             return InteractionResultHolder.success(player.getItemInHand(hand));
         }
         return super.use(level, player, hand);
+    }
+
+    @Override
+    @OnlyIn(Dist.CLIENT)
+    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
+        consumer.accept(new IClientItemExtensions() {
+            public ItemStack getDefaultInstance() {
+                return new ItemStack(BatonItem.this);
+            }
+        });
     }
 }

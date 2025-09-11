@@ -6,9 +6,12 @@ import com.adonis.fluid.block.FluidInterface.FluidInterfaceRenderer;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceRenderer;
 import com.adonis.fluid.block.aqueduct.AqueductRenderer;
 import com.adonis.fluid.handler.PipetteFluidInteractionPointHandler;
+import com.adonis.fluid.item.BatonItemPropertyFunction;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
+import net.minecraft.client.renderer.item.ItemProperties;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -33,6 +36,11 @@ public class CFClient {
             BlockEntityRenderers.register(CFBlockEntity.FLUID_INTERFACE.get(), FluidInterfaceRenderer::new);
             BlockEntityRenderers.register(CFBlockEntity.SMART_FLUID_INTERFACE.get(), SmartFluidInterfaceRenderer::new);
             BlockEntityRenderers.register(CFBlockEntity.AQUEDUCT.get(), AqueductRenderer::new);
+
+            // 注册指挥棒的属性覆盖
+            ItemProperties.register(CFItem.BATON.get(),
+                    new ResourceLocation(CreateFluid.MODID, "selection_mode"),
+                    new BatonItemPropertyFunction());
         });
     }
 

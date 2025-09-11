@@ -28,8 +28,6 @@ public class ArmPlacementPacketMixin {
      */
     @Overwrite
     public boolean handle(NetworkEvent.Context context) {
-        System.out.println("[SERVER MIXIN] ArmPlacementPacket.handle() 被调用");
-
         context.enqueueWork(() -> {
             ServerPlayer player = context.getSender();
             if (player != null) {
@@ -54,14 +52,13 @@ public class ArmPlacementPacketMixin {
                         accessor.setChasedPointProgress(0.0F);
                         accessor.setChasedPointIndex(-1);
 
-                        // 立即初始化交互点（通过调用initInteractionPoints）
+                        // 立即初始化交互点
                         try {
                             java.lang.reflect.Method initMethod = ArmBlockEntity.class.getDeclaredMethod("initInteractionPoints");
                             initMethod.setAccessible(true);
                             initMethod.invoke(arm);
-                            System.out.println("[SERVER MIXIN] 强制初始化交互点");
                         } catch (Exception e) {
-                            System.out.println("[SERVER MIXIN] 无法调用initInteractionPoints: " + e.getMessage());
+                            // 静默处理
                         }
 
                         // 标记更改
@@ -74,8 +71,6 @@ public class ArmPlacementPacketMixin {
                         world.getServer().execute(() -> {
                             world.sendBlockUpdated(pos, arm.getBlockState(), arm.getBlockState(), 3);
                         });
-
-                        System.out.println("[SERVER MIXIN] 更新完成 - 输入: " + accessor.getInputs().size() + ", 输出: " + accessor.getOutputs().size());
                     }
                 }
             }

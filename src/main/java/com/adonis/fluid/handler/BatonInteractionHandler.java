@@ -15,12 +15,17 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
@@ -29,10 +34,12 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 
 @Mod.EventBusSubscriber(value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class BatonInteractionHandler {
@@ -41,7 +48,7 @@ public class BatonInteractionHandler {
     private static BlockEntity selectedTarget = null;
     private static BlockPos selectedTargetPos = null;
 
-    // 动力臂相关 - 直接存储交互点，类似原版
+    // 动力臂相关 - 直接存储交互点
     private static List<ArmInteractionPoint> currentArmSelection = new ArrayList<>();
 
     // 移液器相关
@@ -52,6 +59,9 @@ public class BatonInteractionHandler {
         NONE, ARM, PIPETTE
     }
     private static SelectionType selectionType = SelectionType.NONE;
+
+    // 粒子效果计数器
+    private static int particleCounter = 0;
 
     public static boolean isInSelectionMode() {
         return selectionType != SelectionType.NONE && selectedTarget != null;
@@ -70,14 +80,11 @@ public class BatonInteractionHandler {
         Level level = event.getLevel();
         if (!level.isClientSide) return;
 
-        System.out.println("[DEBUG] Right click with baton");
-
         BlockPos pos = event.getPos();
         BlockEntity be = level.getBlockEntity(pos);
 
         // 如果点击的是动力臂或移液器
         if (be instanceof ArmBlockEntity || be instanceof PipetteBlockEntity) {
-            System.out.println("[DEBUG] Clicked on ARM/Pipette");
             handleTargetClick(be, pos, player, level);
             event.setCanceled(true);
             event.setCancellationResult(InteractionResult.SUCCESS);
@@ -87,7 +94,6 @@ public class BatonInteractionHandler {
         // 如果在选择模式下点击其他方块
         if (isInSelectionMode()) {
             BlockState state = level.getBlockState(pos);
-            System.out.println("[DEBUG] In selection mode, interacting with block at " + pos);
 
             if (selectionType == SelectionType.ARM) {
                 // 模仿原版的行为
@@ -95,16 +101,15 @@ public class BatonInteractionHandler {
                 if (selected == null) {
                     ArmInteractionPoint point = ArmInteractionPoint.create(level, pos, state);
                     if (point == null) {
-                        System.out.println("[DEBUG] Cannot create interaction point at " + pos);
                         return;
                     }
                     selected = point;
                     putArm(point);
-                    System.out.println("[DEBUG] Created new ARM point at " + pos);
+                    // 播放音效和粒子效果
+                    playSelectionEffects(level, pos, true);
                 }
 
                 selected.cycleMode();
-                System.out.println("[DEBUG] Cycled mode to " + selected.getMode());
 
                 // 显示消息
                 ArmInteractionPoint.Mode mode = selected.getMode();
@@ -113,6 +118,10 @@ public class BatonInteractionHandler {
                                 CreateLang.blockName(state).style(ChatFormatting.WHITE))
                         .color(mode.getColor())
                         .sendStatus(player);
+
+                // 播放切换音效
+                level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                        SoundEvents.LEVER_CLICK, SoundSource.BLOCKS, 0.3f, 2.0f, false);
 
             } else if (selectionType == SelectionType.PIPETTE) {
                 handlePipettePointInteraction(level, pos, state, player);
@@ -133,11 +142,9 @@ public class BatonInteractionHandler {
         }
 
         if (isInSelectionMode()) {
-            System.out.println("[DEBUG] Left click in selection mode - CANCELING");
-
             // 在客户端和服务端都取消
             event.setCanceled(true);
-            event.setCancellationResult(InteractionResult.FAIL); // 使用FAIL而不是SUCCESS
+            event.setCancellationResult(InteractionResult.FAIL);
 
             // 只在客户端处理移除逻辑
             if (event.getLevel().isClientSide) {
@@ -149,32 +156,35 @@ public class BatonInteractionHandler {
                     int sizeBefore = currentArmSelection.size();
                     removeArm(pos);
                     removed = currentArmSelection.size() < sizeBefore;
-                    System.out.println("[DEBUG] ARM points before: " + sizeBefore + ", after: " + currentArmSelection.size());
 
                     if (removed) {
                         CreateLang.builder()
                                 .text("Interaction point removed")
                                 .style(ChatFormatting.RED)
                                 .sendStatus(player);
+                        // 播放移除音效
+                        event.getLevel().playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                                SoundEvents.ITEM_PICKUP, SoundSource.BLOCKS, 0.5f, 0.8f, false);
                     }
                 } else if (selectionType == SelectionType.PIPETTE) {
                     int sizeBefore = currentPipetteSelection.size();
                     removePipette(pos);
                     removed = currentPipetteSelection.size() < sizeBefore;
-                    System.out.println("[DEBUG] Pipette points before: " + sizeBefore + ", after: " + currentPipetteSelection.size());
 
                     if (removed) {
                         CreateLang.builder()
                                 .text("Interaction point removed")
                                 .style(ChatFormatting.RED)
                                 .sendStatus(player);
+                        // 播放移除音效
+                        event.getLevel().playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                                SoundEvents.ITEM_PICKUP, SoundSource.BLOCKS, 0.5f, 0.8f, false);
                     }
                 }
             }
         }
     }
 
-    // 添加一个额外的事件来处理破坏
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onBlockBreak(PlayerEvent.BreakSpeed event) {
         Player player = event.getEntity();
@@ -182,27 +192,31 @@ public class BatonInteractionHandler {
             ItemStack heldItem = player.getMainHandItem();
             if (heldItem.getItem() instanceof BatonItem && isInSelectionMode()) {
                 event.setCanceled(true);
-                System.out.println("[DEBUG] Canceling break speed event");
             }
         }
     }
 
     private static void handleTargetClick(BlockEntity be, BlockPos pos, Player player, Level level) {
-        System.out.println("[DEBUG] handleTargetClick at " + pos);
-
         // 如果已经选中了这个目标，保存并退出
         if (selectedTarget == be && selectedTargetPos.equals(pos)) {
-            System.out.println("[DEBUG] Same target clicked - flushing settings");
+            // 创建确认时的粒子效果（与初选时相同）
+            createSelectionSuccessParticles(level, pos);
             flushSettings(pos);
             return;
         }
 
         // 进入新的选择模式
-        System.out.println("[DEBUG] New target selected");
         cancelSelection();
 
         selectedTarget = be;
         selectedTargetPos = pos;
+
+        // 播放进入选择模式的音效
+        level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 0.5f, 1.0f, false);
+
+        // 创建选择成功的粒子效果
+        createSelectionSuccessParticles(level, pos);
 
         if (be instanceof ArmBlockEntity arm) {
             selectionType = SelectionType.ARM;
@@ -212,8 +226,6 @@ public class BatonInteractionHandler {
             ArmBlockEntityAccessor accessor = (ArmBlockEntityAccessor) arm;
             List<ArmInteractionPoint> inputs = accessor.getInputs();
             List<ArmInteractionPoint> outputs = accessor.getOutputs();
-
-            System.out.println("[DEBUG] Loading existing points - Inputs: " + inputs.size() + ", Outputs: " + outputs.size());
 
             // 添加现有点到选择中
             currentArmSelection.addAll(inputs);
@@ -229,8 +241,6 @@ public class BatonInteractionHandler {
             selectionType = SelectionType.PIPETTE;
             currentPipetteSelection.clear();
 
-            System.out.println("[DEBUG] Loading Pipette points - Inputs: " + pipette.inputs.size() + ", Outputs: " + pipette.outputs.size());
-
             currentPipetteSelection.addAll(pipette.inputs);
             currentPipetteSelection.addAll(pipette.outputs);
 
@@ -245,9 +255,7 @@ public class BatonInteractionHandler {
 
     private static void flushSettings(BlockPos armPos) {
         if (selectionType == SelectionType.ARM) {
-            System.out.println("[DEBUG] Flushing ARM settings");
-
-            // 检查范围（模仿原版）
+            // 检查范围
             int removed = 0;
             Iterator<ArmInteractionPoint> iterator = currentArmSelection.iterator();
             while (iterator.hasNext()) {
@@ -283,13 +291,10 @@ public class BatonInteractionHandler {
                 }
             }
 
-            // 发送到服务器（完全模仿原版）
-            System.out.println("[DEBUG] Sending " + currentArmSelection.size() + " points to server for ARM at " + armPos);
+            // 发送到服务器
             AllPackets.getChannel().sendToServer(new ArmPlacementPacket(currentArmSelection, armPos));
 
         } else if (selectionType == SelectionType.PIPETTE) {
-            System.out.println("[DEBUG] Flushing Pipette settings");
-
             // 检查范围
             int removed = 0;
             Iterator<FluidInteractionPoint> iterator = currentPipetteSelection.iterator();
@@ -326,9 +331,12 @@ public class BatonInteractionHandler {
                 }
             }
 
-            System.out.println("[DEBUG] Sending " + currentPipetteSelection.size() + " points to server for Pipette at " + armPos);
             AllPackets.getChannel().sendToServer(new PipetteFluidPlacementPacket(currentPipetteSelection, armPos));
         }
+
+        // 播放完成音效
+        Minecraft.getInstance().level.playLocalSound(armPos.getX() + 0.5, armPos.getY() + 0.5, armPos.getZ() + 0.5,
+                SoundEvents.NOTE_BLOCK_CHIME.get(), SoundSource.BLOCKS, 0.8f, 1.0f, false);
 
         // 清理
         cancelSelection();
@@ -340,16 +348,15 @@ public class BatonInteractionHandler {
         if (selected == null) {
             FluidInteractionPoint point = FluidInteractionPoint.create(level, pos, state);
             if (point == null) {
-                System.out.println("[DEBUG] Cannot create pipette point at " + pos);
                 return;
             }
             selected = point;
             putPipette(point);
-            System.out.println("[DEBUG] Created new Pipette point at " + pos);
+            // 播放音效和粒子效果
+            playSelectionEffects(level, pos, true);
         }
 
         selected.cycleMode();
-        System.out.println("[DEBUG] Cycled mode to " + selected.getMode());
 
         // 显示消息
         FluidInteractionPoint.Mode mode = selected.getMode();
@@ -358,6 +365,42 @@ public class BatonInteractionHandler {
                         CreateLang.blockName(state).style(ChatFormatting.WHITE))
                 .color(mode.getColor())
                 .sendStatus(player);
+
+        // 播放切换音效
+        level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                SoundEvents.LEVER_CLICK, SoundSource.BLOCKS, 0.3f, 2.0f, false);
+    }
+
+    private static void playSelectionEffects(Level level, BlockPos pos, boolean isNew) {
+        if (isNew) {
+            // 播放添加音效
+            level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                    SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 0.3f, 1.5f, false);
+        }
+
+        // 创建白色红石粉粒子
+        Random random = new Random();
+        for (int i = 0; i < 10; i++) {
+            double x = pos.getX() + 0.5 + (random.nextDouble() - 0.5) * 0.6;
+            double y = pos.getY() + 0.5 + (random.nextDouble() - 0.5) * 0.6;
+            double z = pos.getZ() + 0.5 + (random.nextDouble() - 0.5) * 0.6;
+            level.addParticle(new DustParticleOptions(new Vector3f(1.0F, 1.0F, 1.0F), 1.0F),
+                    x, y, z, 0, 0, 0);
+        }
+    }
+
+    private static void createSelectionSuccessParticles(Level level, BlockPos pos) {
+        Random random = new Random();
+        // 创建环形粒子效果
+        for (int i = 0; i < 20; i++) {
+            double angle = (Math.PI * 2) * i / 20;
+            double radius = 0.7;
+            double x = pos.getX() + 0.5 + Math.cos(angle) * radius;
+            double y = pos.getY() + 0.5;
+            double z = pos.getZ() + 0.5 + Math.sin(angle) * radius;
+            level.addParticle(new DustParticleOptions(new Vector3f(1.0F, 1.0F, 1.0F), 1.5F),
+                    x, y, z, 0, 0.05, 0);
+        }
     }
 
     private static void putArm(ArmInteractionPoint point) {
@@ -403,7 +446,6 @@ public class BatonInteractionHandler {
     }
 
     public static void cancelSelection() {
-        System.out.println("[DEBUG] Canceling selection");
         selectedTarget = null;
         selectedTargetPos = null;
         selectionType = SelectionType.NONE;
@@ -427,12 +469,38 @@ public class BatonInteractionHandler {
             return;
         }
 
-        // 在选择模式下绘制轮廓
+        // 在选择模式下绘制轮廓和粒子效果
         if (isInSelectionMode()) {
+            particleCounter++;
+
+            // 每tick都调用，由createContinuousParticles内部控制频率
+            if (selectedTargetPos != null) {
+                createContinuousParticles(Minecraft.getInstance().level, selectedTargetPos);
+            }
+
             if (selectionType == SelectionType.ARM) {
                 drawArmOutlines(currentArmSelection);
             } else if (selectionType == SelectionType.PIPETTE) {
                 drawPipetteOutlines(currentPipetteSelection);
+            }
+        }
+    }
+
+    private static void createContinuousParticles(Level level, BlockPos pos) {
+        Random random = new Random();
+
+        // 只保留环绕粒子，提高频率
+        if (particleCounter % 10 == 0) { // 每0.5秒一次
+            for (int i = 0; i < 6; i++) { // 产生6个粒子
+                double angle = (Math.PI * 2) * i / 6;
+                double radius = 0.7 + random.nextDouble() * 0.2; // 略微随机的半径
+                double x = pos.getX() + 0.5 + Math.cos(angle) * radius;
+                double y = pos.getY() + 0.5 + random.nextDouble() * 0.8; // 在方块高度范围内
+                double z = pos.getZ() + 0.5 + Math.sin(angle) * radius;
+
+                // 使用白色红石粉粒子，略微向上飘动
+                level.addParticle(new DustParticleOptions(new Vector3f(1.0F, 1.0F, 1.0F), 0.6F),
+                        x, y, z, 0, 0.01, 0);
             }
         }
     }
