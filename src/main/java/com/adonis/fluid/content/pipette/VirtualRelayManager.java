@@ -125,10 +125,11 @@ public class VirtualRelayManager {
                 speed = Math.abs(pipette.getSpeed());
             }
 
-            // 根据转速计算额外延迟
-            // 在64转速时延迟为0，低速时增加延迟，高速时减少延迟
-            int extraDelay = Math.round((64f - speed) * 0.3f);
-            int totalProcessingTime = FILLING_TIME + Math.max(0, extraDelay);
+            // 根据转速计算处理时间
+            // 基础时间20tick，根据转速调整：转速越高，处理越快
+            float speedMultiplier = 64f / Math.max(1f, speed);
+            int baseTime = 20;
+            int totalProcessingTime = Math.max(10, Math.round(baseTime * speedMultiplier));
 
             // 等待流体阶段
             if (waitingForFluid) {
@@ -150,15 +151,17 @@ public class VirtualRelayManager {
             if (localProcessingTicks > 0) {
                 localProcessingTicks--;
 
-                // 动态计算粒子和加工的时机
-                int particleTick = Math.max(8, totalProcessingTime / 3);
-                int processTick = Math.max(3, totalProcessingTime / 6);
+                // 动态计算粒子和加工的时机，保持相对位置
+                int particleTick = Math.max(totalProcessingTime / 2, 5);
+                int processTick = Math.max(totalProcessingTime / 4, 2);
 
                 // 发送粒子效果
                 if (localProcessingTicks == particleTick) {
                     BlockEntity ws = workstationRef.get();
                     if (ws instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
-                        pipette.sendBeltProcessingEffects(beltSegmentPos, pipette.getHeldFluid());
+                        // 使用流体副本，确保即使是最后一次加工也有粒子
+                        FluidStack fluidForParticles = pipette.getHeldFluid().copy();
+                        pipette.sendBeltProcessingEffects(beltSegmentPos, fluidForParticles);
                     }
                 }
 
@@ -193,6 +196,7 @@ public class VirtualRelayManager {
                             resultTransported.stack = filledResult;
                             outList.add(resultTransported);
 
+                            // 消耗流体
                             fluid.shrink(required);
                             processor.syncFluid(fluid);
 
@@ -221,7 +225,12 @@ public class VirtualRelayManager {
                                 int nextRequired = FillingBySpout.getRequiredAmountForItem(level, nextSingle, fluid);
 
                                 if (nextRequired > 0 && nextRequired <= fluid.getAmount()) {
-                                    localProcessingTicks = totalProcessingTime;
+                                    // 重新计算速度（可能已经改变）
+                                    if (workstation instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
+                                        speed = Math.abs(pipette.getSpeed());
+                                    }
+                                    speedMultiplier = 64f / Math.max(1f, speed);
+                                    localProcessingTicks = Math.max(10, Math.round(baseTime * speedMultiplier));
                                     return BeltProcessingBehaviour.ProcessingResult.HOLD;
                                 }
                             }

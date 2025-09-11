@@ -714,6 +714,9 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                             .fillItem(this.level, requiredAmount, toProcess, fluidForFilling);
 
                     if (!result.isEmpty()) {
+                        // 在消耗流体前保存副本用于粒子效果
+                        FluidStack fluidForParticles = this.heldFluid.copy();
+
                         itemOnDepot.shrink(1);
 
                         if (itemOnDepot.isEmpty()) {
@@ -758,6 +761,8 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                         }
 
                         behaviour.blockEntity.notifyUpdate();
+
+                        // 消耗流体
                         this.heldFluid.shrink(requiredAmount);
 
                         this.level.playSound(null, point.getPos(),
@@ -765,8 +770,9 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                                 net.minecraft.sounds.SoundSource.BLOCKS,
                                 0.75F, 0.9F + 0.2F * this.level.random.nextFloat());
 
+                        // 使用保存的副本发送粒子
                         if (!this.level.isClientSide) {
-                            sendFillingParticles(point.getPos(), this.heldFluid);
+                            sendFillingParticles(point.getPos(), fluidForParticles);
                         }
                     }
                 }
