@@ -26,7 +26,8 @@ public class CFPonderPlugin implements PonderPlugin {
         
         // 注册动力移液器的场景
         HELPER.forComponents(CFBlock.PIPETTE)  // 假设你的动力移液器方块注册为PIPETTE
-                .addStoryBoard("pipette", PipetteScenes::setup);
+                .addStoryBoard("pipette", PipetteScenes::setup)
+                .addStoryBoard("pipette_filter", PipetteScenes::filtering);
 
 //         HELPER.forComponents(CFItem.BATON)
 //                 .addStoryBoard("conductor_baton", ConductorBatonScenes::usage);
