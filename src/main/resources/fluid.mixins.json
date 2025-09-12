@@ -7,6 +7,8 @@
   "mixins": [
     "AllArmInteractionPointTypesMixin",
     "accessor.DepotBehaviourAccessor",
+    "accessor.ItemDrainBlockEntityAccessor",
+    "accessor.BasinBlockEntityAccessor",
     "BeltInventoryMixin",
     "ArmPlacementPacketMixin"
   ],

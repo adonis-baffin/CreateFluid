@@ -1,10 +1,7 @@
 package com.adonis.fluid.content.pipette;
 
-import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlockEntity;
-import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlockEntity;
 import com.adonis.fluid.registry.CFBlock;
 import com.simibubi.create.AllBlocks;
-import com.simibubi.create.content.processing.basin.BasinBlockEntity;
 import com.simibubi.create.content.contraptions.StructureTransform;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -366,8 +363,8 @@ public class FluidInteractionPoint {
     }
 
     public enum Mode {
-        TAKE("fluid.mechanical_pipette.extract", 0xD73A3A),
-        DEPOSIT("fluid.mechanical_pipette.deposit", 0x3AD73A);
+        TAKE("fluid.mechanical_pipette.extract", 8375776),  // 蓝色（输入）
+        DEPOSIT("fluid.mechanical_pipette.deposit", 14532966); // 黄色（输出）
 
         private final String translationKey;
         private final int color;

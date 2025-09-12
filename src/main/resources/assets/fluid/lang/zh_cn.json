@@ -18,8 +18,6 @@
 
   "itemGroup.fluid.main": "机械动力：流体",
 
-
-
   "block.fluid.fluid_interface.tooltip": "流体接口",
   "block.fluid.fluid_interface.tooltip.summary": "一个用于与相邻流体容器交互的_代理_方块。可用于为自动化流体处理提供_精确定位_。",
   "block.fluid.fluid_interface.tooltip.condition1": "当连接到容器时",
@@ -33,15 +31,6 @@
   "block.fluid.smart_fluid_interface.tooltip.behaviour1": "只允许_指定的流体_被插入或提取。动力移液器将遵守过滤器设置。",
   "block.fluid.smart_fluid_interface.tooltip.condition2": "当连接到容器时",
   "block.fluid.smart_fluid_interface.tooltip.behaviour2": "作为连接容器的_过滤网关_，防止不需要的流体类型通过。",
-
-  "block.fluid.pipette.tooltip": "动力移液器",
-  "block.fluid.pipette.tooltip.summary": "一个用于容器间自动化流体传输的_动力装置_。相当于流体版的动力臂。",
-  "block.fluid.pipette.tooltip.condition1": "当由动力驱动时",
-  "block.fluid.pipette.tooltip.behaviour1": "在配置的输入和输出点之间_自动传输流体_。支持_多个交互点_和_选择模式_。",
-  "block.fluid.pipette.tooltip.condition2": "特殊交互",
-  "block.fluid.pipette.tooltip.behaviour2": "可以_自动向烈焰人燃烧室投喂岩浆_，并在蜂巢满时_提取蜂蜜_。遵守_智能流体接口过滤器_。",
-  "block.fluid.pipette.tooltip.condition3": "配置",
-  "block.fluid.pipette.tooltip.behaviour3": "使用移液器右键_流体接口_、_工作盆_、_蜂巢_或_烈焰人燃烧室_来设置交互点。使用_扳手_修改选择模式。",
 
   "create.fluid.mechanical_pipette.extract": "从%1$s吸取流体",
   "create.fluid.mechanical_pipette.deposit": "将流体注入%1$s",
@@ -65,5 +54,32 @@
   "create.fluid.baton.ejector.no_target": "未设置目标位置",
   "create.fluid.baton.ejector.invalid_target": "无效的目标位置",
   "create.fluid.baton.ejector.target_cleared": "目标位置已清除",
-  "create.fluid.baton.interaction_point_removed": "交互点已移除"
+  "create.fluid.baton.interaction_point_removed": "交互点已移除",
+
+  "fluid.ponder.mechanical_pipette.header": "配置动力移液器",
+  "fluid.ponder.mechanical_pipette.text_1": "输入",
+  "fluid.ponder.mechanical_pipette.text_2": "输出",
+  "fluid.ponder.mechanical_pipette.text_3": "动力移液器与动力臂的工作方式别无二致，但是正如其名，它专注于与流体容器交互",
+  "fluid.ponder.mechanical_pipette.text_4": "对于某些无法直接交互的流体容器，流体接口可以解决此问题",
+  "fluid.ponder.mechanical_pipette.text_5": "除了常规的流体容器，动力移液器还支持与更多有趣的方块交互，也许它能更好地帮助你施展创意",
+  "fluid.ponder.mechanical_pipette.text_6": "这里是动力移液器的存量指示器，通过它可以了解当前动力移液器所持有的流体量",
+
+  "fluid.ponder.mechanical_pipette_filter.header": "动力移液器的过滤",
+  "fluid.ponder.mechanical_pipette_filter.text_1": "有时，你会想着利用某种过滤限制动力移液器的目标",
+  "fluid.ponder.mechanical_pipette_filter.text_2": "智能流体接口因为这种需求而存在",
+  "fluid.ponder.mechanical_pipette_filter.text_3": "智能流体接口的过滤槽可以应用至动力移液器上",
+
+  "fluid.ponder.mechanical_pipette_fill.header": "动力移液器的注液加工",
+  "fluid.ponder.mechanical_pipette_fill.text_1": "除了处理物流，动力移液器也可以应用于加工场景",
+  "fluid.ponder.mechanical_pipette_fill.text_2": "当选定置物台或传送带作为输出端时，动力移液器会时刻留意上方是否有可以执行注液加工的原料",
+  "fluid.ponder.mechanical_pipette_fill.text_3": "动力移液器会从所有的输入端中寻找所需的流体原料，然后执行注液加工",
+
+  "fluid.ponder.baton.header": "使用指挥棒",
+  "fluid.ponder.baton.text_1": "输入",
+  "fluid.ponder.baton.text_2": "输出",
+  "fluid.ponder.baton.text_3": "有时你会想，在动力臂已经放置的情况下，为它添加或修改交互点",
+  "fluid.ponder.baton.text_4": "用指挥棒对其右键，进入指挥模式。指挥模式下，动力臂所有的交互点会持续高亮显示",
+  "fluid.ponder.baton.text_5": "现在，你可以像手持动力臂一样，自由地在之前的基础上，调整动力臂的交互点",
+  "fluid.ponder.baton.text_6": "修改完成后，再次右键动力臂，即可为其更新交互点信息",
+  "fluid.ponder.baton.text_7": "动力移液器和弹射置物台的交互点同样可以用指挥棒修改"
 }

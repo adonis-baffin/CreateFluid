@@ -32,15 +32,6 @@
   "block.fluid.smart_fluid_interface.tooltip.condition2": "When attached to a container",
   "block.fluid.smart_fluid_interface.tooltip.behaviour2": "Functions as a _filtered gateway_ to the attached container, preventing unwanted fluid types.",
 
-  "block.fluid.pipette.tooltip": "MECHANICAL PIPETTE",
-  "block.fluid.pipette.tooltip.summary": "A _kinetic device_ for automated fluid transfer between containers. The fluid equivalent of the Mechanical Arm.",
-  "block.fluid.pipette.tooltip.condition1": "When powered by kinetics",
-  "block.fluid.pipette.tooltip.behaviour1": "_Automatically transfers fluids_ between configured input and output points. Supports _multiple interaction points_ and _selection modes_.",
-  "block.fluid.pipette.tooltip.condition2": "Special Interactions",
-  "block.fluid.pipette.tooltip.behaviour2": "Can _feed lava to Blaze Burners_ automatically and _extract honey from Beehives_ when they're full. Respects _Smart Fluid Interface filters_.",
-  "block.fluid.pipette.tooltip.condition3": "Configuration",
-  "block.fluid.pipette.tooltip.behaviour3": "Use the Pipette on _Fluid Interfaces_, _Basins_, _Beehives_, or _Blaze Burners_ to set up interaction points. Use _Wrench_ to modify selection modes.",
-
   "create.fluid.mechanical_pipette.extract": "Drain fluid from %1$s",
   "create.fluid.mechanical_pipette.deposit": "Inject fluid to %1$s",
   "create.fluid.mechanical_pipette.points_outside_range": "%1$s Fluid Interaction Points were removed because they are now out of range",
@@ -67,5 +58,31 @@
   "create.fluid.baton.ejector.no_target": "No target position set",
   "create.fluid.baton.ejector.invalid_target": "Invalid target position",
   "create.fluid.baton.ejector.target_cleared": "Target position cleared",
-  "create.fluid.baton.interaction_point_removed": "Interaction point removed"
+  "create.fluid.baton.interaction_point_removed": "Interaction point removed",
+
+  "fluid.ponder.mechanical_pipette.text_1": "Outputs",
+  "fluid.ponder.mechanical_pipette.text_2": "Inputs",
+  "fluid.ponder.mechanical_pipette.text_3": "Mechanical Pipettes work much like Mechanical Arms, but as the name suggests, they specialize in interacting with Fluid Containers",
+  "fluid.ponder.mechanical_pipette.text_4": "For containers that cannot be interacted with directly, Fluid Interfaces can help to bridge that gap",
+  "fluid.ponder.mechanical_pipette.text_5": "Besides regular fluid containers, Mechanical Pipettes also support more interesting blocks, perhaps helping you express your creativity",
+  "fluid.ponder.mechanical_pipette.text_6": "This is the Pipette's content gauge. It displays the current amount of fluid held",
+
+  "fluid.ponder.mechanical_pipette_filter.header": "Filtering Targets of the Mechanical Pipette",
+  "fluid.ponder.mechanical_pipette_filter.text_1": "Sometimes it is desirable to restrict targets of the Pipette by matching a filter",
+  "fluid.ponder.mechanical_pipette_filter.text_2": "Smart Fluid Interfaces exist for this very purpose",
+  "fluid.ponder.mechanical_pipette_filter.text_3": "The filter slot of Smart Fluid Interfaces can be applied to Mechanical Pipettes",
+
+  "fluid.ponder.mechanical_pipette_fill.header": "Fluid Filling with Mechanical Pipettes",
+  "fluid.ponder.mechanical_pipette_fill.text_1": "Besides handling logistics, Mechanical Pipettes can also be applied in processing scenarios",
+  "fluid.ponder.mechanical_pipette_fill.text_2": "When a Depot or Belt is selected as output, the Pipette will watch for ingredients above that can undergo fluid filling",
+  "fluid.ponder.mechanical_pipette_fill.text_3": "The Pipette will search all inputs for the required fluid, then perform the filling process",
+
+  "fluid.ponder.baton.header": "Using the Conductor's Baton",
+  "fluid.ponder.baton.text_1": "Inputs",
+  "fluid.ponder.baton.text_2": "Outputs",
+  "fluid.ponder.baton.text_3": "Sometimes you may want to add or modify interaction points after a Mechanical Arm has been placed",
+  "fluid.ponder.baton.text_4": "Right-Click it with the Conductor's Baton to enter conducting mode. All interaction points will be continuously highlighted",
+  "fluid.ponder.baton.text_5": "Now you can adjust the Arm's interaction points just as if you were holding the Arm itself",
+  "fluid.ponder.baton.text_6": "Once finished, Right-Click the Arm again to update its interaction point configuration",
+  "fluid.ponder.baton.text_7": "Interaction points of Mechanical Pipettes and Ejector Depots can also be modified with the Conductor's Baton"
 }
