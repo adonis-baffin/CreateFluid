@@ -24,7 +24,7 @@ public class FluidInteractionPoint {
     protected Direction face;
     protected Mode mode;
     protected Level level;
-    private long lastKnownValid = -1;
+    protected long lastKnownValid = -1;
 
     public FluidInteractionPoint(Level level, BlockPos pos, BlockState state) {
         this.level = level;
@@ -39,6 +39,9 @@ public class FluidInteractionPoint {
         } else if (AllBlocks.BELT.has(state)) {
             // 传送带默认作为输出端（接收流体）
             this.mode = Mode.DEPOSIT;
+        } else if (AllBlocks.ITEM_DRAIN.has(state)) {
+            // 分液池只能作为输入端
+            this.mode = Mode.TAKE;
         } else {
             this.mode = Mode.DEPOSIT;
         }
@@ -49,6 +52,11 @@ public class FluidInteractionPoint {
         // 优先检查是否为置物台
         if (AllBlocks.DEPOT.has(state)) {
             return new DepotFluidInteractionPoint(level, pos, state);
+        }
+
+        // 检查是否为分液池
+        if (AllBlocks.ITEM_DRAIN.has(state)) {
+            return new ItemDrainFluidInteractionPoint(level, pos, state);
         }
 
         // 传送带创建普通的交互点（用于选择），实际处理由虚拟中继器完成
@@ -76,6 +84,11 @@ public class FluidInteractionPoint {
 
         // 支持置物台
         if (AllBlocks.DEPOT.has(state)) {
+            return true;
+        }
+
+        // 支持分液池
+        if (AllBlocks.ITEM_DRAIN.has(state)) {
             return true;
         }
 
@@ -125,6 +138,16 @@ public class FluidInteractionPoint {
             return false;
         }
 
+        // 分液池的特殊处理 - 只要存在就有效
+        if (AllBlocks.ITEM_DRAIN.has(state)) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof com.simibubi.create.content.fluids.drain.ItemDrainBlockEntity) {
+                lastKnownValid = gameTime;
+                return true;
+            }
+            return false;
+        }
+
         boolean valid = isValidFluidBlock(state) &&
                 level.getBlockEntity(pos) != null &&
                 getFluidHandler() != null;
@@ -157,6 +180,13 @@ public class FluidInteractionPoint {
             return new BeehiveFluidHandler(level, pos, state);
         }
 
+        // 分液池特殊处理
+        if (AllBlocks.ITEM_DRAIN.has(state)) {
+            if (be == null) return null;
+            // 分液池必须使用Direction.DOWN获取流体处理器
+            return be.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.DOWN).orElse(null);
+        }
+
         // 标准流体处理
         if (be == null) return null;
 
@@ -179,6 +209,11 @@ public class FluidInteractionPoint {
         // 传送带的注液由虚拟中继器处理
         if (AllBlocks.BELT.has(level.getBlockState(pos))) {
             // 返回原流体表示无法直接插入（需要通过虚拟中继器）
+            return stack;
+        }
+
+        // 分液池不接受流体输入
+        if (AllBlocks.ITEM_DRAIN.has(level.getBlockState(pos))) {
             return stack;
         }
 
@@ -209,6 +244,11 @@ public class FluidInteractionPoint {
             return this.mode == Mode.DEPOSIT;
         }
 
+        // 分液池不接受流体输入
+        if (AllBlocks.ITEM_DRAIN.has(level.getBlockState(pos))) {
+            return false;
+        }
+
         IFluidHandler handler = getFluidHandler();
         if (handler == null) return false;
 
@@ -225,6 +265,11 @@ public class FluidInteractionPoint {
 
         // 蜂巢只能作为输入端
         if (isBeehive(state)) {
+            return;
+        }
+
+        // 分液池只能作为输入端
+        if (AllBlocks.ITEM_DRAIN.has(state)) {
             return;
         }
 
@@ -285,6 +330,10 @@ public class FluidInteractionPoint {
                     // 传送带强制为DEPOSIT模式
                     if (AllBlocks.BELT.has(state)) {
                         point.mode = Mode.DEPOSIT;
+                    }
+                    // 分液池强制为TAKE模式
+                    else if (AllBlocks.ITEM_DRAIN.has(state)) {
+                        point.mode = Mode.TAKE;
                     } else {
                         point.mode = deserializedMode;
                     }
