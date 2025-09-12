@@ -49,6 +49,13 @@ public class PipetteBlock extends KineticBlock implements IBE<PipetteBlockEntity
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        // 确保使用与动力臂完全相同的形状
+        return state.getValue(CEILING) ? AllShapes.MECHANICAL_ARM_CEILING : AllShapes.MECHANICAL_ARM;
+    }
+
+    @Override
+    public VoxelShape getVisualShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        // 添加这个方法，可能影响破裂纹路的渲染
         return state.getValue(CEILING) ? AllShapes.MECHANICAL_ARM_CEILING : AllShapes.MECHANICAL_ARM;
     }
 

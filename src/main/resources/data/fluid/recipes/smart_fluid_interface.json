@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": {
+      "item": "fluid:fluid_interface"
+    },
+    "C": {
+      "tag": "forge:plates/brass"
+    },
+    "D": {
+      "item": "create:electron_tube"
+    }
+  },
+  "pattern": [
+    " C ",
+    " A ",
+    " D "
+  ],
+  "result": {
+    "item": "fluid:smart_fluid_interface"
+  },
+  "show_notification": true
+}

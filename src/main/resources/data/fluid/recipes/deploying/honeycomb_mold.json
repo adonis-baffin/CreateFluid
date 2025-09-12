@@ -1,0 +1,17 @@
+{
+  "type": "create:deploying",
+  "ingredients": [
+    {
+      "tag": "forge:plates/iron"
+    },
+    {
+      "item": "minecraft:honeycomb"
+    }
+  ],
+  "keepHeldItem": true,
+  "results": [
+    {
+      "item": "fluid:honeycomb_mold"
+    }
+  ]
+}

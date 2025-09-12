@@ -8,13 +8,16 @@ import com.adonis.fluid.block.Pipette.PipetteBlock;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlock; // 添加这个导入
 import com.adonis.fluid.block.aqueduct.AqueductBlock;
 import com.adonis.fluid.item.PipetteItem;
+import com.simibubi.create.foundation.data.ModelGen;
 import com.simibubi.create.foundation.data.SharedProperties;
+import com.simibubi.create.foundation.data.TagGen;
 import com.tterrag.registrate.util.entry.BlockEntry;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.material.MapColor;
 import net.minecraftforge.client.model.generators.ConfiguredModel;
 
 public class CFBlock {
@@ -91,15 +94,23 @@ public class CFBlock {
 
     public static final BlockEntry<PipetteBlock> PIPETTE = CreateFluid.REGISTRATE
             .block("pipette", PipetteBlock::new)
-            .initialProperties(SharedProperties::softMetal)
-            .properties(prop -> prop.mapColor(DyeColor.YELLOW))
-            .transform(axeOrPickaxe())
+            .initialProperties(SharedProperties::softMetal)  // 保持与动力臂一致
+            .properties(prop -> prop
+                    .mapColor(MapColor.TERRACOTTA_YELLOW)  // 改为与动力臂一致的颜色映射
+                    .noOcclusion())  // 添加无遮挡属性
+            .transform(TagGen.axeOrPickaxe())  // 使用TagGen而不是直接的axeOrPickaxe
             .blockstate((ctx, prov) -> {
-                prov.simpleBlock(ctx.get());
+                prov.getVariantBuilder(ctx.get())
+                        .forAllStates(state -> {
+                            return ConfiguredModel.builder()
+                                    .modelFile(prov.models().getExistingFile(prov.modLoc("block/pipette")))
+                                    .rotationX(state.getValue(PipetteBlock.CEILING) ? 180 : 0)  // 处理天花板状态
+                                    .build();
+                        });
             })
-            .transform(CreateFluid.STRESS_CONFIG.setImpact(2.0))
+            .transform(CreateFluid.STRESS_CONFIG.setImpact(2.0))  // 保持应力影响
             .item(PipetteItem::new)
-            .build()
+            .transform(ModelGen.customItemModel())  // 添加自定义物品模型
             .register();
 
     public static void register() {}
