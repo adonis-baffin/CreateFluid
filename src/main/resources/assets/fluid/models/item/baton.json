@@ -1,17 +1,5 @@
 {
-  "parent": "minecraft:item/handheld",
-  "loader": "forge:separate_transforms",
-  "base": {
-    "parent": "fluid:item/baton_model"
-  },
-  "perspectives": {
-    "gui": {
-      "parent": "fluid:item/baton_model"
-    },
-    "fixed": {
-      "parent": "fluid:item/baton_model"
-    }
-  },
+  "parent": "fluid:item/baton_base",
   "overrides": [
     {
       "predicate": {
