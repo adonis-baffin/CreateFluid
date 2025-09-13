@@ -12,39 +12,45 @@ import net.createmod.ponder.api.registration.PonderTagRegistrationHelper;
 import net.minecraft.resources.ResourceLocation;
 
 public class CFPonderPlugin implements PonderPlugin {
-    
+
     @Override
     public String getModId() {
         return CreateFluid.MODID;
     }
-    
+
     @Override
     public void registerScenes(PonderSceneRegistrationHelper<ResourceLocation> helper) {
         PonderPlugin.super.registerScenes(helper);
-        
-        PonderSceneRegistrationHelper<ItemProviderEntry<?>> HELPER = helper.withKeyFunction(RegistryEntry::getId);
-        
-        // 注册动力移液器的场景
-        HELPER.forComponents(CFBlock.PIPETTE)  // 假设你的动力移液器方块注册为PIPETTE
-                .addStoryBoard("pipette", PipetteScenes::setup)
-                .addStoryBoard("pipette_filter", PipetteScenes::filtering);
 
-//         HELPER.forComponents(CFItem.BATON)
-//                 .addStoryBoard("conductor_baton", ConductorBatonScenes::usage);
+        PonderSceneRegistrationHelper<ItemProviderEntry<?>> HELPER = helper.withKeyFunction(RegistryEntry::getId);
+
+        // 注册动力移液器的三个场景
+        HELPER.forComponents(CFBlock.PIPETTE)
+                .addStoryBoard("pipette", PipetteScenes::setup)
+                .addStoryBoard("pipette_filter", PipetteScenes::filtering)
+                .addStoryBoard("pipette_fill", PipetteScenes::filling);
+
+        // 注册指挥棒的场景
+        HELPER.forComponents(CFItem.BATON)
+                .addStoryBoard("baton", ConductorBatonScenes::usage);
     }
-    
+
     @Override
     public void registerTags(PonderTagRegistrationHelper<ResourceLocation> helper) {
         PonderPlugin.super.registerTags(helper);
-        
+
         PonderTagRegistrationHelper<RegistryEntry<?>> HELPER = helper.withKeyFunction(RegistryEntry::getId);
-        
+
         // 将动力移液器添加到机械动力的既有标签中
         HELPER.addToTag(AllCreatePonderTags.KINETIC_APPLIANCES)
-                .add(CFBlock.PIPETTE);  // 假设你的动力移液器方块注册为PIPETTE
-        
-        // 如果需要，也可以添加到其他标签
-        // HELPER.addToTag(AllCreatePonderTags.FLUIDS)
-        //         .add(CFBlock.PIPETTE);
+                .add(CFBlock.PIPETTE);
+
+        // 也可以添加到流体相关标签
+        HELPER.addToTag(AllCreatePonderTags.FLUIDS)
+                .add(CFBlock.PIPETTE);
+
+        // 将指挥棒添加到工具标签
+        HELPER.addToTag(AllCreatePonderTags.ARM_TARGETS)
+                .add(CFItem.BATON);
     }
 }
