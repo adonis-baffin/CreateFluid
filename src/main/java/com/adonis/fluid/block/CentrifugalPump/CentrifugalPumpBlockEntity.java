@@ -70,6 +70,10 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         public String getTranslationKey() {
             return this.translationKey;
         }
+
+        public Component getDisplayName() {
+            return Component.translatable(this.translationKey);
+        }
     }
 
     public CentrifugalPumpBlockEntity(BlockEntityType<?> typeIn, BlockPos pos, BlockState state) {
@@ -107,12 +111,25 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         super.tick();
 
         if (!level.isClientSide || isVirtual()) {
-            sidesToUpdate.forEachWithContext((update, isFront) -> {
-                if (!update.isFalse()) {
-                    update.setFalse();
-                    distributePressureTo(isFront ? getFront() : getFront().getOpposite());
+            // 离心泵有两个流体出口，需要分别处理
+            Direction primary = getFront();
+            Direction secondary = getSecondaryFront();
+
+            if (primary != null && secondary != null) {
+                // 处理主要方向（pipe_front）
+                MutableBoolean primaryUpdate = sidesToUpdate.getFirst();
+                if (!primaryUpdate.isFalse()) {
+                    primaryUpdate.setFalse();
+                    distributePressureTo(primary);
                 }
-            });
+
+                // 处理次要方向（pipe_up）
+                MutableBoolean secondaryUpdate = sidesToUpdate.getSecond();
+                if (!secondaryUpdate.isFalse()) {
+                    secondaryUpdate.setFalse();
+                    distributePressureTo(secondary);
+                }
+            }
         }
     }
 
@@ -134,11 +151,16 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
     public void updatePressureChange() {
         pressureUpdate = false;
 
-        BlockPos frontPos = worldPosition.relative(getFront());
-        BlockPos backPos = worldPosition.relative(getFront().getOpposite());
+        Direction primary = getFront();
+        Direction secondary = getSecondaryFront();
+        if (primary == null || secondary == null) return;
 
-        FluidPropagator.propagateChangedPipe(level, frontPos, level.getBlockState(frontPos));
-        FluidPropagator.propagateChangedPipe(level, backPos, level.getBlockState(backPos));
+        // 更新两个流体方向
+        BlockPos primaryPos = worldPosition.relative(primary);
+        BlockPos secondaryPos = worldPosition.relative(secondary);
+
+        FluidPropagator.propagateChangedPipe(level, primaryPos, level.getBlockState(primaryPos));
+        FluidPropagator.propagateChangedPipe(level, secondaryPos, level.getBlockState(secondaryPos));
 
         FluidTransportBehaviour behaviour = getBehaviour(FluidTransportBehaviour.TYPE);
         if (behaviour != null) {
@@ -157,7 +179,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
                 int ordinal = TransferDirection.valueOf(compound.getString("TransferDirection")).ordinal();
                 transferDirection.setValue(ordinal);
             } catch (Exception e) {
-                // 默认值
                 transferDirection.setValue(0);
             }
         }
@@ -176,7 +197,10 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         if (getSpeed() == 0) return;
 
         BlockFace start = new BlockFace(worldPosition, side);
-        boolean pull = isPullingOnSide(isFront(side));
+
+        // 判断这个方向是主要还是次要流体方向
+        boolean isPrimary = side == getFront();
+        boolean pull = isPullingOnSide(isPrimary);
 
         Set<BlockFace> targets = new HashSet<>();
         Map<BlockPos, Pair<Integer, Map<Direction, Boolean>>> pipeGraph = new HashMap<>();
@@ -312,7 +336,11 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         // 检查是否连接到其他泵
         if (PumpBlock.isPump(connectedState) && connectedState.getValue(PumpBlock.FACING).getAxis() == face.getAxis()) {
             if (blockEntity instanceof CentrifugalPumpBlockEntity pumpBE) {
-                return pumpBE.isPullingOnSide(pumpBE.isFront(blockFace.getOppositeFace())) != pull;
+                Direction pumpFront = pumpBE.getFront();
+                if (pumpFront != null) {
+                    boolean otherPull = pumpBE.isPullingOnSide(pumpFront == blockFace.getOppositeFace());
+                    return otherPull != pull;
+                }
             }
         }
 
@@ -333,7 +361,7 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
 
     public void updatePipesOnSide(Direction side) {
         if (isSideAccessible(side)) {
-            updatePipeNetwork(isFront(side));
+            updatePipeNetwork(side == getFront());
             FluidTransportBehaviour behaviour = getBehaviour(FluidTransportBehaviour.TYPE);
             if (behaviour != null) {
                 behaviour.wipePressure();
@@ -347,14 +375,9 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
             return false;
         }
 
-        CentrifugalPumpBlock.Orientation orientation = blockState.getValue(CentrifugalPumpBlock.ORIENTATION);
-        if (orientation == CentrifugalPumpBlock.Orientation.VERTICAL) {
-            // 垂直模式：下方是前方
-            return side == Direction.DOWN;
-        } else {
-            // 水平模式：facing方向是前方
-            return side == blockState.getValue(CentrifugalPumpBlock.FACING);
-        }
+        // 检查是否是两个流体方向之一
+        return side == CentrifugalPumpBlock.getPrimaryFluidDirection(blockState) ||
+                side == CentrifugalPumpBlock.getSecondaryFluidDirection(blockState);
     }
 
     @Nullable
@@ -364,12 +387,19 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
             return null;
         }
 
-        CentrifugalPumpBlock.Orientation orientation = blockState.getValue(CentrifugalPumpBlock.ORIENTATION);
-        if (orientation == CentrifugalPumpBlock.Orientation.VERTICAL) {
-            return Direction.DOWN;
-        } else {
-            return blockState.getValue(CentrifugalPumpBlock.FACING);
+        // 返回pipe_front的方向（主流体方向）
+        return CentrifugalPumpBlock.getPrimaryFluidDirection(blockState);
+    }
+
+    @Nullable
+    protected Direction getSecondaryFront() {
+        BlockState blockState = getBlockState();
+        if (!(blockState.getBlock() instanceof CentrifugalPumpBlock)) {
+            return null;
         }
+
+        // 返回pipe_up的方向（次流体方向）
+        return CentrifugalPumpBlock.getSecondaryFluidDirection(blockState);
     }
 
     protected void updatePipeNetwork(boolean front) {
@@ -385,12 +415,14 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         return CentrifugalPumpBlock.isOpenAt(blockState, side);
     }
 
-    public boolean isPullingOnSide(boolean front) {
+    public boolean isPullingOnSide(boolean isPrimaryDirection) {
         // 根据传输方向设置决定拉/推
-        // REVERSED 相当于反向
-        return transferDirection != null &&
-                transferDirection.get() == TransferDirection.REVERSED ?
-                front : !front;
+        // NORMAL: primary推出，secondary拉入
+        // REVERSED: primary拉入，secondary推出
+        if (transferDirection == null) return !isPrimaryDirection;
+
+        boolean reversed = transferDirection.get() == TransferDirection.REVERSED;
+        return reversed ? isPrimaryDirection : !isPrimaryDirection;
     }
 
     // 内部流体传输行为类
@@ -403,15 +435,33 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         public void tick() {
             super.tick();
 
+            Direction primary = CentrifugalPumpBlockEntity.this.getFront();
+            Direction secondary = CentrifugalPumpBlockEntity.this.getSecondaryFront();
+
+            if (primary == null || secondary == null) return;
+
             for (Map.Entry<Direction, PipeConnection> entry : interfaces.entrySet()) {
-                boolean pull = CentrifugalPumpBlockEntity.this.isPullingOnSide(
-                        CentrifugalPumpBlockEntity.this.isFront(entry.getKey()));
+                Direction dir = entry.getKey();
                 Couple<Float> pressure = entry.getValue().getPressure();
 
                 // 离心泵的压力是速度的两倍
                 float pumpPressure = Math.abs(CentrifugalPumpBlockEntity.this.getSpeed()) * SPEED_MULTIPLIER;
-                pressure.set(pull, pumpPressure);
-                pressure.set(!pull, 0f);
+
+                if (dir == primary) {
+                    // 主要方向
+                    boolean pull = CentrifugalPumpBlockEntity.this.isPullingOnSide(true);
+                    pressure.set(pull, pull ? pumpPressure : 0f);
+                    pressure.set(!pull, pull ? 0f : pumpPressure);
+                } else if (dir == secondary) {
+                    // 次要方向
+                    boolean pull = CentrifugalPumpBlockEntity.this.isPullingOnSide(false);
+                    pressure.set(pull, pull ? pumpPressure : 0f);
+                    pressure.set(!pull, pull ? 0f : pumpPressure);
+                } else {
+                    // 其他方向没有压力
+                    pressure.set(true, 0f);
+                    pressure.set(false, 0f);
+                }
             }
         }
 

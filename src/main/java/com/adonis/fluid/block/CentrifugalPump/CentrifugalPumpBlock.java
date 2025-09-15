@@ -31,17 +31,13 @@ import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.ticks.TickPriority;
 
 public class CentrifugalPumpBlock extends DirectionalAxisKineticBlock
         implements SimpleWaterloggedBlock, IBE<CentrifugalPumpBlockEntity> {
 
-    // 移除重复的 FACING 定义！父类已经有了
-    // public static final DirectionProperty FACING = BlockStateProperties.FACING;  <-- 删除这行
-
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
-
-    // 用于定义泵的垂直/水平模式
     public static final EnumProperty<Orientation> ORIENTATION = EnumProperty.create("orientation", Orientation.class);
 
     public enum Orientation implements net.minecraft.util.StringRepresentable {
@@ -60,8 +56,97 @@ public class CentrifugalPumpBlock extends DirectionalAxisKineticBlock
         }
     }
 
-    // 简化的形状定义
-    private static final VoxelShape SHAPE = Block.box(2, 0, 2, 14, 16, 14);
+    // 基础组件形状（基于模型文件）
+    private static final VoxelShape PUMP_CENTER = Block.box(2, 2, 2, 14, 14, 14);
+    private static final VoxelShape PIPE_FRONT = Block.box(3, 3, 0, 13, 13, 2);
+    private static final VoxelShape PIPE_UP = Block.box(3, 14, 3, 13, 16, 13);
+    private static final VoxelShape BACK_FOR_ROTATE = Block.box(3, 3, 13, 13, 13, 15);
+    private static final VoxelShape ADJUST_LEFT = Block.box(0, 4, 4, 2, 12, 12);
+    private static final VoxelShape ADJUST_RIGHT = Block.box(14, 4, 4, 16, 12, 12);
+
+    // 垂直模式组件
+    private static final VoxelShape PIPE_DOWN = Block.box(3, 0, 3, 13, 2, 13);
+    private static final VoxelShape PIPE_SIDE = Block.box(3, 3, 0, 13, 13, 2);
+    private static final VoxelShape TOP_FOR_STRESS = Block.box(3, 14, 3, 13, 16, 13);
+
+    // 预计算的碰撞箱
+    private static final VoxelShape[] HORIZONTAL_SHAPES = new VoxelShape[4];
+    private static final VoxelShape[] VERTICAL_SHAPES = new VoxelShape[4];
+
+    static {
+        // 水平模式 - 北（pipe_front朝北）
+        HORIZONTAL_SHAPES[0] = Shapes.or(PUMP_CENTER, PIPE_FRONT, PIPE_UP, BACK_FOR_ROTATE, ADJUST_LEFT, ADJUST_RIGHT);
+
+        // 水平模式 - 南（pipe_front朝南）
+        HORIZONTAL_SHAPES[1] = Shapes.or(
+                PUMP_CENTER,
+                Block.box(3, 3, 14, 13, 13, 16),  // pipe_front朝南
+                PIPE_UP,
+                Block.box(3, 3, 0, 13, 13, 2),     // back_for_rotate朝北
+                ADJUST_LEFT,
+                ADJUST_RIGHT
+        );
+
+        // 水平模式 - 西（pipe_front朝西）
+        HORIZONTAL_SHAPES[2] = Shapes.or(
+                PUMP_CENTER,
+                Block.box(0, 3, 3, 2, 13, 13),     // pipe_front朝西
+                PIPE_UP,
+                Block.box(14, 3, 3, 16, 13, 13),   // back_for_rotate朝东
+                Block.box(4, 4, 0, 12, 12, 2),     // adjust朝北
+                Block.box(4, 4, 14, 12, 12, 16)    // adjust朝南
+        );
+
+        // 水平模式 - 东（pipe_front朝东）
+        HORIZONTAL_SHAPES[3] = Shapes.or(
+                PUMP_CENTER,
+                Block.box(14, 3, 3, 16, 13, 13),   // pipe_front朝东
+                PIPE_UP,
+                Block.box(0, 3, 3, 2, 13, 13),     // back_for_rotate朝西
+                Block.box(4, 4, 0, 12, 12, 2),     // adjust朝北
+                Block.box(4, 4, 14, 12, 12, 16)    // adjust朝南
+        );
+
+        // 垂直模式 - 北（pipe_up朝北）
+        VERTICAL_SHAPES[0] = Shapes.or(
+                PUMP_CENTER,
+                PIPE_DOWN,                          // pipe_front向下
+                PIPE_SIDE,                          // pipe_up朝北
+                TOP_FOR_STRESS,                     // back_for_rotate向上
+                ADJUST_LEFT,                         // 东西两侧调节
+                ADJUST_RIGHT
+        );
+
+        // 垂直模式 - 南（pipe_up朝南）
+        VERTICAL_SHAPES[1] = Shapes.or(
+                PUMP_CENTER,
+                PIPE_DOWN,
+                Block.box(3, 3, 14, 13, 13, 16),   // pipe_up朝南
+                TOP_FOR_STRESS,
+                ADJUST_LEFT,
+                ADJUST_RIGHT
+        );
+
+        // 垂直模式 - 西（pipe_up朝西）
+        VERTICAL_SHAPES[2] = Shapes.or(
+                PUMP_CENTER,
+                PIPE_DOWN,
+                Block.box(0, 3, 3, 2, 13, 13),     // pipe_up朝西
+                TOP_FOR_STRESS,
+                Block.box(4, 4, 0, 12, 12, 2),     // adjust朝北
+                Block.box(4, 4, 14, 12, 12, 16)    // adjust朝南
+        );
+
+        // 垂直模式 - 东（pipe_up朝东）
+        VERTICAL_SHAPES[3] = Shapes.or(
+                PUMP_CENTER,
+                PIPE_DOWN,
+                Block.box(14, 3, 3, 16, 13, 13),   // pipe_up朝东
+                TOP_FOR_STRESS,
+                Block.box(4, 4, 0, 12, 12, 2),     // adjust朝北
+                Block.box(4, 4, 14, 12, 12, 16)    // adjust朝南
+        );
+    }
 
     public CentrifugalPumpBlock(Properties properties) {
         super(properties);
@@ -72,93 +157,73 @@ public class CentrifugalPumpBlock extends DirectionalAxisKineticBlock
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        // 不要重复添加 FACING，父类会处理
         builder.add(WATERLOGGED, ORIENTATION);
-        super.createBlockStateDefinition(builder);  // 父类会添加 FACING
+        super.createBlockStateDefinition(builder);
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context) {
+        Orientation orientation = state.getValue(ORIENTATION);
+        Direction facing = state.getValue(FACING);
+
+        if (orientation == Orientation.VERTICAL) {
+            return VERTICAL_SHAPES[facing.get2DDataValue()];
+        } else {
+            return HORIZONTAL_SHAPES[facing.get2DDataValue()];
+        }
     }
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        BlockState state = super.getStateForPlacement(context);
         Level level = context.getLevel();
         BlockPos pos = context.getClickedPos();
         Player player = context.getPlayer();
-        Direction facing = context.getNearestLookingDirection();
+        Direction clickedFace = context.getClickedFace();
 
-        if (player != null && player.isShiftKeyDown()) {
-            facing = facing.getOpposite();
+        // 获取基础状态（从父类获取会设置初始的FACING）
+        BlockState state = super.getStateForPlacement(context);
+        if (state == null) {
+            state = this.defaultBlockState();
         }
 
-        // 根据放置方向决定朝向模式
-        Orientation orientation = facing.getAxis() == Direction.Axis.Y
-                ? Orientation.VERTICAL
-                : Orientation.HORIZONTAL;
+        // 判断放置模式
+        Orientation orientation;
+        Direction facing;
 
-        // 处理垂直模式
-        if (orientation == Orientation.VERTICAL) {
-            if (facing == Direction.UP) {
-                // 应力从下方输入，流体从上方输出
-                facing = Direction.DOWN;
-            } else {
-                // 应力从上方输入，流体从下方输出
-                facing = Direction.UP;
-            }
-            // 获取水平朝向
-            Direction horizontalFacing = context.getHorizontalDirection().getOpposite();
-            state = state.setValue(FACING, horizontalFacing);
+        if (clickedFace.getAxis() == Direction.Axis.Y) {
+            // 点击上下面，使用垂直模式
+            orientation = Orientation.VERTICAL;
+            // facing决定pipe_up的朝向，必须是水平方向
+            facing = context.getHorizontalDirection().getOpposite();
         } else {
-            // 水平模式
-            state = state.setValue(FACING, facing.getOpposite());
+            // 点击侧面，使用水平模式
+            orientation = Orientation.HORIZONTAL;
+            // facing决定pipe_front的朝向
+            facing = clickedFace;
+            if (player != null && player.isShiftKeyDown()) {
+                facing = facing.getOpposite();
+            }
         }
 
-        state = state.setValue(ORIENTATION, orientation);
+        // 确保facing永远不是垂直方向
+        if (facing.getAxis() == Direction.Axis.Y) {
+            facing = Direction.NORTH;
+        }
+
+        state = state.setValue(FACING, facing).setValue(ORIENTATION, orientation);
         state = ProperWaterloggedBlock.withWater(level, state, pos);
-
-        // 智能连接到附近的管道
-        Direction bestConnection = findBestPipeConnection(level, pos, orientation,
-                orientation == Orientation.VERTICAL ? state.getValue(FACING) : facing.getOpposite());
-        if (bestConnection != null) {
-            state = state.setValue(FACING, bestConnection);
-        }
 
         return state;
     }
 
-    private Direction findBestPipeConnection(Level level, BlockPos pos, Orientation orientation, Direction preferredDir) {
-        Direction bestDir = null;
-        double bestDistance = Double.MAX_VALUE;
-
-        for (Direction dir : Iterate.directions) {
-            // 根据朝向模式检查有效连接方向
-            if (orientation == Orientation.VERTICAL) {
-                if (dir.getAxis() == Direction.Axis.Y) continue; // 垂直模式不检查上下
-            } else {
-                if (dir.getAxis() != Direction.Axis.Y && dir.getAxis() == preferredDir.getAxis()) continue;
-            }
-
-            BlockPos adjPos = pos.relative(dir);
-            BlockState adjState = level.getBlockState(adjPos);
-
-            if (FluidPipeBlock.canConnectTo(level, adjPos, adjState, dir)) {
-                double distance = Vec3.atLowerCornerOf(dir.getNormal())
-                        .distanceTo(Vec3.atLowerCornerOf(preferredDir.getNormal()));
-                if (distance < bestDistance) {
-                    bestDistance = distance;
-                    bestDir = dir;
-                }
-            }
-        }
-
-        return bestDir;
-    }
-
     @Override
     public Direction.Axis getRotationAxis(BlockState state) {
+        // 旋转轴总是从back_for_rotate指向pipe_front
         Orientation orientation = state.getValue(ORIENTATION);
         if (orientation == Orientation.VERTICAL) {
-            return Direction.Axis.Y;
+            return Direction.Axis.Y;  // 垂直轴
         } else {
-            return state.getValue(FACING).getAxis();
+            return state.getValue(FACING).getAxis();  // 水平轴
         }
     }
 
@@ -168,26 +233,50 @@ public class CentrifugalPumpBlock extends DirectionalAxisKineticBlock
     }
 
     public boolean hasShaftTowards(LevelAccessor world, BlockPos pos, BlockState state, Direction face) {
+        // 轴总是从back_for_rotate面进入
+        return face == getShaftDirection(state);
+    }
+
+    /**
+     * 获取应力输入方向（back_for_rotate面的方向）
+     */
+    public static Direction getShaftDirection(BlockState state) {
         Orientation orientation = state.getValue(ORIENTATION);
         if (orientation == Orientation.VERTICAL) {
-            // 垂直模式：轴从上方进入
-            return face == Direction.UP;
+            return Direction.UP;  // 垂直模式，轴从上方进入
         } else {
-            // 水平模式：轴从后方进入
-            return face == state.getValue(FACING).getOpposite();
+            return state.getValue(FACING).getOpposite();  // 水平模式，轴从pipe_front的对面进入
+        }
+    }
+
+    /**
+     * 获取主流体输出方向（pipe_front的方向）
+     */
+    public static Direction getPrimaryFluidDirection(BlockState state) {
+        Orientation orientation = state.getValue(ORIENTATION);
+        if (orientation == Orientation.VERTICAL) {
+            return Direction.DOWN;  // 垂直模式，pipe_front固定向下
+        } else {
+            return state.getValue(FACING);  // 水平模式，pipe_front由facing决定
+        }
+    }
+
+    /**
+     * 获取次流体输出方向（pipe_up的方向）
+     */
+    public static Direction getSecondaryFluidDirection(BlockState state) {
+        Orientation orientation = state.getValue(ORIENTATION);
+        if (orientation == Orientation.VERTICAL) {
+            return state.getValue(FACING);  // 垂直模式，pipe_up由facing决定
+        } else {
+            return Direction.UP;  // 水平模式，pipe_up固定向上
         }
     }
 
     public static boolean isOpenAt(BlockState state, Direction direction) {
-        Orientation orientation = state.getValue(ORIENTATION);
-        if (orientation == Orientation.VERTICAL) {
-            // 垂直模式：下方和侧面（根据facing）开放
-            return direction == Direction.DOWN || direction == state.getValue(FACING);
-        } else {
-            // 水平模式：前方和上方开放
-            Direction facing = state.getValue(FACING);
-            return direction == facing || direction == Direction.UP;
-        }
+        // 流体可以从pipe_front和pipe_up两个方向进出
+        return direction == getPrimaryFluidDirection(state) ||
+                direction == getSecondaryFluidDirection(state);
     }
 
     @Override
@@ -222,11 +311,6 @@ public class CentrifugalPumpBlock extends DirectionalAxisKineticBlock
             FluidPropagator.propagateChangedPipe(world, pos, state);
         }
         super.onRemove(state, world, pos, newState, isMoving);
-    }
-
-    @Override
-    public VoxelShape getShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context) {
-        return SHAPE;
     }
 
     @Override
