@@ -2,6 +2,7 @@
   "block.fluid.pipette": "动力移液器",
   "block.fluid.fluid_interface": "流体接口",
   "block.fluid.smart_fluid_interface": "智能流体接口",
+  "block.fluid.centrifugal_pump": "离心泵",
   "item.fluid.honeycomb_mold": "蜜脾模具",
   "item.fluid.honeycomb_mold.tooltip.summary": "用于蜜脾的压块塑形配方",
   "item.fluid.baton": "指挥棒",

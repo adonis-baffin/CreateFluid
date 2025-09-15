@@ -5,8 +5,9 @@ import static com.simibubi.create.foundation.data.TagGen.axeOrPickaxe;
 import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlock;
 import com.adonis.fluid.block.Pipette.PipetteBlock;
-import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlock; // 添加这个导入
-import com.adonis.fluid.block.aqueduct.AqueductBlock;
+import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlock;
+import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlock;
+import com.adonis.fluid.block.Aqueduct.AqueductBlock;
 import com.adonis.fluid.item.PipetteItem;
 import com.simibubi.create.foundation.data.ModelGen;
 import com.simibubi.create.foundation.data.SharedProperties;
@@ -17,6 +18,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraftforge.client.model.generators.ConfiguredModel;
 
@@ -94,23 +96,50 @@ public class CFBlock {
 
     public static final BlockEntry<PipetteBlock> PIPETTE = CreateFluid.REGISTRATE
             .block("pipette", PipetteBlock::new)
-            .initialProperties(SharedProperties::softMetal)  // 保持与动力臂一致
+            .initialProperties(SharedProperties::softMetal)
             .properties(prop -> prop
-                    .mapColor(MapColor.TERRACOTTA_YELLOW)  // 改为与动力臂一致的颜色映射
-                    .noOcclusion())  // 添加无遮挡属性
-            .transform(TagGen.axeOrPickaxe())  // 使用TagGen而不是直接的axeOrPickaxe
+                    .mapColor(MapColor.TERRACOTTA_YELLOW)
+                    .noOcclusion())
+            .transform(TagGen.axeOrPickaxe())
             .blockstate((ctx, prov) -> {
                 prov.getVariantBuilder(ctx.get())
                         .forAllStates(state -> {
                             return ConfiguredModel.builder()
                                     .modelFile(prov.models().getExistingFile(prov.modLoc("block/pipette")))
-                                    .rotationX(state.getValue(PipetteBlock.CEILING) ? 180 : 0)  // 处理天花板状态
+                                    .rotationX(state.getValue(PipetteBlock.CEILING) ? 180 : 0)
                                     .build();
                         });
             })
-            .transform(CreateFluid.STRESS_CONFIG.setImpact(2.0))  // 保持应力影响
+            .transform(CreateFluid.STRESS_CONFIG.setImpact(2.0))
             .item(PipetteItem::new)
-            .transform(ModelGen.customItemModel())  // 添加自定义物品模型
+            .transform(ModelGen.customItemModel())
+            .register();
+
+    // 离心泵注册
+    public static final BlockEntry<CentrifugalPumpBlock> CENTRIFUGAL_PUMP = CreateFluid.REGISTRATE
+            .block("centrifugal_pump", CentrifugalPumpBlock::new)
+            .initialProperties(SharedProperties::stone)
+            .properties(prop -> prop
+                    .mapColor(DyeColor.GRAY)
+                    .sound(SoundType.METAL)
+                    .noOcclusion())
+            .transform(axeOrPickaxe())
+            .blockstate((ctx, prov) -> {
+                prov.getVariantBuilder(ctx.get())
+                        .forAllStates(state -> {
+                            Direction facing = state.getValue(CentrifugalPumpBlock.FACING);
+                            boolean ceiling = state.getValue(CentrifugalPumpBlock.FACE) == AttachFace.CEILING;
+                            boolean wall = state.getValue(CentrifugalPumpBlock.FACE) == AttachFace.WALL;
+                            int yRot = (int) facing.toYRot();
+                            int xRot = wall ? 270 : (ceiling ? 180 : 0);
+                            return ConfiguredModel.builder()
+                                    .modelFile(prov.models().getExistingFile(prov.modLoc("block/centrifugal_pump")))
+                                    .rotationX(xRot)
+                                    .rotationY(wall ? (yRot + 90) % 360 : (ceiling ? (yRot + 180) % 360 : yRot))
+                                    .build();
+                        });
+            })
+            .simpleItem()
             .register();
 
     public static void register() {}
@@ -120,5 +149,6 @@ public class CFBlock {
         ItemBlockRenderTypes.setRenderLayer(FLUID_INTERFACE.get(), cutout);
         ItemBlockRenderTypes.setRenderLayer(SMART_FLUID_INTERFACE.get(), cutout);
         ItemBlockRenderTypes.setRenderLayer(PIPETTE.get(), cutout);
+        ItemBlockRenderTypes.setRenderLayer(CENTRIFUGAL_PUMP.get(), cutout);
     }
 }

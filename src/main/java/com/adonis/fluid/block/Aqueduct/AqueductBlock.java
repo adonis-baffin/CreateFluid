@@ -1,4 +1,4 @@
-package com.adonis.fluid.block.aqueduct;
+package com.adonis.fluid.block.Aqueduct;
 
 import com.adonis.fluid.registry.CFBlockEntity;
 import com.simibubi.create.foundation.block.IBE;

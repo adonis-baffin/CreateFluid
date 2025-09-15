@@ -1,4 +1,4 @@
-package com.adonis.fluid.block.aqueduct;
+package com.adonis.fluid.block.Aqueduct;
 
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.foundation.block.IBE;

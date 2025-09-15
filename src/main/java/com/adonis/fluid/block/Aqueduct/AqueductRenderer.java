@@ -1,4 +1,4 @@
-package com.adonis.fluid.block.aqueduct;
+package com.adonis.fluid.block.Aqueduct;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;

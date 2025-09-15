@@ -24,6 +24,7 @@ public class CFTab {
 
                         // 动力设备
                         output.accept(CFBlock.PIPETTE.get());
+                        output.accept(CFBlock.CENTRIFUGAL_PUMP.get());
 
                         // 流体接口
                         output.accept(CFBlock.FLUID_INTERFACE.get());

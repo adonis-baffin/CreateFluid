@@ -2,6 +2,7 @@
   "block.fluid.pipette": "Mechanical Pipette",
   "block.fluid.fluid_interface": "Fluid Interface",
   "block.fluid.smart_fluid_interface": "Smart Fluid Interface",
+  "block.fluid.centrifugal_pump": "Centrifugal Pump",
   "item.fluid.honeycomb_mold": "Honeycomb Mold",
   "item.fluid.honeycomb_mold.tooltip.summary": "Used for honeycomb compacting recipe",
   "item.fluid.baton": "Conductor's Baton",

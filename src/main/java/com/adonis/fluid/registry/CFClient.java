@@ -4,7 +4,7 @@ import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.block.Pipette.PipetteRenderer;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceRenderer;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceRenderer;
-import com.adonis.fluid.block.aqueduct.AqueductRenderer;
+import com.adonis.fluid.block.Aqueduct.AqueductRenderer;
 import com.adonis.fluid.handler.PipetteFluidInteractionPointHandler;
 import com.adonis.fluid.item.BatonItemPropertyFunction;
 import com.adonis.fluid.ponder.CFPonderPlugin;

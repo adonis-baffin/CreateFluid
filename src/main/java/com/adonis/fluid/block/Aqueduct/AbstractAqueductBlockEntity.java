@@ -1,4 +1,4 @@
-package com.adonis.fluid.block.aqueduct;
+package com.adonis.fluid.block.Aqueduct;
 
 import com.adonis.fluid.config.CFCommonConfig;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
