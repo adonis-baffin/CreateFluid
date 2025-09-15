@@ -36,6 +36,7 @@ public class CFBlockEntity {
                     (pos, state) -> new AqueductBlockEntity(CFBlockEntity.AQUEDUCT.get(), pos, state),
                     CFBlock.AQUEDUCT.get()).build(null));
 
+    // 新增离心泵的注册
     public static final RegistryObject<BlockEntityType<CentrifugalPumpBlockEntity>> CENTRIFUGAL_PUMP =
             BLOCK_ENTITIES.register("centrifugal_pump", () -> BlockEntityType.Builder.of(
                     (pos, state) -> new CentrifugalPumpBlockEntity(CFBlockEntity.CENTRIFUGAL_PUMP.get(), pos, state),

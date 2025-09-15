@@ -1,5 +1,6 @@
 package com.adonis.fluid.registry;
 
+import static com.adonis.fluid.registry.CFBlockEntity.CENTRIFUGAL_PUMP;
 import static com.simibubi.create.foundation.data.TagGen.axeOrPickaxe;
 
 import com.adonis.fluid.CreateFluid;
@@ -7,6 +8,7 @@ import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlock;
 import com.adonis.fluid.block.Pipette.PipetteBlock;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlock;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlock;
+import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlock.Orientation;
 import com.adonis.fluid.block.Aqueduct.AqueductBlock;
 import com.adonis.fluid.item.PipetteItem;
 import com.simibubi.create.foundation.data.ModelGen;
@@ -118,28 +120,71 @@ public class CFBlock {
     // 离心泵注册
     public static final BlockEntry<CentrifugalPumpBlock> CENTRIFUGAL_PUMP = CreateFluid.REGISTRATE
             .block("centrifugal_pump", CentrifugalPumpBlock::new)
-            .initialProperties(SharedProperties::stone)
+            .initialProperties(SharedProperties::copperMetal)
             .properties(prop -> prop
-                    .mapColor(DyeColor.GRAY)
-                    .sound(SoundType.METAL)
+                    .mapColor(MapColor.STONE)
+                    .sound(SoundType.COPPER)
                     .noOcclusion())
-            .transform(axeOrPickaxe())
+            .transform(TagGen.pickaxeOnly())
             .blockstate((ctx, prov) -> {
                 prov.getVariantBuilder(ctx.get())
                         .forAllStates(state -> {
                             Direction facing = state.getValue(CentrifugalPumpBlock.FACING);
-                            boolean ceiling = state.getValue(CentrifugalPumpBlock.FACE) == AttachFace.CEILING;
-                            boolean wall = state.getValue(CentrifugalPumpBlock.FACE) == AttachFace.WALL;
-                            int yRot = (int) facing.toYRot();
-                            int xRot = wall ? 270 : (ceiling ? 180 : 0);
-                            return ConfiguredModel.builder()
-                                    .modelFile(prov.models().getExistingFile(prov.modLoc("block/centrifugal_pump")))
-                                    .rotationX(xRot)
-                                    .rotationY(wall ? (yRot + 90) % 360 : (ceiling ? (yRot + 180) % 360 : yRot))
-                                    .build();
+                            Orientation orientation = state.getValue(CentrifugalPumpBlock.ORIENTATION);
+
+                            String modelName = orientation == Orientation.VERTICAL
+                                    ? "block/centrifugal_pump/block_vertical"
+                                    : "block/centrifugal_pump/block";
+
+                            ConfiguredModel.Builder<?> builder = ConfiguredModel.builder()
+                                    .modelFile(prov.models().getExistingFile(prov.modLoc(modelName)));
+
+                            // 处理旋转
+                            if (orientation == Orientation.VERTICAL) {
+                                // 垂直模式：X轴旋转90度，然后根据facing调整Y轴
+                                builder.rotationX(90);
+                                switch (facing) {
+                                    case NORTH:
+                                        builder.rotationY(0);
+                                        break;
+                                    case SOUTH:
+                                        builder.rotationY(180);
+                                        break;
+                                    case WEST:
+                                        builder.rotationY(90);
+                                        break;
+                                    case EAST:
+                                        builder.rotationY(270);
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            } else {
+                                // 水平模式：只需要Y轴旋转
+                                switch (facing) {
+                                    case NORTH:
+                                        builder.rotationY(0);
+                                        break;
+                                    case SOUTH:
+                                        builder.rotationY(180);
+                                        break;
+                                    case WEST:
+                                        builder.rotationY(90);
+                                        break;
+                                    case EAST:
+                                        builder.rotationY(270);
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }
+
+                            return builder.build();
                         });
             })
-            .simpleItem()
+            .transform(CreateFluid.STRESS_CONFIG.setImpact(8.0))  // 设置应力影响为8
+            .item()
+            .transform(ModelGen.customItemModel())
             .register();
 
     public static void register() {}
