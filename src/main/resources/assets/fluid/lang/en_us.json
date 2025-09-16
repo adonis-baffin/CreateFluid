@@ -13,35 +13,37 @@
   "itemGroup.fluid.main": "Create: Fluid",
 
   "block.fluid.fluid_interface.tooltip": "FLUID INTERFACE",
-  "block.fluid.fluid_interface.tooltip.summary": "A _proxy_ block for interfacing with adjacent fluid containers.",
+  "block.fluid.fluid_interface.tooltip.summary": "A _proxy_ block for interfacing with adjacent fluid containers",
   "block.fluid.fluid_interface.tooltip.condition1": "When used by player",
-  "block.fluid.fluid_interface.tooltip.behaviour1": "Allows _direct fluid interaction_ with the attached container using buckets or fluid containers.",
+  "block.fluid.fluid_interface.tooltip.behaviour1": "Allows _direct fluid interaction_ with the attached container using buckets or fluid containers",
 
   "block.fluid.smart_fluid_interface.tooltip": "SMART FLUID INTERFACE",
-  "block.fluid.smart_fluid_interface.tooltip.summary": "An _advanced proxy_ block for fluid containers with _filtering capabilities_ that restricts which fluids can pass through.",
+  "block.fluid.smart_fluid_interface.tooltip.summary": "An _advanced proxy_ block for fluid containers with _filtering capabilities_ that restricts which fluids can pass through",
   "block.fluid.smart_fluid_interface.tooltip.condition1": "When configured with filter",
-  "block.fluid.smart_fluid_interface.tooltip.behaviour1": "Only allows _specified fluids_ to be inserted or extracted.",
+  "block.fluid.smart_fluid_interface.tooltip.behaviour1": "Only allows _specified fluids_ to be inserted or extracted",
   "block.fluid.smart_fluid_interface.tooltip.condition2": "When attached to a container",
-  "block.fluid.smart_fluid_interface.tooltip.behaviour2": "Functions as a _filtered gateway_ to the attached container, preventing unwanted fluid types from passing through.",
+  "block.fluid.smart_fluid_interface.tooltip.behaviour2": "Functions as a _filtered gateway_ to the attached container, preventing unwanted fluid types from passing through",
+
+  "block.fluid.centrifugal_pump.tooltip.summary": "Better than _mechanical pump_",
 
   "create.fluid.mechanical_pipette.extract": "Drain fluid from %1$s",
   "create.fluid.mechanical_pipette.deposit": "Inject fluid to %1$s",
   "create.fluid.mechanical_pipette.points_outside_range": "%1$s Fluid Interaction Points were removed because they are now out of range",
   "create.fluid.mechanical_pipette.summary": "Configured Fluid Points: %1$s Inputs, %2$s Outputs",
   "create.fluid.mechanical_pipette.no_targets.title": "No Targets",
-  "create.fluid.mechanical_pipette.no_targets": "It appears this _Mechanical_ _Pipette_ has not been assigned any _targets._ Select basin, drain, fluid interface and other blocks by _right-clicking_ them while _holding_ the _Mechanical_ _Pipette_ in your _hand_.",
+  "create.fluid.mechanical_pipette.no_targets": "It appears this _Mechanical_ _Pipette_ has not been assigned any _targets._ Select basin, drain, fluid interface and other blocks by _right-clicking_ them while _holding_ the _Mechanical_ _Pipette_ in your _hand_",
 
 
   "create.create.mechanical_arm.extract_from": "Take items from %1$s",
   "create.create.mechanical_arm.deposit_to": "Deposit items to %1$s",
 
-  "create.hint.mechanical_arm_no_targets": "It appears this _Mechanical_ _Arm_ has not been assigned any _targets._ Select belts, depots, funnels and other blocks by _right-clicking_ them while _holding_ the _Mechanical_ _Arm_ in your _hand_.",
+  "create.hint.mechanical_arm_no_targets": "It appears this _Mechanical_ _Arm_ has not been assigned any _targets._ Select belts, depots, funnels and other blocks by _right-clicking_ them while _holding_ the _Mechanical_ _Arm_ in your _hand_",
   "create.hint.mechanical_arm_no_targets.title": "No Targets",
-  "create.create.mechanical_arm.points_outside_range": "%1$s selected interaction point(s) removed due to range limitations.",
+  "create.create.mechanical_arm.points_outside_range": "%1$s selected interaction point(s) removed due to range limitations",
   "create.create.mechanical_arm.selection_mode.forced_round_robin": "Forced Round Robin",
   "create.create.mechanical_arm.selection_mode.prefer_first": "Prefer First Target",
   "create.create.mechanical_arm.selection_mode.round_robin": "Round Robin",
-  "create.create.mechanical_arm.summary": "Mechanical Arm has %1$s input(s) and %2$s output(s).",
+  "create.create.mechanical_arm.summary": "Mechanical Arm has %1$s input(s) and %2$s output(s)",
 
   "create.fluid.baton.arm.dance_started": "Arm started dancing",
   "create.fluid.baton.arm.dance_stopped": "Arm stopped dancing",

@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": {
+      "tag": "forge:storage_blocks/copper"
+    },
+    "C": {
+      "item": "create:propeller"
+    },
+    "I": {
+      "item": "create:shaft"
+    }
+  },
+  "pattern": [
+    " I ",
+    " C ",
+    " A "
+  ],
+  "result": {
+    "item": "fluid:centrifugal_pump"
+  },
+  "show_notification": true
+}

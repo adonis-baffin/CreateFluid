@@ -24,6 +24,8 @@
   "block.fluid.smart_fluid_interface.tooltip.condition2": "当连接到容器时",
   "block.fluid.smart_fluid_interface.tooltip.behaviour2": "作为连接容器的_过滤网关_，防止不需要的流体类型通过",
 
+  "block.fluid.centrifugal_pump.tooltip.summary": "比_动力泵_更好用",
+
   "create.fluid.mechanical_pipette.extract": "从%1$s吸取流体",
   "create.fluid.mechanical_pipette.deposit": "将流体注入%1$s",
   "create.fluid.mechanical_pipette.points_outside_range": "由于距离限制，%1$s 个已选定的交互点已被移除。",

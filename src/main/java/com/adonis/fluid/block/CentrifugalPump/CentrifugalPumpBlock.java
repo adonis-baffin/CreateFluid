@@ -3,7 +3,14 @@ package com.adonis.fluid.block.CentrifugalPump;
 import com.adonis.fluid.registry.CFBlockEntity;
 import com.simibubi.create.content.fluids.FluidPropagator;
 import com.simibubi.create.content.fluids.pipes.FluidPipeBlock;
+
+import com.simibubi.create.content.kinetics.base.AbstractEncasedShaftBlock;
 import com.simibubi.create.content.kinetics.base.DirectionalKineticBlock;
+import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import com.simibubi.create.content.kinetics.base.RotatedPillarKineticBlock;
+
+import com.simibubi.create.content.kinetics.simpleRelays.AbstractShaftBlock;
+import com.simibubi.create.content.kinetics.simpleRelays.ICogWheel;
 import com.simibubi.create.foundation.block.IBE;
 import com.simibubi.create.foundation.block.ProperWaterloggedBlock;
 import net.createmod.catnip.data.Iterate;
@@ -19,6 +26,7 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SimpleWaterloggedBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -33,13 +41,15 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.ticks.TickPriority;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class CentrifugalPumpBlock extends DirectionalKineticBlock
         implements IBE<CentrifugalPumpBlockEntity>, SimpleWaterloggedBlock {
 
     public static final EnumProperty<AttachFace> FACE = BlockStateProperties.ATTACH_FACE;
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
-    // 临时的形状定义，避免崩溃
     private static final VoxelShape PUMP_SHAPE = Block.box(2, 2, 2, 14, 14, 14);
 
     public CentrifugalPumpBlock(Properties properties) {
@@ -57,85 +67,216 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext ctx) {
-        BlockState stateForPlacement = super.getStateForPlacement(ctx);
-        if (stateForPlacement == null) {
-            stateForPlacement = this.defaultBlockState();
-        }
-
-        Direction clickedFace = ctx.getClickedFace();
-        AttachFace face;
-        Direction facing = ctx.getHorizontalDirection().getOpposite(); // 默认朝向改为反方向
-
-        // 根据点击的面确定AttachFace
-        switch (clickedFace) {
-            case UP:
-                face = AttachFace.FLOOR;
-                break;
-            case DOWN:
-                face = AttachFace.CEILING;
-                break;
-            default:
-                face = AttachFace.WALL;
-                // 对于墙面放置，facing应该就是点击的面本身
-                // 因为在WALL模式下，facing决定了pipe_up的朝向
-                // pipe_up朝向点击面（贴墙的反方向），base就在对面（贴墙）
-                facing = clickedFace;
-                break;
-        }
-
-        // 检查周围的管道连接，优先连接
-        Direction.Axis prefferedAxis = null;
-        BlockPos pos = ctx.getClickedPos();
         Level world = ctx.getLevel();
+        BlockPos pos = ctx.getClickedPos();
 
-        for (Direction direction : Iterate.directions) {
-            if (this.prefersConnectionTo(world, pos, direction)) {
-                if (prefferedAxis != null && prefferedAxis != direction.getAxis()) {
-                    prefferedAxis = null;
+// 潜行模式：让主要接口对着玩家点击的面
+        if (ctx.getPlayer() != null && ctx.getPlayer().isShiftKeyDown()) {
+            Direction clickedFace = ctx.getClickedFace();
+            AttachFace face;
+            Direction facing;
+
+            switch (clickedFace) {
+                case UP:
+                    // 点击顶部（对着天花板）：pipefront朝上不可能，所以让pipe_up朝上，pipefront朝玩家
+                    face = AttachFace.FLOOR;
+                    facing = ctx.getHorizontalDirection(); // pipefront朝玩家
                     break;
-                }
-                prefferedAxis = direction.getAxis();
+
+                case DOWN:
+                    // 点击底部（对着地板）：pipefront朝下，pipe_up朝玩家
+                    face = AttachFace.WALL;
+                    facing = ctx.getHorizontalDirection(); // pipe_up(secondary)朝玩家
+                    break;
+
+                default:
+                    // 点击侧面（东南西北）：pipefront朝那个面，pipe_up朝上
+                    face = AttachFace.FLOOR;
+                    facing = clickedFace.getOpposite(); // pipefront朝向点击的面
+                    break;
+            }
+
+            BlockState state = this.defaultBlockState()
+                    .setValue(FACE, face)
+                    .setValue(FACING, facing)
+                    .setValue(WATERLOGGED, ctx.getLevel().getFluidState(pos).getType() == Fluids.WATER);
+
+            return state;
+        }
+
+        // 非潜行模式：收集连接信息
+        List<Direction> fluidConnections = new ArrayList<>();
+        Direction kineticConnection = null;
+
+        for (Direction dir : Direction.values()) {
+            BlockPos neighborPos = pos.relative(dir);
+            BlockState neighborState = world.getBlockState(neighborPos);
+
+            // 检查流体连接
+            if (FluidPipeBlock.canConnectTo(world, neighborPos, neighborState, dir)) {
+                fluidConnections.add(dir);
+            }
+
+            // 检查动力连接
+            if (kineticConnection == null && hasKineticConnection(world, neighborPos, neighborState, dir)) {
+                kineticConnection = dir;
             }
         }
 
-        // 根据优先连接调整朝向
-        if (prefferedAxis == Direction.Axis.Y) {
-            // 垂直轴优先，使用WALL模式
-            face = AttachFace.WALL;
-        } else if (prefferedAxis != null) {
-            // 水平轴优先
-            if (face == AttachFace.WALL) {
-                face = AttachFace.FLOOR;
+        // 智能决定放置形态
+        AttachFace face;
+        Direction facing;
+
+        if (fluidConnections.size() >= 2) {
+            // 多个流体连接
+            PlacementResult best = findBestPlacement(fluidConnections, kineticConnection);
+            face = best.face;
+            facing = best.facing;
+        } else if (fluidConnections.size() == 1) {
+            // 单个流体连接
+            Direction fluid = fluidConnections.get(0);
+            if (kineticConnection != null) {
+                PlacementResult result = placementForBoth(fluid, kineticConnection);
+                face = result.face;
+                facing = result.facing;
+            } else {
+                PlacementResult result = placementForSingleFluid(fluid);
+                face = result.face;
+                facing = result.facing;
             }
-            // 设置facing为优先连接的方向
-            for (Direction d : Direction.values()) {
-                if (d.getAxis() == prefferedAxis && d.getAxis() != Direction.Axis.Y) {
-                    facing = d;
-                    break;
-                }
-            }
+        } else if (kineticConnection != null) {
+            // 只有动力连接
+            PlacementResult result = placementForKinetic(kineticConnection);
+            face = result.face;
+            facing = result.facing;
+        } else {
+            // 没有连接，使用默认
+            face = clickedFaceToAttachFace(ctx.getClickedFace());
+            facing = face == AttachFace.WALL ? ctx.getClickedFace() : ctx.getHorizontalDirection().getOpposite();
         }
 
-        stateForPlacement = stateForPlacement
+        BlockState state = this.defaultBlockState()
                 .setValue(FACE, face)
-                .setValue(FACING, facing);
+                .setValue(FACING, facing)
+                .setValue(WATERLOGGED, ctx.getLevel().getFluidState(pos).getType() == Fluids.WATER);
 
-        return ProperWaterloggedBlock.withWater(world, stateForPlacement, pos);
+        return state;
     }
 
-    protected boolean prefersConnectionTo(LevelReader reader, BlockPos pos, Direction facing) {
-        BlockPos offset = pos.relative(facing);
-        BlockState blockState = reader.getBlockState(offset);
-        return FluidPipeBlock.canConnectTo(reader, offset, blockState, facing);
+    private boolean hasKineticConnection(Level world, BlockPos pos, BlockState state, Direction from) {
+        Block block = state.getBlock();
+
+        if (block instanceof AbstractShaftBlock || block instanceof AbstractEncasedShaftBlock) {
+            if (state.hasProperty(RotatedPillarKineticBlock.AXIS)) {
+                return state.getValue(RotatedPillarKineticBlock.AXIS) == from.getAxis();
+            }
+        }
+
+        if (block instanceof ICogWheel) {
+            return true;
+        }
+
+        BlockEntity be = world.getBlockEntity(pos);
+        return be instanceof KineticBlockEntity;
+    }
+
+    private PlacementResult findBestPlacement(List<Direction> fluids, Direction kinetic) {
+        PlacementResult best = null;
+        int maxConnections = 0;
+
+        for (AttachFace face : AttachFace.values()) {
+            for (Direction facing : Direction.values()) {
+                if (face == AttachFace.WALL && facing.getAxis() == Direction.Axis.Y) continue;
+                if (face != AttachFace.WALL && facing.getAxis() == Direction.Axis.Y) continue;
+
+                int connections = 0;
+                Direction primary = getPrimaryForPlacement(face, facing);
+                Direction secondary = getSecondaryForPlacement(face, facing);
+
+                if (fluids.contains(primary)) connections++;
+                if (fluids.contains(secondary)) connections++;
+
+                boolean kineticOk = kinetic == null || kinetic.getOpposite() == getShaftForPlacement(face, facing);
+
+                if (connections > maxConnections && kineticOk) {
+                    maxConnections = connections;
+                    best = new PlacementResult(face, facing);
+                }
+            }
+        }
+
+        return best != null ? best : new PlacementResult(AttachFace.FLOOR, Direction.NORTH);
+    }
+
+    private PlacementResult placementForSingleFluid(Direction fluid) {
+        if (fluid.getAxis() == Direction.Axis.Y) {
+            return new PlacementResult(AttachFace.FLOOR, Direction.NORTH);
+        }
+        return new PlacementResult(AttachFace.WALL, fluid);
+    }
+
+    private PlacementResult placementForBoth(Direction fluid, Direction kinetic) {
+        if (kinetic.getAxis() == Direction.Axis.Y) {
+            return new PlacementResult(AttachFace.WALL,
+                    fluid.getAxis() != Direction.Axis.Y ? fluid : Direction.NORTH);
+        }
+        return new PlacementResult(AttachFace.FLOOR, kinetic.getOpposite());
+    }
+
+    private PlacementResult placementForKinetic(Direction kinetic) {
+        if (kinetic.getAxis() == Direction.Axis.Y) {
+            return new PlacementResult(AttachFace.WALL, Direction.NORTH);
+        }
+        return new PlacementResult(AttachFace.FLOOR, kinetic.getOpposite());
+    }
+
+    private Direction getPrimaryForPlacement(AttachFace face, Direction facing) {
+        if (face == AttachFace.WALL) {
+            return Direction.DOWN;
+        }
+        return facing;
+    }
+
+    private Direction getSecondaryForPlacement(AttachFace face, Direction facing) {
+        if (face == AttachFace.WALL) {
+            return facing;
+        } else if (face == AttachFace.FLOOR) {
+            return Direction.UP;
+        } else {
+            return Direction.DOWN;
+        }
+    }
+
+    private Direction getShaftForPlacement(AttachFace face, Direction facing) {
+        if (face == AttachFace.WALL) {
+            return Direction.UP;
+        }
+        return facing.getOpposite();
+    }
+
+    private AttachFace clickedFaceToAttachFace(Direction clicked) {
+        switch (clicked) {
+            case UP: return AttachFace.FLOOR;
+            case DOWN: return AttachFace.CEILING;
+            default: return AttachFace.WALL;
+        }
+    }
+
+    private static class PlacementResult {
+        final AttachFace face;
+        final Direction facing;
+
+        PlacementResult(AttachFace face, Direction facing) {
+            this.face = face;
+            this.facing = facing;
+        }
     }
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context) {
-        // 安全的形状获取，避免返回null
         AttachFace face = state.getValue(FACE);
         Direction facing = state.getValue(FACING);
 
-        // 尝试从CFShapes获取形状
         try {
             if (com.adonis.fluid.registry.CFShapes.CENTRIFUGAL_PUMP_FLOOR != null &&
                     com.adonis.fluid.registry.CFShapes.CENTRIFUGAL_PUMP_CEILING != null &&
@@ -155,14 +296,11 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
                 }
             }
         } catch (Exception e) {
-            // 如果出现任何错误，使用默认形状
+            // 使用默认形状
         }
 
-        // 返回默认形状，避免null
         return PUMP_SHAPE;
     }
-
-    // ====== 应力系统关键方法 ======
 
     @Override
     public Direction.Axis getRotationAxis(BlockState state) {
@@ -170,14 +308,20 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
     }
 
     protected static Direction.Axis getPumpAxis(BlockState state) {
+        if (!(state.getBlock() instanceof CentrifugalPumpBlock)) {
+            return Direction.Axis.Y;
+        }
+
+        if (!state.hasProperty(FACE) || !state.hasProperty(FACING)) {
+            return Direction.Axis.Y;
+        }
+
         AttachFace face = state.getValue(FACE);
         Direction facing = state.getValue(FACING);
 
         if (face == AttachFace.WALL) {
-            // 垂直泵：轴是Y轴
             return Direction.Axis.Y;
         } else {
-            // 水平泵：轴是facing的轴
             return facing.getAxis();
         }
     }
@@ -187,33 +331,32 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
         return face == getShaftDirection(state);
     }
 
-    /**
-     * 获取应力输入方向（传动杆连接的方向）
-     */
     public static Direction getShaftDirection(BlockState state) {
+        if (!(state.getBlock() instanceof CentrifugalPumpBlock)) {
+            return Direction.UP;
+        }
+
+        if (!state.hasProperty(FACE) || !state.hasProperty(FACING)) {
+            return Direction.UP;
+        }
+
         AttachFace face = state.getValue(FACE);
         Direction facing = state.getValue(FACING);
 
         if (face == AttachFace.WALL) {
-            // 垂直泵：从上方接收动力
             return Direction.UP;
         } else {
-            // 水平泵（FLOOR/CEILING）：从facing的反方向接收动力
             return facing.getOpposite();
         }
     }
 
-    // ====== 流体系统方法 ======
-
     public static Direction getPrimaryFluidDirection(BlockState state) {
-        // 添加安全检查
         if (!(state.getBlock() instanceof CentrifugalPumpBlock)) {
-            return Direction.UP; // 返回默认值
+            return Direction.UP;
         }
 
-        // 确保state包含必要的属性
         if (!state.hasProperty(FACE) || !state.hasProperty(FACING)) {
-            return Direction.UP; // 返回默认值
+            return Direction.UP;
         }
 
         AttachFace face = state.getValue(FACE);
@@ -227,14 +370,12 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
     }
 
     public static Direction getSecondaryFluidDirection(BlockState state) {
-        // 添加安全检查
         if (!(state.getBlock() instanceof CentrifugalPumpBlock)) {
-            return Direction.NORTH; // 返回默认值
+            return Direction.NORTH;
         }
 
-        // 确保state包含必要的属性
         if (!state.hasProperty(FACE) || !state.hasProperty(FACING)) {
-            return Direction.NORTH; // 返回默认值
+            return Direction.NORTH;
         }
 
         AttachFace face = state.getValue(FACE);
@@ -244,26 +385,22 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
             return facing;
         } else if (face == AttachFace.FLOOR) {
             return Direction.UP;
-        } else { // CEILING
+        } else {
             return Direction.DOWN;
         }
     }
 
     public static boolean isOpenAt(BlockState state, Direction d) {
-        // 添加安全检查
         if (!(state.getBlock() instanceof CentrifugalPumpBlock)) {
             return false;
         }
 
-        // 确保state包含必要的属性
         if (!state.hasProperty(FACE) || !state.hasProperty(FACING)) {
             return false;
         }
 
         return d == getPrimaryFluidDirection(state) || d == getSecondaryFluidDirection(state);
     }
-
-    // ====== 流体传播相关 ======
 
     @Override
     public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean isMoving) {
@@ -284,11 +421,9 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
         super.onPlace(state, world, pos, oldState, isMoving);
 
         if (!world.isClientSide) {
-            // 立即触发网络更新
             if (state != oldState) {
                 world.scheduleTick(pos, this, 1, TickPriority.HIGH);
 
-                // 通知泵实体需要更新
                 if (world.getBlockEntity(pos) instanceof CentrifugalPumpBlockEntity pump) {
                     pump.onPipeNetworkChanged();
                 }
@@ -305,10 +440,8 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
         Direction d = FluidPropagator.validateNeighbourChange(state, world, pos, otherBlock, neighborPos, isMoving);
 
         if (d != null && isOpenAt(state, d)) {
-            // 立即安排tick
             world.scheduleTick(pos, this, 1, TickPriority.HIGH);
 
-            // 标记需要更新压力
             if (world.getBlockEntity(pos) instanceof CentrifugalPumpBlockEntity pump) {
                 pump.pressureUpdate = true;
             }
@@ -317,10 +450,8 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
 
     @Override
     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource r) {
-        // 先传播管道变化
         FluidPropagator.propagateChangedPipe(world, pos, state);
 
-        // 然后触发泵的压力更新
         if (world.getBlockEntity(pos) instanceof CentrifugalPumpBlockEntity pump) {
             pump.pressureUpdate = true;
         }
