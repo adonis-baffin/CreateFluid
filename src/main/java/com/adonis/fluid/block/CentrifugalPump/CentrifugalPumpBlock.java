@@ -206,6 +206,16 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
     // ====== 流体系统方法 ======
 
     public static Direction getPrimaryFluidDirection(BlockState state) {
+        // 添加安全检查
+        if (!(state.getBlock() instanceof CentrifugalPumpBlock)) {
+            return Direction.UP; // 返回默认值
+        }
+
+        // 确保state包含必要的属性
+        if (!state.hasProperty(FACE) || !state.hasProperty(FACING)) {
+            return Direction.UP; // 返回默认值
+        }
+
         AttachFace face = state.getValue(FACE);
         Direction facing = state.getValue(FACING);
 
@@ -217,6 +227,16 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
     }
 
     public static Direction getSecondaryFluidDirection(BlockState state) {
+        // 添加安全检查
+        if (!(state.getBlock() instanceof CentrifugalPumpBlock)) {
+            return Direction.NORTH; // 返回默认值
+        }
+
+        // 确保state包含必要的属性
+        if (!state.hasProperty(FACE) || !state.hasProperty(FACING)) {
+            return Direction.NORTH; // 返回默认值
+        }
+
         AttachFace face = state.getValue(FACE);
         Direction facing = state.getValue(FACING);
 
@@ -230,6 +250,16 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
     }
 
     public static boolean isOpenAt(BlockState state, Direction d) {
+        // 添加安全检查
+        if (!(state.getBlock() instanceof CentrifugalPumpBlock)) {
+            return false;
+        }
+
+        // 确保state包含必要的属性
+        if (!state.hasProperty(FACE) || !state.hasProperty(FACING)) {
+            return false;
+        }
+
         return d == getPrimaryFluidDirection(state) || d == getSecondaryFluidDirection(state);
     }
 
@@ -252,24 +282,48 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
     @Override
     public void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, world, pos, oldState, isMoving);
-        if (!world.isClientSide && state != oldState) {
-            world.scheduleTick(pos, this, 1, TickPriority.HIGH);
+
+        if (!world.isClientSide) {
+            // 立即触发网络更新
+            if (state != oldState) {
+                world.scheduleTick(pos, this, 1, TickPriority.HIGH);
+
+                // 通知泵实体需要更新
+                if (world.getBlockEntity(pos) instanceof CentrifugalPumpBlockEntity pump) {
+                    pump.onPipeNetworkChanged();
+                }
+            }
         }
     }
 
     @Override
     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block otherBlock,
                                 BlockPos neighborPos, boolean isMoving) {
+        super.neighborChanged(state, world, pos, otherBlock, neighborPos, isMoving);
+
         DebugPackets.sendNeighborsUpdatePacket(world, pos);
         Direction d = FluidPropagator.validateNeighbourChange(state, world, pos, otherBlock, neighborPos, isMoving);
+
         if (d != null && isOpenAt(state, d)) {
+            // 立即安排tick
             world.scheduleTick(pos, this, 1, TickPriority.HIGH);
+
+            // 标记需要更新压力
+            if (world.getBlockEntity(pos) instanceof CentrifugalPumpBlockEntity pump) {
+                pump.pressureUpdate = true;
+            }
         }
     }
 
     @Override
     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource r) {
+        // 先传播管道变化
         FluidPropagator.propagateChangedPipe(world, pos, state);
+
+        // 然后触发泵的压力更新
+        if (world.getBlockEntity(pos) instanceof CentrifugalPumpBlockEntity pump) {
+            pump.pressureUpdate = true;
+        }
     }
 
     @Override

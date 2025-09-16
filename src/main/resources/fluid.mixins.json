@@ -11,7 +11,10 @@
     "accessor.BasinBlockEntityAccessor",
     "accessor.PipeConnectionAccessor",
     "BeltInventoryMixin",
-    "ArmPlacementPacketMixin"
+    "ArmPlacementPacketMixin",
+    "FluidPropagatorMixin",
+    "FluidPropagatorCompleteMixin",
+    "FluidPipeBlockMixin"
   ],
   "client": [
     "accessor.ArmBlockEntityAccessor"
