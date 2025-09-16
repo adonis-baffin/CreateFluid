@@ -1,6 +1,5 @@
 package com.adonis.fluid.block.CentrifugalPump;
 
-import com.simibubi.create.foundation.gui.AllIcons;
 import com.simibubi.create.content.fluids.FluidPropagator;
 import com.simibubi.create.content.fluids.FluidTransportBehaviour;
 import com.simibubi.create.content.fluids.PipeConnection;
@@ -12,6 +11,7 @@ import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.INamedIconOptions;
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollOptionBehaviour;
+import com.simibubi.create.foundation.gui.AllIcons;
 import net.createmod.catnip.data.Couple;
 import net.createmod.catnip.data.Iterate;
 import net.createmod.catnip.data.Pair;
@@ -26,6 +26,7 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
@@ -47,6 +48,7 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
     // 传输参数
     private static final int BASE_PUMP_RANGE = 20; // 固定传输距离20格
     private static final float SPEED_MULTIPLIER = 2.0f; // 速度倍率（相对于普通泵）
+    private static final float STRESS_IMPACT = 8.0f; // 应力影响倍率
 
     // 传输方向枚举
     public enum TransferDirection implements INamedIconOptions {
@@ -111,19 +113,16 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         super.tick();
 
         if (!level.isClientSide || isVirtual()) {
-            // 离心泵有两个流体出口，需要分别处理
             Direction primary = getFront();
             Direction secondary = getSecondaryFront();
 
             if (primary != null && secondary != null) {
-                // 处理主要方向（pipe_front）
                 MutableBoolean primaryUpdate = sidesToUpdate.getFirst();
                 if (!primaryUpdate.isFalse()) {
                     primaryUpdate.setFalse();
                     distributePressureTo(primary);
                 }
 
-                // 处理次要方向（pipe_up）
                 MutableBoolean secondaryUpdate = sidesToUpdate.getSecond();
                 if (!secondaryUpdate.isFalse()) {
                     secondaryUpdate.setFalse();
@@ -148,6 +147,15 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         }
     }
 
+    // 不要重写这些方法！让KineticBlockEntity从应力配置中自动获取值
+    // 删除 calculateStressApplied() 和 calculateAddedStressCapacity() 的重写
+
+    @Override
+    public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
+        // 调用父类方法，这会自动显示应力信息（从STRESS_CONFIG获取）
+        return super.addToGoggleTooltip(tooltip, isPlayerSneaking);
+    }
+
     public void updatePressureChange() {
         pressureUpdate = false;
 
@@ -155,7 +163,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         Direction secondary = getSecondaryFront();
         if (primary == null || secondary == null) return;
 
-        // 更新两个流体方向
         BlockPos primaryPos = worldPosition.relative(primary);
         BlockPos secondaryPos = worldPosition.relative(secondary);
 
@@ -197,8 +204,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         if (getSpeed() == 0) return;
 
         BlockFace start = new BlockFace(worldPosition, side);
-
-        // 判断这个方向是主要还是次要流体方向
         boolean isPrimary = side == getFront();
         boolean pull = isPullingOnSide(isPrimary);
 
@@ -209,10 +214,8 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
             FluidPropagator.resetAffectedFluidNetworks(level, worldPosition, side.getOpposite());
         }
 
-        // 使用固定的传输距离
         int maxDistance = BASE_PUMP_RANGE;
 
-        // 探索管道网络
         if (!hasReachedValidEndpoint(level, start, pull)) {
             pipeGraph.computeIfAbsent(worldPosition, $ -> Pair.of(0, new IdentityHashMap<>()))
                     .getSecond().put(side, pull);
@@ -266,12 +269,10 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
             }
         }
 
-        // 应用压力
         Map<Integer, Set<BlockFace>> validFaces = new HashMap<>();
         searchForEndpointRecursively(pipeGraph, targets, validFaces,
                 new BlockFace(start.getPos(), start.getOppositeFace()), pull);
 
-        // 离心泵的压力是速度的两倍
         float pressure = Math.abs(getSpeed()) * SPEED_MULTIPLIER;
 
         for (Set<BlockFace> set : validFaces.values()) {
@@ -333,7 +334,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         BlockEntity blockEntity = world.getBlockEntity(connectedPos);
         Direction face = blockFace.getFace();
 
-        // 检查是否连接到其他泵
         if (PumpBlock.isPump(connectedState) && connectedState.getValue(PumpBlock.FACING).getAxis() == face.getAxis()) {
             if (blockEntity instanceof CentrifugalPumpBlockEntity pumpBE) {
                 Direction pumpFront = pumpBE.getFront();
@@ -375,7 +375,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
             return false;
         }
 
-        // 检查是否是两个流体方向之一
         return side == CentrifugalPumpBlock.getPrimaryFluidDirection(blockState) ||
                 side == CentrifugalPumpBlock.getSecondaryFluidDirection(blockState);
     }
@@ -387,7 +386,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
             return null;
         }
 
-        // 返回pipe_front的方向（主流体方向）
         return CentrifugalPumpBlock.getPrimaryFluidDirection(blockState);
     }
 
@@ -398,7 +396,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
             return null;
         }
 
-        // 返回pipe_up的方向（次流体方向）
         return CentrifugalPumpBlock.getSecondaryFluidDirection(blockState);
     }
 
@@ -416,9 +413,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
     }
 
     public boolean isPullingOnSide(boolean isPrimaryDirection) {
-        // 根据传输方向设置决定拉/推
-        // NORMAL: primary推出，secondary拉入
-        // REVERSED: primary拉入，secondary推出
         if (transferDirection == null) return !isPrimaryDirection;
 
         boolean reversed = transferDirection.get() == TransferDirection.REVERSED;
@@ -444,21 +438,17 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
                 Direction dir = entry.getKey();
                 Couple<Float> pressure = entry.getValue().getPressure();
 
-                // 离心泵的压力是速度的两倍
                 float pumpPressure = Math.abs(CentrifugalPumpBlockEntity.this.getSpeed()) * SPEED_MULTIPLIER;
 
                 if (dir == primary) {
-                    // 主要方向
                     boolean pull = CentrifugalPumpBlockEntity.this.isPullingOnSide(true);
                     pressure.set(pull, pull ? pumpPressure : 0f);
                     pressure.set(!pull, pull ? 0f : pumpPressure);
                 } else if (dir == secondary) {
-                    // 次要方向
                     boolean pull = CentrifugalPumpBlockEntity.this.isPullingOnSide(false);
                     pressure.set(pull, pull ? pumpPressure : 0f);
                     pressure.set(!pull, pull ? 0f : pumpPressure);
                 } else {
-                    // 其他方向没有压力
                     pressure.set(true, 0f);
                     pressure.set(false, 0f);
                 }
@@ -478,7 +468,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         }
     }
 
-    // 值盒子变换类（用于显示传输方向）
     static class CentrifugalPumpValueBoxTransform extends ValueBoxTransform.Sided {
 
         @Override
@@ -488,19 +477,16 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
 
         @Override
         protected boolean isSideActive(BlockState state, Direction direction) {
-            // 在侧面显示控制面板
             if (!(state.getBlock() instanceof CentrifugalPumpBlock)) {
                 return false;
             }
 
-            CentrifugalPumpBlock.Orientation orientation = state.getValue(CentrifugalPumpBlock.ORIENTATION);
+            AttachFace face = state.getValue(CentrifugalPumpBlock.FACE);
             Direction facing = state.getValue(CentrifugalPumpBlock.FACING);
 
-            if (orientation == CentrifugalPumpBlock.Orientation.VERTICAL) {
-                // 垂直模式：在水平侧面显示（不在上下面，也不在主朝向面）
-                return direction.getAxis() != Direction.Axis.Y && direction != facing;
+            if (face == AttachFace.WALL) {
+                return direction.getAxis() != Direction.Axis.Y && direction != facing && direction != facing.getOpposite();
             } else {
-                // 水平模式：在左右两侧显示
                 return direction.getAxis() != facing.getAxis() && direction.getAxis() != Direction.Axis.Y;
             }
         }

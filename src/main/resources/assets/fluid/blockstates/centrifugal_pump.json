@@ -1,100 +1,102 @@
 {
   "variants": {
-    "facing=north,orientation=horizontal,waterlogged=false": {
+    "face=floor,facing=north,waterlogged=false": {
       "model": "fluid:block/centrifugal_pump/block"
     },
-    "facing=north,orientation=horizontal,waterlogged=true": {
+    "face=floor,facing=north,waterlogged=true": {
       "model": "fluid:block/centrifugal_pump/block"
     },
-    "facing=south,orientation=horizontal,waterlogged=false": {
+    "face=floor,facing=south,waterlogged=false": {
       "model": "fluid:block/centrifugal_pump/block",
       "y": 180
     },
-    "facing=south,orientation=horizontal,waterlogged=true": {
+    "face=floor,facing=south,waterlogged=true": {
       "model": "fluid:block/centrifugal_pump/block",
       "y": 180
     },
-    "facing=west,orientation=horizontal,waterlogged=false": {
-      "model": "fluid:block/centrifugal_pump/block",
-      "y": 90
-    },
-    "facing=west,orientation=horizontal,waterlogged=true": {
-      "model": "fluid:block/centrifugal_pump/block",
-      "y": 90
-    },
-    "facing=east,orientation=horizontal,waterlogged=false": {
+    "face=floor,facing=west,waterlogged=false": {
       "model": "fluid:block/centrifugal_pump/block",
       "y": 270
     },
-    "facing=east,orientation=horizontal,waterlogged=true": {
+    "face=floor,facing=west,waterlogged=true": {
       "model": "fluid:block/centrifugal_pump/block",
       "y": 270
     },
-    "facing=north,orientation=vertical,waterlogged=false": {
-      "model": "fluid:block/centrifugal_pump/block_vertical",
-      "x": 90
+    "face=floor,facing=east,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "y": 90
     },
-    "facing=north,orientation=vertical,waterlogged=true": {
-      "model": "fluid:block/centrifugal_pump/block_vertical",
-      "x": 90
+    "face=floor,facing=east,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "y": 90
     },
-    "facing=south,orientation=vertical,waterlogged=false": {
-      "model": "fluid:block/centrifugal_pump/block_vertical",
-      "x": 90,
+    "face=ceiling,facing=north,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "x": 180,
       "y": 180
     },
-    "facing=south,orientation=vertical,waterlogged=true": {
-      "model": "fluid:block/centrifugal_pump/block_vertical",
-      "x": 90,
+    "face=ceiling,facing=north,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "x": 180,
       "y": 180
     },
-    "facing=west,orientation=vertical,waterlogged=false": {
-      "model": "fluid:block/centrifugal_pump/block_vertical",
-      "x": 90,
+    "face=ceiling,facing=south,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "x": 180
+    },
+    "face=ceiling,facing=south,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "x": 180
+    },
+    "face=ceiling,facing=west,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "x": 180,
       "y": 90
     },
-    "facing=west,orientation=vertical,waterlogged=true": {
-      "model": "fluid:block/centrifugal_pump/block_vertical",
-      "x": 90,
+    "face=ceiling,facing=west,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "x": 180,
       "y": 90
     },
-    "facing=east,orientation=vertical,waterlogged=false": {
-      "model": "fluid:block/centrifugal_pump/block_vertical",
-      "x": 90,
+    "face=ceiling,facing=east,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "x": 180,
       "y": 270
     },
-    "facing=east,orientation=vertical,waterlogged=true": {
-      "model": "fluid:block/centrifugal_pump/block_vertical",
-      "x": 90,
+    "face=ceiling,facing=east,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "x": 180,
       "y": 270
     },
-    "facing=up,orientation=horizontal,waterlogged=false": {
-      "model": "fluid:block/centrifugal_pump/block"
+    "face=wall,facing=north,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/block_vertical"
     },
-    "facing=up,orientation=horizontal,waterlogged=true": {
-      "model": "fluid:block/centrifugal_pump/block"
+    "face=wall,facing=north,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/block_vertical"
     },
-    "facing=down,orientation=horizontal,waterlogged=false": {
-      "model": "fluid:block/centrifugal_pump/block"
-    },
-    "facing=down,orientation=horizontal,waterlogged=true": {
-      "model": "fluid:block/centrifugal_pump/block"
-    },
-    "facing=up,orientation=vertical,waterlogged=false": {
+    "face=wall,facing=south,waterlogged=false": {
       "model": "fluid:block/centrifugal_pump/block_vertical",
-      "x": 90
+      "y": 180
     },
-    "facing=up,orientation=vertical,waterlogged=true": {
+    "face=wall,facing=south,waterlogged=true": {
       "model": "fluid:block/centrifugal_pump/block_vertical",
-      "x": 90
+      "y": 180
     },
-    "facing=down,orientation=vertical,waterlogged=false": {
+    "face=wall,facing=west,waterlogged=false": {
       "model": "fluid:block/centrifugal_pump/block_vertical",
-      "x": 90
+      "y": 270
     },
-    "facing=down,orientation=vertical,waterlogged=true": {
+    "face=wall,facing=west,waterlogged=true": {
       "model": "fluid:block/centrifugal_pump/block_vertical",
-      "x": 90
+      "y": 270
+    },
+    "face=wall,facing=east,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/block_vertical",
+      "y": 90
+    },
+    "face=wall,facing=east,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/block_vertical",
+      "y": 90
     }
   }
 }

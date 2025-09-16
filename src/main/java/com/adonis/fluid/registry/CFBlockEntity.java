@@ -5,7 +5,11 @@ import com.adonis.fluid.block.Pipette.PipetteBlockEntity;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlockEntity;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlockEntity;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlockEntity;
+import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpRenderer;
+import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpVisual;
 import com.adonis.fluid.block.Aqueduct.AqueductBlockEntity;
+import com.simibubi.create.foundation.data.CreateRegistrate;
+import com.tterrag.registrate.util.entry.BlockEntityEntry;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
@@ -13,6 +17,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 public class CFBlockEntity {
+    // 保留原有的注册方式用于其他方块实体
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, CreateFluid.MODID);
 
@@ -36,11 +41,18 @@ public class CFBlockEntity {
                     (pos, state) -> new AqueductBlockEntity(CFBlockEntity.AQUEDUCT.get(), pos, state),
                     CFBlock.AQUEDUCT.get()).build(null));
 
-    // 新增离心泵的注册
+    // 使用CreateRegistrate方式注册离心泵，以支持Visual
+    public static final BlockEntityEntry<CentrifugalPumpBlockEntity> CENTRIFUGAL_PUMP_ENTRY =
+            CreateFluid.REGISTRATE
+                    .blockEntity("centrifugal_pump", CentrifugalPumpBlockEntity::new)
+                    .visual(() -> CentrifugalPumpVisual::new, false)
+                    .validBlocks(CFBlock.CENTRIFUGAL_PUMP)
+                    .renderer(() -> CentrifugalPumpRenderer::new)
+                    .register();
+
+    // 为了保持兼容性，提供一个RegistryObject访问器
     public static final RegistryObject<BlockEntityType<CentrifugalPumpBlockEntity>> CENTRIFUGAL_PUMP =
-            BLOCK_ENTITIES.register("centrifugal_pump", () -> BlockEntityType.Builder.of(
-                    (pos, state) -> new CentrifugalPumpBlockEntity(CFBlockEntity.CENTRIFUGAL_PUMP.get(), pos, state),
-                    CFBlock.CENTRIFUGAL_PUMP.get()).build(null));
+            RegistryObject.create(CreateFluid.asResource("centrifugal_pump"), ForgeRegistries.BLOCK_ENTITY_TYPES);
 
     public static void register(IEventBus modEventBus) {
         BLOCK_ENTITIES.register(modEventBus);

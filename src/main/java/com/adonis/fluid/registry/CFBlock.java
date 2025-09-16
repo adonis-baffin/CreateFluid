@@ -8,7 +8,6 @@ import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlock;
 import com.adonis.fluid.block.Pipette.PipetteBlock;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlock;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlock;
-import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlock.Orientation;
 import com.adonis.fluid.block.Aqueduct.AqueductBlock;
 import com.adonis.fluid.item.PipetteItem;
 import com.simibubi.create.foundation.data.ModelGen;
@@ -117,7 +116,7 @@ public class CFBlock {
             .transform(ModelGen.customItemModel())
             .register();
 
-    // 离心泵注册
+    // 离心泵注册 - 使用 AttachFace 而不是 Orientation
     public static final BlockEntry<CentrifugalPumpBlock> CENTRIFUGAL_PUMP = CreateFluid.REGISTRATE
             .block("centrifugal_pump", CentrifugalPumpBlock::new)
             .initialProperties(SharedProperties::copperMetal)
@@ -130,19 +129,15 @@ public class CFBlock {
                 prov.getVariantBuilder(ctx.get())
                         .forAllStates(state -> {
                             Direction facing = state.getValue(CentrifugalPumpBlock.FACING);
-                            Orientation orientation = state.getValue(CentrifugalPumpBlock.ORIENTATION);
+                            AttachFace face = state.getValue(CentrifugalPumpBlock.FACE);
 
-                            String modelName = orientation == Orientation.VERTICAL
-                                    ? "block/centrifugal_pump/block_vertical"
-                                    : "block/centrifugal_pump/block";
+                            ConfiguredModel.Builder<?> builder = ConfiguredModel.builder();
 
-                            ConfiguredModel.Builder<?> builder = ConfiguredModel.builder()
-                                    .modelFile(prov.models().getExistingFile(prov.modLoc(modelName)));
-
-                            // 处理旋转
-                            if (orientation == Orientation.VERTICAL) {
-                                // 垂直模式：X轴旋转90度，然后根据facing调整Y轴
-                                builder.rotationX(90);
+                            // 根据 AttachFace 选择模型和旋转
+                            if (face == AttachFace.WALL) {
+                                // 垂直模式 - 使用 block_vertical 模型
+                                builder.modelFile(prov.models().getExistingFile(prov.modLoc("block/centrifugal_pump/block_vertical")));
+                                // 根据 facing 设置 Y 轴旋转
                                 switch (facing) {
                                     case NORTH:
                                         builder.rotationY(0);
@@ -151,16 +146,17 @@ public class CFBlock {
                                         builder.rotationY(180);
                                         break;
                                     case WEST:
-                                        builder.rotationY(90);
-                                        break;
-                                    case EAST:
                                         builder.rotationY(270);
                                         break;
-                                    default:
+                                    case EAST:
+                                        builder.rotationY(90);
                                         break;
                                 }
-                            } else {
-                                // 水平模式：只需要Y轴旋转
+                            } else if (face == AttachFace.CEILING) {
+                                // 天花板模式 - 使用标准模型，翻转180度
+                                builder.modelFile(prov.models().getExistingFile(prov.modLoc("block/centrifugal_pump/block")));
+                                builder.rotationX(180);
+                                // 根据 facing 设置 Y 轴旋转
                                 switch (facing) {
                                     case NORTH:
                                         builder.rotationY(0);
@@ -169,12 +165,28 @@ public class CFBlock {
                                         builder.rotationY(180);
                                         break;
                                     case WEST:
-                                        builder.rotationY(90);
-                                        break;
-                                    case EAST:
                                         builder.rotationY(270);
                                         break;
-                                    default:
+                                    case EAST:
+                                        builder.rotationY(90);
+                                        break;
+                                }
+                            } else { // AttachFace.FLOOR
+                                // 地面模式 - 使用标准模型
+                                builder.modelFile(prov.models().getExistingFile(prov.modLoc("block/centrifugal_pump/block")));
+                                // 根据 facing 设置 Y 轴旋转
+                                switch (facing) {
+                                    case NORTH:
+                                        builder.rotationY(0);
+                                        break;
+                                    case SOUTH:
+                                        builder.rotationY(180);
+                                        break;
+                                    case WEST:
+                                        builder.rotationY(270);
+                                        break;
+                                    case EAST:
+                                        builder.rotationY(90);
                                         break;
                                 }
                             }
