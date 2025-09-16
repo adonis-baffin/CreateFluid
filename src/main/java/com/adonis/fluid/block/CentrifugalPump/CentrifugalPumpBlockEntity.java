@@ -1,5 +1,6 @@
 package com.adonis.fluid.block.CentrifugalPump;
 
+import com.adonis.fluid.mixin.accessor.PipeConnectionAccessor;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.content.fluids.FluidPropagator;
 import com.simibubi.create.content.fluids.FluidTransportBehaviour;
@@ -26,6 +27,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -34,7 +36,9 @@ import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.templates.FluidTank;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import javax.annotation.Nullable;
@@ -91,15 +95,21 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
                 new CentrifugalPumpValueBox()
         );
 
-        // 不要求扳手，方便调试
-        // pumpMode.requiresWrench();
-
         pumpMode.withCallback(i -> onModeChanged());
         behaviours.add(pumpMode);
 
         // 注册成就
         registerAwardables(behaviours, FluidPropagator.getSharedTriggers());
         registerAwardables(behaviours, AllAdvancements.PUMP);
+    }
+
+    @Override
+    public void initialize() {
+        super.initialize();
+        // 初始化时触发流体网络更新
+        if (!level.isClientSide) {
+            updatePressureChange();
+        }
     }
 
     private void onModeChanged() {
@@ -293,6 +303,16 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
                 }
             }
         }
+
+        // 在分配压力后，确保流体网络知道这个泵是流体源或目标
+        FluidTransportBehaviour behaviour = getBehaviour(FluidTransportBehaviour.TYPE);
+        if (behaviour != null) {
+            PipeConnection connection = behaviour.getConnection(side);
+            if (connection != null) {
+                // 设置这个连接为活动源/汇
+                connection.determineSource(level, worldPosition);
+            }
+        }
     }
 
     protected boolean searchForEndpointRecursively(Map<BlockPos, Pair<Integer, Map<Direction, Boolean>>> pipeGraph,
@@ -432,20 +452,36 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
     }
 
     // 内部流体传输行为类
-    class CentrifugalPumpFluidTransferBehaviour extends FluidTransportBehaviour {
+    class CentrifugalPumpFluidTransferBehaviour extends FluidTransportBehaviour implements IFluidHandler {
+
+        // 内部流体缓存 - 作为中转站
+        private FluidTank internalTank;
+        private static final int TANK_CAPACITY = 2000; // 2桶容量
+
         public CentrifugalPumpFluidTransferBehaviour(SmartBlockEntity be) {
             super(be);
+            this.internalTank = new FluidTank(TANK_CAPACITY);
         }
 
         @Override
         public void tick() {
             super.tick();
 
+            if (CentrifugalPumpBlockEntity.this.getSpeed() == 0) return;
+
             Direction primary = CentrifugalPumpBlockEntity.this.getFront();
             Direction secondary = CentrifugalPumpBlockEntity.this.getSecondaryFront();
 
             if (primary == null || secondary == null) return;
 
+            // 更新压力
+            updatePressures(primary, secondary);
+
+            // 执行泵送操作
+            performPumping(primary, secondary);
+        }
+
+        private void updatePressures(Direction primary, Direction secondary) {
             for (Map.Entry<Direction, PipeConnection> entry : interfaces.entrySet()) {
                 Direction dir = entry.getKey();
                 Couple<Float> pressure = entry.getValue().getPressure();
@@ -454,16 +490,110 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
 
                 if (dir == primary) {
                     boolean pull = CentrifugalPumpBlockEntity.this.isPullingOnSide(true);
-                    pressure.set(pull, pull ? pumpPressure : 0f);
-                    pressure.set(!pull, pull ? 0f : pumpPressure);
+                    pressure.set(pull, pumpPressure);
+                    pressure.set(!pull, 0f);
                 } else if (dir == secondary) {
                     boolean pull = CentrifugalPumpBlockEntity.this.isPullingOnSide(false);
-                    pressure.set(pull, pull ? pumpPressure : 0f);
-                    pressure.set(!pull, pull ? 0f : pumpPressure);
+                    pressure.set(pull, pumpPressure);
+                    pressure.set(!pull, 0f);
                 } else {
                     pressure.set(true, 0f);
                     pressure.set(false, 0f);
                 }
+            }
+        }
+
+        private void performPumping(Direction primary, Direction secondary) {
+            boolean pullFromPrimary = CentrifugalPumpBlockEntity.this.isPullingOnSide(true);
+
+            Direction inputDir = pullFromPrimary ? primary : secondary;
+            Direction outputDir = pullFromPrimary ? secondary : primary;
+
+            int transferRate = (int)(Math.abs(CentrifugalPumpBlockEntity.this.getSpeed()) * 50); // mB/tick
+
+            // 步骤1：从输入端抽取流体到内部缓存
+            extractFromInput(inputDir, transferRate);
+
+            // 步骤2：从内部缓存输出到输出端
+            insertToOutput(outputDir, transferRate);
+        }
+
+        private void extractFromInput(Direction inputDir, int maxAmount) {
+            BlockPos inputPos = worldPosition.relative(inputDir);
+            BlockEntity be = level.getBlockEntity(inputPos);
+
+            if (be != null) {
+                LazyOptional<IFluidHandler> capability = be.getCapability(
+                        ForgeCapabilities.FLUID_HANDLER,
+                        inputDir.getOpposite()
+                );
+
+                capability.ifPresent(handler -> {
+                    // 计算可以抽取的量
+                    int spaceAvailable = internalTank.getSpace();
+                    int toExtract = Math.min(maxAmount, spaceAvailable);
+
+                    // 模拟抽取
+                    FluidStack simulated = handler.drain(toExtract, FluidAction.SIMULATE);
+                    if (!simulated.isEmpty()) {
+                        // 检查是否可以接受这种流体
+                        if (internalTank.isEmpty() || internalTank.getFluid().isFluidEqual(simulated)) {
+                            // 实际抽取
+                            FluidStack extracted = handler.drain(toExtract, FluidAction.EXECUTE);
+                            if (!extracted.isEmpty()) {
+                                internalTank.fill(extracted, FluidAction.EXECUTE);
+
+                                // 更新流体动画
+                                updateFlowAnimation(inputDir, extracted, true);
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        private void insertToOutput(Direction outputDir, int maxAmount) {
+            if (internalTank.isEmpty()) return;
+
+            BlockPos outputPos = worldPosition.relative(outputDir);
+            BlockEntity be = level.getBlockEntity(outputPos);
+
+            if (be != null) {
+                LazyOptional<IFluidHandler> capability = be.getCapability(
+                        ForgeCapabilities.FLUID_HANDLER,
+                        outputDir.getOpposite()
+                );
+
+                capability.ifPresent(handler -> {
+                    // 尝试输出
+                    FluidStack toOutput = internalTank.getFluid().copy();
+                    toOutput.setAmount(Math.min(maxAmount, toOutput.getAmount()));
+
+                    int inserted = handler.fill(toOutput, FluidAction.EXECUTE);
+                    if (inserted > 0) {
+                        internalTank.drain(inserted, FluidAction.EXECUTE);
+
+                        // 更新流体动画
+                        FluidStack outputted = toOutput.copy();
+                        outputted.setAmount(inserted);
+                        updateFlowAnimation(outputDir, outputted, false);
+                    }
+                });
+            }
+        }
+
+        private void updateFlowAnimation(Direction dir, FluidStack fluid, boolean inbound) {
+            PipeConnection connection = interfaces.get(dir);
+            if (connection != null) {
+                // 使用Accessor更新流动画
+                PipeConnectionAccessor accessor = (PipeConnectionAccessor) connection;
+
+                if (!connection.hasFlow() || !accessor.getFlow().get().fluid.isFluidEqual(fluid)) {
+                    PipeConnection.Flow newFlow = connection.new Flow(inbound, fluid);
+                    accessor.setFlow(Optional.of(newFlow));
+                }
+
+                connection.tickFlowProgress(level, worldPosition);
             }
         }
 
@@ -472,15 +602,61 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
             return CentrifugalPumpBlockEntity.this.isSideAccessible(direction);
         }
 
+        // IFluidHandler 实现 - 允许管道直接与泵交互
         @Override
-        public AttachmentTypes getRenderedRimAttachment(BlockAndTintGetter world, BlockPos pos,
-                                                        BlockState state, Direction direction) {
-            AttachmentTypes attachment = super.getRenderedRimAttachment(world, pos, state, direction);
-            return attachment == AttachmentTypes.RIM ? AttachmentTypes.NONE : attachment;
+        public int getTanks() {
+            return 1;
+        }
+
+        @Override
+        public FluidStack getFluidInTank(int tank) {
+            return internalTank.getFluid();
+        }
+
+        @Override
+        public int getTankCapacity(int tank) {
+            return TANK_CAPACITY;
+        }
+
+        @Override
+        public boolean isFluidValid(int tank, FluidStack stack) {
+            return true;
+        }
+
+        @Override
+        public int fill(FluidStack resource, FluidAction action) {
+            // 只允许从输入方向填充
+            return 0; // 通过extractFromInput处理
+        }
+
+        @Override
+        public FluidStack drain(FluidStack resource, FluidAction action) {
+            // 只允许从输出方向抽取
+            return FluidStack.EMPTY; // 通过insertToOutput处理
+        }
+
+        @Override
+        public FluidStack drain(int maxDrain, FluidAction action) {
+            return FluidStack.EMPTY; // 通过insertToOutput处理
+        }
+
+        // 添加NBT存储
+        @Override
+        public void write(CompoundTag compound, boolean clientPacket) {
+            super.write(compound, clientPacket);
+            compound.put("Tank", internalTank.writeToNBT(new CompoundTag()));
+        }
+
+        @Override
+        public void read(CompoundTag compound, boolean clientPacket) {
+            super.read(compound, clientPacket);
+            if (compound.contains("Tank")) {
+                internalTank.readFromNBT(compound.getCompound("Tank"));
+            }
         }
     }
 
-    // 简单的 ValueBoxTransform 实现，支持多面板
+    // ValueBox实现保持不变
     public static class CentrifugalPumpValueBox extends ValueBoxTransform.Sided {
 
         @Override
@@ -492,18 +668,13 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
             AttachFace face = state.getValue(CentrifugalPumpBlock.FACE);
             Direction facing = state.getValue(CentrifugalPumpBlock.FACING);
 
-            // 确定哪些面应该显示调节面板
-            // 调节面板应该在两个侧面（8x8像素的面）
-
             if (face == AttachFace.WALL) {
-                // 垂直模式：调节面板在水平方向的两个侧面
                 if (facing == Direction.NORTH || facing == Direction.SOUTH) {
                     return side == Direction.WEST || side == Direction.EAST;
                 } else {
                     return side == Direction.NORTH || side == Direction.SOUTH;
                 }
             } else {
-                // 水平模式：调节面板在与facing垂直的两个水平侧面
                 if (facing == Direction.NORTH || facing == Direction.SOUTH) {
                     return side == Direction.WEST || side == Direction.EAST;
                 } else {
@@ -514,7 +685,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
 
         @Override
         protected Vec3 getSouthLocation() {
-            // 基础位置
             return VecHelper.voxelSpace(8, 8, 16);
         }
 
@@ -522,7 +692,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         public Vec3 getLocalOffset(LevelAccessor level, BlockPos pos, BlockState state) {
             Direction side = getSide();
             if (side == null) {
-                // 如果 getSide() 返回 null，尝试获取一个默认的活动侧面
                 AttachFace face = state.getValue(CentrifugalPumpBlock.FACE);
                 Direction facing = state.getValue(CentrifugalPumpBlock.FACING);
 
@@ -533,18 +702,16 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
                 }
             }
 
-            // 根据侧面返回位置 - 调整offset值使面板更靠外
-            // 原来是14.5f，现在改为15.5f，让面板更贴近方块边缘
             float offset = 15.5f;
             switch (side) {
                 case NORTH:
-                    return VecHelper.voxelSpace(8, 8, 16 - offset);  // 北面：z = 0.5
+                    return VecHelper.voxelSpace(8, 8, 16 - offset);
                 case SOUTH:
-                    return VecHelper.voxelSpace(8, 8, offset);        // 南面：z = 15.5
+                    return VecHelper.voxelSpace(8, 8, offset);
                 case WEST:
-                    return VecHelper.voxelSpace(16 - offset, 8, 8);   // 西面：x = 0.5
+                    return VecHelper.voxelSpace(16 - offset, 8, 8);
                 case EAST:
-                    return VecHelper.voxelSpace(offset, 8, 8);        // 东面：x = 15.5
+                    return VecHelper.voxelSpace(offset, 8, 8);
                 default:
                     return VecHelper.voxelSpace(8, 8, offset);
             }
@@ -554,7 +721,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         public void rotate(LevelAccessor level, BlockPos pos, BlockState state, PoseStack ms) {
             Direction side = getSide();
             if (side == null) {
-                // 如果 getSide() 返回 null，使用默认侧面
                 AttachFace face = state.getValue(CentrifugalPumpBlock.FACE);
                 Direction facing = state.getValue(CentrifugalPumpBlock.FACING);
 
@@ -567,11 +733,9 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
 
             AttachFace face = state.getValue(CentrifugalPumpBlock.FACE);
 
-            // 面板朝外
             float yRot = AngleHelper.horizontalAngle(side) + 180;
             TransformStack.of(ms).rotateYDegrees(yRot);
 
-            // 天花板模式需要翻转
             if (face == AttachFace.CEILING) {
                 TransformStack.of(ms).rotateZDegrees(180);
             }
