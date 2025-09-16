@@ -65,7 +65,7 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
 
         Direction clickedFace = ctx.getClickedFace();
         AttachFace face;
-        Direction facing = ctx.getHorizontalDirection();
+        Direction facing = ctx.getHorizontalDirection().getOpposite(); // 默认朝向改为反方向
 
         // 根据点击的面确定AttachFace
         switch (clickedFace) {
@@ -77,6 +77,10 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
                 break;
             default:
                 face = AttachFace.WALL;
+                // 对于墙面放置，facing应该就是点击的面本身
+                // 因为在WALL模式下，facing决定了pipe_up的朝向
+                // pipe_up朝向点击面（贴墙的反方向），base就在对面（贴墙）
+                facing = clickedFace;
                 break;
         }
 

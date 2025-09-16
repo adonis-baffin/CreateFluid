@@ -1,5 +1,6 @@
 package com.adonis.fluid.block.CentrifugalPump;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.content.fluids.FluidPropagator;
 import com.simibubi.create.content.fluids.FluidTransportBehaviour;
 import com.simibubi.create.content.fluids.PipeConnection;
@@ -12,10 +13,13 @@ import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.INamedIconOptions;
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollOptionBehaviour;
 import com.simibubi.create.foundation.gui.AllIcons;
+import dev.engine_room.flywheel.lib.transform.TransformStack;
 import net.createmod.catnip.data.Couple;
 import net.createmod.catnip.data.Iterate;
 import net.createmod.catnip.data.Pair;
 import net.createmod.catnip.lang.Lang;
+import net.createmod.catnip.math.AngleHelper;
+import net.createmod.catnip.math.VecHelper;
 import net.createmod.catnip.math.BlockFace;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -38,29 +42,23 @@ import java.util.*;
 
 public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
 
-    // 传输方向控制
-    protected ScrollOptionBehaviour<TransferDirection> transferDirection;
-
-    // 两侧的更新状态
+    protected ScrollOptionBehaviour<PumpMode> pumpMode;
     Couple<MutableBoolean> sidesToUpdate = Couple.create(MutableBoolean::new);
     boolean pressureUpdate;
 
-    // 传输参数
-    private static final int BASE_PUMP_RANGE = 20; // 固定传输距离20格
-    private static final float SPEED_MULTIPLIER = 2.0f; // 速度倍率（相对于普通泵）
-    private static final float STRESS_IMPACT = 8.0f; // 应力影响倍率
+    private static final int BASE_PUMP_RANGE = 20;
+    private static final float SPEED_MULTIPLIER = 2.0f;
 
-    // 传输方向枚举
-    public enum TransferDirection implements INamedIconOptions {
-        NORMAL(AllIcons.I_CONFIRM),      // 正常方向
-        REVERSED(AllIcons.I_ROTATE_CCW); // 反向
+    public enum PumpMode implements INamedIconOptions {
+        PUMP_IN(AllIcons.I_REFRESH),
+        PUMP_OUT(AllIcons.I_ROTATE_CCW);
 
         private String translationKey;
         private AllIcons icon;
 
-        private TransferDirection(AllIcons icon) {
+        private PumpMode(AllIcons icon) {
             this.icon = icon;
-            this.translationKey = "create_fluid.pump.transfer_direction." + Lang.asId(this.name());
+            this.translationKey = "create_fluid.centrifugal_pump.mode." + Lang.asId(this.name());
         }
 
         @Override
@@ -71,10 +69,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         @Override
         public String getTranslationKey() {
             return this.translationKey;
-        }
-
-        public Component getDisplayName() {
-            return Component.translatable(this.translationKey);
         }
     }
 
@@ -89,20 +83,26 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         // 添加流体传输行为
         behaviours.add(new CentrifugalPumpFluidTransferBehaviour(this));
 
-        // 添加方向控制行为（通过侧面面板）
-        transferDirection = new ScrollOptionBehaviour<>(TransferDirection.class,
-                Component.translatable("create_fluid.pump.transfer_direction"),
-                this, new CentrifugalPumpValueBoxTransform());
-        transferDirection.requiresWrench();  // 需要扳手才能调整
-        transferDirection.withCallback(i -> onDirectionChanged());
-        behaviours.add(transferDirection);
+        // 使用最简单的实现方式，直接用匿名类
+        pumpMode = new ScrollOptionBehaviour<>(
+                PumpMode.class,
+                Component.translatable("create_fluid.centrifugal_pump.pump_mode"),
+                this,
+                new CentrifugalPumpValueBox()
+        );
+
+        // 不要求扳手，方便调试
+        // pumpMode.requiresWrench();
+
+        pumpMode.withCallback(i -> onModeChanged());
+        behaviours.add(pumpMode);
 
         // 注册成就
         registerAwardables(behaviours, FluidPropagator.getSharedTriggers());
         registerAwardables(behaviours, AllAdvancements.PUMP);
     }
 
-    private void onDirectionChanged() {
+    private void onModeChanged() {
         if (!level.isClientSide || isVirtual()) {
             updatePressureChange();
         }
@@ -147,12 +147,8 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         }
     }
 
-    // 不要重写这些方法！让KineticBlockEntity从应力配置中自动获取值
-    // 删除 calculateStressApplied() 和 calculateAddedStressCapacity() 的重写
-
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
-        // 调用父类方法，这会自动显示应力信息（从STRESS_CONFIG获取）
         return super.addToGoggleTooltip(tooltip, isPlayerSneaking);
     }
 
@@ -181,12 +177,18 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
     protected void read(CompoundTag compound, boolean clientPacket) {
         super.read(compound, clientPacket);
 
-        if (compound.contains("TransferDirection") && transferDirection != null) {
+        if (compound.contains("PumpMode") && pumpMode != null) {
             try {
-                int ordinal = TransferDirection.valueOf(compound.getString("TransferDirection")).ordinal();
-                transferDirection.setValue(ordinal);
+                String mode = compound.getString("PumpMode");
+                PumpMode pMode = PumpMode.valueOf(mode);
+                pumpMode.setValue(pMode.ordinal());
             } catch (Exception e) {
-                transferDirection.setValue(0);
+                // 兼容旧的存储格式
+                if (compound.contains("PumpModeOrdinal")) {
+                    pumpMode.setValue(compound.getInt("PumpModeOrdinal"));
+                } else {
+                    pumpMode.setValue(0);
+                }
             }
         }
     }
@@ -195,8 +197,9 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
     protected void write(CompoundTag compound, boolean clientPacket) {
         super.write(compound, clientPacket);
 
-        if (transferDirection != null) {
-            compound.putString("TransferDirection", transferDirection.get().name());
+        if (pumpMode != null) {
+            compound.putString("PumpMode", pumpMode.get().name());
+            compound.putInt("PumpModeOrdinal", pumpMode.getValue());
         }
     }
 
@@ -334,14 +337,23 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         BlockEntity blockEntity = world.getBlockEntity(connectedPos);
         Direction face = blockFace.getFace();
 
-        if (PumpBlock.isPump(connectedState) && connectedState.getValue(PumpBlock.FACING).getAxis() == face.getAxis()) {
+        // 检查是否连接到另一个离心泵
+        if (connectedState.getBlock() instanceof CentrifugalPumpBlock) {
             if (blockEntity instanceof CentrifugalPumpBlockEntity pumpBE) {
-                Direction pumpFront = pumpBE.getFront();
-                if (pumpFront != null) {
-                    boolean otherPull = pumpBE.isPullingOnSide(pumpFront == blockFace.getOppositeFace());
+                // 检查是否是有效的连接
+                Direction pumpPrimary = pumpBE.getFront();
+                Direction pumpSecondary = pumpBE.getSecondaryFront();
+
+                if (face.getOpposite() == pumpPrimary || face.getOpposite() == pumpSecondary) {
+                    boolean otherPull = pumpBE.isPullingOnSide(face.getOpposite() == pumpPrimary);
                     return otherPull != pull;
                 }
             }
+        }
+
+        // 检查原版机械动力的泵
+        if (PumpBlock.isPump(connectedState) && connectedState.getValue(PumpBlock.FACING).getAxis() == face.getAxis()) {
+            return true;
         }
 
         FluidTransportBehaviour pipe = FluidPropagator.getPipe(world, connectedPos);
@@ -413,10 +425,10 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
     }
 
     public boolean isPullingOnSide(boolean isPrimaryDirection) {
-        if (transferDirection == null) return !isPrimaryDirection;
+        if (pumpMode == null) return !isPrimaryDirection;
 
-        boolean reversed = transferDirection.get() == TransferDirection.REVERSED;
-        return reversed ? isPrimaryDirection : !isPrimaryDirection;
+        boolean pumpIn = pumpMode.get() == PumpMode.PUMP_IN;
+        return pumpIn ? isPrimaryDirection : !isPrimaryDirection;
     }
 
     // 内部流体传输行为类
@@ -468,15 +480,11 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         }
     }
 
-    static class CentrifugalPumpValueBoxTransform extends ValueBoxTransform.Sided {
+    // 简单的 ValueBoxTransform 实现，支持多面板
+    public static class CentrifugalPumpValueBox extends ValueBoxTransform.Sided {
 
         @Override
-        protected Vec3 getSouthLocation() {
-            return Vec3.ZERO.add(0.5, 0.5, 0.5);
-        }
-
-        @Override
-        protected boolean isSideActive(BlockState state, Direction direction) {
+        protected boolean isSideActive(BlockState state, Direction side) {
             if (!(state.getBlock() instanceof CentrifugalPumpBlock)) {
                 return false;
             }
@@ -484,10 +492,88 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
             AttachFace face = state.getValue(CentrifugalPumpBlock.FACE);
             Direction facing = state.getValue(CentrifugalPumpBlock.FACING);
 
+            // 确定哪些面应该显示调节面板
+            // 调节面板应该在两个侧面（8x8像素的面）
+
             if (face == AttachFace.WALL) {
-                return direction.getAxis() != Direction.Axis.Y && direction != facing && direction != facing.getOpposite();
+                // 垂直模式：调节面板在水平方向的两个侧面
+                if (facing == Direction.NORTH || facing == Direction.SOUTH) {
+                    return side == Direction.WEST || side == Direction.EAST;
+                } else {
+                    return side == Direction.NORTH || side == Direction.SOUTH;
+                }
             } else {
-                return direction.getAxis() != facing.getAxis() && direction.getAxis() != Direction.Axis.Y;
+                // 水平模式：调节面板在与facing垂直的两个水平侧面
+                if (facing == Direction.NORTH || facing == Direction.SOUTH) {
+                    return side == Direction.WEST || side == Direction.EAST;
+                } else {
+                    return side == Direction.NORTH || side == Direction.SOUTH;
+                }
+            }
+        }
+
+        @Override
+        protected Vec3 getSouthLocation() {
+            // 基础位置
+            return VecHelper.voxelSpace(8, 8, 16);
+        }
+
+        @Override
+        public Vec3 getLocalOffset(LevelAccessor level, BlockPos pos, BlockState state) {
+            Direction side = getSide();
+            if (side == null) {
+                // 如果 getSide() 返回 null，尝试获取一个默认的活动侧面
+                AttachFace face = state.getValue(CentrifugalPumpBlock.FACE);
+                Direction facing = state.getValue(CentrifugalPumpBlock.FACING);
+
+                if (face == AttachFace.WALL) {
+                    side = (facing == Direction.NORTH || facing == Direction.SOUTH) ? Direction.WEST : Direction.NORTH;
+                } else {
+                    side = (facing == Direction.NORTH || facing == Direction.SOUTH) ? Direction.WEST : Direction.NORTH;
+                }
+            }
+
+            // 根据侧面返回位置 - 调整offset值使面板更靠外
+            // 原来是14.5f，现在改为15.5f，让面板更贴近方块边缘
+            float offset = 15.5f;
+            switch (side) {
+                case NORTH:
+                    return VecHelper.voxelSpace(8, 8, 16 - offset);  // 北面：z = 0.5
+                case SOUTH:
+                    return VecHelper.voxelSpace(8, 8, offset);        // 南面：z = 15.5
+                case WEST:
+                    return VecHelper.voxelSpace(16 - offset, 8, 8);   // 西面：x = 0.5
+                case EAST:
+                    return VecHelper.voxelSpace(offset, 8, 8);        // 东面：x = 15.5
+                default:
+                    return VecHelper.voxelSpace(8, 8, offset);
+            }
+        }
+
+        @Override
+        public void rotate(LevelAccessor level, BlockPos pos, BlockState state, PoseStack ms) {
+            Direction side = getSide();
+            if (side == null) {
+                // 如果 getSide() 返回 null，使用默认侧面
+                AttachFace face = state.getValue(CentrifugalPumpBlock.FACE);
+                Direction facing = state.getValue(CentrifugalPumpBlock.FACING);
+
+                if (face == AttachFace.WALL) {
+                    side = (facing == Direction.NORTH || facing == Direction.SOUTH) ? Direction.WEST : Direction.NORTH;
+                } else {
+                    side = (facing == Direction.NORTH || facing == Direction.SOUTH) ? Direction.WEST : Direction.NORTH;
+                }
+            }
+
+            AttachFace face = state.getValue(CentrifugalPumpBlock.FACE);
+
+            // 面板朝外
+            float yRot = AngleHelper.horizontalAngle(side) + 180;
+            TransformStack.of(ms).rotateYDegrees(yRot);
+
+            // 天花板模式需要翻转
+            if (face == AttachFace.CEILING) {
+                TransformStack.of(ms).rotateZDegrees(180);
             }
         }
     }

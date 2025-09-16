@@ -48,6 +48,10 @@
   "create.fluid.baton.ejector.target_cleared": "目标位置已清除",
   "create.fluid.baton.interaction_point_removed": "交互点已移除",
 
+  "create_fluid.centrifugal_pump.pump_mode": "泵送模式",
+  "create_fluid.centrifugal_pump.mode.pump_in": "泵入",
+  "create_fluid.centrifugal_pump.mode.pump_out": "泵出",
+
   "fluid.ponder.mechanical_pipette.header": "配置动力移液器",
   "fluid.ponder.mechanical_pipette.text_1": "输入",
   "fluid.ponder.mechanical_pipette.text_2": "输出",

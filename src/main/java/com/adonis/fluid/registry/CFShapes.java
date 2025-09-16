@@ -45,7 +45,7 @@ public class CFShapes {
                 Block.box(2, 2, 2, 14, 14, 14),      // PumpCenter
                 Block.box(3, 0, 3, 13, 2, 13),       // pipe_down
                 Block.box(3, 3, 0, 13, 13, 2),       // pipe_side
-                Block.box(3, 14, 3, 13, 16, 13),     // top_for_stress
+                Block.box(3, 14, 3, 13, 15, 13),     // top_for_stress
                 Block.box(0, 4, 4, 2, 12, 12),       // adjust_front
                 Block.box(14, 4, 4, 16, 12, 12)      // adjust_back
                 // base_front 和 base_back 在背面，不影响功能性碰撞箱

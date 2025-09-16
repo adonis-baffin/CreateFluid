@@ -52,6 +52,10 @@
   "create.fluid.baton.ejector.target_cleared": "Target position cleared",
   "create.fluid.baton.interaction_point_removed": "Interaction point removed",
 
+  "create_fluid.centrifugal_pump.pump_mode": "Pump Mode",
+  "create_fluid.centrifugal_pump.mode.pump_in": "Pump in",
+  "create_fluid.centrifugal_pump.mode.pump_out": "Pump out",
+
   "fluid.ponder.mechanical_pipette.header": "Setting up Mechanical Pipette",
   "fluid.ponder.mechanical_pipette.text_1": "Inputs",
   "fluid.ponder.mechanical_pipette.text_2": "Outputs",
