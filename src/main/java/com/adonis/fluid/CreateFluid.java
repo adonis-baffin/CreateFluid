@@ -3,7 +3,10 @@ package com.adonis.fluid;
 import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.config.CFStress;
 import com.adonis.fluid.handler.PipetteFluidInteractionPointHandler;
+import com.adonis.fluid.packet.CopperFaucetParticlePacket;
 import com.adonis.fluid.packet.PipetteFluidPlacementPacket;
+import com.adonis.fluid.packet.PipetteParticlePacket;
+import com.adonis.fluid.packet.QuartzLampTogglePacket;
 import com.adonis.fluid.registry.*;
 import com.mojang.logging.LogUtils;
 import com.simibubi.create.AllPackets;
@@ -65,26 +68,26 @@ public class CreateFluid {
         CFBlockEntity.register(modEventBus);
         CFItem.register(modEventBus);
         CFTab.register(modEventBus);
+        CFFluid.register();  // 注册流体
 
-        // 注册普通配置
+        // 注册配置
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, CFCommonConfig.CONFIG_SPEC);
+
         ForgeConfigSpec.Builder stressBuilder = new ForgeConfigSpec.Builder();
         STRESS_CONFIG.registerAll(stressBuilder);
         stressConfigSpec = stressBuilder.build();
         ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, stressConfigSpec, STRESS_CONFIG.getName() + ".toml");
 
-        // 注册事件监听器
+        // 注册事件
         modEventBus.addListener(this::setup);
         modEventBus.addListener(this::enqueueIMC);
         modEventBus.addListener(this::processIMC);
         modEventBus.addListener(this::clientInit);
         modEventBus.addListener(this::onModConfigEvent);
 
-        // 注册Forge事件
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.addListener(this::onServerStarting);
 
-        // 客户端事件注册
         if (FMLEnvironment.dist == Dist.CLIENT) {
             MinecraftForge.EVENT_BUS.addListener(CreateFluid::onClientTick);
         }
@@ -98,68 +101,74 @@ public class CreateFluid {
             BlockStressValues.IMPACTS.registerProvider(STRESS_CONFIG::getImpact);
             BlockStressValues.CAPACITIES.registerProvider(STRESS_CONFIG::getCapacity);
 
-            // 注册流体网络包
-            SimpleChannel channel = AllPackets.getChannel();
-            int id = 200;
+            // 无需注册OpenPipe效果 - 虚拟流体不支持
 
-            // 注册移液器交互点配置包
-            channel.registerMessage(id++, PipetteFluidPlacementPacket.class,
-                    (msg, buf) -> msg.write(buf),
-                    PipetteFluidPlacementPacket::new,
-                    (msg, ctxSupplier) -> {
-                        NetworkEvent.Context ctx = ctxSupplier.get();
-                        boolean handled = msg.handle(ctx);
-                        ctx.setPacketHandled(handled);
-                    });
+            registerNetworkPackets();
 
-            // 注册客户端请求包
-            channel.registerMessage(id++, PipetteFluidPlacementPacket.ClientBoundRequest.class,
-                    (msg, buf) -> msg.write(buf),
-                    PipetteFluidPlacementPacket.ClientBoundRequest::new,
-                    (msg, ctxSupplier) -> {
-                        NetworkEvent.Context ctx = ctxSupplier.get();
-                        boolean handled = msg.handle(ctx);
-                        ctx.setPacketHandled(handled);
-                    });
-
-            // 注册移液器粒子包
-            channel.registerMessage(id++, com.adonis.fluid.packet.PipetteParticlePacket.class,
-                    (msg, buf) -> msg.write(buf),
-                    com.adonis.fluid.packet.PipetteParticlePacket::new,
-                    (msg, ctxSupplier) -> {
-                        NetworkEvent.Context ctx = ctxSupplier.get();
-                        boolean handled = msg.handle(ctx);
-                        ctx.setPacketHandled(handled);
-                    });
-
-            // 注册铜龙头粒子包 - 添加这个！
-            channel.registerMessage(id++, com.adonis.fluid.packet.CopperFaucetParticlePacket.class,
-                    (msg, buf) -> msg.write(buf),
-                    com.adonis.fluid.packet.CopperFaucetParticlePacket::new,
-                    (msg, ctxSupplier) -> {
-                        NetworkEvent.Context ctx = ctxSupplier.get();
-                        boolean handled = msg.handle(ctx);
-                        ctx.setPacketHandled(handled);
-                    });
-
-            // 注册石英灯开关包
-            channel.registerMessage(id++, com.adonis.fluid.packet.QuartzLampTogglePacket.class,
-                    (msg, buf) -> msg.write(buf),
-                    com.adonis.fluid.packet.QuartzLampTogglePacket::new,
-                    (msg, ctxSupplier) -> {
-                        NetworkEvent.Context ctx = ctxSupplier.get();
-                        boolean handled = msg.handle(ctx);
-                        ctx.setPacketHandled(handled);
-                    });
+            LOGGER.info("CreateFluid common setup completed");
         });
     }
 
+    private void registerNetworkPackets() {
+        SimpleChannel channel = AllPackets.getChannel();
+        int id = 200;
+
+        channel.registerMessage(id++, PipetteFluidPlacementPacket.class,
+                (msg, buf) -> msg.write(buf),
+                PipetteFluidPlacementPacket::new,
+                (msg, ctxSupplier) -> {
+                    NetworkEvent.Context ctx = ctxSupplier.get();
+                    boolean handled = msg.handle(ctx);
+                    ctx.setPacketHandled(handled);
+                });
+
+        channel.registerMessage(id++, PipetteFluidPlacementPacket.ClientBoundRequest.class,
+                (msg, buf) -> msg.write(buf),
+                PipetteFluidPlacementPacket.ClientBoundRequest::new,
+                (msg, ctxSupplier) -> {
+                    NetworkEvent.Context ctx = ctxSupplier.get();
+                    boolean handled = msg.handle(ctx);
+                    ctx.setPacketHandled(handled);
+                });
+
+        channel.registerMessage(id++, PipetteParticlePacket.class,
+                (msg, buf) -> msg.write(buf),
+                PipetteParticlePacket::new,
+                (msg, ctxSupplier) -> {
+                    NetworkEvent.Context ctx = ctxSupplier.get();
+                    boolean handled = msg.handle(ctx);
+                    ctx.setPacketHandled(handled);
+                });
+
+        channel.registerMessage(id++, CopperFaucetParticlePacket.class,
+                (msg, buf) -> msg.write(buf),
+                CopperFaucetParticlePacket::new,
+                (msg, ctxSupplier) -> {
+                    NetworkEvent.Context ctx = ctxSupplier.get();
+                    boolean handled = msg.handle(ctx);
+                    ctx.setPacketHandled(handled);
+                });
+
+        channel.registerMessage(id++, QuartzLampTogglePacket.class,
+                (msg, buf) -> msg.write(buf),
+                QuartzLampTogglePacket::new,
+                (msg, ctxSupplier) -> {
+                    NetworkEvent.Context ctx = ctxSupplier.get();
+                    boolean handled = msg.handle(ctx);
+                    ctx.setPacketHandled(handled);
+                });
+
+        LOGGER.debug("Registered {} network packets", id - 200);
+    }
+
     private void enqueueIMC(final InterModEnqueueEvent event) {}
+
     private void processIMC(final InterModProcessEvent event) {}
 
     private void clientInit(final FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             CFBlock.setupRenderLayers();
+            LOGGER.info("CreateFluid client setup completed");
         });
     }
 
@@ -175,12 +184,16 @@ public class CreateFluid {
         if (config.getSpec() == CFCommonConfig.CONFIG_SPEC) {
             if (event instanceof ModConfigEvent.Loading) {
                 CFCommonConfig.onLoad();
+                LOGGER.info("Common config loaded");
             } else if (event instanceof ModConfigEvent.Reloading) {
                 CFCommonConfig.onReload();
+                LOGGER.info("Common config reloaded");
             }
         } else if (stressConfigSpec != null && config.getSpec() == stressConfigSpec) {
             if (event instanceof ModConfigEvent.Loading) {
+                LOGGER.info("Stress config loaded");
             } else if (event instanceof ModConfigEvent.Reloading) {
+                LOGGER.info("Stress config reloaded");
             }
         }
     }

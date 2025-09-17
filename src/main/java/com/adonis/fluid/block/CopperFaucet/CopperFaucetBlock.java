@@ -41,46 +41,46 @@ public class CopperFaucetBlock extends HorizontalDirectionalBlock implements IBE
     public static final BooleanProperty OPEN = net.minecraft.world.level.block.state.properties.BlockStateProperties.OPEN;
 
     // 根据模型定义碰撞箱
-    // NORTH: 龙头朝向北方（贴在南边的方块上）
-    private static final VoxelShape NORTH_OUTLET = Block.box(5, 5, 15, 11, 11, 16);  // 出水口
-    private static final VoxelShape NORTH_PIPE = Block.box(6, 6, 6, 10, 10, 15);     // 主管道
-    private static final VoxelShape NORTH_DROP = Block.box(6, 4, 6, 10, 6, 10);      // 底部滴水部分
-    private static final VoxelShape NORTH_BASE = Block.box(5, 5, 11, 11, 11, 13);    // 连接基座
-    private static final VoxelShape NORTH_VALVE_TOP = Block.box(5, 12, 9, 11, 13, 15); // 阀门顶盖
-    private static final VoxelShape NORTH_VALVE_HANDLE = Block.box(7, 11, 11, 9, 12, 13); // 阀门把手
+// NORTH: 龙头朝向北方（贴在南边的方块上）
+    private static final VoxelShape NORTH_OUTLET = Block.box(3, 3, 15, 13, 12.9, 16);  // 出水口改为10x9.9
+    private static final VoxelShape NORTH_PIPE = Block.box(6, 6, 6, 10, 10, 15);     // 主管道（不变）
+    private static final VoxelShape NORTH_DROP = Block.box(6, 4, 6, 10, 6, 10);      // 底部滴水部分（不变）
+    private static final VoxelShape NORTH_BASE = Block.box(5, 5, 11, 11, 11, 13);    // 连接基座（不变）
+    private static final VoxelShape NORTH_VALVE_TOP = Block.box(5, 13, 9, 11, 14, 15); // 阀门顶盖
+    private static final VoxelShape NORTH_VALVE_HANDLE = Block.box(7, 11, 11, 9, 13, 13); // 阀门把手
     private static final VoxelShape NORTH_SHAPE = Shapes.or(
             NORTH_OUTLET, NORTH_PIPE, NORTH_DROP, NORTH_BASE, NORTH_VALVE_TOP, NORTH_VALVE_HANDLE
     );
 
     // SOUTH: 龙头朝向南方（贴在北边的方块上）
-    private static final VoxelShape SOUTH_OUTLET = Block.box(5, 5, 0, 11, 11, 1);
+    private static final VoxelShape SOUTH_OUTLET = Block.box(3, 3, 0, 13, 12.9, 1);  // 出水口改为10x9.9
     private static final VoxelShape SOUTH_PIPE = Block.box(6, 6, 1, 10, 10, 10);
     private static final VoxelShape SOUTH_DROP = Block.box(6, 4, 6, 10, 6, 10);
     private static final VoxelShape SOUTH_BASE = Block.box(5, 5, 3, 11, 11, 5);
-    private static final VoxelShape SOUTH_VALVE_TOP = Block.box(5, 12, 1, 11, 13, 7);
-    private static final VoxelShape SOUTH_VALVE_HANDLE = Block.box(7, 11, 3, 9, 12, 5);
+    private static final VoxelShape SOUTH_VALVE_TOP = Block.box(5, 13, 1, 11, 14, 7);
+    private static final VoxelShape SOUTH_VALVE_HANDLE = Block.box(7, 11, 3, 9, 13, 5);
     private static final VoxelShape SOUTH_SHAPE = Shapes.or(
             SOUTH_OUTLET, SOUTH_PIPE, SOUTH_DROP, SOUTH_BASE, SOUTH_VALVE_TOP, SOUTH_VALVE_HANDLE
     );
 
     // EAST: 龙头朝向东方（贴在西边的方块上）
-    private static final VoxelShape EAST_OUTLET = Block.box(0, 5, 5, 1, 11, 11);
+    private static final VoxelShape EAST_OUTLET = Block.box(0, 3, 3, 1, 12.9, 13);  // 出水口改为10x9.9
     private static final VoxelShape EAST_PIPE = Block.box(1, 6, 6, 10, 10, 10);
     private static final VoxelShape EAST_DROP = Block.box(6, 4, 6, 10, 6, 10);
     private static final VoxelShape EAST_BASE = Block.box(3, 5, 5, 5, 11, 11);
-    private static final VoxelShape EAST_VALVE_TOP = Block.box(1, 12, 5, 7, 13, 11);
-    private static final VoxelShape EAST_VALVE_HANDLE = Block.box(3, 11, 7, 5, 12, 9);
+    private static final VoxelShape EAST_VALVE_TOP = Block.box(1, 13, 5, 7, 14, 11);
+    private static final VoxelShape EAST_VALVE_HANDLE = Block.box(3, 11, 7, 5, 13, 9);
     private static final VoxelShape EAST_SHAPE = Shapes.or(
             EAST_OUTLET, EAST_PIPE, EAST_DROP, EAST_BASE, EAST_VALVE_TOP, EAST_VALVE_HANDLE
     );
 
     // WEST: 龙头朝向西方（贴在东边的方块上）
-    private static final VoxelShape WEST_OUTLET = Block.box(15, 5, 5, 16, 11, 11);
+    private static final VoxelShape WEST_OUTLET = Block.box(15, 3, 3, 16, 12.9, 13);  // 出水口改为10x9.9
     private static final VoxelShape WEST_PIPE = Block.box(6, 6, 6, 15, 10, 10);
     private static final VoxelShape WEST_DROP = Block.box(6, 4, 6, 10, 6, 10);
     private static final VoxelShape WEST_BASE = Block.box(11, 5, 5, 13, 11, 11);
-    private static final VoxelShape WEST_VALVE_TOP = Block.box(9, 12, 5, 15, 13, 11);
-    private static final VoxelShape WEST_VALVE_HANDLE = Block.box(11, 11, 7, 13, 12, 9);
+    private static final VoxelShape WEST_VALVE_TOP = Block.box(9, 13, 5, 15, 14, 11);
+    private static final VoxelShape WEST_VALVE_HANDLE = Block.box(11, 11, 7, 13, 13, 9);
     private static final VoxelShape WEST_SHAPE = Shapes.or(
             WEST_OUTLET, WEST_PIPE, WEST_DROP, WEST_BASE, WEST_VALVE_TOP, WEST_VALVE_HANDLE
     );
