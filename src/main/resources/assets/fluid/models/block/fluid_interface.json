@@ -2,16 +2,16 @@
 	"format_version": "1.21.6",
 	"credit": "Made with Blockbench",
 	"parent": "block/block",
+	"render_type": "minecraft:cutout",
 	"textures": {
 		"0": "fluid:block/hinge",
 		"1": "fluid:block/pipes1",
 		"particle": "fluid:block/pipes2"
 	},
-	"render_type": "minecraft:cutout",
 	"elements": [
 		{
 			"from": [3, 3, 14],
-			"to": [13, 12.9, 17],
+			"to": [13, 12.9, 17.1],
 			"rotation": {"angle": 0, "axis": "y", "origin": [8, 8, 14]},
 			"faces": {
 				"north": {"uv": [11, 11, 16, 16], "rotation": 180, "texture": "#1"},

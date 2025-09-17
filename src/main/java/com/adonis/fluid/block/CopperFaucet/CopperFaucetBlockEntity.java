@@ -221,34 +221,74 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
         BlockEntity targetEntity = level.getBlockEntity(targetPos);
 
         if (targetEntity != null && isDepot(targetEntity)) {
-            ItemStack itemOnDepot = getItemOnDepot(targetEntity);
+            // 获取 DepotBehaviour
+            var behaviour = com.simibubi.create.content.logistics.depot.DepotBehaviour.get(
+                    targetEntity, com.simibubi.create.content.logistics.depot.DepotBehaviour.TYPE);
 
-            // 确保物品还在
-            if (!itemOnDepot.isEmpty()) {
-                // 执行填充
-                ItemStack result = FillingBySpout.fillItem(level, renderingFluid.getAmount(),
-                        itemOnDepot.copy(), renderingFluid);
+            if (behaviour != null) {
+                ItemStack itemOnDepot = behaviour.getHeldItemStack();
 
-                if (!result.isEmpty()) {
-                    // 消耗原物品
-                    itemOnDepot.shrink(1);
-                    if (!itemOnDepot.isEmpty()) {
-                        setItemOnDepot(targetEntity, itemOnDepot);
-                    } else {
-                        clearDepot(targetEntity);
+                // 确保物品还在
+                if (!itemOnDepot.isEmpty()) {
+                    // 执行填充
+                    ItemStack result = FillingBySpout.fillItem(level, renderingFluid.getAmount(),
+                            itemOnDepot.copy(), renderingFluid);
+
+                    if (!result.isEmpty()) {
+                        // 消耗原物品
+                        itemOnDepot.shrink(1);
+
+                        if (itemOnDepot.isEmpty()) {
+                            behaviour.removeHeldItem();
+                        } else {
+                            var updatedStack = new com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack(itemOnDepot);
+                            updatedStack.beltPosition = 0.5f;
+                            updatedStack.prevBeltPosition = 0.5f;
+                            behaviour.setCenteredHeldItem(updatedStack);
+                        }
+
+                        // 使用反射访问内部缓冲区
+                        try {
+                            java.lang.reflect.Field bufferField = com.simibubi.create.content.logistics.depot.DepotBehaviour.class.getDeclaredField("processingOutputBuffer");
+                            bufferField.setAccessible(true);
+                            net.minecraftforge.items.ItemStackHandler outputBuffer =
+                                    (net.minecraftforge.items.ItemStackHandler) bufferField.get(behaviour);
+
+                            ItemStack remainder = result.copy();
+                            for (int slot = 0; slot < outputBuffer.getSlots() && !remainder.isEmpty(); slot++) {
+                                remainder = outputBuffer.insertItem(slot, remainder, false);
+                            }
+
+                            // 如果缓冲区满了，掉落多余的物品
+                            if (!remainder.isEmpty()) {
+                                Vec3 dropPos = Vec3.atCenterOf(targetPos);
+                                net.minecraft.world.Containers.dropItemStack(
+                                        level,
+                                        dropPos.x,
+                                        dropPos.y + 0.5,
+                                        dropPos.z,
+                                        remainder
+                                );
+                            }
+                        } catch (Exception e) {
+                            // 反射失败，直接设置结果
+                            var newTIS = new com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack(result);
+                            newTIS.beltPosition = 0.5f;
+                            newTIS.prevBeltPosition = 0.5f;
+                            behaviour.setCenteredHeldItem(newTIS);
+                        }
+
+                        targetEntity.setChanged();
+
+                        // 播放完成声音
+                        level.playSound(null, targetPos,
+                                net.minecraft.sounds.SoundEvents.BOTTLE_FILL,
+                                net.minecraft.sounds.SoundSource.BLOCKS,
+                                0.5f, 1.0f + level.random.nextFloat() * 0.2f);
+
+                        // 发送粒子效果
+                        sendFillingParticles(targetPos, renderingFluid);
                     }
-
-                    // 放置结果物品
-                    Vec3 dropPos = Vec3.atCenterOf(targetPos).add(0, 0.5, 0);
-                    ItemEntity resultEntity = new ItemEntity(level, dropPos.x, dropPos.y, dropPos.z, result);
-                    resultEntity.setDeltaMovement(Vec3.ZERO);
-                    level.addFreshEntity(resultEntity);
-
-                    // 播放完成声音
-                    level.playSound(null, targetPos,
-                            net.minecraft.sounds.SoundEvents.BOTTLE_FILL,
-                            net.minecraft.sounds.SoundSource.BLOCKS,
-                            0.5f, 1.0f + level.random.nextFloat() * 0.2f);
                 }
             }
         }
@@ -307,7 +347,19 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
     }
 
     private ItemStack getItemOnDepot(BlockEntity depot) {
-        // 尝试通过物品处理器获取
+        // 使用 DepotBehaviour 获取物品
+        if (depot instanceof com.simibubi.create.content.logistics.depot.DepotBlockEntity depotEntity) {
+            return depotEntity.getHeldItem();
+        }
+
+        // 通过 DepotBehaviour.get 获取
+        var behaviour = com.simibubi.create.content.logistics.depot.DepotBehaviour.get(
+                depot, com.simibubi.create.content.logistics.depot.DepotBehaviour.TYPE);
+        if (behaviour != null) {
+            return behaviour.getHeldItemStack();
+        }
+
+        // 备用方案：通过物品处理器
         if (depot.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).isPresent()) {
             var handler = depot.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).resolve().get();
             if (handler.getSlots() > 0) {
@@ -315,17 +367,34 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
             }
         }
 
-        // 备用方案：搜索上方的掉落物
-        AABB searchArea = new AABB(depot.getBlockPos()).inflate(0.5, 1, 0.5).move(0, 0.5, 0);
-        List<ItemEntity> items = level.getEntitiesOfClass(ItemEntity.class, searchArea);
-        if (!items.isEmpty()) {
-            return items.get(0).getItem();
-        }
-
         return ItemStack.EMPTY;
     }
 
     private void setItemOnDepot(BlockEntity depot, ItemStack stack) {
+        // 使用 DepotBlockEntity 的方法
+        if (depot instanceof com.simibubi.create.content.logistics.depot.DepotBlockEntity depotEntity) {
+            depotEntity.setHeldItem(stack);
+            depot.setChanged();
+            return;
+        }
+
+        // 通过 DepotBehaviour.get 设置
+        var behaviour = com.simibubi.create.content.logistics.depot.DepotBehaviour.get(
+                depot, com.simibubi.create.content.logistics.depot.DepotBehaviour.TYPE);
+        if (behaviour != null) {
+            if (stack.isEmpty()) {
+                behaviour.removeHeldItem();
+            } else {
+                var transportedStack = new com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack(stack);
+                transportedStack.beltPosition = 0.5f;
+                transportedStack.prevBeltPosition = 0.5f;
+                behaviour.setCenteredHeldItem(transportedStack);
+            }
+            depot.setChanged();
+            return;
+        }
+
+        // 备用方案
         if (depot.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).isPresent()) {
             var handler = depot.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).resolve().get();
             if (handler.getSlots() > 0) {
