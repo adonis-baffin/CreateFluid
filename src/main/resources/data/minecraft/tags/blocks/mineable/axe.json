@@ -3,6 +3,8 @@
     "fluid:pipette",
     "fluid:fluid_interface",
     "fluid:smart_fluid_interface",
-    "fluid:centrifugal_pump"
+    "fluid:centrifugal_pump",
+    "fluid:copper_faucet"
   ]
 }
+

@@ -19,7 +19,7 @@ public class CFFluid {
     public static final ResourceLocation POWDER_SNOW_FLOW_RL =
             CreateFluid.asResource("block/powder_snow_fluid_flow");
 
-    // 注册细雪虚拟流体 - 与TEA对齐，无特殊效果
+    // 注册细雪虚拟流体 - 与TEA对齐，无特殊效果，无桶
     public static final FluidEntry<PowderSnowFluid> POWDER_SNOW = REGISTRATE
             .virtualFluid("powder_snow",
                     POWDER_SNOW_STILL_RL,

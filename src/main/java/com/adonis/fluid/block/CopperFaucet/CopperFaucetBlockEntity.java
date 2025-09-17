@@ -9,14 +9,13 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidStack;
@@ -151,17 +150,72 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
             if (!itemOnDepot.isEmpty() && FillingBySpout.canItemBeFilled(level, itemOnDepot)) {
                 return startItemFilling(sourceHandler, targetPos, itemOnDepot);
             }
-            // 置物台上没有可填充物品，不继续
             return false;
         }
 
-        // 检查是否可以填充的容器
+        // 检查炼药锅
+        if (targetState.is(Blocks.CAULDRON)) {
+            return tryFillCauldron(sourceHandler, targetPos, targetState);
+        }
+
+        // 检查其他容器
         if (targetState.is(FAUCET_FILLABLE) && targetEntity != null) {
             return tryFillContainer(sourceHandler, targetEntity);
         }
 
         return false;
     }
+
+    private boolean tryFillCauldron(IFluidHandler sourceHandler, BlockPos targetPos, BlockState targetState) {
+        // 只处理空炼药锅
+        if (!targetState.is(Blocks.CAULDRON)) {
+            return false;
+        }
+
+        // 获取可用流体
+        FluidStack availableFluid = sourceHandler.drain(1000, IFluidHandler.FluidAction.SIMULATE);
+        if (availableFluid.isEmpty()) {
+            return false;
+        }
+
+        // 获取对应的炼药锅信息
+        var cauldronInfo = com.simibubi.create.api.behaviour.spouting.CauldronSpoutingBehavior
+                .CAULDRON_INFO.get(availableFluid.getFluid());
+
+        if (cauldronInfo == null) {
+            return false;
+        }
+
+        // 检查流体量是否足够
+        if (availableFluid.getAmount() < cauldronInfo.amount()) {
+            return false;
+        }
+
+        // 执行实际抽取
+        FluidStack drained = sourceHandler.drain(cauldronInfo.amount(), IFluidHandler.FluidAction.EXECUTE);
+        if (drained.isEmpty() || drained.getAmount() < cauldronInfo.amount()) {
+            return false;
+        }
+
+        // 设置炼药锅状态
+        level.setBlockAndUpdate(targetPos, cauldronInfo.cauldron());
+
+        // 设置渲染流体
+        renderingFluid = drained.copy();
+
+        // 播放声音
+        level.playSound(null, targetPos,
+                net.minecraft.sounds.SoundEvents.BUCKET_EMPTY,
+                net.minecraft.sounds.SoundSource.BLOCKS,
+                0.5f, 1.0f);
+
+        // 发送粒子效果
+        sendFillingParticles(targetPos, drained);
+
+        notifyUpdate();
+        return true;
+    }
+
 
     private boolean startItemFilling(IFluidHandler sourceHandler, BlockPos targetPos, ItemStack item) {
         // 获取可用流体
