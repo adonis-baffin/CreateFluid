@@ -21,8 +21,4 @@ public class PowderSnowFluid extends VirtualFluid {
     public PowderSnowFluid(Properties properties, boolean source) {
         super(properties, source);
     }
-    
-    public boolean isLighterThanAir() {
-        return false;
-    }
 }

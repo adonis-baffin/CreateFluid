@@ -39,6 +39,9 @@ import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.ticks.TickPriority;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 
 public class CentrifugalPumpBlock extends DirectionalKineticBlock
         implements IBE<CentrifugalPumpBlockEntity>, SimpleWaterloggedBlock, IWrenchable {
@@ -448,6 +451,8 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
         }
     }
 
+// 在 CentrifugalPumpBlock 的 neighborChanged 方法中添加额外的检测：
+
     @Override
     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block otherBlock,
                                 BlockPos neighborPos, boolean isMoving) {
@@ -461,6 +466,38 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
 
             if (world.getBlockEntity(pos) instanceof CentrifugalPumpBlockEntity pump) {
                 pump.pressureUpdate = true;
+            }
+        }
+
+        // 新增：检测流体容器的放置
+        // 无论 FluidPropagator.validateNeighbourChange 返回什么，都检查是否是流体容器
+        if (!world.isClientSide && world.getBlockEntity(pos) instanceof CentrifugalPumpBlockEntity pump) {
+            // 计算邻居的方向
+            Direction neighborDir = null;
+            for (Direction dir : Direction.values()) {
+                if (pos.relative(dir).equals(neighborPos)) {
+                    neighborDir = dir;
+                    break;
+                }
+            }
+
+            // 如果邻居在泵的开放方向上
+            if (neighborDir != null && isOpenAt(state, neighborDir)) {
+                BlockEntity neighborBE = world.getBlockEntity(neighborPos);
+                if (neighborBE != null) {
+                    // 检查是否有流体处理能力
+                    LazyOptional<IFluidHandler> capability = neighborBE.getCapability(
+                            ForgeCapabilities.FLUID_HANDLER, neighborDir.getOpposite()
+                    );
+                    if (!capability.isPresent()) {
+                        capability = neighborBE.getCapability(ForgeCapabilities.FLUID_HANDLER, null);
+                    }
+
+                    if (capability.isPresent()) {
+                        // 发现流体容器，立即触发更新
+                        pump.onFluidContainerDetected(neighborDir);
+                    }
+                }
             }
         }
     }

@@ -68,7 +68,7 @@ public class CreateFluid {
         CFBlockEntity.register(modEventBus);
         CFItem.register(modEventBus);
         CFTab.register(modEventBus);
-        CFFluid.register();  // 注册流体
+        CFFluid.register();
 
         // 注册配置
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, CFCommonConfig.CONFIG_SPEC);
@@ -101,11 +101,7 @@ public class CreateFluid {
             BlockStressValues.IMPACTS.registerProvider(STRESS_CONFIG::getImpact);
             BlockStressValues.CAPACITIES.registerProvider(STRESS_CONFIG::getCapacity);
 
-            // 无需注册OpenPipe效果 - 虚拟流体不支持
-
             registerNetworkPackets();
-
-            LOGGER.info("CreateFluid common setup completed");
         });
     }
 
@@ -157,8 +153,6 @@ public class CreateFluid {
                     boolean handled = msg.handle(ctx);
                     ctx.setPacketHandled(handled);
                 });
-
-        LOGGER.debug("Registered {} network packets", id - 200);
     }
 
     private void enqueueIMC(final InterModEnqueueEvent event) {}
@@ -168,7 +162,6 @@ public class CreateFluid {
     private void clientInit(final FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             CFBlock.setupRenderLayers();
-            LOGGER.info("CreateFluid client setup completed");
         });
     }
 
@@ -184,16 +177,8 @@ public class CreateFluid {
         if (config.getSpec() == CFCommonConfig.CONFIG_SPEC) {
             if (event instanceof ModConfigEvent.Loading) {
                 CFCommonConfig.onLoad();
-                LOGGER.info("Common config loaded");
             } else if (event instanceof ModConfigEvent.Reloading) {
                 CFCommonConfig.onReload();
-                LOGGER.info("Common config reloaded");
-            }
-        } else if (stressConfigSpec != null && config.getSpec() == stressConfigSpec) {
-            if (event instanceof ModConfigEvent.Loading) {
-                LOGGER.info("Stress config loaded");
-            } else if (event instanceof ModConfigEvent.Reloading) {
-                LOGGER.info("Stress config reloaded");
             }
         }
     }

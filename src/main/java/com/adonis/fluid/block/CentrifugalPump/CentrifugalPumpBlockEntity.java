@@ -54,10 +54,13 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
     private static final int BASE_PUMP_RANGE = 20;
     private static final float SPEED_MULTIPLIER = 2.0f;
 
-    // 添加定期检查机制
+    // 定期检查机制
     private int networkCheckTimer = 0;
     private static final int CHECK_INTERVAL = 20; // 每秒检查一次
-    private boolean networkInitialized = false; // 标记网络是否已初始化
+    private boolean networkInitialized = false;
+
+    // 跟踪流体处理器状态
+    private Map<Direction, Boolean> lastFluidHandlerState = new HashMap<>();
 
     public enum PumpMode implements INamedIconOptions {
         PUMP_IN(AllIcons.I_REFRESH),
@@ -86,14 +89,91 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         super(typeIn, pos, state);
     }
 
+    /**
+     * 当检测到流体容器时调用（从 Block 的 neighborChanged 中触发）
+     */
+    public void onFluidContainerDetected(Direction dir) {
+        if (level == null || level.isClientSide) return;
+
+        // 立即触发更新
+        FluidTransportBehaviour behaviour = getBehaviour(FluidTransportBehaviour.TYPE);
+        if (behaviour != null) {
+            PipeConnection connection = behaviour.getConnection(dir);
+
+            if (connection == null) {
+                // 没有连接，需要创建
+                pressureUpdate = true;
+                updatePipeNetwork(dir == getFront());
+            } else {
+                // 有连接但可能需要更新源
+                PipeConnectionAccessor accessor = (PipeConnectionAccessor) connection;
+                if (!accessor.getSource().isPresent()) {
+                    // 没有源，需要重新确定
+                    connection.determineSource(level, worldPosition);
+                    updatePipeNetwork(dir == getFront());
+                } else {
+                    // 即使有源，也强制重新检测一次，因为可能是新的容器类型
+                    connection.determineSource(level, worldPosition);
+                }
+            }
+        }
+    }
+
+    /**
+     * 当邻居方块发生变化时调用
+     * 这是检测分液池等流体容器放置的关键
+     */
+    public void onNeighborChanged(BlockPos neighborPos) {
+        if (level == null || level.isClientSide) return;
+
+        // 计算邻居方向
+        Direction dir = null;
+        for (Direction d : Direction.values()) {
+            if (worldPosition.relative(d).equals(neighborPos)) {
+                dir = d;
+                break;
+            }
+        }
+
+        if (dir == null) return;
+
+        // 检查这个方向是否是泵的开放端
+        if (!isSideAccessible(dir)) return;
+
+        // 检查邻居是否有流体处理能力
+        BlockEntity neighborBE = level.getBlockEntity(neighborPos);
+        if (neighborBE != null) {
+            LazyOptional<IFluidHandler> capability = neighborBE.getCapability(
+                    ForgeCapabilities.FLUID_HANDLER, dir.getOpposite()
+            );
+            if (!capability.isPresent()) {
+                capability = neighborBE.getCapability(ForgeCapabilities.FLUID_HANDLER, null);
+            }
+
+            if (capability.isPresent()) {
+                // 发现新的流体处理器，立即更新这个方向
+                FluidTransportBehaviour behaviour = getBehaviour(FluidTransportBehaviour.TYPE);
+                if (behaviour != null) {
+                    PipeConnection connection = behaviour.getConnection(dir);
+                    if (connection == null) {
+                        // 需要建立新连接
+                        updatePipeNetwork(dir == getFront());
+                        pressureUpdate = true;
+                    } else {
+                        // 重新确定连接源
+                        connection.determineSource(level, worldPosition);
+                    }
+                }
+            }
+        }
+    }
+
     @Override
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
         super.addBehaviours(behaviours);
 
-        // 添加流体传输行为
         behaviours.add(new CentrifugalPumpFluidTransferBehaviour(this));
 
-        // 使用最简单的实现方式，直接用匿名类
         pumpMode = new ScrollOptionBehaviour<>(
                 PumpMode.class,
                 Component.translatable("create_fluid.centrifugal_pump.pump_mode"),
@@ -104,7 +184,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         pumpMode.withCallback(i -> onModeChanged());
         behaviours.add(pumpMode);
 
-        // 注册成就
         registerAwardables(behaviours, FluidPropagator.getSharedTriggers());
         registerAwardables(behaviours, AllAdvancements.PUMP);
     }
@@ -112,7 +191,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
     @Override
     public void initialize() {
         super.initialize();
-        // 标记网络未初始化，需要在第一次tick时更新
         networkInitialized = false;
         pressureUpdate = true;
     }
@@ -120,7 +198,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
     @Override
     public void setLevel(Level level) {
         super.setLevel(level);
-        // 当设置世界时，标记需要更新
         if (level != null && !level.isClientSide) {
             networkInitialized = false;
             pressureUpdate = true;
@@ -142,40 +219,24 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
             if (!networkInitialized) {
                 networkInitialized = true;
                 updatePressureChange();
+                // 初始化时也检查流体容器
+                checkForFluidContainers();
                 return;
             }
 
-            // 定期验证网络连接
+            // 简单的定期检查 - 只检查是否有需要建立的新连接
             if (++networkCheckTimer >= CHECK_INTERVAL) {
                 networkCheckTimer = 0;
-
-                // 检查网络是否有效
-                if (validateNetwork()) {
-                    Direction primary = getFront();
-                    Direction secondary = getSecondaryFront();
-
-                    if (primary != null && secondary != null) {
-                        // 检查两端的连接状态是否正常
-                        FluidTransportBehaviour behaviour = getBehaviour(FluidTransportBehaviour.TYPE);
-                        if (behaviour != null) {
-                            boolean primaryConnected = behaviour.getConnection(primary) != null;
-                            boolean secondaryConnected = behaviour.getConnection(secondary) != null;
-
-                            // 如果任一端没有连接，触发更新
-                            if (!primaryConnected || !secondaryConnected) {
-                                pressureUpdate = true;
-                            }
-                        }
-                    }
-                }
+                checkForMissingConnections();
             }
 
-            // 检查是否需要更新压力
+            // 处理压力更新
             if (pressureUpdate) {
                 updatePressureChange();
                 return;
             }
 
+            // 处理方向更新
             Direction primary = getFront();
             Direction secondary = getSecondaryFront();
 
@@ -193,6 +254,104 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
                 }
             }
         }
+    }
+
+    /**
+     * 检查是否有流体容器但还没有建立连接
+     */
+    private void checkForMissingConnections() {
+        Direction primary = getFront();
+        Direction secondary = getSecondaryFront();
+
+        if (primary == null || secondary == null) return;
+
+        FluidTransportBehaviour behaviour = getBehaviour(FluidTransportBehaviour.TYPE);
+        if (behaviour == null) return;
+
+        // 检查每个方向
+        checkDirectionForContainer(primary, behaviour);
+        checkDirectionForContainer(secondary, behaviour);
+    }
+
+    /**
+     * 检查特定方向是否有流体容器但缺少连接
+     */
+    private void checkDirectionForContainer(Direction dir, FluidTransportBehaviour behaviour) {
+        PipeConnection connection = behaviour.getConnection(dir);
+
+        // 如果已经有正常工作的连接，不要干扰
+        if (connection != null && connection.hasFlow()) {
+            return;
+        }
+
+        BlockPos targetPos = worldPosition.relative(dir);
+        if (!level.isLoaded(targetPos)) return;
+
+        BlockEntity targetBE = level.getBlockEntity(targetPos);
+        if (targetBE == null) return;
+
+        // 检查是否有流体处理能力
+        LazyOptional<IFluidHandler> capability = targetBE.getCapability(
+                ForgeCapabilities.FLUID_HANDLER, dir.getOpposite()
+        );
+        if (!capability.isPresent()) {
+            capability = targetBE.getCapability(ForgeCapabilities.FLUID_HANDLER, null);
+        }
+
+        if (capability.isPresent()) {
+            // 有流体处理器但没有活动连接
+            if (connection == null) {
+                // 完全没有连接，需要建立
+                pressureUpdate = true;
+            } else {
+                // 有连接但可能需要重新确定源
+                // 通过accessor检查源是否存在
+                PipeConnectionAccessor accessor = (PipeConnectionAccessor) connection;
+                if (!accessor.getSource().isPresent()) {
+                    // 没有源，重新确定
+                    connection.determineSource(level, worldPosition);
+                }
+            }
+        }
+    }
+
+    /**
+     * 初始检查流体容器
+     */
+    private void checkForFluidContainers() {
+        Direction primary = getFront();
+        Direction secondary = getSecondaryFront();
+
+        if (primary == null || secondary == null) return;
+
+        boolean foundContainer = false;
+
+        if (hasFluidContainer(primary)) foundContainer = true;
+        if (hasFluidContainer(secondary)) foundContainer = true;
+
+        if (foundContainer) {
+            pressureUpdate = true;
+        }
+    }
+
+    /**
+     * 检查指定方向是否有流体容器
+     */
+    private boolean hasFluidContainer(Direction dir) {
+        BlockPos targetPos = worldPosition.relative(dir);
+        if (!level.isLoaded(targetPos)) return false;
+
+        BlockEntity targetBE = level.getBlockEntity(targetPos);
+        if (targetBE == null) return false;
+
+        LazyOptional<IFluidHandler> capability = targetBE.getCapability(
+                ForgeCapabilities.FLUID_HANDLER, dir.getOpposite()
+        );
+        if (!capability.isPresent()) {
+            capability = targetBE.getCapability(ForgeCapabilities.FLUID_HANDLER, null);
+        }
+
+        return capability.isPresent();
     }
 
     @Override
@@ -236,43 +395,81 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         sidesToUpdate.forEach(MutableBoolean::setTrue);
     }
 
-    // 处理管道网络变化的方法
     public void onPipeNetworkChanged() {
         if (!level.isClientSide || isVirtual()) {
-            // 清除缓存的流体行为
             FluidTransportBehaviour behaviour = getBehaviour(FluidTransportBehaviour.TYPE);
             if (behaviour != null) {
                 behaviour.wipePressure();
             }
 
-            // 标记需要更新
             pressureUpdate = true;
             sidesToUpdate.forEach(MutableBoolean::setTrue);
         }
     }
 
-    // 强化网络验证
     private boolean validateNetwork() {
         Direction primary = getFront();
         Direction secondary = getSecondaryFront();
 
         if (primary == null || secondary == null) return false;
 
-        // 检查两端是否至少有一个有效连接
-        BlockPos primaryPos = worldPosition.relative(primary);
-        BlockPos secondaryPos = worldPosition.relative(secondary);
+        boolean primaryValid = hasValidFluidConnection(primary);
+        boolean secondaryValid = hasValidFluidConnection(secondary);
 
-        boolean primaryValid = level.isLoaded(primaryPos) &&
-                (FluidPropagator.isOpenEnd(level, worldPosition, primary) ||
-                        FluidPropagator.hasFluidCapability(level, primaryPos, primary.getOpposite()) ||
-                        FluidPropagator.getPipe(level, primaryPos) != null);
+        FluidTransportBehaviour behaviour = getBehaviour(FluidTransportBehaviour.TYPE);
+        if (behaviour != null) {
+            PipeConnection primaryConn = behaviour.getConnection(primary);
+            PipeConnection secondaryConn = behaviour.getConnection(secondary);
 
-        boolean secondaryValid = level.isLoaded(secondaryPos) &&
-                (FluidPropagator.isOpenEnd(level, worldPosition, secondary) ||
-                        FluidPropagator.hasFluidCapability(level, secondaryPos, secondary.getOpposite()) ||
-                        FluidPropagator.getPipe(level, secondaryPos) != null);
+            boolean primaryChanged = (primaryConn == null && primaryValid) ||
+                    (primaryConn != null && !primaryValid);
+            boolean secondaryChanged = (secondaryConn == null && secondaryValid) ||
+                    (secondaryConn != null && !secondaryValid);
+
+            if (primaryChanged || secondaryChanged) {
+                pressureUpdate = true;
+                sidesToUpdate.forEach(MutableBoolean::setTrue);
+            }
+        }
 
         return primaryValid || secondaryValid;
+    }
+
+    private boolean hasValidFluidConnection(Direction dir) {
+        BlockPos targetPos = worldPosition.relative(dir);
+
+        if (!level.isLoaded(targetPos)) {
+            return false;
+        }
+
+        BlockState targetState = level.getBlockState(targetPos);
+        BlockEntity targetBE = level.getBlockEntity(targetPos);
+
+        // 检查是否是管道
+        if (FluidPipeBlock.isPipe(targetState)) {
+            return true;
+        }
+
+        // 检查是否有流体处理能力
+        if (targetBE != null) {
+            LazyOptional<IFluidHandler> capability = targetBE.getCapability(
+                    ForgeCapabilities.FLUID_HANDLER,
+                    dir.getOpposite()
+            );
+            if (!capability.isPresent()) {
+                capability = targetBE.getCapability(ForgeCapabilities.FLUID_HANDLER, null);
+            }
+            if (capability.isPresent()) {
+                return true;
+            }
+        }
+
+        // 检查是否是开放端
+        if (FluidPropagator.isOpenEnd(level, worldPosition, dir)) {
+            return true;
+        }
+
+        return false;
     }
 
     @Override
@@ -285,7 +482,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
                 PumpMode pMode = PumpMode.valueOf(mode);
                 pumpMode.setValue(pMode.ordinal());
             } catch (Exception e) {
-                // 兼容旧的存储格式
                 if (compound.contains("PumpModeOrdinal")) {
                     pumpMode.setValue(compound.getInt("PumpModeOrdinal"));
                 } else {
@@ -294,7 +490,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
             }
         }
 
-        // 读取NBT后也需要更新网络
         if (!clientPacket) {
             networkInitialized = false;
             pressureUpdate = true;
@@ -310,13 +505,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
             compound.putInt("PumpModeOrdinal", pumpMode.getValue());
         }
     }
-
-    // 其余代码保持不变...
-    // [distributePressureTo, searchForEndpointRecursively, hasReachedValidEndpoint等方法保持原样]
-    // [updatePipesOnSide, isFront, getFront, getSecondaryFront等方法保持原样]
-    // [updatePipeNetwork, isSideAccessible, isPullingOnSide等方法保持原样]
-    // [CentrifugalPumpFluidTransferBehaviour内部类保持原样]
-    // [CentrifugalPumpValueBox内部类保持原样]
 
     protected void distributePressureTo(Direction side) {
         if (getSpeed() == 0) return;
@@ -460,6 +648,7 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         BlockEntity blockEntity = world.getBlockEntity(connectedPos);
         Direction face = blockFace.getFace();
 
+        // 检查是否是另一个离心泵
         if (connectedState.getBlock() instanceof CentrifugalPumpBlock) {
             if (blockEntity instanceof CentrifugalPumpBlockEntity pumpBE) {
                 Direction pumpPrimary = pumpBE.getFront();
@@ -472,22 +661,32 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
             }
         }
 
+        // 检查是否是动力泵
         if (PumpBlock.isPump(connectedState) && connectedState.getValue(PumpBlock.FACING).getAxis() == face.getAxis()) {
             return true;
         }
 
+        // 检查是否是管道
         FluidTransportBehaviour pipe = FluidPropagator.getPipe(world, connectedPos);
         if (pipe != null && pipe.canHaveFlowToward(connectedState, blockFace.getOppositeFace())) {
             return false;
         }
 
+        // 检查是否有流体处理能力
         if (blockEntity != null) {
-            LazyOptional<IFluidHandler> capability = blockEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, face.getOpposite());
+            LazyOptional<IFluidHandler> capability = blockEntity.getCapability(
+                    ForgeCapabilities.FLUID_HANDLER,
+                    face.getOpposite()
+            );
+            if (!capability.isPresent()) {
+                capability = blockEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, null);
+            }
             if (capability.isPresent()) {
                 return true;
             }
         }
 
+        // 检查是否是开放端
         return FluidPropagator.isOpenEnd(world, blockFace.getPos(), face);
     }
 
@@ -551,7 +750,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         return pumpIn ? isPrimaryDirection : !isPrimaryDirection;
     }
 
-    // CentrifugalPumpFluidTransferBehaviour 和 CentrifugalPumpValueBox 类保持原样
     class CentrifugalPumpFluidTransferBehaviour extends FluidTransportBehaviour implements IFluidHandler {
 
         private FluidTank internalTank;
@@ -573,17 +771,13 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
 
             if (primary == null || secondary == null) return;
 
-            // 验证并更新连接
             validateConnections(primary, secondary);
-
             updatePressures(primary, secondary);
             performPumping(primary, secondary);
         }
 
         private void validateConnections(Direction primary, Direction secondary) {
-            // 检查主要方向的连接
             validateConnection(primary);
-            // 检查次要方向的连接
             validateConnection(secondary);
         }
 
@@ -593,46 +787,36 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
                 BlockPos targetPos = worldPosition.relative(dir);
                 BlockState targetState = level.getBlockState(targetPos);
 
-                // 强制重新确定源，如果目标改变了
                 boolean needsUpdate = false;
 
-                // 检查是否是储罐
                 if (targetState.getBlock() instanceof FluidTankBlock) {
                     PipeConnectionAccessor accessor = (PipeConnectionAccessor) connection;
                     Optional<FlowSource> currentSource = accessor.getSource();
 
-                    // 如果当前源不是FluidHandler类型，需要更新
                     if (!currentSource.isPresent() || !(currentSource.get() instanceof FlowSource.FluidHandler)) {
                         needsUpdate = true;
                     }
                 }
-                // 检查是否是管道
                 else if (FluidPipeBlock.isPipe(targetState)) {
                     PipeConnectionAccessor accessor = (PipeConnectionAccessor) connection;
                     Optional<FlowSource> currentSource = accessor.getSource();
 
-                    // 如果当前源不是OtherPipe类型，需要更新
                     if (!currentSource.isPresent() || !(currentSource.get() instanceof FlowSource.OtherPipe)) {
                         needsUpdate = true;
                     }
                 }
-                // 检查是否是开放端
                 else if (FluidPropagator.isOpenEnd(level, worldPosition, dir)) {
                     PipeConnectionAccessor accessor = (PipeConnectionAccessor) connection;
                     Optional<FlowSource> currentSource = accessor.getSource();
 
-                    // 如果当前源不是OpenEndedPipe类型，需要更新
                     if (!currentSource.isPresent() || !(currentSource.get() instanceof OpenEndedPipe)) {
                         needsUpdate = true;
                     }
                 }
 
                 if (needsUpdate) {
-                    // 清除旧的流动状态
                     PipeConnectionAccessor accessor = (PipeConnectionAccessor) connection;
                     accessor.setFlow(Optional.empty());
-
-                    // 强制重新确定源
                     connection.determineSource(level, worldPosition);
                 }
             }
@@ -677,11 +861,14 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
             BlockEntity be = level.getBlockEntity(inputPos);
 
             if (be != null) {
-                // 直接尝试获取流体处理能力
                 LazyOptional<IFluidHandler> capability = be.getCapability(
                         ForgeCapabilities.FLUID_HANDLER,
                         inputDir.getOpposite()
                 );
+
+                if (!capability.isPresent()) {
+                    capability = be.getCapability(ForgeCapabilities.FLUID_HANDLER, null);
+                }
 
                 if (capability.isPresent()) {
                     capability.ifPresent(handler -> {
@@ -695,9 +882,9 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
                                 if (!extracted.isEmpty()) {
                                     internalTank.fill(extracted, IFluidHandler.FluidAction.EXECUTE);
 
-                                    // 只在管道连接时更新动画
                                     BlockState targetState = level.getBlockState(inputPos);
-                                    if (FluidPipeBlock.isPipe(targetState) || FluidPropagator.isOpenEnd(level, worldPosition, inputDir)) {
+                                    if (FluidPipeBlock.isPipe(targetState) ||
+                                            FluidPropagator.isOpenEnd(level, worldPosition, inputDir)) {
                                         updateFlowAnimation(inputDir, extracted, true);
                                     }
                                 }
@@ -715,11 +902,14 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
             BlockEntity be = level.getBlockEntity(outputPos);
 
             if (be != null) {
-                // 直接尝试获取流体处理能力
                 LazyOptional<IFluidHandler> capability = be.getCapability(
                         ForgeCapabilities.FLUID_HANDLER,
                         outputDir.getOpposite()
                 );
+
+                if (!capability.isPresent()) {
+                    capability = be.getCapability(ForgeCapabilities.FLUID_HANDLER, null);
+                }
 
                 if (capability.isPresent()) {
                     capability.ifPresent(handler -> {
@@ -733,9 +923,9 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
                             FluidStack outputted = toOutput.copy();
                             outputted.setAmount(inserted);
 
-                            // 只在管道连接时更新动画
                             BlockState targetState = level.getBlockState(outputPos);
-                            if (FluidPipeBlock.isPipe(targetState) || FluidPropagator.isOpenEnd(level, worldPosition, outputDir)) {
+                            if (FluidPipeBlock.isPipe(targetState) ||
+                                    FluidPropagator.isOpenEnd(level, worldPosition, outputDir)) {
                                 updateFlowAnimation(outputDir, outputted, false);
                             }
                         }
@@ -763,7 +953,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
             return CentrifugalPumpBlockEntity.this.isSideAccessible(direction);
         }
 
-        // IFluidHandler 接口方法保持不变
         @Override
         public int getTanks() {
             return 1;

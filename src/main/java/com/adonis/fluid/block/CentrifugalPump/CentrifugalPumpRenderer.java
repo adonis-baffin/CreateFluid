@@ -27,48 +27,6 @@ public class CentrifugalPumpRenderer extends KineticBlockEntityRenderer<Centrifu
     protected void renderSafe(CentrifugalPumpBlockEntity be, float partialTicks, PoseStack ms,
                               MultiBufferSource buffer, int light, int overlay) {
 
-        // 渲染传动轴
-        if (!VisualizationManager.supportsVisualization(be.getLevel())) {
-            BlockState blockState = be.getBlockState();
-            if (!(blockState.getBlock() instanceof CentrifugalPumpBlock)) {
-                return;
-            }
-
-            Direction shaftDirection = CentrifugalPumpBlock.getShaftDirection(blockState);
-            AttachFace face = blockState.getValue(CentrifugalPumpBlock.FACE);
-
-            int lightBehind = LevelRenderer.getLightColor(
-                    be.getLevel(),
-                    be.getBlockPos().relative(shaftDirection)
-            );
-
-            VertexConsumer vb = buffer.getBuffer(RenderType.cutoutMipped());
-            SuperByteBuffer shaftHalf;
-
-            if (face == AttachFace.WALL) {
-                shaftHalf = CachedBuffers.partialFacing(
-                        AllPartialModels.SHAFT_HALF,
-                        blockState,
-                        Direction.DOWN
-                );
-            } else if (face == AttachFace.FLOOR) {
-                shaftHalf = CachedBuffers.partialFacing(
-                        AllPartialModels.SHAFT_HALF,
-                        blockState,
-                        shaftDirection.getOpposite()
-                );
-            } else { // CEILING
-                shaftHalf = CachedBuffers.partialFacing(
-                        AllPartialModels.SHAFT_HALF,
-                        blockState,
-                        shaftDirection.getOpposite()
-                );
-            }
-
-            standardKineticRotationTransform(shaftHalf, be, lightBehind)
-                    .renderInto(ms, vb);
-        }
-
         // 调用父类方法处理标准渲染（包括单个面板）
         super.renderSafe(be, partialTicks, ms, buffer, light, overlay);
 
@@ -108,9 +66,6 @@ public class CentrifugalPumpRenderer extends KineticBlockEntityRenderer<Centrifu
             if (secondPanelOffset != null) {
                 ms.pushPose();
                 ms.translate(secondPanelOffset.x, secondPanelOffset.y, secondPanelOffset.z);
-
-                // 这里需要实际的渲染代码，可能需要访问 ValueBoxRenderer 的内部方法
-                // 或者创建一个临时的 ValueBoxTransform 来渲染
 
                 ms.popPose();
             }
