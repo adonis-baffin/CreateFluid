@@ -102,6 +102,7 @@ public class CreateFluid {
             SimpleChannel channel = AllPackets.getChannel();
             int id = 200;
 
+            // 注册移液器交互点配置包
             channel.registerMessage(id++, PipetteFluidPlacementPacket.class,
                     (msg, buf) -> msg.write(buf),
                     PipetteFluidPlacementPacket::new,
@@ -111,6 +112,7 @@ public class CreateFluid {
                         ctx.setPacketHandled(handled);
                     });
 
+            // 注册客户端请求包
             channel.registerMessage(id++, PipetteFluidPlacementPacket.ClientBoundRequest.class,
                     (msg, buf) -> msg.write(buf),
                     PipetteFluidPlacementPacket.ClientBoundRequest::new,
@@ -120,7 +122,7 @@ public class CreateFluid {
                         ctx.setPacketHandled(handled);
                     });
 
-            // 添加粒子包的注册
+            // 注册移液器粒子包
             channel.registerMessage(id++, com.adonis.fluid.packet.PipetteParticlePacket.class,
                     (msg, buf) -> msg.write(buf),
                     com.adonis.fluid.packet.PipetteParticlePacket::new,
@@ -130,6 +132,17 @@ public class CreateFluid {
                         ctx.setPacketHandled(handled);
                     });
 
+            // 注册铜龙头粒子包 - 添加这个！
+            channel.registerMessage(id++, com.adonis.fluid.packet.CopperFaucetParticlePacket.class,
+                    (msg, buf) -> msg.write(buf),
+                    com.adonis.fluid.packet.CopperFaucetParticlePacket::new,
+                    (msg, ctxSupplier) -> {
+                        NetworkEvent.Context ctx = ctxSupplier.get();
+                        boolean handled = msg.handle(ctx);
+                        ctx.setPacketHandled(handled);
+                    });
+
+            // 注册石英灯开关包
             channel.registerMessage(id++, com.adonis.fluid.packet.QuartzLampTogglePacket.class,
                     (msg, buf) -> msg.write(buf),
                     com.adonis.fluid.packet.QuartzLampTogglePacket::new,

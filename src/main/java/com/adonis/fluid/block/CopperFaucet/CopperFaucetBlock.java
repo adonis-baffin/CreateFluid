@@ -10,6 +10,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
@@ -30,7 +31,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
-import net.minecraft.world.item.context.UseOnContext;
+import com.simibubi.create.content.fluids.transfer.GenericItemFilling;
 
 import javax.annotation.Nullable;
 
@@ -188,14 +189,14 @@ public class CopperFaucetBlock extends HorizontalDirectionalBlock implements IBE
 
         ItemStack heldItem = player.getItemInHand(hand);
 
-        // 如果手持扳手，也可以开关
+        // 扳手可以开关
         if (AllItems.WRENCH.isIn(heldItem)) {
             toggleFaucet(state, level, pos);
             return InteractionResult.SUCCESS;
         }
 
-        // 空手右键开关
-        if (heldItem.isEmpty()) {
+        // 如果手持的物品不能被填充（包括空手），则可以开关龙头
+        if (heldItem.isEmpty() || !GenericItemFilling.canItemBeFilled(level, heldItem)) {
             toggleFaucet(state, level, pos);
             return InteractionResult.SUCCESS;
         }

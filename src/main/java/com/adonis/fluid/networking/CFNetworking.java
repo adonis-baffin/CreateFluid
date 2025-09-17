@@ -1,5 +1,6 @@
 package com.adonis.fluid.networking;
 
+import com.adonis.fluid.packet.CopperFaucetParticlePacket;
 import com.adonis.fluid.packet.PipetteFluidPlacementPacket;
 import com.adonis.fluid.packet.PipetteParticlePacket;
 import com.simibubi.create.AllPackets;
@@ -29,10 +30,19 @@ public class CFNetworking {
                     ctxSupplier.get().setPacketHandled(true);
                 });
 
-        // 注册粒子效果包
+        // 注册移液器粒子效果包
         channel.registerMessage(id++, PipetteParticlePacket.class,
                 (msg, buf) -> msg.write(buf),
                 PipetteParticlePacket::new,
+                (msg, ctxSupplier) -> {
+                    msg.handle(ctxSupplier.get());
+                    ctxSupplier.get().setPacketHandled(true);
+                });
+
+        // 注册铜龙头粒子效果包
+        channel.registerMessage(id++, CopperFaucetParticlePacket.class,
+                (msg, buf) -> msg.write(buf),
+                CopperFaucetParticlePacket::new,
                 (msg, ctxSupplier) -> {
                     msg.handle(ctxSupplier.get());
                     ctxSupplier.get().setPacketHandled(true);

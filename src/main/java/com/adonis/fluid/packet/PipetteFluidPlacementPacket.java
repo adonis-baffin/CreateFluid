@@ -80,8 +80,6 @@ public class PipetteFluidPlacementPacket extends SimplePacketBase {
                 world.getServer().execute(() -> {
                     world.sendBlockUpdated(pos, pipette.getBlockState(), pipette.getBlockState(), 3);
                 });
-
-                System.out.println("[SERVER] 移液器更新完成 - 输入: " + pipette.inputs.size() + ", 输出: " + pipette.outputs.size());
             }
         });
         return true;
