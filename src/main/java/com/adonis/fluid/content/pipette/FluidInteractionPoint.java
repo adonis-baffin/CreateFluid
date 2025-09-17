@@ -1,14 +1,18 @@
 package com.adonis.fluid.content.pipette;
 
 import com.adonis.fluid.registry.CFBlock;
+import com.adonis.fluid.registry.CFFluid;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.contraptions.StructureTransform;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LayeredCauldronBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -39,6 +43,9 @@ public class FluidInteractionPoint {
         } else if (AllBlocks.ITEM_DRAIN.has(state)) {
             // 分液池只能作为输入端
             this.mode = Mode.TAKE;
+        } else if (isCauldron(state)) {
+            // 炼药锅可以输入输出
+            this.mode = Mode.DEPOSIT;
         } else {
             this.mode = Mode.DEPOSIT;
         }
@@ -63,6 +70,11 @@ public class FluidInteractionPoint {
                 return new FluidInteractionPoint(level, pos, state);
             }
             return null;
+        }
+
+        // 检查是否为炼药锅 - 添加特殊处理
+        if (isCauldron(state)) {
+            return new FluidInteractionPoint(level, pos, state);
         }
 
         // 检查其他有效的流体方块
@@ -106,6 +118,11 @@ public class FluidInteractionPoint {
             return true;
         }
 
+        // 支持炼药锅
+        if (isCauldron(state)) {
+            return true;
+        }
+
         return false;
     }
 
@@ -116,6 +133,13 @@ public class FluidInteractionPoint {
 
     private static boolean isBeehive(BlockState state) {
         return state.getBlock() instanceof net.minecraft.world.level.block.BeehiveBlock;
+    }
+
+    private static boolean isCauldron(BlockState state) {
+        return state.is(Blocks.CAULDRON) ||
+                state.is(Blocks.WATER_CAULDRON) ||
+                state.is(Blocks.LAVA_CAULDRON) ||
+                state.is(Blocks.POWDER_SNOW_CAULDRON);
     }
 
     public boolean isValid() {
@@ -145,9 +169,22 @@ public class FluidInteractionPoint {
             return false;
         }
 
-        boolean valid = isValidFluidBlock(state) &&
-                level.getBlockEntity(pos) != null &&
-                getFluidHandler() != null;
+        // 炼药锅的特殊处理 - 只要是炼药锅就有效
+        if (isCauldron(state)) {
+            lastKnownValid = gameTime;
+            return true;
+        }
+
+        // 对于有方块实体的方块，检查流体处理器
+        BlockEntity be = level.getBlockEntity(pos);
+        boolean valid = false;
+
+        if (be != null) {
+            valid = isValidFluidBlock(state) && getFluidHandler() != null;
+        } else {
+            // 没有方块实体但是是有效的流体方块（如炼药锅）
+            valid = isValidFluidBlock(state);
+        }
 
         if (valid) {
             lastKnownValid = gameTime;
@@ -163,6 +200,11 @@ public class FluidInteractionPoint {
         // 传送带不提供流体处理器（由虚拟中继器处理）
         if (AllBlocks.BELT.has(state)) {
             return null;
+        }
+
+        // 炼药锅使用自定义流体处理器
+        if (isCauldron(state)) {
+            return new CauldronFluidHandler(level, pos, state);
         }
 
         BlockEntity be = level.getBlockEntity(pos);
@@ -229,6 +271,29 @@ public class FluidInteractionPoint {
             return false;
         }
 
+        BlockState state = level.getBlockState(pos);
+
+        // 空炼药锅不能抽取
+        if (state.is(Blocks.CAULDRON)) {
+            return false;
+        }
+
+        // 检查特定类型的炼药锅
+        if (state.is(Blocks.WATER_CAULDRON)) {
+            // 水炼药锅只有满的才能抽取
+            return state.getValue(LayeredCauldronBlock.LEVEL) == 3;
+        }
+
+        if (state.is(Blocks.LAVA_CAULDRON)) {
+            // 岩浆炼药锅总是满的，可以抽取
+            return true;
+        }
+
+        if (state.is(Blocks.POWDER_SNOW_CAULDRON)) {
+            // 细雪炼药锅只有满的才能抽取
+            return state.getValue(LayeredCauldronBlock.LEVEL) == 3;
+        }
+
         IFluidHandler handler = getFluidHandler();
         if (handler == null) return false;
 
@@ -244,6 +309,34 @@ public class FluidInteractionPoint {
         // 分液池不接受流体输入
         if (AllBlocks.ITEM_DRAIN.has(level.getBlockState(pos))) {
             return false;
+        }
+
+        BlockState state = level.getBlockState(pos);
+
+        // 炼药锅的特殊处理
+        if (isCauldron(state)) {
+            // 空炼药锅可以接受支持的流体
+            if (state.is(Blocks.CAULDRON)) {
+                return stack.getFluid() == Fluids.WATER ||
+                        stack.getFluid() == Fluids.LAVA ||
+                        CFFluid.isPowderSnowFluid(stack.getFluid());
+            }
+
+            // 部分填充的水炼药锅可以继续填充水
+            if (state.is(Blocks.WATER_CAULDRON)) {
+                int level = state.getValue(LayeredCauldronBlock.LEVEL);
+                return level < 3 && stack.getFluid() == Fluids.WATER;
+            }
+
+            // 满的岩浆炼药锅不能再填充
+            if (state.is(Blocks.LAVA_CAULDRON)) {
+                return false;
+            }
+
+            // 细雪炼药锅不能部分填充（必须一次性填满）
+            if (state.is(Blocks.POWDER_SNOW_CAULDRON)) {
+                return false;
+            }
         }
 
         IFluidHandler handler = getFluidHandler();
@@ -278,7 +371,7 @@ public class FluidInteractionPoint {
             return;
         }
 
-        // 其他方块可以正常切换模式
+        // 其他方块（包括炼药锅）可以正常切换模式
         mode = mode == Mode.TAKE ? Mode.DEPOSIT : Mode.TAKE;
     }
 

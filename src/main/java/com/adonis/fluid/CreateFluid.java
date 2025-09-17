@@ -2,6 +2,7 @@ package com.adonis.fluid;
 
 import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.config.CFStress;
+import com.adonis.fluid.fluid.powdersnow.PowderSnowCauldronSpoutingRegistry;
 import com.adonis.fluid.handler.PipetteFluidInteractionPointHandler;
 import com.adonis.fluid.packet.CopperFaucetParticlePacket;
 import com.adonis.fluid.packet.PipetteFluidPlacementPacket;
