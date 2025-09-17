@@ -4,7 +4,7 @@ license="MIT License"
 
 [[mods]]
 modId="fluid"
-version="1.0.0"
+version="1.0.2"
 displayName="Create Fluid"
 logoFile="fluid.png"
 credits="adonis"

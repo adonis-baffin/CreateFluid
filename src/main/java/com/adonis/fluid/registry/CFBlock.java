@@ -4,6 +4,7 @@ import static com.adonis.fluid.registry.CFBlockEntity.CENTRIFUGAL_PUMP;
 import static com.simibubi.create.foundation.data.TagGen.axeOrPickaxe;
 
 import com.adonis.fluid.CreateFluid;
+import com.adonis.fluid.block.CopperFaucet.CopperFaucetBlock;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlock;
 import com.adonis.fluid.block.Pipette.PipetteBlock;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlock;
@@ -199,6 +200,31 @@ public class CFBlock {
             .transform(ModelGen.customItemModel())
             .register();
 
+    // 铜龙头注册
+    public static final BlockEntry<CopperFaucetBlock> COPPER_FAUCET = CreateFluid.REGISTRATE
+            .block("copper_faucet", CopperFaucetBlock::new)
+            .initialProperties(SharedProperties::copperMetal)
+            .properties(prop -> prop
+                    .mapColor(MapColor.COLOR_ORANGE)
+                    .sound(SoundType.COPPER)
+                    .noOcclusion())
+            .transform(axeOrPickaxe())
+            .blockstate((ctx, prov) -> {
+                prov.getVariantBuilder(ctx.get())
+                        .forAllStates(state -> {
+                            Direction dir = state.getValue(CopperFaucetBlock.FACING);
+                            int yRot = (int) dir.toYRot();
+                            return ConfiguredModel.builder()
+                                    .modelFile(prov.models().getExistingFile(prov.modLoc("block/copper_faucet")))
+                                    .rotationY(yRot)
+                                    .build();
+                        });
+            })
+            .item()
+            .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), prov.modLoc("block/copper_faucet")))
+            .build()
+            .register();
+
     public static void register() {}
 
     public static void setupRenderLayers() {
@@ -207,5 +233,6 @@ public class CFBlock {
         ItemBlockRenderTypes.setRenderLayer(SMART_FLUID_INTERFACE.get(), cutout);
         ItemBlockRenderTypes.setRenderLayer(PIPETTE.get(), cutout);
         ItemBlockRenderTypes.setRenderLayer(CENTRIFUGAL_PUMP.get(), cutout);
+        ItemBlockRenderTypes.setRenderLayer(COPPER_FAUCET.get(), RenderType.cutout());
     }
 }

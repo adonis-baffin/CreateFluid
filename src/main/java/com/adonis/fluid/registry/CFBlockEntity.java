@@ -1,6 +1,7 @@
 package com.adonis.fluid.registry;
 
 import com.adonis.fluid.CreateFluid;
+import com.adonis.fluid.block.CopperFaucet.CopperFaucetBlockEntity;
 import com.adonis.fluid.block.Pipette.PipetteBlockEntity;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlockEntity;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlockEntity;
@@ -49,6 +50,11 @@ public class CFBlockEntity {
                     .validBlocks(CFBlock.CENTRIFUGAL_PUMP)
                     .renderer(() -> CentrifugalPumpRenderer::new)
                     .register();
+
+    public static final RegistryObject<BlockEntityType<CopperFaucetBlockEntity>> COPPER_FAUCET =
+            BLOCK_ENTITIES.register("copper_faucet", () -> BlockEntityType.Builder.of(
+                    (pos, state) -> new CopperFaucetBlockEntity(CFBlockEntity.COPPER_FAUCET.get(), pos, state),
+                    CFBlock.COPPER_FAUCET.get()).build(null));
 
     // 为了保持兼容性，提供一个RegistryObject访问器
     public static final RegistryObject<BlockEntityType<CentrifugalPumpBlockEntity>> CENTRIFUGAL_PUMP =
