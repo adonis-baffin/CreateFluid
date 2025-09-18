@@ -36,7 +36,6 @@ public class CFClient {
             ItemBlockRenderTypes.setRenderLayer(CFBlock.AQUEDUCT.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(CFBlock.CENTRIFUGAL_PUMP.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(CFBlock.COPPER_FAUCET.get(), RenderType.cutout());
-            ItemBlockRenderTypes.setRenderLayer(CFBlock.COPPER_FAUCET.get(), RenderType.cutout());
 
             // 注册方块实体渲染器
             BlockEntityRenderers.register(CFBlockEntity.PIPETTE.get(), PipetteRenderer::new);

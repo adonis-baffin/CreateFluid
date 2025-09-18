@@ -1,6 +1,6 @@
 package com.adonis.fluid.registry;
 
-import static com.adonis.fluid.registry.CFBlockEntity.CENTRIFUGAL_PUMP;
+import static com.adonis.fluid.CreateFluid.REGISTRATE;
 import static com.simibubi.create.foundation.data.TagGen.axeOrPickaxe;
 
 import com.adonis.fluid.CreateFluid;
@@ -27,7 +27,7 @@ import net.minecraftforge.client.model.generators.ConfiguredModel;
 public class CFBlock {
 
     // 流体接口注册
-    public static final BlockEntry<FluidInterfaceBlock> FLUID_INTERFACE = CreateFluid.REGISTRATE
+    public static final BlockEntry<FluidInterfaceBlock> FLUID_INTERFACE = REGISTRATE
             .block("fluid_interface", FluidInterfaceBlock::new)
             .initialProperties(SharedProperties::wooden)
             .properties(prop -> prop
@@ -50,7 +50,7 @@ public class CFBlock {
             .register();
 
     // 智能流体接口注册
-    public static final BlockEntry<SmartFluidInterfaceBlock> SMART_FLUID_INTERFACE = CreateFluid.REGISTRATE
+    public static final BlockEntry<SmartFluidInterfaceBlock> SMART_FLUID_INTERFACE = REGISTRATE
             .block("smart_fluid_interface", SmartFluidInterfaceBlock::new)
             .initialProperties(SharedProperties::wooden)
             .properties(prop -> prop
@@ -72,7 +72,7 @@ public class CFBlock {
             .simpleItem()
             .register();
 
-    public static final BlockEntry<AqueductBlock> AQUEDUCT = CreateFluid.REGISTRATE
+    public static final BlockEntry<AqueductBlock> AQUEDUCT = REGISTRATE
             .block("aqueduct", AqueductBlock::new)
             .initialProperties(SharedProperties::stone)
             .properties(p -> p
@@ -96,7 +96,7 @@ public class CFBlock {
             .build()
             .register();
 
-    public static final BlockEntry<PipetteBlock> PIPETTE = CreateFluid.REGISTRATE
+    public static final BlockEntry<PipetteBlock> PIPETTE = REGISTRATE
             .block("pipette", PipetteBlock::new)
             .initialProperties(SharedProperties::softMetal)
             .properties(prop -> prop
@@ -118,7 +118,7 @@ public class CFBlock {
             .register();
 
     // 离心泵注册 - 使用 AttachFace 而不是 Orientation
-    public static final BlockEntry<CentrifugalPumpBlock> CENTRIFUGAL_PUMP = CreateFluid.REGISTRATE
+    public static final BlockEntry<CentrifugalPumpBlock> CENTRIFUGAL_PUMP = REGISTRATE
             .block("centrifugal_pump", CentrifugalPumpBlock::new)
             .initialProperties(SharedProperties::copperMetal)
             .properties(prop -> prop
@@ -201,7 +201,7 @@ public class CFBlock {
             .register();
 
     // 铜龙头注册
-    public static final BlockEntry<CopperFaucetBlock> COPPER_FAUCET = CreateFluid.REGISTRATE
+    public static final BlockEntry<CopperFaucetBlock> COPPER_FAUCET = REGISTRATE
             .block("copper_faucet", CopperFaucetBlock::new)
             .initialProperties(SharedProperties::copperMetal)
             .properties(prop -> prop

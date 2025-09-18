@@ -1,6 +1,7 @@
 package com.adonis.fluid.block.CentrifugalPump;
 
 import com.adonis.fluid.registry.CFBlockEntity;
+import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.content.fluids.FluidPropagator;
 import com.simibubi.create.content.fluids.pipes.FluidPipeBlock;
@@ -15,8 +16,13 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.DebugPackets;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.BlockGetter;
@@ -36,7 +42,9 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.pathfinder.PathComputationType;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.ticks.TickPriority;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -48,20 +56,150 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
 
     public static final EnumProperty<AttachFace> FACE = BlockStateProperties.ATTACH_FACE;
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
+    public static final BooleanProperty ENCASED = BooleanProperty.create("encased");
 
     private static final VoxelShape PUMP_SHAPE = Block.box(2, 2, 2, 14, 14, 14);
+    private static final VoxelShape FULL_SHAPE = Shapes.block();
 
     public CentrifugalPumpBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.defaultBlockState()
                 .setValue(FACE, AttachFace.FLOOR)
-                .setValue(WATERLOGGED, false));
+                .setValue(WATERLOGGED, false)
+                .setValue(ENCASED, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
-        builder.add(FACE, WATERLOGGED);
+        builder.add(FACE, WATERLOGGED, ENCASED);
+    }
+
+    @Override
+    public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        ItemStack heldItem = player.getItemInHand(hand);
+
+        // 检查是否是铜机壳
+        if (!state.getValue(ENCASED) && heldItem.is(AllBlocks.COPPER_CASING.asItem())) {
+            if (!world.isClientSide) {
+                // 转换为封装状态
+                BlockState newState = state.setValue(ENCASED, true);
+                world.setBlock(pos, newState, 3);
+
+                // 消耗物品
+                if (!player.isCreative()) {
+                    heldItem.shrink(1);
+                }
+
+                // 播放放置声音
+                world.playSound(null, pos, SoundEvents.COPPER_PLACE, SoundSource.BLOCKS, 1.0F, 1.0F);
+
+                // 通知流体网络更新
+                if (world.getBlockEntity(pos) instanceof CentrifugalPumpBlockEntity pump) {
+                    pump.onPipeNetworkChanged();
+                }
+            }
+            // 返回成功结果，阻止方块放置
+            return InteractionResult.sidedSuccess(world.isClientSide);
+        }
+
+        return InteractionResult.PASS;
+    }
+
+    @Override
+    public InteractionResult onWrenched(BlockState state, UseOnContext context) {
+        Level world = context.getLevel();
+        BlockPos pos = context.getClickedPos();
+        Player player = context.getPlayer();
+
+        // 如果是潜行+扳手，移除封装
+        if (!world.isClientSide && player != null && player.isShiftKeyDown() && state.getValue(ENCASED)) {
+            BlockState newState = state.setValue(ENCASED, false);
+            world.setBlock(pos, newState, 3);
+
+            // 掉落铜机壳
+            if (!player.isCreative()) {
+                Block.popResource(world, pos, AllBlocks.COPPER_CASING.asStack());
+            }
+
+            // 播放破坏声音
+            world.playSound(null, pos, SoundEvents.COPPER_BREAK, SoundSource.BLOCKS, 1.0F, 1.0F);
+
+            // 通知流体网络更新
+            if (world.getBlockEntity(pos) instanceof CentrifugalPumpBlockEntity pump) {
+                pump.onPipeNetworkChanged();
+            }
+
+            return InteractionResult.SUCCESS;
+        }
+
+        // 正常的旋转功能
+        if (!world.isClientSide) {
+            AttachFace face = state.getValue(FACE);
+            Direction facing = state.getValue(FACING);
+            Direction newFacing = facing;
+
+            // 根据不同的附着面旋转
+            if (face == AttachFace.WALL) {
+                // 垂直模式，旋转到下一个水平方向
+                newFacing = facing.getClockWise();
+                if (newFacing.getAxis() == Direction.Axis.Y) {
+                    newFacing = Direction.NORTH;
+                }
+            } else {
+                // 水平模式（FLOOR或CEILING），旋转到下一个水平方向
+                newFacing = facing.getClockWise();
+                if (newFacing.getAxis() == Direction.Axis.Y) {
+                    newFacing = Direction.NORTH;
+                }
+            }
+
+            BlockState newState = state.setValue(FACING, newFacing);
+            world.setBlock(pos, newState, 3);
+
+            // 通知流体网络更新
+            if (world.getBlockEntity(pos) instanceof CentrifugalPumpBlockEntity pump) {
+                pump.onPipeNetworkChanged();
+            }
+        }
+
+        return InteractionResult.SUCCESS;
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context) {
+        // 如果是封装状态，返回完整方块碰撞箱
+        if (state.getValue(ENCASED)) {
+            return FULL_SHAPE;
+        }
+
+        // 否则使用原本的碰撞箱逻辑
+        AttachFace face = state.getValue(FACE);
+        Direction facing = state.getValue(FACING);
+
+        try {
+            if (com.adonis.fluid.registry.CFShapes.CENTRIFUGAL_PUMP_FLOOR != null &&
+                    com.adonis.fluid.registry.CFShapes.CENTRIFUGAL_PUMP_CEILING != null &&
+                    com.adonis.fluid.registry.CFShapes.CENTRIFUGAL_PUMP_WALL != null) {
+
+                VoxelShape shape = null;
+                if (face == AttachFace.FLOOR) {
+                    shape = com.adonis.fluid.registry.CFShapes.CENTRIFUGAL_PUMP_FLOOR.get(facing);
+                } else if (face == AttachFace.CEILING) {
+                    shape = com.adonis.fluid.registry.CFShapes.CENTRIFUGAL_PUMP_CEILING.get(facing);
+                } else {
+                    shape = com.adonis.fluid.registry.CFShapes.CENTRIFUGAL_PUMP_WALL.get(facing);
+                }
+
+                if (shape != null) {
+                    return shape;
+                }
+            }
+        } catch (Exception e) {
+            // 使用默认形状
+        }
+
+        return PUMP_SHAPE;
     }
 
     @Override
@@ -98,7 +236,8 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
             return this.defaultBlockState()
                     .setValue(FACE, face)
                     .setValue(FACING, facing)
-                    .setValue(WATERLOGGED, ctx.getLevel().getFluidState(pos).getType() == Fluids.WATER);
+                    .setValue(WATERLOGGED, ctx.getLevel().getFluidState(pos).getType() == Fluids.WATER)
+                    .setValue(ENCASED, false);
         }
 
         // 非潜行模式：智能放置
@@ -197,7 +336,8 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
         return this.defaultBlockState()
                 .setValue(FACE, face)
                 .setValue(FACING, facing)
-                .setValue(WATERLOGGED, ctx.getLevel().getFluidState(pos).getType() == Fluids.WATER);
+                .setValue(WATERLOGGED, ctx.getLevel().getFluidState(pos).getType() == Fluids.WATER)
+                .setValue(ENCASED, false);
     }
 
     // 辅助方法：检查是否有流体连接（从指定方向）
@@ -253,73 +393,6 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
             case DOWN: return AttachFace.CEILING;
             default: return AttachFace.WALL;
         }
-    }
-
-    @Override
-    public InteractionResult onWrenched(BlockState state, UseOnContext context) {
-        Level world = context.getLevel();
-        BlockPos pos = context.getClickedPos();
-
-        if (!world.isClientSide) {
-            AttachFace face = state.getValue(FACE);
-            Direction facing = state.getValue(FACING);
-            Direction newFacing = facing;
-
-            // 根据不同的附着面旋转
-            if (face == AttachFace.WALL) {
-                // 垂直模式，旋转到下一个水平方向
-                newFacing = facing.getClockWise();
-                if (newFacing.getAxis() == Direction.Axis.Y) {
-                    newFacing = Direction.NORTH;
-                }
-            } else {
-                // 水平模式（FLOOR或CEILING），旋转到下一个水平方向
-                newFacing = facing.getClockWise();
-                if (newFacing.getAxis() == Direction.Axis.Y) {
-                    newFacing = Direction.NORTH;
-                }
-            }
-
-            BlockState newState = state.setValue(FACING, newFacing);
-            world.setBlock(pos, newState, 3);
-
-            // 通知流体网络更新
-            if (world.getBlockEntity(pos) instanceof CentrifugalPumpBlockEntity pump) {
-                pump.onPipeNetworkChanged();
-            }
-        }
-
-        return InteractionResult.SUCCESS;
-    }
-
-    @Override
-    public VoxelShape getShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context) {
-        AttachFace face = state.getValue(FACE);
-        Direction facing = state.getValue(FACING);
-
-        try {
-            if (com.adonis.fluid.registry.CFShapes.CENTRIFUGAL_PUMP_FLOOR != null &&
-                    com.adonis.fluid.registry.CFShapes.CENTRIFUGAL_PUMP_CEILING != null &&
-                    com.adonis.fluid.registry.CFShapes.CENTRIFUGAL_PUMP_WALL != null) {
-
-                VoxelShape shape = null;
-                if (face == AttachFace.FLOOR) {
-                    shape = com.adonis.fluid.registry.CFShapes.CENTRIFUGAL_PUMP_FLOOR.get(facing);
-                } else if (face == AttachFace.CEILING) {
-                    shape = com.adonis.fluid.registry.CFShapes.CENTRIFUGAL_PUMP_CEILING.get(facing);
-                } else {
-                    shape = com.adonis.fluid.registry.CFShapes.CENTRIFUGAL_PUMP_WALL.get(facing);
-                }
-
-                if (shape != null) {
-                    return shape;
-                }
-            }
-        } catch (Exception e) {
-            // 使用默认形状
-        }
-
-        return PUMP_SHAPE;
     }
 
     @Override
@@ -450,8 +523,6 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
             }
         }
     }
-
-// 在 CentrifugalPumpBlock 的 neighborChanged 方法中添加额外的检测：
 
     @Override
     public void neighborChanged(BlockState state, Level world, BlockPos pos, Block otherBlock,
