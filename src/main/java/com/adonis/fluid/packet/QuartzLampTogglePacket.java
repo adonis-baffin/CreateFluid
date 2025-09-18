@@ -10,7 +10,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.network.NetworkEvent;
 
 public class QuartzLampTogglePacket extends SimplePacketBase {
-    private BlockPos pos;
+    private final BlockPos pos;
 
     public QuartzLampTogglePacket(BlockPos pos) {
         this.pos = pos;
@@ -29,21 +29,31 @@ public class QuartzLampTogglePacket extends SimplePacketBase {
     public boolean handle(NetworkEvent.Context context) {
         context.enqueueWork(() -> {
             ServerPlayer player = context.getSender();
-            if (player != null && player.mayBuild()) {
-                Level world = player.level();
-                if (world != null && world.isLoaded(this.pos)) {
-                    BlockState state = world.getBlockState(this.pos);
-
-                    if (state.getBlock() instanceof RoseQuartzLampBlock) {
-                        // 切换POWERING状态
-                        BlockState newState = state.cycle(RoseQuartzLampBlock.POWERING);
-                        world.setBlock(this.pos, newState, 3);
-
-                        // 更新邻居
-                        world.updateNeighborsAt(this.pos, state.getBlock());
-                    }
-                }
+            if (player == null || !player.mayBuild()) {
+                return;
             }
+
+            Level world = player.level();
+            if (!world.isLoaded(this.pos)) {
+                return;
+            }
+
+            BlockState state = world.getBlockState(this.pos);
+            if (!(state.getBlock() instanceof RoseQuartzLampBlock)) {
+                return;
+            }
+
+            // 检查玩家距离（可选的安全检查）
+            if (player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) > 64.0) {
+                return; // 距离太远，防止作弊
+            }
+
+            // 切换POWERING状态
+            BlockState newState = state.cycle(RoseQuartzLampBlock.POWERING);
+            world.setBlock(this.pos, newState, 3);
+
+            // 更新邻居方块
+            world.updateNeighborsAt(this.pos, state.getBlock());
         });
         return true;
     }

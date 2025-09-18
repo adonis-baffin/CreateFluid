@@ -53,9 +53,7 @@ public class PipetteFluidPlacementPacket extends SimplePacketBase {
 
             BlockEntity be = world.getBlockEntity(pos);
             if (be instanceof PipetteBlockEntity pipette) {
-                System.out.println("[SERVER] PipetteFluidPlacementPacket 处理中");
-                System.out.println("[SERVER] 目标位置: " + pos);
-                System.out.println("[SERVER] 点数: " + pointsTag.size());
+                // 移除所有 System.out.println 调试输出
 
                 // 清空现有的交互点
                 pipette.inputs.clear();

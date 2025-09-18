@@ -27,9 +27,11 @@ public class CFClient {
 
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
+        // 初始化客户端部分模型
         CFPartialModels.init();
 
         event.enqueueWork(() -> {
+            // 设置渲染层
             ItemBlockRenderTypes.setRenderLayer(CFBlock.PIPETTE.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(CFBlock.FLUID_INTERFACE.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(CFBlock.SMART_FLUID_INTERFACE.get(), RenderType.cutout());
@@ -42,21 +44,25 @@ public class CFClient {
             BlockEntityRenderers.register(CFBlockEntity.FLUID_INTERFACE.get(), FluidInterfaceRenderer::new);
             BlockEntityRenderers.register(CFBlockEntity.SMART_FLUID_INTERFACE.get(), SmartFluidInterfaceRenderer::new);
             BlockEntityRenderers.register(CFBlockEntity.AQUEDUCT.get(), AqueductRenderer::new);
-            BlockEntityRenderers.register(CFBlockEntity.CENTRIFUGAL_PUMP.get(), CentrifugalPumpRenderer::new); // 添加这行
+            BlockEntityRenderers.register(CFBlockEntity.CENTRIFUGAL_PUMP.get(), CentrifugalPumpRenderer::new);
             BlockEntityRenderers.register(CFBlockEntity.COPPER_FAUCET.get(), CopperFaucetRenderer::new);
 
+            // 注册 Ponder 插件
             PonderIndex.addPlugin(new CFPonderPlugin());
 
-            // 注册指挥棒的属性覆盖
-            ItemProperties.register(CFItem.BATON.get(),
-                    new ResourceLocation(CreateFluid.MODID, "selection_mode"),
-                    new BatonItemPropertyFunction());
+            // 注册指挥棒的属性覆盖（如果有的话）
+            if (CFItem.BATON != null) {
+                ItemProperties.register(CFItem.BATON.get(),
+                        new ResourceLocation(CreateFluid.MODID, "selection_mode"),
+                        new BatonItemPropertyFunction());
+            }
         });
     }
 
-    // 客户端tick事件处理
+    // 客户端 Forge 事件总线的内部类
     @Mod.EventBusSubscriber(modid = CreateFluid.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
     public static class ClientForgeEvents {
+
         @SubscribeEvent
         public static void onClientTick(TickEvent.ClientTickEvent event) {
             if (event.phase == TickEvent.Phase.END) {

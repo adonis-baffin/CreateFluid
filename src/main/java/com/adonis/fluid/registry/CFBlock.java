@@ -15,8 +15,6 @@ import com.simibubi.create.foundation.data.ModelGen;
 import com.simibubi.create.foundation.data.SharedProperties;
 import com.simibubi.create.foundation.data.TagGen;
 import com.tterrag.registrate.util.entry.BlockEntry;
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.block.SoundType;
@@ -117,7 +115,7 @@ public class CFBlock {
             .transform(ModelGen.customItemModel())
             .register();
 
-    // 离心泵注册 - 使用 AttachFace 而不是 Orientation
+    // 离心泵注册
     public static final BlockEntry<CentrifugalPumpBlock> CENTRIFUGAL_PUMP = REGISTRATE
             .block("centrifugal_pump", CentrifugalPumpBlock::new)
             .initialProperties(SharedProperties::copperMetal)
@@ -134,11 +132,8 @@ public class CFBlock {
 
                             ConfiguredModel.Builder<?> builder = ConfiguredModel.builder();
 
-                            // 根据 AttachFace 选择模型和旋转
                             if (face == AttachFace.WALL) {
-                                // 垂直模式 - 使用 block_vertical 模型
                                 builder.modelFile(prov.models().getExistingFile(prov.modLoc("block/centrifugal_pump/block_vertical")));
-                                // 根据 facing 设置 Y 轴旋转
                                 switch (facing) {
                                     case NORTH:
                                         builder.rotationY(0);
@@ -154,10 +149,8 @@ public class CFBlock {
                                         break;
                                 }
                             } else if (face == AttachFace.CEILING) {
-                                // 天花板模式 - 使用标准模型，翻转180度
                                 builder.modelFile(prov.models().getExistingFile(prov.modLoc("block/centrifugal_pump/block")));
                                 builder.rotationX(180);
-                                // 根据 facing 设置 Y 轴旋转
                                 switch (facing) {
                                     case NORTH:
                                         builder.rotationY(0);
@@ -173,9 +166,7 @@ public class CFBlock {
                                         break;
                                 }
                             } else { // AttachFace.FLOOR
-                                // 地面模式 - 使用标准模型
                                 builder.modelFile(prov.models().getExistingFile(prov.modLoc("block/centrifugal_pump/block")));
-                                // 根据 facing 设置 Y 轴旋转
                                 switch (facing) {
                                     case NORTH:
                                         builder.rotationY(0);
@@ -195,7 +186,7 @@ public class CFBlock {
                             return builder.build();
                         });
             })
-            .transform(CreateFluid.STRESS_CONFIG.setImpact(8.0))  // 设置应力影响为8
+            .transform(CreateFluid.STRESS_CONFIG.setImpact(8.0))
             .item()
             .transform(ModelGen.customItemModel())
             .register();
@@ -225,14 +216,7 @@ public class CFBlock {
             .build()
             .register();
 
-    public static void register() {}
-
-    public static void setupRenderLayers() {
-        RenderType cutout = RenderType.cutout();
-        ItemBlockRenderTypes.setRenderLayer(FLUID_INTERFACE.get(), cutout);
-        ItemBlockRenderTypes.setRenderLayer(SMART_FLUID_INTERFACE.get(), cutout);
-        ItemBlockRenderTypes.setRenderLayer(PIPETTE.get(), cutout);
-        ItemBlockRenderTypes.setRenderLayer(CENTRIFUGAL_PUMP.get(), cutout);
-        ItemBlockRenderTypes.setRenderLayer(COPPER_FAUCET.get(), RenderType.cutout());
+    public static void register() {
+        // 这个方法是空的，仅用于触发静态字段的初始化
     }
 }

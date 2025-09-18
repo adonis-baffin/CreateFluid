@@ -1,21 +1,17 @@
 package com.adonis.fluid.packet;
 
-import com.simibubi.create.content.fluids.FluidFX;
 import com.simibubi.create.foundation.networking.SimplePacketBase;
-import net.createmod.catnip.math.VecHelper;
-import net.minecraft.client.Minecraft;
-import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.network.NetworkEvent;
 
 public class PipetteParticlePacket extends SimplePacketBase {
-    private Vec3 pos;
-    private FluidStack fluid;
+    private final Vec3 pos;
+    private final FluidStack fluid;
 
     public PipetteParticlePacket(Vec3 pos, FluidStack fluid) {
         this.pos = pos;
@@ -42,27 +38,33 @@ public class PipetteParticlePacket extends SimplePacketBase {
     @Override
     public boolean handle(NetworkEvent.Context context) {
         context.enqueueWork(() -> {
-            // 修复：正确的客户端执行方式
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-                spawnParticles();
-            });
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () ->
+                    ClientHandler.handleParticle(pos, fluid)
+            );
         });
         return true;
     }
 
-    private void spawnParticles() {
-        Level level = Minecraft.getInstance().level;
-        if (level == null || fluid.isEmpty()) return;
+    @OnlyIn(Dist.CLIENT)
+    private static class ClientHandler {
+        private static void handleParticle(Vec3 pos, FluidStack fluid) {
+            // 现在这里可以安全地导入客户端类
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+            net.minecraft.world.level.Level level = mc.level;
+            if (level == null || fluid.isEmpty()) return;
 
-        ParticleOptions particle = FluidFX.getFluidParticle(fluid);
-        // 增加粒子数量和调整位置，模拟注液效果
-        for (int i = 0; i < 20; i++) {
-            Vec3 motion = VecHelper.offsetRandomly(Vec3.ZERO, level.random, 0.125F);
-            motion = new Vec3(motion.x, -Math.abs(motion.y) * 0.5 - 0.1, motion.z);
-            level.addParticle(particle,
-                    pos.x, pos.y, pos.z,
-                    motion.x, motion.y, motion.z
-            );
+            net.minecraft.core.particles.ParticleOptions particle =
+                    com.simibubi.create.content.fluids.FluidFX.getFluidParticle(fluid);
+
+            for (int i = 0; i < 20; i++) {
+                Vec3 motion = net.createmod.catnip.math.VecHelper.offsetRandomly(
+                        Vec3.ZERO, level.random, 0.125F);
+                motion = new Vec3(motion.x, -Math.abs(motion.y) * 0.5 - 0.1, motion.z);
+                level.addParticle(particle,
+                        pos.x, pos.y, pos.z,
+                        motion.x, motion.y, motion.z
+                );
+            }
         }
     }
 }

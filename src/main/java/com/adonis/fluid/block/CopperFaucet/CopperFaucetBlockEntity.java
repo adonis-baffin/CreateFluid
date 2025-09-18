@@ -42,6 +42,11 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
     private ItemStack processingItem = ItemStack.EMPTY;
     private boolean isFillingItem = false; // 标记是否正在注液
 
+    // 待消耗的流体信息（延迟消耗）
+    private FluidStack pendingFluid = FluidStack.EMPTY;
+    private Direction sourceDirection = null;
+    private BlockPos sourceBlockPos = null;
+
     // 标签
     private static final TagKey<Block> FAUCET_FILLABLE = TagKey.create(
             ForgeRegistries.BLOCKS.getRegistryKey(),
@@ -68,12 +73,15 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
         boolean isOpen = state.getValue(BlockStateProperties.OPEN);
 
         if (!isOpen) {
-            // 关闭状态，清空渲染缓存
-            if (!renderingFluid.isEmpty()) {
+            // 关闭状态，清空渲染缓存和待处理的流体
+            if (!renderingFluid.isEmpty() || !pendingFluid.isEmpty()) {
                 renderingFluid = FluidStack.EMPTY;
+                pendingFluid = FluidStack.EMPTY;
                 isFillingItem = false;
                 processingTicks = 0;
                 processingItem = ItemStack.EMPTY;
+                sourceDirection = null;
+                sourceBlockPos = null;
                 notifyUpdate();
             }
             transferCooldown = 0;
@@ -90,8 +98,16 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
         // 处理注液进度
         if (isFillingItem && processingTicks > 0) {
             processingTicks--;
+
+            // 每tick检查物品是否还在
+            if (!validateItemStillPresent()) {
+                // 物品不在了，取消注液
+                cancelItemFilling();
+                return;
+            }
+
             if (processingTicks == 0) {
-                // 注液完成，清理状态
+                // 注液完成，消耗流体并生成结果
                 finishItemFilling();
             }
             return; // 注液期间不做其他事
@@ -101,6 +117,42 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
         if (transferCooldown == 0) {
             tryTransferFluid();
         }
+    }
+
+    private boolean validateItemStillPresent() {
+        if (processingItem.isEmpty())
+            return false;
+
+        BlockPos targetPos = worldPosition.below();
+        BlockEntity targetEntity = level.getBlockEntity(targetPos);
+
+        if (targetEntity == null || !isDepot(targetEntity))
+            return false;
+
+        ItemStack currentItem = getItemOnDepot(targetEntity);
+
+        // 检查物品是否还是同一个（类型和数量）
+        return ItemStack.isSameItemSameTags(currentItem, processingItem) &&
+                currentItem.getCount() >= processingItem.getCount();
+    }
+
+    private void cancelItemFilling() {
+        // 取消注液，不消耗流体
+        isFillingItem = false;
+        processingTicks = 0;
+        processingItem = ItemStack.EMPTY;
+        renderingFluid = FluidStack.EMPTY;
+        pendingFluid = FluidStack.EMPTY;
+        sourceDirection = null;
+        sourceBlockPos = null;
+
+        // 播放取消的声音效果
+        level.playSound(null, worldPosition,
+                net.minecraft.sounds.SoundEvents.FIRE_EXTINGUISH,
+                net.minecraft.sounds.SoundSource.BLOCKS,
+                0.25f, 2.0f);
+
+        notifyUpdate();
     }
 
     private void tryTransferFluid() {
@@ -127,7 +179,7 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
         BlockPos targetPos = worldPosition.below();
 
         // 尝试处理
-        boolean success = tryProcess(sourceHandler, targetPos);
+        boolean success = tryProcess(sourceHandler, targetPos, attached, sourcePos);
 
         if (success) {
             transferCooldown = TRANSFER_INTERVAL;
@@ -140,7 +192,7 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
         }
     }
 
-    private boolean tryProcess(IFluidHandler sourceHandler, BlockPos targetPos) {
+    private boolean tryProcess(IFluidHandler sourceHandler, BlockPos targetPos, Direction sourceDir, BlockPos sourcePos) {
         BlockEntity targetEntity = level.getBlockEntity(targetPos);
         BlockState targetState = level.getBlockState(targetPos);
 
@@ -148,7 +200,7 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
         if (targetEntity != null && isDepot(targetEntity)) {
             ItemStack itemOnDepot = getItemOnDepot(targetEntity);
             if (!itemOnDepot.isEmpty() && FillingBySpout.canItemBeFilled(level, itemOnDepot)) {
-                return startItemFilling(sourceHandler, targetPos, itemOnDepot);
+                return startItemFilling(sourceHandler, targetPos, itemOnDepot, sourceDir, sourcePos);
             }
             return false;
         }
@@ -191,7 +243,7 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
             return false;
         }
 
-        // 执行实际抽取
+        // 执行实际抽取（炼药锅立即消耗）
         FluidStack drained = sourceHandler.drain(cauldronInfo.amount(), IFluidHandler.FluidAction.EXECUTE);
         if (drained.isEmpty() || drained.getAmount() < cauldronInfo.amount()) {
             return false;
@@ -216,8 +268,8 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
         return true;
     }
 
-
-    private boolean startItemFilling(IFluidHandler sourceHandler, BlockPos targetPos, ItemStack item) {
+    private boolean startItemFilling(IFluidHandler sourceHandler, BlockPos targetPos, ItemStack item,
+                                     Direction sourceDir, BlockPos sourcePos) {
         // 获取可用流体
         FluidStack availableFluid = sourceHandler.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
         if (availableFluid.isEmpty())
@@ -228,22 +280,25 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
         if (requiredAmount <= 0 || requiredAmount > availableFluid.getAmount())
             return false;
 
-        // 开始注液
-        FluidStack drainedFluid = sourceHandler.drain(requiredAmount, IFluidHandler.FluidAction.EXECUTE);
-        if (drainedFluid.isEmpty())
+        // 只是模拟抽取，不实际消耗
+        FluidStack simulatedDrain = sourceHandler.drain(requiredAmount, IFluidHandler.FluidAction.SIMULATE);
+        if (simulatedDrain.isEmpty() || simulatedDrain.getAmount() < requiredAmount)
             return false;
 
-        // 设置注液状态
+        // 设置注液状态，但不消耗流体
         isFillingItem = true;
         processingTicks = FILLING_TIME;
         processingItem = item.copy();
-        renderingFluid = drainedFluid.copy();
+        pendingFluid = simulatedDrain.copy(); // 保存待消耗的流体信息
+        renderingFluid = simulatedDrain.copy(); // 用于渲染
+        sourceDirection = sourceDir; // 保存源方向
+        sourceBlockPos = sourcePos.immutable(); // 保存源位置
 
         // 播放声音
         AllSoundEvents.SPOUTING.playOnServer(level, worldPosition, 0.75f, 0.9f + 0.2f * level.random.nextFloat());
 
         // 发送粒子效果
-        sendFillingParticles(targetPos, drainedFluid);
+        sendFillingParticles(targetPos, simulatedDrain);
 
         notifyUpdate();
         return true;
@@ -267,7 +322,7 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
     }
 
     private void finishItemFilling() {
-        if (!isFillingItem || processingItem.isEmpty())
+        if (!isFillingItem || processingItem.isEmpty() || pendingFluid.isEmpty())
             return;
 
         // 找到置物台
@@ -275,6 +330,39 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
         BlockEntity targetEntity = level.getBlockEntity(targetPos);
 
         if (targetEntity != null && isDepot(targetEntity)) {
+            // 再次验证物品
+            ItemStack currentItem = getItemOnDepot(targetEntity);
+            if (!ItemStack.isSameItemSameTags(currentItem, processingItem) ||
+                    currentItem.getCount() < processingItem.getCount()) {
+                // 物品已改变，取消
+                cancelItemFilling();
+                return;
+            }
+
+            // 现在尝试实际消耗流体
+            boolean fluidConsumed = false;
+            if (sourceBlockPos != null && sourceDirection != null) {
+                BlockEntity sourceEntity = level.getBlockEntity(sourceBlockPos);
+                if (sourceEntity != null) {
+                    IFluidHandler sourceHandler = sourceEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, sourceDirection)
+                            .orElse(sourceEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, null).orElse(null));
+
+                    if (sourceHandler != null) {
+                        // 实际消耗流体
+                        FluidStack drained = sourceHandler.drain(pendingFluid, IFluidHandler.FluidAction.EXECUTE);
+                        if (!drained.isEmpty() && drained.getAmount() >= pendingFluid.getAmount()) {
+                            fluidConsumed = true;
+                        }
+                    }
+                }
+            }
+
+            if (!fluidConsumed) {
+                // 无法消耗流体，取消注液
+                cancelItemFilling();
+                return;
+            }
+
             // 获取 DepotBehaviour
             var behaviour = com.simibubi.create.content.logistics.depot.DepotBehaviour.get(
                     targetEntity, com.simibubi.create.content.logistics.depot.DepotBehaviour.TYPE);
@@ -285,8 +373,8 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
                 // 确保物品还在
                 if (!itemOnDepot.isEmpty()) {
                     // 执行填充
-                    ItemStack result = FillingBySpout.fillItem(level, renderingFluid.getAmount(),
-                            itemOnDepot.copy(), renderingFluid);
+                    ItemStack result = FillingBySpout.fillItem(level, pendingFluid.getAmount(),
+                            itemOnDepot.copy(), pendingFluid);
 
                     if (!result.isEmpty()) {
                         // 消耗原物品
@@ -352,6 +440,9 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
         processingTicks = 0;
         processingItem = ItemStack.EMPTY;
         renderingFluid = FluidStack.EMPTY;
+        pendingFluid = FluidStack.EMPTY;
+        sourceDirection = null;
+        sourceBlockPos = null;
         notifyUpdate();
     }
 
@@ -373,7 +464,7 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
         if (filled <= 0)
             return false;
 
-        // 执行实际传输
+        // 执行实际传输（容器直接传输）
         FluidStack actualDrain = sourceHandler.drain(filled, IFluidHandler.FluidAction.EXECUTE);
         if (actualDrain.isEmpty())
             return false;
@@ -468,9 +559,12 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
         // 关闭龙头
         level.setBlockAndUpdate(worldPosition, getBlockState().setValue(BlockStateProperties.OPEN, false));
         renderingFluid = FluidStack.EMPTY;
+        pendingFluid = FluidStack.EMPTY;
         isFillingItem = false;
         processingTicks = 0;
         processingItem = ItemStack.EMPTY;
+        sourceDirection = null;
+        sourceBlockPos = null;
         notifyUpdate();
     }
 
@@ -478,11 +572,18 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
     protected void write(CompoundTag tag, boolean clientPacket) {
         super.write(tag, clientPacket);
         tag.put("RenderingFluid", renderingFluid.writeToNBT(new CompoundTag()));
+        tag.put("PendingFluid", pendingFluid.writeToNBT(new CompoundTag()));
         tag.putBoolean("IsFillingItem", isFillingItem);
         tag.putInt("ProcessingTicks", processingTicks);
         tag.putInt("TransferCooldown", transferCooldown);
         if (!processingItem.isEmpty()) {
             tag.put("ProcessingItem", processingItem.save(new CompoundTag()));
+        }
+        if (sourceDirection != null) {
+            tag.putInt("SourceDirection", sourceDirection.get3DDataValue());
+        }
+        if (sourceBlockPos != null) {
+            tag.putLong("SourcePos", sourceBlockPos.asLong());
         }
     }
 
@@ -490,11 +591,18 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
     protected void read(CompoundTag tag, boolean clientPacket) {
         super.read(tag, clientPacket);
         renderingFluid = FluidStack.loadFluidStackFromNBT(tag.getCompound("RenderingFluid"));
+        pendingFluid = FluidStack.loadFluidStackFromNBT(tag.getCompound("PendingFluid"));
         isFillingItem = tag.getBoolean("IsFillingItem");
         processingTicks = tag.getInt("ProcessingTicks");
         transferCooldown = tag.getInt("TransferCooldown");
         if (tag.contains("ProcessingItem")) {
             processingItem = ItemStack.of(tag.getCompound("ProcessingItem"));
+        }
+        if (tag.contains("SourceDirection")) {
+            sourceDirection = Direction.from3DDataValue(tag.getInt("SourceDirection"));
+        }
+        if (tag.contains("SourcePos")) {
+            sourceBlockPos = BlockPos.of(tag.getLong("SourcePos"));
         }
     }
 

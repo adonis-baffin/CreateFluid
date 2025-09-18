@@ -2,14 +2,9 @@ package com.adonis.fluid;
 
 import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.config.CFStress;
-import com.adonis.fluid.handler.PipetteFluidInteractionPointHandler;
-import com.adonis.fluid.packet.CopperFaucetParticlePacket;
-import com.adonis.fluid.packet.PipetteFluidPlacementPacket;
-import com.adonis.fluid.packet.PipetteParticlePacket;
-import com.adonis.fluid.packet.QuartzLampTogglePacket;
+import com.adonis.fluid.networking.CFNetworking;
 import com.adonis.fluid.registry.*;
 import com.mojang.logging.LogUtils;
-import com.simibubi.create.AllPackets;
 import com.simibubi.create.api.stress.BlockStressValues;
 import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.simibubi.create.foundation.item.ItemDescription;
@@ -17,15 +12,12 @@ import com.simibubi.create.foundation.item.KineticStats;
 import com.simibubi.create.foundation.item.TooltipModifier;
 import net.createmod.catnip.lang.FontHelper;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.InterModEnqueueEvent;
 import net.minecraftforge.fml.event.lifecycle.InterModProcessEvent;
@@ -33,9 +25,6 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.simple.SimpleChannel;
-import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.slf4j.Logger;
 
 import java.util.Random;
@@ -82,15 +71,10 @@ public class CreateFluid {
         modEventBus.addListener(this::setup);
         modEventBus.addListener(this::enqueueIMC);
         modEventBus.addListener(this::processIMC);
-        modEventBus.addListener(this::clientInit);
         modEventBus.addListener(this::onModConfigEvent);
 
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.addListener(this::onServerStarting);
-
-        if (FMLEnvironment.dist == Dist.CLIENT) {
-            MinecraftForge.EVENT_BUS.addListener(CreateFluid::onClientTick);
-        }
     }
 
     private void setup(final FMLCommonSetupEvent event) {
@@ -101,75 +85,14 @@ public class CreateFluid {
             BlockStressValues.IMPACTS.registerProvider(STRESS_CONFIG::getImpact);
             BlockStressValues.CAPACITIES.registerProvider(STRESS_CONFIG::getCapacity);
 
-            registerNetworkPackets();
+            // 使用新的网络注册类
+            CFNetworking.register();
         });
-    }
-
-    private void registerNetworkPackets() {
-        SimpleChannel channel = AllPackets.getChannel();
-        int id = 200;
-
-        channel.registerMessage(id++, PipetteFluidPlacementPacket.class,
-                (msg, buf) -> msg.write(buf),
-                PipetteFluidPlacementPacket::new,
-                (msg, ctxSupplier) -> {
-                    NetworkEvent.Context ctx = ctxSupplier.get();
-                    boolean handled = msg.handle(ctx);
-                    ctx.setPacketHandled(handled);
-                });
-
-        channel.registerMessage(id++, PipetteFluidPlacementPacket.ClientBoundRequest.class,
-                (msg, buf) -> msg.write(buf),
-                PipetteFluidPlacementPacket.ClientBoundRequest::new,
-                (msg, ctxSupplier) -> {
-                    NetworkEvent.Context ctx = ctxSupplier.get();
-                    boolean handled = msg.handle(ctx);
-                    ctx.setPacketHandled(handled);
-                });
-
-        channel.registerMessage(id++, PipetteParticlePacket.class,
-                (msg, buf) -> msg.write(buf),
-                PipetteParticlePacket::new,
-                (msg, ctxSupplier) -> {
-                    NetworkEvent.Context ctx = ctxSupplier.get();
-                    boolean handled = msg.handle(ctx);
-                    ctx.setPacketHandled(handled);
-                });
-
-        channel.registerMessage(id++, CopperFaucetParticlePacket.class,
-                (msg, buf) -> msg.write(buf),
-                CopperFaucetParticlePacket::new,
-                (msg, ctxSupplier) -> {
-                    NetworkEvent.Context ctx = ctxSupplier.get();
-                    boolean handled = msg.handle(ctx);
-                    ctx.setPacketHandled(handled);
-                });
-
-        channel.registerMessage(id++, QuartzLampTogglePacket.class,
-                (msg, buf) -> msg.write(buf),
-                QuartzLampTogglePacket::new,
-                (msg, ctxSupplier) -> {
-                    NetworkEvent.Context ctx = ctxSupplier.get();
-                    boolean handled = msg.handle(ctx);
-                    ctx.setPacketHandled(handled);
-                });
     }
 
     private void enqueueIMC(final InterModEnqueueEvent event) {}
 
     private void processIMC(final InterModProcessEvent event) {}
-
-    private void clientInit(final FMLClientSetupEvent event) {
-        event.enqueueWork(() -> {
-            CFBlock.setupRenderLayers();
-        });
-    }
-
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase == TickEvent.Phase.END) {
-            PipetteFluidInteractionPointHandler.tick();
-        }
-    }
 
     private void onModConfigEvent(ModConfigEvent event) {
         ModConfig config = event.getConfig();
