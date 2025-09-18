@@ -8,7 +8,7 @@
   "item.fluid.honeycomb_mold.tooltip.summary": "Used for honeycomb compacting recipe",
   "item.fluid.baton": "Conductor's Baton",
   "item.fluid.baton.tooltip.summary": "Used to configure interaction points for Mechanical Arm，Mechanical Pipette and Ejector Depot",
-  "fluid.fluid.powder_snow": "Powder Snow",
+  "fluid_type.fluid.powder_snow": "Powder Snow",
 
   "item.fluid.pipette": "Mechanical Pipette",
 

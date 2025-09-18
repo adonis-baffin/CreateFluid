@@ -1,51 +1,44 @@
+// java/com/adonis/fluid/registry/CFFluid.java
 package com.adonis.fluid.registry;
 
 import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.fluid.powdersnow.PowderSnowFluid;
-import com.simibubi.create.AllTags;
-import com.simibubi.create.foundation.data.CreateRegistrate;
-import com.tterrag.registrate.util.entry.FluidEntry;
-import net.minecraft.resources.ResourceLocation;
+import com.adonis.fluid.fluid.powdersnow.PowderSnowFluidType;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
 
 public class CFFluid {
+    private static final DeferredRegister<Fluid> FLUIDS =
+            DeferredRegister.create(ForgeRegistries.FLUIDS, CreateFluid.MODID);
 
-    private static final CreateRegistrate REGISTRATE = CreateFluid.REGISTRATE;
+    public static final RegistryObject<Fluid> POWDER_SNOW =
+            FLUIDS.register("powder_snow", PowderSnowFluid.Source::new);
 
-    // 细雪流体贴图路径
-    public static final ResourceLocation POWDER_SNOW_STILL_RL =
-            CreateFluid.asResource("block/powder_snow_fluid_still");
-    public static final ResourceLocation POWDER_SNOW_FLOW_RL =
-            CreateFluid.asResource("block/powder_snow_fluid_flow");
+    public static final RegistryObject<Fluid> POWDER_SNOW_FLOWING =
+            FLUIDS.register("powder_snow_flowing", PowderSnowFluid.Flowing::new);
 
-    // 注册细雪虚拟流体 - 与TEA对齐，无特殊效果，无桶
-    public static final FluidEntry<PowderSnowFluid> POWDER_SNOW = REGISTRATE
-            .virtualFluid("powder_snow",
-                    POWDER_SNOW_STILL_RL,
-                    POWDER_SNOW_FLOW_RL,
-                    CreateRegistrate::defaultFluidType,
-                    PowderSnowFluid::createSource,
-                    PowderSnowFluid::createFlowing)
-            .lang("Powder Snow")
-            .properties(builder -> builder
-                    .temperature(250)  // 低温
-                    .viscosity(2000)   // 较高粘度
-                    .density(600)      // 比水轻
-                    .lightLevel(0))    // 不发光
-            .tag(AllTags.forgeFluidTag("powder_snow"))
-            .register();
-
-    // 注册方法
     public static void register() {
+        IEventBus modEventBus = net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext.get().getModEventBus();
+        FLUIDS.register(modEventBus);
+        PowderSnowFluidType.FLUID_TYPES.register(modEventBus);
+        CreateFluid.LOGGER.info("Registering CF Fluids");
     }
 
-    // 辅助方法
+    /**
+     * 检查是否为细雪流体
+     */
+    public static boolean isPowderSnowFluid(Fluid fluid) {
+        return fluid == POWDER_SNOW.get() || fluid == POWDER_SNOW_FLOWING.get();
+    }
+
+    /**
+     * 创建细雪流体堆
+     */
     public static FluidStack getPowderSnowFluidStack(int amount) {
         return new FluidStack(POWDER_SNOW.get(), amount);
-    }
-
-    public static boolean isPowderSnowFluid(Fluid fluid) {
-        return fluid == POWDER_SNOW.get() || fluid == POWDER_SNOW.get().getFlowing();
     }
 }

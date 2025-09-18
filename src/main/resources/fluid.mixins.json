@@ -15,8 +15,8 @@
     "FluidPropagatorMixin",
     "FluidPropagatorCompleteMixin",
     "FluidPipeBlockMixin",
-    "FluidBucketWrapperMixin",
-    "VanillaFluidTargetsMixin"
+    "VanillaFluidTargetsMixin",
+    "FluidUtilMixin"
   ],
   "client": [
     "accessor.ArmBlockEntityAccessor"
