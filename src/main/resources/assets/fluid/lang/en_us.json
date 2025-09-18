@@ -26,7 +26,8 @@
   "block.fluid.smart_fluid_interface.tooltip.condition2": "When attached to a container",
   "block.fluid.smart_fluid_interface.tooltip.behaviour2": "Functions as a _filtered gateway_ to the attached container, preventing unwanted fluid types from passing through",
 
-  "block.fluid.centrifugal_pump.tooltip.summary": "Better than _mechanical pump_",
+  "block.fluid.centrifugal_pump.tooltip.summary": "Transports further and faster than _Mechanical Pumps_, can be encased with _Copper Casing_",
+  "block.fluid.copper_faucet.tooltip.summary": "Right-click to switch. Can fill Basins, Cauldrons below, or perform spout processing on Depots below",
 
   "create.fluid.mechanical_pipette.extract": "Drain fluid from %1$s",
   "create.fluid.mechanical_pipette.deposit": "Inject fluid to %1$s",

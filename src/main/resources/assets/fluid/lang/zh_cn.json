@@ -25,7 +25,8 @@
   "block.fluid.smart_fluid_interface.tooltip.condition2": "当连接到容器时",
   "block.fluid.smart_fluid_interface.tooltip.behaviour2": "作为连接容器的_过滤网关_，防止不需要的流体类型通过",
 
-  "block.fluid.centrifugal_pump.tooltip.summary": "比_动力泵_更好用",
+  "block.fluid.centrifugal_pump.tooltip.summary": "比_动力泵_运输距离更远，传输速率更高，可以用_铜机壳_来封装",
+  "block.fluid.copper_faucet.tooltip.summary": "右键开关。可以填充下方的工作盆，炼药锅，或对下方的置物台进行注液加工",
 
   "create.fluid.mechanical_pipette.extract": "从%1$s吸取流体",
   "create.fluid.mechanical_pipette.deposit": "将流体注入%1$s",
