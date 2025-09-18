@@ -11,16 +11,20 @@ import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 import dev.engine_room.flywheel.lib.transform.PoseTransformStack;
 import dev.engine_room.flywheel.lib.transform.TransformStack;
 import net.createmod.catnip.animation.AnimationTickHolder;
-import net.createmod.catnip.platform.ForgeCatnipServices;
 import net.createmod.catnip.render.CachedBuffers;
 import net.createmod.catnip.render.SuperByteBuffer;
 import net.createmod.catnip.theme.Color;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.fluids.FluidStack;
 
 public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEntity> {
@@ -105,9 +109,11 @@ public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEnti
         ms.popPose();
     }
 
-    private void renderFluidInNeedle(FluidStack fluid, int capacity, PoseStack ms,
+    private void renderFluidInNeedle(FluidStack fluidStack, int capacity, PoseStack ms,
                                      MultiBufferSource buffer, int light, boolean isInjectMode) {
-        float fillFactor = (float) fluid.getAmount() / capacity;
+        if (fluidStack.isEmpty()) return;
+
+        float fillFactor = (float) fluidStack.getAmount() / capacity;
 
         // 针头内部流体渲染
         float needleRadius = 1.5f / 16f;
@@ -121,13 +127,92 @@ public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEnti
 
         ms.translate(0, 0, zOffset);
 
-        // 使用Forge的流体渲染器
-        ForgeCatnipServices.FLUID_RENDERER.renderFluidBox(
-                fluid,
-                -needleRadius, -needleRadius, -fluidLength / 2,
-                needleRadius, needleRadius, fluidLength / 2,
-                buffer, ms, light, true, false
-        );
+        // 自定义流体渲染
+        float xMin = -needleRadius;
+        float xMax = needleRadius;
+        float yMin = -needleRadius;
+        float yMax = needleRadius;
+        float zMin = -fluidLength / 2;
+        float zMax = fluidLength / 2;
+
+        // 获取流体属性
+        Fluid fluid = fluidStack.getFluid();
+        IClientFluidTypeExtensions fluidAttributes = IClientFluidTypeExtensions.of(fluid);
+
+        // 获取流体纹理
+        TextureAtlasSprite fluidTexture = Minecraft.getInstance()
+                .getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
+                .apply(fluidAttributes.getStillTexture(fluidStack));
+
+        // 获取流体颜色
+        int color = fluidAttributes.getTintColor(fluidStack);
+        int a = (color >> 24) & 0xFF;
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
+        if (a == 0) a = 255;
+
+        // 获取渲染类型
+        RenderType renderType = RenderType.translucent();
+        VertexConsumer builder = buffer.getBuffer(renderType);
+
+        // 纹理坐标
+        float u0 = fluidTexture.getU0();
+        float u1 = fluidTexture.getU1();
+        float v0 = fluidTexture.getV0();
+        float v1 = fluidTexture.getV1();
+
+        PoseStack.Pose pose = ms.last();
+
+        // 渲染六个面
+        // 前面 (Z+)
+        addVertex(builder, pose, xMin, yMin, zMax, u0, v1, r, g, b, a, light, 0, 0, 1);
+        addVertex(builder, pose, xMax, yMin, zMax, u1, v1, r, g, b, a, light, 0, 0, 1);
+        addVertex(builder, pose, xMax, yMax, zMax, u1, v0, r, g, b, a, light, 0, 0, 1);
+        addVertex(builder, pose, xMin, yMax, zMax, u0, v0, r, g, b, a, light, 0, 0, 1);
+
+        // 后面 (Z-)
+        addVertex(builder, pose, xMin, yMin, zMin, u0, v1, r, g, b, a, light, 0, 0, -1);
+        addVertex(builder, pose, xMin, yMax, zMin, u0, v0, r, g, b, a, light, 0, 0, -1);
+        addVertex(builder, pose, xMax, yMax, zMin, u1, v0, r, g, b, a, light, 0, 0, -1);
+        addVertex(builder, pose, xMax, yMin, zMin, u1, v1, r, g, b, a, light, 0, 0, -1);
+
+        // 左面 (X-)
+        addVertex(builder, pose, xMin, yMin, zMin, u0, v1, r, g, b, a, light, -1, 0, 0);
+        addVertex(builder, pose, xMin, yMin, zMax, u1, v1, r, g, b, a, light, -1, 0, 0);
+        addVertex(builder, pose, xMin, yMax, zMax, u1, v0, r, g, b, a, light, -1, 0, 0);
+        addVertex(builder, pose, xMin, yMax, zMin, u0, v0, r, g, b, a, light, -1, 0, 0);
+
+        // 右面 (X+)
+        addVertex(builder, pose, xMax, yMin, zMin, u0, v1, r, g, b, a, light, 1, 0, 0);
+        addVertex(builder, pose, xMax, yMax, zMin, u0, v0, r, g, b, a, light, 1, 0, 0);
+        addVertex(builder, pose, xMax, yMax, zMax, u1, v0, r, g, b, a, light, 1, 0, 0);
+        addVertex(builder, pose, xMax, yMin, zMax, u1, v1, r, g, b, a, light, 1, 0, 0);
+
+        // 顶面 (Y+)
+        addVertex(builder, pose, xMin, yMax, zMin, u0, v0, r, g, b, a, light, 0, 1, 0);
+        addVertex(builder, pose, xMin, yMax, zMax, u0, v1, r, g, b, a, light, 0, 1, 0);
+        addVertex(builder, pose, xMax, yMax, zMax, u1, v1, r, g, b, a, light, 0, 1, 0);
+        addVertex(builder, pose, xMax, yMax, zMin, u1, v0, r, g, b, a, light, 0, 1, 0);
+
+        // 底面 (Y-) - 总是渲染
+        addVertex(builder, pose, xMin, yMin, zMin, u0, v0, r, g, b, a, light, 0, -1, 0);
+        addVertex(builder, pose, xMax, yMin, zMin, u1, v0, r, g, b, a, light, 0, -1, 0);
+        addVertex(builder, pose, xMax, yMin, zMax, u1, v1, r, g, b, a, light, 0, -1, 0);
+        addVertex(builder, pose, xMin, yMin, zMax, u0, v1, r, g, b, a, light, 0, -1, 0);
+    }
+
+    private void addVertex(VertexConsumer builder, PoseStack.Pose pose,
+                           float x, float y, float z,
+                           float u, float v,
+                           int r, int g, int b, int a, int light,
+                           float nx, float ny, float nz) {
+        builder.vertex(pose.pose(), x, y, z)
+                .color(r, g, b, a)
+                .uv(u, v)
+                .uv2(light)
+                .normal(pose.normal(), nx, ny, nz)
+                .endVertex();
     }
 
     private void renderPipette(VertexConsumer builder, PoseStack ms, PoseStack msLocal,

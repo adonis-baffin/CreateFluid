@@ -1,17 +1,23 @@
 package com.adonis.fluid.block.CopperFaucet;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.simibubi.create.content.fluids.FluidFX;
 import com.simibubi.create.foundation.blockEntity.renderer.SafeBlockEntityRenderer;
-import net.createmod.catnip.platform.ForgeCatnipServices;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.util.Mth;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.fluids.FluidStack;
 
 public class CopperFaucetRenderer extends SafeBlockEntityRenderer<CopperFaucetBlockEntity> {
@@ -94,12 +100,9 @@ public class CopperFaucetRenderer extends SafeBlockEntityRenderer<CopperFaucetBl
             endZ = center + (endZ - center) * scale;
         }
 
-        // 使用类似youkaishomecoming的流体渲染
-        ForgeCatnipServices.FLUID_RENDERER.renderFluidBox(
-                fluid, startX, endY, startZ,
-                endX, startY, endZ,
-                buffer, ms, light, false, true
-        );
+        // 使用自定义流体渲染方法
+        renderFluidBox(fluid, startX, endY, startZ, endX, startY, endZ,
+                buffer, ms, light, false, true);
     }
 
     private void renderFillingEffect(CopperFaucetBlockEntity be, FluidStack fluid, PoseStack ms,
@@ -124,11 +127,8 @@ public class CopperFaucetRenderer extends SafeBlockEntityRenderer<CopperFaucetBl
             float endY = -12f / 16f; // 延伸到下方
 
             // 渲染细流
-            ForgeCatnipServices.FLUID_RENDERER.renderFluidBox(
-                    fluid, startX, endY, startZ,
-                    endX, startY, endZ,
-                    buffer, ms, light, false, true
-            );
+            renderFluidBox(fluid, startX, endY, startZ, endX, startY, endZ,
+                    buffer, ms, light, false, true);
 
             // 渲染飞溅效果
             float splash = 1f - processingProgress;
@@ -136,14 +136,141 @@ public class CopperFaucetRenderer extends SafeBlockEntityRenderer<CopperFaucetBl
                 float splashRadius = splash * 0.5f;
 
                 // 在底部渲染扩散的流体池
-                ForgeCatnipServices.FLUID_RENDERER.renderFluidBox(
-                        fluid,
+                renderFluidBox(fluid,
                         0.5f - splashRadius, -15.5f / 16f, 0.5f - splashRadius,
                         0.5f + splashRadius, -15f / 16f, 0.5f + splashRadius,
-                        buffer, ms, light, false, true
-                );
+                        buffer, ms, light, false, true);
             }
         }
+    }
+
+    /**
+     * 自定义流体渲染方法
+     * 基于Catnip的实现，但使用机械动力和原版的API
+     */
+    private void renderFluidBox(FluidStack fluidStack, float xMin, float yMin, float zMin,
+                                float xMax, float yMax, float zMax,
+                                MultiBufferSource buffer, PoseStack ms, int light,
+                                boolean renderBottom, boolean flowing) {
+        if (fluidStack.isEmpty())
+            return;
+
+        Fluid fluid = fluidStack.getFluid();
+        IClientFluidTypeExtensions fluidAttributes = IClientFluidTypeExtensions.of(fluid);
+
+        // 获取流体纹理
+        TextureAtlasSprite fluidTexture;
+        if (flowing) {
+            fluidTexture = Minecraft.getInstance()
+                    .getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
+                    .apply(fluidAttributes.getFlowingTexture(fluidStack));
+        } else {
+            fluidTexture = Minecraft.getInstance()
+                    .getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
+                    .apply(fluidAttributes.getStillTexture(fluidStack));
+        }
+
+        // 获取流体颜色
+        int color = fluidAttributes.getTintColor(fluidStack);
+
+        // 获取渲染类型 - 使用半透明渲染类型
+        RenderType renderType = RenderType.translucent();
+        VertexConsumer builder = buffer.getBuffer(renderType);
+
+        // 使用类似Catnip的方式渲染每个面
+        renderFluidFaces(builder, ms, fluidTexture, xMin, yMin, zMin, xMax, yMax, zMax,
+                color, light, renderBottom);
+    }
+
+    private void renderFluidFaces(VertexConsumer builder, PoseStack ms, TextureAtlasSprite texture,
+                                  float xMin, float yMin, float zMin, float xMax, float yMax, float zMax,
+                                  int color, int light, boolean renderBottom) {
+        // 提取颜色分量
+        int a = (color >> 24) & 0xFF;
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
+        if (a == 0) a = 255;
+
+        // 纹理坐标
+        float u0 = texture.getU0();
+        float u1 = texture.getU1();
+        float v0 = texture.getV0();
+        float v1 = texture.getV1();
+
+        PoseStack.Pose pose = ms.last();
+
+        // 渲染各个面（按照Catnip的顺序）
+        Direction[] directions = Direction.values();
+        for (Direction dir : directions) {
+            if (dir == Direction.DOWN && !renderBottom) {
+                continue;
+            }
+
+            renderFace(builder, pose, dir, xMin, yMin, zMin, xMax, yMax, zMax,
+                    u0, u1, v0, v1, r, g, b, a, light);
+        }
+    }
+
+    private void renderFace(VertexConsumer builder, PoseStack.Pose pose, Direction dir,
+                            float xMin, float yMin, float zMin, float xMax, float yMax, float zMax,
+                            float u0, float u1, float v0, float v1,
+                            int r, int g, int b, int a, int light) {
+        float nx = dir.getNormal().getX();
+        float ny = dir.getNormal().getY();
+        float nz = dir.getNormal().getZ();
+
+        switch (dir) {
+            case DOWN: // Y-
+                addVertex(builder, pose, xMin, yMin, zMin, u0, v0, r, g, b, a, light, nx, ny, nz);
+                addVertex(builder, pose, xMax, yMin, zMin, u1, v0, r, g, b, a, light, nx, ny, nz);
+                addVertex(builder, pose, xMax, yMin, zMax, u1, v1, r, g, b, a, light, nx, ny, nz);
+                addVertex(builder, pose, xMin, yMin, zMax, u0, v1, r, g, b, a, light, nx, ny, nz);
+                break;
+            case UP: // Y+
+                addVertex(builder, pose, xMin, yMax, zMin, u0, v0, r, g, b, a, light, nx, ny, nz);
+                addVertex(builder, pose, xMin, yMax, zMax, u0, v1, r, g, b, a, light, nx, ny, nz);
+                addVertex(builder, pose, xMax, yMax, zMax, u1, v1, r, g, b, a, light, nx, ny, nz);
+                addVertex(builder, pose, xMax, yMax, zMin, u1, v0, r, g, b, a, light, nx, ny, nz);
+                break;
+            case NORTH: // Z-
+                addVertex(builder, pose, xMin, yMin, zMin, u0, v1, r, g, b, a, light, nx, ny, nz);
+                addVertex(builder, pose, xMin, yMax, zMin, u0, v0, r, g, b, a, light, nx, ny, nz);
+                addVertex(builder, pose, xMax, yMax, zMin, u1, v0, r, g, b, a, light, nx, ny, nz);
+                addVertex(builder, pose, xMax, yMin, zMin, u1, v1, r, g, b, a, light, nx, ny, nz);
+                break;
+            case SOUTH: // Z+
+                addVertex(builder, pose, xMin, yMin, zMax, u0, v1, r, g, b, a, light, nx, ny, nz);
+                addVertex(builder, pose, xMax, yMin, zMax, u1, v1, r, g, b, a, light, nx, ny, nz);
+                addVertex(builder, pose, xMax, yMax, zMax, u1, v0, r, g, b, a, light, nx, ny, nz);
+                addVertex(builder, pose, xMin, yMax, zMax, u0, v0, r, g, b, a, light, nx, ny, nz);
+                break;
+            case WEST: // X-
+                addVertex(builder, pose, xMin, yMin, zMin, u0, v1, r, g, b, a, light, nx, ny, nz);
+                addVertex(builder, pose, xMin, yMin, zMax, u1, v1, r, g, b, a, light, nx, ny, nz);
+                addVertex(builder, pose, xMin, yMax, zMax, u1, v0, r, g, b, a, light, nx, ny, nz);
+                addVertex(builder, pose, xMin, yMax, zMin, u0, v0, r, g, b, a, light, nx, ny, nz);
+                break;
+            case EAST: // X+
+                addVertex(builder, pose, xMax, yMin, zMin, u0, v1, r, g, b, a, light, nx, ny, nz);
+                addVertex(builder, pose, xMax, yMax, zMin, u0, v0, r, g, b, a, light, nx, ny, nz);
+                addVertex(builder, pose, xMax, yMax, zMax, u1, v0, r, g, b, a, light, nx, ny, nz);
+                addVertex(builder, pose, xMax, yMin, zMax, u1, v1, r, g, b, a, light, nx, ny, nz);
+                break;
+        }
+    }
+
+    private void addVertex(VertexConsumer builder, PoseStack.Pose pose,
+                           float x, float y, float z,
+                           float u, float v,
+                           int r, int g, int b, int a, int light,
+                           float nx, float ny, float nz) {
+        builder.vertex(pose.pose(), x, y, z)
+                .color(r, g, b, a)
+                .uv(u, v)
+                .uv2(light)
+                .normal(pose.normal(), nx, ny, nz)
+                .endVertex();
     }
 
     // 客户端粒子效果（可选）
