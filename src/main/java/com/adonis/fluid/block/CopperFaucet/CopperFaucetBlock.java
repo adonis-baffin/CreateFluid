@@ -189,19 +189,35 @@ public class CopperFaucetBlock extends HorizontalDirectionalBlock implements IBE
 
         ItemStack heldItem = player.getItemInHand(hand);
 
-        // 扳手可以开关
-        if (AllItems.WRENCH.isIn(heldItem)) {
-            toggleFaucet(state, level, pos);
-            return InteractionResult.SUCCESS;
+        // 检查是否应该阻止开关
+        // 只有当物品可以被填充，且不是桶，且下方有合适的目标时，才不允许开关
+        boolean shouldPreventToggle = false;
+
+        if (!heldItem.isEmpty() && GenericItemFilling.canItemBeFilled(level, heldItem)) {
+            // 检查是否是桶
+            if (!(heldItem.getItem() instanceof net.minecraft.world.item.BucketItem)) {
+                // 检查下方是否有可以接收填充的目标（比如置物台）
+                BlockPos belowPos = pos.below();
+                BlockEntity belowEntity = level.getBlockEntity(belowPos);
+                if (belowEntity != null && isDepot(belowEntity)) {
+                    // 只有在下方有置物台时，才阻止开关（让物品被填充）
+                    shouldPreventToggle = true;
+                }
+            }
         }
 
-        // 如果手持的物品不能被填充（包括空手），则可以开关龙头
-        if (heldItem.isEmpty() || !GenericItemFilling.canItemBeFilled(level, heldItem)) {
-            toggleFaucet(state, level, pos);
-            return InteractionResult.SUCCESS;
+        if (shouldPreventToggle) {
+            return InteractionResult.PASS;
         }
 
-        return InteractionResult.PASS;
+        // 其他所有情况都允许开关
+        toggleFaucet(state, level, pos);
+        return InteractionResult.SUCCESS;
+    }
+
+    // 需要添加这个辅助方法到 CopperFaucetBlock 类中
+    private boolean isDepot(BlockEntity entity) {
+        return entity.getClass().getSimpleName().toLowerCase().contains("depot");
     }
 
     @Override
