@@ -86,20 +86,19 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
                 BlockState newState = state.setValue(ENCASED, true);
                 world.setBlock(pos, newState, 3);
 
-                // 消耗物品
-                if (!player.isCreative()) {
-                    heldItem.shrink(1);
-                }
+                // 不消耗物品（移除这行）
+                // if (!player.isCreative()) {
+                //     heldItem.shrink(1);
+                // }
 
                 // 播放放置声音
                 world.playSound(null, pos, SoundEvents.COPPER_PLACE, SoundSource.BLOCKS, 1.0F, 1.0F);
 
                 // 通知流体网络更新
                 if (world.getBlockEntity(pos) instanceof CentrifugalPumpBlockEntity pump) {
-                    pump.onPipeNetworkChanged();
+                    pump.onEncasedStateChanged(true);
                 }
             }
-            // 返回成功结果，阻止方块放置
             return InteractionResult.sidedSuccess(world.isClientSide);
         }
 
@@ -127,10 +126,15 @@ public class CentrifugalPumpBlock extends DirectionalKineticBlock
 
             // 通知流体网络更新
             if (world.getBlockEntity(pos) instanceof CentrifugalPumpBlockEntity pump) {
-                pump.onPipeNetworkChanged();
+                pump.onEncasedStateChanged(false);
             }
 
             return InteractionResult.SUCCESS;
+        }
+
+        // 封装状态下不允许旋转
+        if (state.getValue(ENCASED)) {
+            return InteractionResult.PASS;
         }
 
         // 正常的旋转功能

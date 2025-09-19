@@ -35,9 +35,7 @@ import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.templates.FluidTank;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import javax.annotation.Nullable;
@@ -49,14 +47,15 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
     Couple<MutableBoolean> sidesToUpdate = Couple.create(MutableBoolean::new);
     boolean pressureUpdate;
 
+    // 封装状态
+    private boolean isEncased = false;
+
     private static final int BASE_PUMP_RANGE = 20;
     private static final float SPEED_MULTIPLIER = 2.0f;
 
     private int networkCheckTimer = 0;
     private static final int CHECK_INTERVAL = 20;
     private boolean networkInitialized = false;
-
-    private Map<Direction, Boolean> lastFluidHandlerState = new HashMap<>();
 
     public enum PumpMode implements INamedIconOptions {
         PUMP_IN(AllIcons.I_REFRESH),
@@ -85,6 +84,14 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         super(typeIn, pos, state);
     }
 
+    public void onEncasedStateChanged(boolean encased) {
+        this.isEncased = encased;
+
+        // 触发更新
+        updatePressureChange();
+        notifyUpdate();
+    }
+
     public void onFluidContainerDetected(Direction dir) {
         if (level == null || level.isClientSide) return;
 
@@ -106,46 +113,7 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
             }
         }
 
-        // 触发流体传播更新
         FluidPropagator.propagateChangedPipe(level, worldPosition, getBlockState());
-    }
-
-    public void onNeighborChanged(BlockPos neighborPos) {
-        if (level == null || level.isClientSide) return;
-
-        Direction dir = null;
-        for (Direction d : Direction.values()) {
-            if (worldPosition.relative(d).equals(neighborPos)) {
-                dir = d;
-                break;
-            }
-        }
-
-        if (dir == null) return;
-        if (!isSideAccessible(dir)) return;
-
-        BlockEntity neighborBE = level.getBlockEntity(neighborPos);
-        if (neighborBE != null) {
-            LazyOptional<IFluidHandler> capability = neighborBE.getCapability(
-                    ForgeCapabilities.FLUID_HANDLER, dir.getOpposite()
-            );
-            if (!capability.isPresent()) {
-                capability = neighborBE.getCapability(ForgeCapabilities.FLUID_HANDLER, null);
-            }
-
-            if (capability.isPresent()) {
-                FluidTransportBehaviour behaviour = getBehaviour(FluidTransportBehaviour.TYPE);
-                if (behaviour != null) {
-                    PipeConnection connection = behaviour.getConnection(dir);
-                    if (connection == null) {
-                        updatePipeNetwork(dir == getFront());
-                        pressureUpdate = true;
-                    } else {
-                        connection.determineSource(level, worldPosition);
-                    }
-                }
-            }
-        }
     }
 
     @Override
@@ -154,15 +122,23 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
 
         behaviours.add(new CentrifugalPumpFluidTransferBehaviour(this));
 
-        pumpMode = new ScrollOptionBehaviour<>(
-                PumpMode.class,
-                Component.translatable("create_fluid.centrifugal_pump.pump_mode"),
-                this,
-                new CentrifugalPumpValueBox()
-        );
+        // 只在非封装状态下添加 ScrollOptionBehaviour
+        BlockState state = getBlockState();
+        boolean isCurrentlyEncased = state.hasProperty(CentrifugalPumpBlock.ENCASED)
+                && state.getValue(CentrifugalPumpBlock.ENCASED);
 
-        pumpMode.withCallback(i -> onModeChanged());
-        behaviours.add(pumpMode);
+        if (!isCurrentlyEncased) {
+            pumpMode = new ScrollOptionBehaviour<>(
+                    PumpMode.class,
+                    Component.translatable("create_fluid.centrifugal_pump.pump_mode"),
+                    this,
+                    new CentrifugalPumpValueBox()
+            );
+            pumpMode.withCallback(i -> onModeChanged());
+            behaviours.add(pumpMode);
+        }
+
+        isEncased = isCurrentlyEncased;
 
         registerAwardables(behaviours, FluidPropagator.getSharedTriggers());
         registerAwardables(behaviours, AllAdvancements.PUMP);
@@ -366,7 +342,13 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
     protected void read(CompoundTag compound, boolean clientPacket) {
         super.read(compound, clientPacket);
 
-        if (compound.contains("PumpMode") && pumpMode != null) {
+        // 读取封装状态
+        if (compound.contains("Encased")) {
+            isEncased = compound.getBoolean("Encased");
+        }
+
+        // 只在非封装状态下读取泵模式
+        if (compound.contains("PumpMode") && !isEncased && pumpMode != null) {
             try {
                 String mode = compound.getString("PumpMode");
                 PumpMode pMode = PumpMode.valueOf(mode);
@@ -390,7 +372,10 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
     protected void write(CompoundTag compound, boolean clientPacket) {
         super.write(compound, clientPacket);
 
-        if (pumpMode != null) {
+        compound.putBoolean("Encased", isEncased);
+
+        // 只在非封装状态下保存泵模式
+        if (pumpMode != null && !isEncased) {
             compound.putString("PumpMode", pumpMode.get().name());
             compound.putInt("PumpModeOrdinal", pumpMode.getValue());
         }
@@ -538,7 +523,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         BlockEntity blockEntity = world.getBlockEntity(connectedPos);
         Direction face = blockFace.getFace();
 
-        // 修复后的离心泵检测逻辑
         if (connectedState.getBlock() instanceof CentrifugalPumpBlock) {
             if (blockEntity instanceof CentrifugalPumpBlockEntity otherPump) {
                 Direction otherPrimary = CentrifugalPumpBlock.getPrimaryFluidDirection(connectedState);
@@ -635,20 +619,25 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
     }
 
     public boolean isPullingOnSide(boolean isPrimaryDirection) {
+        BlockState state = getBlockState();
+
+        // 如果是封装状态，根据旋转方向决定
+        if (state.hasProperty(CentrifugalPumpBlock.ENCASED) && state.getValue(CentrifugalPumpBlock.ENCASED)) {
+            // 逆时针（负速度）= 泵入，顺时针（正速度）= 泵出
+            boolean pumpIn = getSpeed() < 0;
+            return pumpIn ? isPrimaryDirection : !isPrimaryDirection;
+        }
+
+        // 非封装状态，使用手动控制
         if (pumpMode == null) return !isPrimaryDirection;
 
         boolean pumpIn = pumpMode.get() == PumpMode.PUMP_IN;
         return pumpIn ? isPrimaryDirection : !isPrimaryDirection;
     }
-
-    class CentrifugalPumpFluidTransferBehaviour extends FluidTransportBehaviour implements IFluidHandler {
-
-        private FluidTank internalTank;
-        private static final int TANK_CAPACITY = 2000;
+    class CentrifugalPumpFluidTransferBehaviour extends FluidTransportBehaviour {
 
         public CentrifugalPumpFluidTransferBehaviour(SmartBlockEntity be) {
             super(be);
-            this.internalTank = new FluidTank(TANK_CAPACITY);
         }
 
         @Override
@@ -662,53 +651,14 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
 
             if (primary == null || secondary == null) return;
 
-            validateConnections(primary, secondary);
             updatePressures(primary, secondary);
-            performPumping(primary, secondary);
-        }
-
-        private void validateConnections(Direction primary, Direction secondary) {
-            validateConnection(primary);
-            validateConnection(secondary);
-        }
-
-        private void validateConnection(Direction dir) {
-            PipeConnection connection = interfaces.get(dir);
-            if (connection != null) {
-                BlockPos targetPos = worldPosition.relative(dir);
-                BlockState targetState = level.getBlockState(targetPos);
-
-                boolean needsUpdate = false;
-
-                if (FluidPipeBlock.isPipe(targetState)) {
-                    PipeConnectionAccessor accessor = (PipeConnectionAccessor) connection;
-                    Optional<FlowSource> currentSource = accessor.getSource();
-
-                    if (!currentSource.isPresent() || !(currentSource.get() instanceof FlowSource.OtherPipe)) {
-                        needsUpdate = true;
-                    }
-                }
-                else if (FluidPropagator.isOpenEnd(level, worldPosition, dir)) {
-                    PipeConnectionAccessor accessor = (PipeConnectionAccessor) connection;
-                    Optional<FlowSource> currentSource = accessor.getSource();
-
-                    if (!currentSource.isPresent() || !(currentSource.get() instanceof OpenEndedPipe)) {
-                        needsUpdate = true;
-                    }
-                }
-
-                if (needsUpdate) {
-                    PipeConnectionAccessor accessor = (PipeConnectionAccessor) connection;
-                    accessor.setFlow(Optional.empty());
-                    connection.determineSource(level, worldPosition);
-                }
-            }
         }
 
         private void updatePressures(Direction primary, Direction secondary) {
             for (Map.Entry<Direction, PipeConnection> entry : interfaces.entrySet()) {
                 Direction dir = entry.getKey();
-                Couple<Float> pressure = entry.getValue().getPressure();
+                PipeConnectionAccessor accessor = (PipeConnectionAccessor) entry.getValue();
+                Couple<Float> pressure = accessor.getPressure();
 
                 float pumpPressure = Math.abs(CentrifugalPumpBlockEntity.this.getSpeed()) * SPEED_MULTIPLIER;
 
@@ -727,162 +677,9 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
             }
         }
 
-        private void performPumping(Direction primary, Direction secondary) {
-            boolean pullFromPrimary = CentrifugalPumpBlockEntity.this.isPullingOnSide(true);
-
-            Direction inputDir = pullFromPrimary ? primary : secondary;
-            Direction outputDir = pullFromPrimary ? secondary : primary;
-
-            int transferRate = (int)(Math.abs(CentrifugalPumpBlockEntity.this.getSpeed()) * 50);
-
-            extractFromInput(inputDir, transferRate);
-            insertToOutput(outputDir, transferRate);
-        }
-
-        private void extractFromInput(Direction inputDir, int maxAmount) {
-            BlockPos inputPos = worldPosition.relative(inputDir);
-            BlockEntity be = level.getBlockEntity(inputPos);
-
-            if (be != null) {
-                LazyOptional<IFluidHandler> capability = be.getCapability(
-                        ForgeCapabilities.FLUID_HANDLER,
-                        inputDir.getOpposite()
-                );
-
-                if (!capability.isPresent()) {
-                    capability = be.getCapability(ForgeCapabilities.FLUID_HANDLER, null);
-                }
-
-                if (capability.isPresent()) {
-                    capability.ifPresent(handler -> {
-                        int spaceAvailable = internalTank.getSpace();
-                        int toExtract = Math.min(maxAmount, spaceAvailable);
-
-                        FluidStack simulated = handler.drain(toExtract, IFluidHandler.FluidAction.SIMULATE);
-                        if (!simulated.isEmpty()) {
-                            if (internalTank.isEmpty() || internalTank.getFluid().isFluidEqual(simulated)) {
-                                FluidStack extracted = handler.drain(toExtract, IFluidHandler.FluidAction.EXECUTE);
-                                if (!extracted.isEmpty()) {
-                                    internalTank.fill(extracted, IFluidHandler.FluidAction.EXECUTE);
-
-                                    BlockState targetState = level.getBlockState(inputPos);
-                                    if (FluidPipeBlock.isPipe(targetState) ||
-                                            FluidPropagator.isOpenEnd(level, worldPosition, inputDir)) {
-                                        updateFlowAnimation(inputDir, extracted, true);
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }
-            }
-        }
-
-        private void insertToOutput(Direction outputDir, int maxAmount) {
-            if (internalTank.isEmpty()) return;
-
-            BlockPos outputPos = worldPosition.relative(outputDir);
-            BlockEntity be = level.getBlockEntity(outputPos);
-
-            if (be != null) {
-                LazyOptional<IFluidHandler> capability = be.getCapability(
-                        ForgeCapabilities.FLUID_HANDLER,
-                        outputDir.getOpposite()
-                );
-
-                if (!capability.isPresent()) {
-                    capability = be.getCapability(ForgeCapabilities.FLUID_HANDLER, null);
-                }
-
-                if (capability.isPresent()) {
-                    capability.ifPresent(handler -> {
-                        FluidStack toOutput = internalTank.getFluid().copy();
-                        toOutput.setAmount(Math.min(maxAmount, toOutput.getAmount()));
-
-                        int inserted = handler.fill(toOutput, IFluidHandler.FluidAction.EXECUTE);
-                        if (inserted > 0) {
-                            internalTank.drain(inserted, IFluidHandler.FluidAction.EXECUTE);
-
-                            FluidStack outputted = toOutput.copy();
-                            outputted.setAmount(inserted);
-
-                            BlockState targetState = level.getBlockState(outputPos);
-                            if (FluidPipeBlock.isPipe(targetState) ||
-                                    FluidPropagator.isOpenEnd(level, worldPosition, outputDir)) {
-                                updateFlowAnimation(outputDir, outputted, false);
-                            }
-                        }
-                    });
-                }
-            }
-        }
-
-        private void updateFlowAnimation(Direction dir, FluidStack fluid, boolean inbound) {
-            PipeConnection connection = interfaces.get(dir);
-            if (connection != null) {
-                PipeConnectionAccessor accessor = (PipeConnectionAccessor) connection;
-
-                if (!connection.hasFlow() || !accessor.getFlow().get().fluid.isFluidEqual(fluid)) {
-                    PipeConnection.Flow newFlow = connection.new Flow(inbound, fluid);
-                    accessor.setFlow(Optional.of(newFlow));
-                }
-
-                connection.tickFlowProgress(level, worldPosition);
-            }
-        }
-
         @Override
         public boolean canHaveFlowToward(BlockState state, Direction direction) {
             return CentrifugalPumpBlockEntity.this.isSideAccessible(direction);
-        }
-
-        @Override
-        public int getTanks() {
-            return 1;
-        }
-
-        @Override
-        public FluidStack getFluidInTank(int tank) {
-            return internalTank.getFluid();
-        }
-
-        @Override
-        public int getTankCapacity(int tank) {
-            return TANK_CAPACITY;
-        }
-
-        @Override
-        public boolean isFluidValid(int tank, FluidStack stack) {
-            return true;
-        }
-
-        @Override
-        public int fill(FluidStack resource, IFluidHandler.FluidAction action) {
-            return 0;
-        }
-
-        @Override
-        public FluidStack drain(FluidStack resource, IFluidHandler.FluidAction action) {
-            return FluidStack.EMPTY;
-        }
-
-        @Override
-        public FluidStack drain(int maxDrain, IFluidHandler.FluidAction action) {
-            return FluidStack.EMPTY;
-        }
-
-        @Override
-        public void write(CompoundTag compound, boolean clientPacket) {
-            super.write(compound, clientPacket);
-            compound.put("Tank", internalTank.writeToNBT(new CompoundTag()));
-        }
-
-        @Override
-        public void read(CompoundTag compound, boolean clientPacket) {
-            super.read(compound, clientPacket);
-            if (compound.contains("Tank")) {
-                internalTank.readFromNBT(compound.getCompound("Tank"));
-            }
         }
     }
 
@@ -890,6 +687,11 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
 
         @Override
         protected boolean isSideActive(BlockState state, Direction side) {
+            // 封装状态下不显示ValueBox
+            if (state.hasProperty(CentrifugalPumpBlock.ENCASED) && state.getValue(CentrifugalPumpBlock.ENCASED)) {
+                return false;
+            }
+
             if (!(state.getBlock() instanceof CentrifugalPumpBlock)) {
                 return false;
             }

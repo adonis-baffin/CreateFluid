@@ -2,6 +2,7 @@ package com.adonis.fluid.mixin.accessor;
 
 import com.simibubi.create.content.fluids.FlowSource;
 import com.simibubi.create.content.fluids.PipeConnection;
+import net.createmod.catnip.data.Couple;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
@@ -21,4 +22,7 @@ public interface PipeConnectionAccessor {
 
     @Accessor("flow")
     void setFlow(Optional<PipeConnection.Flow> flow);
+
+    @Accessor("pressure")
+    Couple<Float> getPressure();
 }

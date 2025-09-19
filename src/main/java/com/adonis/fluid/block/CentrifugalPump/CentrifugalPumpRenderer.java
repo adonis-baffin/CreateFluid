@@ -27,12 +27,19 @@ public class CentrifugalPumpRenderer extends KineticBlockEntityRenderer<Centrifu
     protected void renderSafe(CentrifugalPumpBlockEntity be, float partialTicks, PoseStack ms,
                               MultiBufferSource buffer, int light, int overlay) {
 
-        // 调用父类方法处理标准渲染（包括单个面板）
+        // 调用父类方法处理标准渲染（包括第一个面板）
         super.renderSafe(be, partialTicks, ms, buffer, light, overlay);
 
-        // 手动渲染第二个面板
-        if (be.pumpMode != null && be.pumpMode.isActive()) {
-            BlockState state = be.getBlockState();
+        BlockState state = be.getBlockState();
+
+        // 检查是否是封装状态，如果是则不渲染第二个面板
+        if (state.hasProperty(CentrifugalPumpBlock.ENCASED) && state.getValue(CentrifugalPumpBlock.ENCASED)) {
+            return; // 封装状态下不渲染额外的UI元素
+        }
+
+        // 只在非封装状态下渲染第二个面板
+        // pumpMode 只在非封装状态下存在
+        if (be.pumpMode != null) {
             AttachFace attachFace = state.getValue(CentrifugalPumpBlock.FACE);
             Direction facing = state.getValue(CentrifugalPumpBlock.FACING);
 
@@ -66,6 +73,9 @@ public class CentrifugalPumpRenderer extends KineticBlockEntityRenderer<Centrifu
             if (secondPanelOffset != null) {
                 ms.pushPose();
                 ms.translate(secondPanelOffset.x, secondPanelOffset.y, secondPanelOffset.z);
+
+                // 这里可以添加额外的渲染代码，如果需要的话
+                // 例如渲染一个指示当前模式的图标等
 
                 ms.popPose();
             }
