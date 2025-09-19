@@ -13,8 +13,10 @@
     "BeltInventoryMixin",
     "ArmPlacementPacketMixin",
     "FluidPropagatorMixin",
-    "FluidPropagatorCompleteMixin",
     "FluidPipeBlockMixin",
+    "PipeConnectionMixin",
+    "FluidNetworkMixin",
+    "FluidTransportBehaviourMixin",
     "VanillaFluidTargetsMixin",
     "FluidUtilMixin"
   ],

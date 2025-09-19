@@ -9,15 +9,16 @@ import java.util.Optional;
 
 @Mixin(value = PipeConnection.class, remap = false)
 public interface PipeConnectionAccessor {
-    @Accessor("flow")
-    void setFlow(Optional<PipeConnection.Flow> flow);
-
-    @Accessor("flow")
-    Optional<PipeConnection.Flow> getFlow();
 
     @Accessor("source")
     Optional<FlowSource> getSource();
 
     @Accessor("source")
     void setSource(Optional<FlowSource> source);
+
+    @Accessor("flow")
+    Optional<PipeConnection.Flow> getFlow();
+
+    @Accessor("flow")
+    void setFlow(Optional<PipeConnection.Flow> flow);
 }
