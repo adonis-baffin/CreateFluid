@@ -1,10 +1,12 @@
 package com.adonis.fluid.block.CopperFaucet;
 
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
-import com.simibubi.create.AllItems;
 import com.simibubi.create.foundation.block.IBE;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -22,6 +24,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
@@ -30,7 +33,6 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-
 import com.simibubi.create.content.fluids.transfer.GenericItemFilling;
 
 import javax.annotation.Nullable;
@@ -38,22 +40,23 @@ import javax.annotation.Nullable;
 public class CopperFaucetBlock extends HorizontalDirectionalBlock implements IBE<CopperFaucetBlockEntity>, IWrenchable {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
-    public static final BooleanProperty OPEN = net.minecraft.world.level.block.state.properties.BlockStateProperties.OPEN;
+    public static final BooleanProperty OPEN = BlockStateProperties.OPEN;
+    public static final BooleanProperty POWERED = BlockStateProperties.POWERED;  // 使用正确的导入
 
-    // 根据模型定义碰撞箱
-// NORTH: 龙头朝向北方（贴在南边的方块上）
-    private static final VoxelShape NORTH_OUTLET = Block.box(3, 3, 15, 13, 12.9, 16);  // 出水口改为10x9.9
-    private static final VoxelShape NORTH_PIPE = Block.box(6, 6, 6, 10, 10, 15);     // 主管道（不变）
-    private static final VoxelShape NORTH_DROP = Block.box(6, 4, 6, 10, 6, 10);      // 底部滴水部分（不变）
-    private static final VoxelShape NORTH_BASE = Block.box(5, 5, 11, 11, 11, 13);    // 连接基座（不变）
-    private static final VoxelShape NORTH_VALVE_TOP = Block.box(5, 13, 9, 11, 14, 15); // 阀门顶盖
-    private static final VoxelShape NORTH_VALVE_HANDLE = Block.box(7, 11, 11, 9, 13, 13); // 阀门把手
+    // [保持原有的VoxelShape定义不变...]
+    // NORTH shapes
+    private static final VoxelShape NORTH_OUTLET = Block.box(3, 3, 15, 13, 12.9, 16);
+    private static final VoxelShape NORTH_PIPE = Block.box(6, 6, 6, 10, 10, 15);
+    private static final VoxelShape NORTH_DROP = Block.box(6, 4, 6, 10, 6, 10);
+    private static final VoxelShape NORTH_BASE = Block.box(5, 5, 11, 11, 11, 13);
+    private static final VoxelShape NORTH_VALVE_TOP = Block.box(5, 13, 9, 11, 14, 15);
+    private static final VoxelShape NORTH_VALVE_HANDLE = Block.box(7, 11, 11, 9, 13, 13);
     private static final VoxelShape NORTH_SHAPE = Shapes.or(
             NORTH_OUTLET, NORTH_PIPE, NORTH_DROP, NORTH_BASE, NORTH_VALVE_TOP, NORTH_VALVE_HANDLE
     );
 
-    // SOUTH: 龙头朝向南方（贴在北边的方块上）
-    private static final VoxelShape SOUTH_OUTLET = Block.box(3, 3, 0, 13, 12.9, 1);  // 出水口改为10x9.9
+    // [其他方向的shapes保持不变...]
+    private static final VoxelShape SOUTH_OUTLET = Block.box(3, 3, 0, 13, 12.9, 1);
     private static final VoxelShape SOUTH_PIPE = Block.box(6, 6, 1, 10, 10, 10);
     private static final VoxelShape SOUTH_DROP = Block.box(6, 4, 6, 10, 6, 10);
     private static final VoxelShape SOUTH_BASE = Block.box(5, 5, 3, 11, 11, 5);
@@ -63,8 +66,7 @@ public class CopperFaucetBlock extends HorizontalDirectionalBlock implements IBE
             SOUTH_OUTLET, SOUTH_PIPE, SOUTH_DROP, SOUTH_BASE, SOUTH_VALVE_TOP, SOUTH_VALVE_HANDLE
     );
 
-    // EAST: 龙头朝向东方（贴在西边的方块上）
-    private static final VoxelShape EAST_OUTLET = Block.box(0, 3, 3, 1, 12.9, 13);  // 出水口改为10x9.9
+    private static final VoxelShape EAST_OUTLET = Block.box(0, 3, 3, 1, 12.9, 13);
     private static final VoxelShape EAST_PIPE = Block.box(1, 6, 6, 10, 10, 10);
     private static final VoxelShape EAST_DROP = Block.box(6, 4, 6, 10, 6, 10);
     private static final VoxelShape EAST_BASE = Block.box(3, 5, 5, 5, 11, 11);
@@ -74,8 +76,7 @@ public class CopperFaucetBlock extends HorizontalDirectionalBlock implements IBE
             EAST_OUTLET, EAST_PIPE, EAST_DROP, EAST_BASE, EAST_VALVE_TOP, EAST_VALVE_HANDLE
     );
 
-    // WEST: 龙头朝向西方（贴在东边的方块上）
-    private static final VoxelShape WEST_OUTLET = Block.box(15, 3, 3, 16, 12.9, 13);  // 出水口改为10x9.9
+    private static final VoxelShape WEST_OUTLET = Block.box(15, 3, 3, 16, 12.9, 13);
     private static final VoxelShape WEST_PIPE = Block.box(6, 6, 6, 15, 10, 10);
     private static final VoxelShape WEST_DROP = Block.box(6, 4, 6, 10, 6, 10);
     private static final VoxelShape WEST_BASE = Block.box(11, 5, 5, 13, 11, 11);
@@ -89,12 +90,13 @@ public class CopperFaucetBlock extends HorizontalDirectionalBlock implements IBE
         super(properties);
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(FACING, Direction.NORTH)
-                .setValue(OPEN, false));
+                .setValue(OPEN, false)
+                .setValue(POWERED, false));  // 添加POWERED的默认值
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING, OPEN);
+        builder.add(FACING, OPEN, POWERED);  // 添加POWERED属性
     }
 
     @Override
@@ -113,20 +115,24 @@ public class CopperFaucetBlock extends HorizontalDirectionalBlock implements IBE
         return getShape(state, level, pos, context);
     }
 
-    // 辅助方法：检查方块是否有流体存储能力
     private boolean hasFluidCapability(LevelReader level, BlockPos pos, Direction fromDirection) {
+        BlockState blockState = level.getBlockState(pos);
+
+        // 可以放在任何树叶上
+        if (blockState.is(BlockTags.LEAVES)) {
+            return true;
+        }
+
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity == null) {
             return false;
         }
 
-        // 首先尝试从指定方向获取流体能力
         IFluidHandler capability = blockEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, fromDirection).orElse(null);
         if (capability != null && capability.getTanks() > 0) {
             return true;
         }
 
-        // 如果没有，尝试获取默认的流体能力
         capability = blockEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, null).orElse(null);
         return capability != null && capability.getTanks() > 0;
     }
@@ -137,28 +143,40 @@ public class CopperFaucetBlock extends HorizontalDirectionalBlock implements IBE
         Direction direction = context.getHorizontalDirection().getOpposite();
         BlockPos blockpos = context.getClickedPos();
         BlockPos attachedPos = blockpos.relative(direction.getOpposite());
+        Level level = context.getLevel();
 
-        // 检查是否可以贴在这个方向（需要有流体存储能力）
         if (hasFluidCapability(context.getLevel(), attachedPos, direction)) {
-            return this.defaultBlockState().setValue(FACING, direction);
+            boolean powered = level.hasNeighborSignal(blockpos);
+            return this.defaultBlockState()
+                    .setValue(FACING, direction)
+                    .setValue(POWERED, powered)
+                    .setValue(OPEN, powered);
         }
 
-        // 如果不能直接贴，尝试其他水平方向
         for (Direction dir : Direction.Plane.HORIZONTAL) {
             BlockPos testPos = blockpos.relative(dir.getOpposite());
             if (hasFluidCapability(context.getLevel(), testPos, dir)) {
-                return this.defaultBlockState().setValue(FACING, dir);
+                boolean powered = level.hasNeighborSignal(blockpos);
+                return this.defaultBlockState()
+                        .setValue(FACING, dir)
+                        .setValue(POWERED, powered)
+                        .setValue(OPEN, powered);
             }
         }
 
-        return null; // 如果周围都没有有流体存储能力的方块，则不能放置
+        return null;
     }
 
     @Override
     public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
         Direction direction = state.getValue(FACING);
         BlockPos attachedPos = pos.relative(direction.getOpposite());
-        // 需要背后的方块有流体存储能力才能存活
+        BlockState attachedState = level.getBlockState(attachedPos);
+
+        if (attachedState.is(BlockTags.LEAVES)) {
+            return true;
+        }
+
         return hasFluidCapability(level, attachedPos, direction);
     }
 
@@ -172,13 +190,56 @@ public class CopperFaucetBlock extends HorizontalDirectionalBlock implements IBE
     }
 
     @Override
-    public boolean propagatesSkylightDown(BlockState state, BlockGetter reader, BlockPos pos) {
-        return true;
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block,
+                                BlockPos fromPos, boolean isMoving) {
+        if (!level.isClientSide) {
+            Direction facing = state.getValue(FACING);
+            BlockPos attachedPos = pos.relative(facing.getOpposite());
+
+            if (fromPos.equals(attachedPos) && !canSurvive(state, level, pos)) {
+                level.destroyBlock(pos, true);
+                return;
+            }
+
+            if (!level.getBlockTicks().willTickThisTick(pos, this)) {
+                level.scheduleTick(pos, this, 1);
+            }
+
+            if (fromPos.equals(pos.below()) && state.getValue(OPEN)) {
+                BlockEntity be = level.getBlockEntity(pos);
+                if (be instanceof CopperFaucetBlockEntity faucetBE) {
+                    faucetBE.onTargetChanged();
+                }
+            }
+        }
     }
 
     @Override
-    public float getShadeBrightness(BlockState state, BlockGetter level, BlockPos pos) {
-        return 1.0F;
+    public void tick(BlockState state, ServerLevel worldIn, BlockPos pos, RandomSource random) {
+        boolean previouslyPowered = state.getValue(POWERED);
+        boolean currentlyPowered = worldIn.hasNeighborSignal(pos);
+
+        if (previouslyPowered != currentlyPowered) {
+            BlockState newState = state.setValue(POWERED, currentlyPowered);
+
+            if (currentlyPowered) {
+                if (!state.getValue(OPEN)) {
+                    newState = newState.setValue(OPEN, true);
+                    worldIn.playSound(null, pos,
+                            net.minecraft.sounds.SoundEvents.IRON_TRAPDOOR_OPEN,
+                            net.minecraft.sounds.SoundSource.BLOCKS, 0.5f, 1.0f);
+                }
+            } else {
+                if (state.getValue(OPEN) && previouslyPowered) {
+                    newState = newState.setValue(OPEN, false);
+                    worldIn.playSound(null, pos,
+                            net.minecraft.sounds.SoundEvents.IRON_TRAPDOOR_CLOSE,
+                            net.minecraft.sounds.SoundSource.BLOCKS, 0.5f, 1.0f);
+                }
+            }
+
+            worldIn.setBlock(pos, newState, 2);
+        }
     }
 
     @Override
@@ -187,20 +248,22 @@ public class CopperFaucetBlock extends HorizontalDirectionalBlock implements IBE
         if (level.isClientSide())
             return InteractionResult.SUCCESS;
 
-        ItemStack heldItem = player.getItemInHand(hand);
+        // 如果被红石信号锁定，播放声音提示但不切换状态
+        if (state.getValue(POWERED)) {
+            level.playSound(null, pos,
+                    net.minecraft.sounds.SoundEvents.IRON_TRAPDOOR_CLOSE,
+                    net.minecraft.sounds.SoundSource.BLOCKS, 0.3f, 2.0f);
+            return InteractionResult.SUCCESS;
+        }
 
-        // 检查是否应该阻止开关
-        // 只有当物品可以被填充，且不是桶，且下方有合适的目标时，才不允许开关
+        ItemStack heldItem = player.getItemInHand(hand);
         boolean shouldPreventToggle = false;
 
         if (!heldItem.isEmpty() && GenericItemFilling.canItemBeFilled(level, heldItem)) {
-            // 检查是否是桶
             if (!(heldItem.getItem() instanceof net.minecraft.world.item.BucketItem)) {
-                // 检查下方是否有可以接收填充的目标（比如置物台）
                 BlockPos belowPos = pos.below();
                 BlockEntity belowEntity = level.getBlockEntity(belowPos);
                 if (belowEntity != null && isDepot(belowEntity)) {
-                    // 只有在下方有置物台时，才阻止开关（让物品被填充）
                     shouldPreventToggle = true;
                 }
             }
@@ -210,20 +273,19 @@ public class CopperFaucetBlock extends HorizontalDirectionalBlock implements IBE
             return InteractionResult.PASS;
         }
 
-        // 其他所有情况都允许开关
         toggleFaucet(state, level, pos);
         return InteractionResult.SUCCESS;
     }
 
-    // 需要添加这个辅助方法到 CopperFaucetBlock 类中
-    private boolean isDepot(BlockEntity entity) {
-        return entity.getClass().getSimpleName().toLowerCase().contains("depot");
-    }
-
     @Override
     public InteractionResult onWrenched(BlockState state, UseOnContext context) {
-        // 扳手右键可以开关
         if (!context.getLevel().isClientSide()) {
+            if (state.getValue(POWERED)) {
+                context.getLevel().playSound(null, context.getClickedPos(),
+                        net.minecraft.sounds.SoundEvents.IRON_TRAPDOOR_CLOSE,
+                        net.minecraft.sounds.SoundSource.BLOCKS, 0.3f, 2.0f);
+                return InteractionResult.SUCCESS;
+            }
             toggleFaucet(state, context.getLevel(), context.getClickedPos());
         }
         return InteractionResult.SUCCESS;
@@ -233,11 +295,24 @@ public class CopperFaucetBlock extends HorizontalDirectionalBlock implements IBE
         boolean isOpen = state.getValue(OPEN);
         level.setBlockAndUpdate(pos, state.setValue(OPEN, !isOpen));
 
-        // 播放开关声音
         level.playSound(null, pos, isOpen ?
                         net.minecraft.sounds.SoundEvents.IRON_TRAPDOOR_CLOSE :
                         net.minecraft.sounds.SoundEvents.IRON_TRAPDOOR_OPEN,
                 net.minecraft.sounds.SoundSource.BLOCKS, 0.5f, 1.0f);
+    }
+
+    private boolean isDepot(BlockEntity entity) {
+        return entity.getClass().getSimpleName().toLowerCase().contains("depot");
+    }
+
+    @Override
+    public boolean propagatesSkylightDown(BlockState state, BlockGetter reader, BlockPos pos) {
+        return true;
+    }
+
+    @Override
+    public float getShadeBrightness(BlockState state, BlockGetter level, BlockPos pos) {
+        return 1.0F;
     }
 
     @Override
