@@ -172,20 +172,21 @@ public class CFBlock {
                         });
             })
             .transform(CreateFluid.STRESS_CONFIG.setImpact(8.0))
-            .onRegister(CreateRegistrate.connectedTextures(() -> new CentrifugalPumpCTBehaviour()))
-            .onRegister(CreateRegistrate.casingConnectivity((block, cc) ->
-                    cc.make(block, AllSpriteShifts.COPPER_CASING, (state, face) -> {
-                        if (!state.getValue(CentrifugalPumpBlock.ENCASED)) {
-                            return false;
-                        }
-
-                        Direction primary = CentrifugalPumpBlock.getPrimaryFluidDirection(state);
-                        Direction secondary = CentrifugalPumpBlock.getSecondaryFluidDirection(state);
-                        Direction shaft = CentrifugalPumpBlock.getShaftDirection(state);
-
-                        return face != primary && face != secondary && face != shaft;
-                    })
-            ))
+            // 连接纹理功能已禁用 - 如需重新启用，取消下面的注释
+            // .onRegister(CreateRegistrate.connectedTextures(() -> new CentrifugalPumpCTBehaviour()))
+            // .onRegister(CreateRegistrate.casingConnectivity((block, cc) ->
+            //         cc.make(block, AllSpriteShifts.COPPER_CASING, (state, face) -> {
+            //             if (!state.getValue(CentrifugalPumpBlock.ENCASED)) {
+            //                 return false;
+            //             }
+            //
+            //             Direction primary = CentrifugalPumpBlock.getPrimaryFluidDirection(state);
+            //             Direction secondary = CentrifugalPumpBlock.getSecondaryFluidDirection(state);
+            //             Direction shaft = CentrifugalPumpBlock.getShaftDirection(state);
+            //
+            //             return face != primary && face != secondary && face != shaft;
+            //         })
+            // ))
             .item()
             .transform(ModelGen.customItemModel())
             .register();
