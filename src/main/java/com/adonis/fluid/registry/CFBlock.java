@@ -4,6 +4,7 @@ import static com.adonis.fluid.CreateFluid.REGISTRATE;
 import static com.simibubi.create.foundation.data.TagGen.axeOrPickaxe;
 
 import com.adonis.fluid.CreateFluid;
+import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpCTBehaviour;
 import com.adonis.fluid.block.CopperFaucet.CopperFaucetBlock;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlock;
 import com.adonis.fluid.block.Pipette.PipetteBlock;
@@ -11,6 +12,8 @@ import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlock;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlock;
 import com.adonis.fluid.block.Aqueduct.AqueductBlock;
 import com.adonis.fluid.item.PipetteItem;
+import com.simibubi.create.AllSpriteShifts;
+import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.simibubi.create.foundation.data.ModelGen;
 import com.simibubi.create.foundation.data.SharedProperties;
 import com.simibubi.create.foundation.data.TagGen;
@@ -21,8 +24,11 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraftforge.client.model.generators.ConfiguredModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CFBlock {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CFBlock.class);
 
     // 流体接口注册
     public static final BlockEntry<FluidInterfaceBlock> FLUID_INTERFACE = REGISTRATE
@@ -115,7 +121,6 @@ public class CFBlock {
             .transform(ModelGen.customItemModel())
             .register();
 
-    // 离心泵注册
     public static final BlockEntry<CentrifugalPumpBlock> CENTRIFUGAL_PUMP = REGISTRATE
             .block("centrifugal_pump", CentrifugalPumpBlock::new)
             .initialProperties(SharedProperties::copperMetal)
@@ -129,64 +134,58 @@ public class CFBlock {
                         .forAllStates(state -> {
                             Direction facing = state.getValue(CentrifugalPumpBlock.FACING);
                             AttachFace face = state.getValue(CentrifugalPumpBlock.FACE);
+                            boolean encased = state.getValue(CentrifugalPumpBlock.ENCASED);
 
                             ConfiguredModel.Builder<?> builder = ConfiguredModel.builder();
+                            String modelPrefix = encased ? "encased_pump" : "block";
 
                             if (face == AttachFace.WALL) {
-                                builder.modelFile(prov.models().getExistingFile(prov.modLoc("block/centrifugal_pump/block_vertical")));
+                                builder.modelFile(prov.models().getExistingFile(
+                                        prov.modLoc("block/centrifugal_pump/" + modelPrefix + "_vertical")));
                                 switch (facing) {
-                                    case NORTH:
-                                        builder.rotationY(0);
-                                        break;
-                                    case SOUTH:
-                                        builder.rotationY(180);
-                                        break;
-                                    case WEST:
-                                        builder.rotationY(270);
-                                        break;
-                                    case EAST:
-                                        builder.rotationY(90);
-                                        break;
+                                    case NORTH: builder.rotationY(0); break;
+                                    case SOUTH: builder.rotationY(180); break;
+                                    case WEST: builder.rotationY(270); break;
+                                    case EAST: builder.rotationY(90); break;
                                 }
                             } else if (face == AttachFace.CEILING) {
-                                builder.modelFile(prov.models().getExistingFile(prov.modLoc("block/centrifugal_pump/block")));
+                                builder.modelFile(prov.models().getExistingFile(
+                                        prov.modLoc("block/centrifugal_pump/" + modelPrefix)));
                                 builder.rotationX(180);
                                 switch (facing) {
-                                    case NORTH:
-                                        builder.rotationY(0);
-                                        break;
-                                    case SOUTH:
-                                        builder.rotationY(180);
-                                        break;
-                                    case WEST:
-                                        builder.rotationY(270);
-                                        break;
-                                    case EAST:
-                                        builder.rotationY(90);
-                                        break;
+                                    case NORTH: builder.rotationY(180); break;
+                                    case SOUTH: builder.rotationY(0); break;
+                                    case WEST: builder.rotationY(90); break;
+                                    case EAST: builder.rotationY(270); break;
                                 }
                             } else { // AttachFace.FLOOR
-                                builder.modelFile(prov.models().getExistingFile(prov.modLoc("block/centrifugal_pump/block")));
+                                builder.modelFile(prov.models().getExistingFile(
+                                        prov.modLoc("block/centrifugal_pump/" + modelPrefix)));
                                 switch (facing) {
-                                    case NORTH:
-                                        builder.rotationY(0);
-                                        break;
-                                    case SOUTH:
-                                        builder.rotationY(180);
-                                        break;
-                                    case WEST:
-                                        builder.rotationY(270);
-                                        break;
-                                    case EAST:
-                                        builder.rotationY(90);
-                                        break;
+                                    case NORTH: builder.rotationY(0); break;
+                                    case SOUTH: builder.rotationY(180); break;
+                                    case WEST: builder.rotationY(270); break;
+                                    case EAST: builder.rotationY(90); break;
                                 }
                             }
-
                             return builder.build();
                         });
             })
             .transform(CreateFluid.STRESS_CONFIG.setImpact(8.0))
+            .onRegister(CreateRegistrate.connectedTextures(() -> new CentrifugalPumpCTBehaviour()))
+            .onRegister(CreateRegistrate.casingConnectivity((block, cc) ->
+                    cc.make(block, AllSpriteShifts.COPPER_CASING, (state, face) -> {
+                        if (!state.getValue(CentrifugalPumpBlock.ENCASED)) {
+                            return false;
+                        }
+
+                        Direction primary = CentrifugalPumpBlock.getPrimaryFluidDirection(state);
+                        Direction secondary = CentrifugalPumpBlock.getSecondaryFluidDirection(state);
+                        Direction shaft = CentrifugalPumpBlock.getShaftDirection(state);
+
+                        return face != primary && face != secondary && face != shaft;
+                    })
+            ))
             .item()
             .transform(ModelGen.customItemModel())
             .register();

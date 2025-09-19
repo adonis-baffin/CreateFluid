@@ -1,11 +1,11 @@
 package com.adonis.fluid.registry;
 
 import com.adonis.fluid.CreateFluid;
+import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpRenderer;
 import com.adonis.fluid.block.Pipette.PipetteRenderer;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceRenderer;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceRenderer;
 import com.adonis.fluid.block.Aqueduct.AqueductRenderer;
-import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpRenderer;
 import com.adonis.fluid.block.CopperFaucet.CopperFaucetRenderer;
 import com.adonis.fluid.handler.PipetteFluidInteractionPointHandler;
 import com.adonis.fluid.item.BatonItemPropertyFunction;
@@ -27,7 +27,6 @@ public class CFClient {
 
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
-        // 初始化客户端部分模型
         CFPartialModels.init();
 
         event.enqueueWork(() -> {
@@ -50,7 +49,7 @@ public class CFClient {
             // 注册 Ponder 插件
             PonderIndex.addPlugin(new CFPonderPlugin());
 
-            // 注册指挥棒的属性覆盖（如果有的话）
+            // 注册指挥棒的属性覆盖
             if (CFItem.BATON != null) {
                 ItemProperties.register(CFItem.BATON.get(),
                         new ResourceLocation(CreateFluid.MODID, "selection_mode"),
@@ -59,7 +58,6 @@ public class CFClient {
         });
     }
 
-    // 客户端 Forge 事件总线的内部类
     @Mod.EventBusSubscriber(modid = CreateFluid.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
     public static class ClientForgeEvents {
 
