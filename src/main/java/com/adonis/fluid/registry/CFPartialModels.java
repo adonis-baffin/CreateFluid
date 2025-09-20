@@ -4,44 +4,137 @@ import com.adonis.fluid.CreateFluid;
 import com.simibubi.create.AllPartialModels;
 import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 import net.minecraft.resources.ResourceLocation;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class CFPartialModels {
-    // 齿轮和底座继续使用Create的模型
-    public static final PartialModel PIPETTE_COG = AllPartialModels.ARM_COG;
+    private static final Logger LOGGER = LogManager.getLogger();
+    private static boolean initialized = false;
+    private static boolean useFallback = false;
 
-    // 使用自定义的移液器模型
-    public static final PartialModel PIPETTE_BASE = createPartialModel("pipette/base");
-    public static final PartialModel PIPETTE_LOWER_ARM = createPartialModel("pipette/lower_arm");
-    public static final PartialModel PIPETTE_UPPER_ARM = createPartialModel("pipette/upper_arm");
+    // 声明模型字段
+    public static PartialModel PIPETTE_COG;
+    public static PartialModel PIPETTE_BASE;
+    public static PartialModel PIPETTE_LOWER_ARM;
+    public static PartialModel PIPETTE_UPPER_ARM;
+    public static PartialModel PIPETTE_HEAD_EMPTY;
+    public static PartialModel PIPETTE_HEAD_250;
+    public static PartialModel PIPETTE_HEAD_500;
+    public static PartialModel PIPETTE_HEAD_750;
+    public static PartialModel PIPETTE_HEAD_1000;
+    public static PartialModel PIPETTE_HEAD;
 
-    // 不同流体量的头部模型
-    public static final PartialModel PIPETTE_HEAD_EMPTY = createPartialModel("pipette/head_empty");
-    public static final PartialModel PIPETTE_HEAD_250 = createPartialModel("pipette/head_250");
-    public static final PartialModel PIPETTE_HEAD_500 = createPartialModel("pipette/head_500");
-    public static final PartialModel PIPETTE_HEAD_750 = createPartialModel("pipette/head_750");
-    public static final PartialModel PIPETTE_HEAD_1000 = createPartialModel("pipette/head_1000");
+    static {
+        init();
+    }
 
-    // 保留原始头部作为默认（向后兼容）
-    public static final PartialModel PIPETTE_HEAD = PIPETTE_HEAD_EMPTY;
+    public static void init() {
+        if (initialized) return;
+
+        try {
+            // 使用Create的现有模型作为基础
+            PIPETTE_COG = AllPartialModels.ARM_COG;
+
+            // 尝试加载自定义模型
+            try {
+                PIPETTE_BASE = createPartialModel("pipette/base");
+                PIPETTE_LOWER_ARM = createPartialModel("pipette/lower_arm");
+                PIPETTE_UPPER_ARM = createPartialModel("pipette/upper_arm");
+                PIPETTE_HEAD_EMPTY = createPartialModel("pipette/head_empty");
+                PIPETTE_HEAD_250 = createPartialModel("pipette/head_250");
+                PIPETTE_HEAD_500 = createPartialModel("pipette/head_500");
+                PIPETTE_HEAD_750 = createPartialModel("pipette/head_750");
+                PIPETTE_HEAD_1000 = createPartialModel("pipette/head_1000");
+                PIPETTE_HEAD = PIPETTE_HEAD_EMPTY;
+
+                LOGGER.info("Successfully loaded custom pipette models");
+            } catch (Exception e) {
+                LOGGER.warn("Failed to load custom pipette models, using Create defaults", e);
+                initFallbackModels();
+            }
+
+            initialized = true;
+
+        } catch (Exception e) {
+            LOGGER.error("Critical error initializing pipette models", e);
+            initFallbackModels();
+        }
+    }
+
+    private static void initFallbackModels() {
+        // 使用Create的机械臂模型作为后备
+        PIPETTE_COG = AllPartialModels.ARM_COG;
+        PIPETTE_BASE = AllPartialModels.ARM_BASE;
+        PIPETTE_LOWER_ARM = AllPartialModels.ARM_LOWER_BODY;
+        PIPETTE_UPPER_ARM = AllPartialModels.ARM_UPPER_BODY;
+
+        // 使用机械爪基础作为头部
+        PIPETTE_HEAD_EMPTY = AllPartialModels.ARM_CLAW_BASE;
+        PIPETTE_HEAD_250 = AllPartialModels.ARM_CLAW_BASE;
+        PIPETTE_HEAD_500 = AllPartialModels.ARM_CLAW_BASE;
+        PIPETTE_HEAD_750 = AllPartialModels.ARM_CLAW_BASE;
+        PIPETTE_HEAD_1000 = AllPartialModels.ARM_CLAW_BASE;
+        PIPETTE_HEAD = AllPartialModels.ARM_CLAW_BASE;
+
+        useFallback = true;
+        initialized = true;
+        LOGGER.info("Using fallback models from Create");
+    }
 
     private static PartialModel createPartialModel(String path) {
-        return PartialModel.of(new ResourceLocation(CreateFluid.MODID, "block/" + path));
+        try {
+            ResourceLocation location = new ResourceLocation(CreateFluid.MODID, "block/" + path);
+            return PartialModel.of(location);
+        } catch (Exception e) {
+            LOGGER.error("Failed to create partial model for path: {}", path, e);
+            throw e;
+        }
     }
 
     /**
      * 根据流体量获取对应的头部模型
-     * @param fluidAmount 流体量(mB)
-     * @return 对应的头部模型
      */
     public static PartialModel getPipetteHeadForFluidAmount(int fluidAmount) {
-        if (fluidAmount >= 1000) return PIPETTE_HEAD_1000;
-        if (fluidAmount >= 750) return PIPETTE_HEAD_750;
-        if (fluidAmount >= 500) return PIPETTE_HEAD_500;
-        if (fluidAmount >= 250) return PIPETTE_HEAD_250;
-        return PIPETTE_HEAD_EMPTY;
+        // 确保已初始化
+        if (!initialized) {
+            init();
+        }
+
+        if (useFallback) {
+            // 使用后备模型时，返回同一个模型
+            return PIPETTE_HEAD_EMPTY != null ? PIPETTE_HEAD_EMPTY : AllPartialModels.ARM_CLAW_BASE;
+        }
+
+        // 根据流体量返回不同的模型
+        try {
+            if (fluidAmount >= 1000 && PIPETTE_HEAD_1000 != null) return PIPETTE_HEAD_1000;
+            if (fluidAmount >= 750 && PIPETTE_HEAD_750 != null) return PIPETTE_HEAD_750;
+            if (fluidAmount >= 500 && PIPETTE_HEAD_500 != null) return PIPETTE_HEAD_500;
+            if (fluidAmount >= 250 && PIPETTE_HEAD_250 != null) return PIPETTE_HEAD_250;
+            if (PIPETTE_HEAD_EMPTY != null) return PIPETTE_HEAD_EMPTY;
+        } catch (Exception e) {
+            LOGGER.error("Error selecting pipette head model", e);
+        }
+
+        // 最终后备
+        return AllPartialModels.ARM_CLAW_BASE;
     }
 
-    public static void init() {
-        // 模型初始化
+    public static boolean isUsingFallback() {
+        return useFallback;
+    }
+
+    /**
+     * 获取模型，如果为null则返回后备模型
+     */
+    public static PartialModel getModelOrFallback(PartialModel model, PartialModel fallback) {
+        if (model != null) {
+            return model;
+        }
+        if (fallback != null) {
+            return fallback;
+        }
+        // 最终后备，使用机械臂的基础模型
+        return AllPartialModels.ARM_BASE;
     }
 }

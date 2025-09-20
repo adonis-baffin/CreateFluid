@@ -1,9 +1,11 @@
 package com.adonis.fluid.block.Pipette;
 
+import com.adonis.fluid.registry.CFPartialModels;
 import com.adonis.fluid.render.PipetteFluidVisual;
 import com.google.common.collect.Lists;
 import com.simibubi.create.AllPartialModels;
 import com.simibubi.create.content.kinetics.base.SingleAxisRotatingVisual;
+import com.simibubi.create.content.kinetics.mechanicalArm.ArmRenderer;
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.visual.DynamicVisual;
 import dev.engine_room.flywheel.api.visualization.VisualizationContext;
@@ -12,17 +14,25 @@ import dev.engine_room.flywheel.lib.instance.FlatLit;
 import dev.engine_room.flywheel.lib.instance.InstanceTypes;
 import dev.engine_room.flywheel.lib.instance.TransformedInstance;
 import dev.engine_room.flywheel.lib.model.Models;
+import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 import dev.engine_room.flywheel.lib.transform.PoseTransformStack;
 import dev.engine_room.flywheel.lib.transform.TransformStack;
 import dev.engine_room.flywheel.lib.util.RecyclingPoseStack;
 import dev.engine_room.flywheel.lib.visual.SimpleDynamicVisual;
-import java.util.ArrayList;
-import java.util.function.Consumer;
 import net.createmod.catnip.data.Iterate;
 import net.minecraft.util.Mth;
 import net.minecraftforge.fluids.FluidStack;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Objects;
+import java.util.function.Consumer;
 
 public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> implements SimpleDynamicVisual {
+    private static final Logger LOGGER = LogManager.getLogger();
+
     final TransformedInstance base;
     final TransformedInstance lowerBody;
     final TransformedInstance upperBody;
@@ -33,6 +43,7 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
     private final RecyclingPoseStack poseStack = new RecyclingPoseStack();
 
     // 流体渲染相关
+    @Nullable
     private final PipetteFluidVisual fluidVisual;
     private TransformedInstance fluidInstance;
     private FluidStack lastFluid = FluidStack.EMPTY;
@@ -43,22 +54,41 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
     private float headAngle = Float.NaN;
 
     public PipetteVisual(VisualizationContext context, PipetteBlockEntity blockEntity, float partialTick) {
-        super(context, blockEntity, partialTick, Models.partial(AllPartialModels.ARM_COG));
+        super(context, blockEntity, partialTick, Models.partial(getRotatingModel()));
 
-        this.base = (TransformedInstance)this.instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(AllPartialModels.ARM_BASE)).createInstance();
-        this.lowerBody = (TransformedInstance)this.instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(AllPartialModels.ARM_LOWER_BODY)).createInstance();
-        this.upperBody = (TransformedInstance)this.instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(AllPartialModels.ARM_UPPER_BODY)).createInstance();
-        this.claw = (TransformedInstance)this.instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(blockEntity.goggles ? AllPartialModels.ARM_CLAW_BASE_GOGGLES : AllPartialModels.ARM_CLAW_BASE)).createInstance();
+        // 安全地创建各个部件的实例
+        this.base = createSafeInstance(CFPartialModels.PIPETTE_BASE, AllPartialModels.ARM_BASE);
+        this.lowerBody = createSafeInstance(CFPartialModels.PIPETTE_LOWER_ARM, AllPartialModels.ARM_LOWER_BODY);
+        this.upperBody = createSafeInstance(CFPartialModels.PIPETTE_UPPER_ARM, AllPartialModels.ARM_UPPER_BODY);
 
-        TransformedInstance clawGrip1 = (TransformedInstance)this.instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(AllPartialModels.ARM_CLAW_GRIP_UPPER)).createInstance();
-        TransformedInstance clawGrip2 = (TransformedInstance)this.instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(AllPartialModels.ARM_CLAW_GRIP_LOWER)).createInstance();
-        this.clawGrips = Lists.newArrayList(new TransformedInstance[]{clawGrip1, clawGrip2});
-        this.models = Lists.newArrayList(new TransformedInstance[]{this.base, this.lowerBody, this.upperBody, this.claw, clawGrip1, clawGrip2});
+        // 根据护目镜状态选择爪子模型
+        PartialModel clawModel = blockEntity.goggles ?
+                AllPartialModels.ARM_CLAW_BASE_GOGGLES : AllPartialModels.ARM_CLAW_BASE;
+        this.claw = createSafeInstance(clawModel, AllPartialModels.ARM_CLAW_BASE);
+
+        // 创建夹爪
+        TransformedInstance clawGrip1 = createSafeInstance(
+                AllPartialModels.ARM_CLAW_GRIP_UPPER,
+                AllPartialModels.ARM_CLAW_GRIP_UPPER
+        );
+        TransformedInstance clawGrip2 = createSafeInstance(
+                AllPartialModels.ARM_CLAW_GRIP_LOWER,
+                AllPartialModels.ARM_CLAW_GRIP_LOWER
+        );
+
+        this.clawGrips = Lists.newArrayList(clawGrip1, clawGrip2);
+        this.models = Lists.newArrayList(this.base, this.lowerBody, this.upperBody, this.claw, clawGrip1, clawGrip2);
 
         // 初始化流体渲染
-        this.fluidVisual = new PipetteFluidVisual(context);
+        PipetteFluidVisual tempFluidVisual = null;
+        try {
+            tempFluidVisual = new PipetteFluidVisual(context);
+        } catch (Exception e) {
+            LOGGER.error("Failed to create fluid visual", e);
+        }
+        this.fluidVisual = tempFluidVisual;
 
-        this.ceiling = (Boolean)this.blockState.getValue(PipetteBlock.CEILING);
+        this.ceiling = blockState.getValue(PipetteBlock.CEILING);
         PoseTransformStack msr = TransformStack.of(this.poseStack);
         msr.translate(this.getVisualPosition());
         msr.center();
@@ -69,155 +99,290 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
         this.animate(partialTick);
     }
 
+    private static PartialModel getRotatingModel() {
+        try {
+            if (CFPartialModels.PIPETTE_COG != null) {
+                return CFPartialModels.PIPETTE_COG;
+            }
+        } catch (Exception e) {
+            LOGGER.debug("Failed to get custom cog model, using default");
+        }
+        return AllPartialModels.ARM_COG;
+    }
+
+    private TransformedInstance createSafeInstance(PartialModel model, PartialModel fallback) {
+        PartialModel modelToUse = model;
+
+        if (modelToUse == null) {
+            modelToUse = fallback;
+        }
+
+        try {
+            return (TransformedInstance) this.instancerProvider()
+                    .instancer(InstanceTypes.TRANSFORMED, Models.partial(modelToUse))
+                    .createInstance();
+        } catch (Exception e) {
+            LOGGER.error("Failed to create instance for model, trying fallback", e);
+
+            if (fallback != null && fallback != modelToUse) {
+                try {
+                    return (TransformedInstance) this.instancerProvider()
+                            .instancer(InstanceTypes.TRANSFORMED, Models.partial(fallback))
+                            .createInstance();
+                } catch (Exception e2) {
+                    LOGGER.error("Failed to create instance even with fallback", e2);
+                }
+            }
+        }
+
+        // 最后的尝试，使用最基础的模型
+        try {
+            return (TransformedInstance) this.instancerProvider()
+                    .instancer(InstanceTypes.TRANSFORMED, Models.partial(AllPartialModels.ARM_BASE))
+                    .createInstance();
+        } catch (Exception e) {
+            LOGGER.error("Critical: Cannot create any instance", e);
+            return null;
+        }
+    }
+
     public void beginFrame(DynamicVisual.Context ctx) {
-        fluidVisual.begin();
-        this.animate(ctx.partialTick());
-        fluidVisual.end();
+        try {
+            if (fluidVisual != null) {
+                fluidVisual.begin();
+            }
+            this.animate(ctx.partialTick());
+            if (fluidVisual != null) {
+                fluidVisual.end();
+            }
+        } catch (Exception e) {
+            LOGGER.debug("Error in beginFrame", e);
+        }
     }
 
     private void animate(float pt) {
-        float baseAngleNow = ((PipetteBlockEntity)this.blockEntity).baseAngle.getValue(pt);
-        float lowerArmAngleNow = ((PipetteBlockEntity)this.blockEntity).lowerArmAngle.getValue(pt);
-        float upperArmAngleNow = ((PipetteBlockEntity)this.blockEntity).upperArmAngle.getValue(pt);
-        float headAngleNow = ((PipetteBlockEntity)this.blockEntity).headAngle.getValue(pt);
+        try {
+            float baseAngleNow = this.blockEntity.baseAngle.getValue(pt);
+            float lowerArmAngleNow = this.blockEntity.lowerArmAngle.getValue(pt);
+            float upperArmAngleNow = this.blockEntity.upperArmAngle.getValue(pt);
+            float headAngleNow = this.blockEntity.headAngle.getValue(pt);
 
-        boolean settled = Mth.equal(this.baseAngle, baseAngleNow) && Mth.equal(this.lowerArmAngle, lowerArmAngleNow)
-                && Mth.equal(this.upperArmAngle, upperArmAngleNow) && Mth.equal(this.headAngle, headAngleNow);
+            boolean settled = Mth.equal(this.baseAngle, baseAngleNow)
+                    && Mth.equal(this.lowerArmAngle, lowerArmAngleNow)
+                    && Mth.equal(this.upperArmAngle, upperArmAngleNow)
+                    && Mth.equal(this.headAngle, headAngleNow);
 
-        this.baseAngle = baseAngleNow;
-        this.lowerArmAngle = lowerArmAngleNow;
-        this.upperArmAngle = upperArmAngleNow;
-        this.headAngle = headAngleNow;
+            this.baseAngle = baseAngleNow;
+            this.lowerArmAngle = lowerArmAngleNow;
+            this.upperArmAngle = upperArmAngleNow;
+            this.headAngle = headAngleNow;
 
-        if (!settled) {
-            this.animateArm();
+            if (!settled) {
+                this.animateArm();
+            }
+
+            // 更新流体渲染
+            if (fluidVisual != null) {
+                this.updateFluidRendering(pt);
+            }
+        } catch (Exception e) {
+            LOGGER.debug("Error animating pipette", e);
         }
-
-        // 更新流体渲染
-        this.updateFluidRendering(pt);
     }
 
     private void updateFluidRendering(float pt) {
-        FluidStack currentFluid = ((PipetteBlockEntity)this.blockEntity).heldFluid;
+        if (fluidVisual == null) return;
 
-        // 检查流体是否发生变化
-        if (!FluidStack.areFluidStackTagsEqual(currentFluid, lastFluid) ||
-                currentFluid.getAmount() != lastFluid.getAmount()) {
+        try {
+            FluidStack currentFluid = this.blockEntity.heldFluid;
 
-            // 删除旧的流体实例
-            if (fluidInstance != null) {
-                fluidInstance.delete();
-                fluidInstance = null;
-            }
+            // 检查流体是否发生变化
+            if (!FluidStack.areFluidStackTagsEqual(currentFluid, lastFluid) ||
+                    currentFluid.getAmount() != lastFluid.getAmount()) {
 
-            // 创建新的流体实例
-            if (!currentFluid.isEmpty()) {
-                fluidInstance = fluidVisual.createFluidInstance(currentFluid);
+                // 删除旧的流体实例
                 if (fluidInstance != null) {
-                    models.add(fluidInstance);
+                    fluidInstance.delete();
+                    fluidInstance = null;
                 }
+
+                // 创建新的流体实例
+                if (!currentFluid.isEmpty()) {
+                    fluidInstance = fluidVisual.createFluidInstance(currentFluid);
+                    if (fluidInstance != null) {
+                        models.add(fluidInstance);
+                    }
+                }
+
+                lastFluid = currentFluid.copy();
             }
 
-            lastFluid = currentFluid.copy();
-        }
-
-        // 更新流体位置和效果
-        if (fluidInstance != null && !currentFluid.isEmpty()) {
-            updateFluidTransform(currentFluid, pt);
+            // 更新流体位置和效果
+            if (fluidInstance != null && !currentFluid.isEmpty()) {
+                updateFluidTransform(currentFluid, pt);
+            }
+        } catch (Exception e) {
+            LOGGER.debug("Error updating fluid rendering", e);
         }
     }
 
     private void updateFluidTransform(FluidStack fluid, float pt) {
-        if (fluidInstance == null) return;
+        if (fluidInstance == null || fluidVisual == null) return;
 
-        this.poseStack.pushPose();
-        PoseTransformStack msr = TransformStack.of(this.poseStack);
+        try {
+            this.poseStack.pushPose();
+            PoseTransformStack msr = TransformStack.of(this.poseStack);
 
-        // 应用所有移液器的变换
-        PipetteRenderer.transformBase(msr, this.baseAngle);
-        PipetteRenderer.transformLowerArm(msr, this.lowerArmAngle - 135.0F);
-        PipetteRenderer.transformUpperArm(msr, this.upperArmAngle - 90.0F);
-        PipetteRenderer.transformHead(msr, this.headAngle);
+            // 使用 ArmRenderer 的静态方法
+            ArmRenderer.transformBase(msr, this.baseAngle);
+            ArmRenderer.transformLowerArm(msr, this.lowerArmAngle - 135.0F);
+            ArmRenderer.transformUpperArm(msr, this.upperArmAngle - 90.0F);
+            ArmRenderer.transformHead(msr, this.headAngle);
 
-        if (this.ceiling && ((PipetteBlockEntity)this.blockEntity).goggles) {
-            msr.rotateZDegrees(180.0F);
+            if (this.ceiling && this.blockEntity.goggles) {
+                msr.rotateZDegrees(180.0F);
+            }
+
+            // 设置流体在针头中的渲染
+            fluidVisual.setupPipetteFluid(
+                    fluidInstance,
+                    fluid,
+                    this.blockEntity.getFluidCapacity(),
+                    this.blockEntity.isInjectMode()
+            );
+
+            // 应用变换
+            fluidInstance.setTransform(this.poseStack).setChanged();
+
+            this.poseStack.popPose();
+        } catch (Exception e) {
+            LOGGER.debug("Error updating fluid transform", e);
+            this.poseStack.popPose(); // 确保堆栈平衡
         }
-
-        // 设置流体在针头中的渲染
-        fluidVisual.setupPipetteFluid(
-                fluidInstance,
-                fluid,
-                ((PipetteBlockEntity)this.blockEntity).getFluidCapacity(),
-                ((PipetteBlockEntity)this.blockEntity).isInjectMode()
-        );
-
-        // 应用变换
-        fluidInstance.setTransform(this.poseStack).setChanged();
-
-        this.poseStack.popPose();
     }
 
     private void animateArm() {
-        this.updateAngles(this.baseAngle, this.lowerArmAngle - 135.0F, this.upperArmAngle - 90.0F, this.headAngle, 16777215);
+        this.updateAngles(this.baseAngle, this.lowerArmAngle - 135.0F,
+                this.upperArmAngle - 90.0F, this.headAngle, 16777215);
     }
 
-    private void updateAngles(float baseAngle, float lowerArmAngle, float upperArmAngle, float headAngle, int color) {
-        this.poseStack.pushPose();
-        PoseTransformStack msr = TransformStack.of(this.poseStack);
-
-        PipetteRenderer.transformBase(msr, baseAngle);
-        this.base.setTransform(this.poseStack).setChanged();
-
-        PipetteRenderer.transformLowerArm(msr, lowerArmAngle);
-        this.lowerBody.setTransform(this.poseStack).colorRgb(color).setChanged();
-
-        PipetteRenderer.transformUpperArm(msr, upperArmAngle);
-        this.upperBody.setTransform(this.poseStack).colorRgb(color).setChanged();
-
-        PipetteRenderer.transformHead(msr, headAngle);
-        if (this.ceiling && ((PipetteBlockEntity)this.blockEntity).goggles) {
-            msr.rotateZDegrees(180.0F);
-        }
-        this.claw.setTransform(this.poseStack).setChanged();
-
-        if (this.ceiling && ((PipetteBlockEntity)this.blockEntity).goggles) {
-            msr.rotateZDegrees(180.0F);
-        }
-
-        FluidStack fluid = ((PipetteBlockEntity)this.blockEntity).heldFluid;
-        boolean hasFluid = !fluid.isEmpty();
-
-        // 针头部分 - 保持固定状态
-        int[] indices = Iterate.zeroAndOne;
-        for(int index : indices) {
+    private void updateAngles(float baseAngle, float lowerArmAngle, float upperArmAngle,
+                              float headAngle, int color) {
+        try {
             this.poseStack.pushPose();
-            int flip = index * 2 - 1;
-            PipetteRenderer.transformClawHalf(msr, hasFluid, flip);
-            ((TransformedInstance)this.clawGrips.get(index)).setTransform(this.poseStack).setChanged();
-            this.poseStack.popPose();
-        }
+            PoseTransformStack msr = TransformStack.of(this.poseStack);
 
-        this.poseStack.popPose();
+            if (this.base != null) {
+                ArmRenderer.transformBase(msr, baseAngle);
+                this.base.setTransform(this.poseStack).setChanged();
+            }
+
+            if (this.lowerBody != null) {
+                ArmRenderer.transformLowerArm(msr, lowerArmAngle);
+                this.lowerBody.setTransform(this.poseStack).colorRgb(color).setChanged();
+            }
+
+            if (this.upperBody != null) {
+                ArmRenderer.transformUpperArm(msr, upperArmAngle);
+                this.upperBody.setTransform(this.poseStack).colorRgb(color).setChanged();
+            }
+
+            if (this.claw != null) {
+                ArmRenderer.transformHead(msr, headAngle);
+                if (this.ceiling && this.blockEntity.goggles) {
+                    msr.rotateZDegrees(180.0F);
+                }
+                this.claw.setTransform(this.poseStack).setChanged();
+            }
+
+            if (this.ceiling && this.blockEntity.goggles) {
+                msr.rotateZDegrees(180.0F);
+            }
+
+            FluidStack fluid = this.blockEntity.heldFluid;
+            boolean hasFluid = !fluid.isEmpty();
+
+            // 针头部分 - 注意：这里可能需要使用你自己的 transformClawHalf 方法
+            int[] indices = Iterate.zeroAndOne;
+            for(int index : indices) {
+                if (index < clawGrips.size() && clawGrips.get(index) != null) {
+                    this.poseStack.pushPose();
+                    int flip = index * 2 - 1;
+                    // 如果 ArmRenderer 没有这个方法，使用你自己的实现
+                    transformPipetteGrip(msr, hasFluid, flip);
+                    clawGrips.get(index).setTransform(this.poseStack).setChanged();
+                    this.poseStack.popPose();
+                }
+            }
+
+            this.poseStack.popPose();
+        } catch (Exception e) {
+            LOGGER.debug("Error updating angles", e);
+            // 确保堆栈平衡
+            try {
+                this.poseStack.popPose();
+            } catch (Exception ignored) {}
+        }
+    }
+
+    // 自定义的针头夹持部分变换
+    private void transformPipetteGrip(PoseTransformStack msr, boolean hasFluid, int flip) {
+        // 对于移液器，针头保持固定位置，不需要根据是否有流体调整
+        msr.translate(0.0, (double)((float)(-flip) * 0.0625F), -0.375);
     }
 
     public void update(float pt) {
-        super.update(pt);
-        this.instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(((PipetteBlockEntity)this.blockEntity).goggles ? AllPartialModels.ARM_CLAW_BASE_GOGGLES : AllPartialModels.ARM_CLAW_BASE)).stealInstance(this.claw);
+        try {
+            super.update(pt);
+
+            // 更新爪子模型
+            PartialModel clawModel = this.blockEntity.goggles ?
+                    AllPartialModels.ARM_CLAW_BASE_GOGGLES : AllPartialModels.ARM_CLAW_BASE;
+
+            this.instancerProvider()
+                    .instancer(InstanceTypes.TRANSFORMED, Models.partial(clawModel))
+                    .stealInstance(this.claw);
+        } catch (Exception e) {
+            LOGGER.debug("Error in update", e);
+        }
     }
 
     public void updateLight(float partialTick) {
-        super.updateLight(partialTick);
-        this.relight((FlatLit[])this.models.toArray(new FlatLit[0]));
+        try {
+            super.updateLight(partialTick);
+            FlatLit[] litModels = this.models.stream()
+                    .filter(Objects::nonNull)
+                    .toArray(FlatLit[]::new);
+            this.relight(litModels);
+        } catch (Exception e) {
+            LOGGER.debug("Error updating light", e);
+        }
     }
 
     protected void _delete() {
-        super._delete();
-        this.models.forEach(AbstractInstance::delete);
-        this.fluidVisual.delete();
+        try {
+            super._delete();
+            this.models.forEach(model -> {
+                if (model != null) {
+                    model.delete();
+                }
+            });
+            if (fluidVisual != null) {
+                fluidVisual.delete();
+            }
+        } catch (Exception e) {
+            LOGGER.debug("Error during deletion", e);
+        }
     }
 
     public void collectCrumblingInstances(Consumer<Instance> consumer) {
-        super.collectCrumblingInstances(consumer);
-        this.models.forEach(consumer);
+        try {
+            super.collectCrumblingInstances(consumer);
+            this.models.stream()
+                    .filter(Objects::nonNull)
+                    .forEach(consumer);
+        } catch (Exception e) {
+            LOGGER.debug("Error collecting crumbling instances", e);
+        }
     }
 }

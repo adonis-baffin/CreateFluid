@@ -158,6 +158,13 @@ artifacts {
     archives sourcesJar
 }
 
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    // 忽略 Mixin 相关的警告
+    options.compilerArgs << '-Xlint:-processing'
+}
+
+
 publishing {
     publications {
         mavenJava(MavenPublication) {
