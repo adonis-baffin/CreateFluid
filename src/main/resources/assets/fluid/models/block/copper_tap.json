@@ -3,10 +3,10 @@
 	"credit": "Made with Blockbench",
 	"parent": "block/block",
 	"textures": {
-		"1": "fluid:block/pipe_faucet",
-		"2": "fluid:block/copper_faucet",
-		"5": "fluid:block/copper_faucet_valve",
-		"particle": "fluid:block/copper_faucet"
+		"1": "fluid:block/pipe_tap",
+		"2": "fluid:block/copper_tap",
+		"5": "fluid:block/copper_tap_valve",
+		"particle": "fluid:block/copper_tap"
 	},
 	"elements": [
 		{
@@ -41,7 +41,7 @@
 			"name": "faucet",
 			"from": [5, 13, 9],
 			"to": [11, 14, 15],
-			"rotation": {"angle": 45, "axis": "y", "origin": [8, 13, 12]},
+			"rotation": {"angle": 0, "axis": "y", "origin": [8, 13, 12]},
 			"faces": {
 				"north": {"uv": [0, 6, 6, 7], "texture": "#5"},
 				"east": {"uv": [0, 6, 6, 7], "texture": "#5"},

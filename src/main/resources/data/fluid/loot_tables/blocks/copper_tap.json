@@ -11,11 +11,11 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "fluid:copper_faucet"
+          "name": "fluid:copper_tap"
         }
       ],
       "rolls": 1.0
     }
   ],
-  "random_sequence": "fluid:blocks/copper_faucet"
+  "random_sequence": "fluid:blocks/copper_tap"
 }

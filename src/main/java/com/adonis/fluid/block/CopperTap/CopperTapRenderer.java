@@ -1,4 +1,4 @@
-package com.adonis.fluid.block.CopperFaucet;
+package com.adonis.fluid.block.CopperTap;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -20,13 +20,13 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.fluids.FluidStack;
 
-public class CopperFaucetRenderer extends SafeBlockEntityRenderer<CopperFaucetBlockEntity> {
+public class CopperTapRenderer extends SafeBlockEntityRenderer<CopperTapBlockEntity> {
 
-    public CopperFaucetRenderer(BlockEntityRendererProvider.Context context) {
+    public CopperTapRenderer(BlockEntityRendererProvider.Context context) {
     }
 
     @Override
-    protected void renderSafe(CopperFaucetBlockEntity be, float partialTicks, PoseStack ms,
+    protected void renderSafe(CopperTapBlockEntity be, float partialTicks, PoseStack ms,
                               MultiBufferSource buffer, int light, int overlay) {
 
         // 只在有流体要渲染时才渲染
@@ -44,7 +44,7 @@ public class CopperFaucetRenderer extends SafeBlockEntityRenderer<CopperFaucetBl
             return;
 
         // 根据方向调整渲染位置
-        Direction facing = state.getValue(CopperFaucetBlock.FACING);
+        Direction facing = state.getValue(CopperTapBlock.FACING);
 
         ms.pushPose();
 
@@ -78,7 +78,7 @@ public class CopperFaucetRenderer extends SafeBlockEntityRenderer<CopperFaucetBl
         ms.popPose();
     }
 
-    private void renderFluidStream(CopperFaucetBlockEntity be, FluidStack fluid, PoseStack ms,
+    private void renderFluidStream(CopperTapBlockEntity be, FluidStack fluid, PoseStack ms,
                                    MultiBufferSource buffer, int light, float partialTicks) {
         // 流体流从出水口到下方
         float startX = 6f / 16f;
@@ -105,7 +105,7 @@ public class CopperFaucetRenderer extends SafeBlockEntityRenderer<CopperFaucetBl
                 buffer, ms, light, false, true);
     }
 
-    private void renderFillingEffect(CopperFaucetBlockEntity be, FluidStack fluid, PoseStack ms,
+    private void renderFillingEffect(CopperTapBlockEntity be, FluidStack fluid, PoseStack ms,
                                      MultiBufferSource buffer, int light, float partialTicks) {
         // 注液时的特效，类似注液器
         int processingTicks = be.getProcessingTicks();
@@ -274,7 +274,7 @@ public class CopperFaucetRenderer extends SafeBlockEntityRenderer<CopperFaucetBl
     }
 
     // 客户端粒子效果（可选）
-    public static void spawnFluidParticles(CopperFaucetBlockEntity be) {
+    public static void spawnFluidParticles(CopperTapBlockEntity be) {
         if (be.getLevel() == null || !be.getLevel().isClientSide)
             return;
 

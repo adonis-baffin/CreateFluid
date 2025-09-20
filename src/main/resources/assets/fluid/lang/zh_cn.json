@@ -4,7 +4,7 @@
   "block.fluid.smart_fluid_interface": "智能流体接口",
   "block.fluid.centrifugal_pump": "离心泵",
   "item.fluid.honeycomb_mold": "蜜脾模具",
-  "block.fluid.copper_faucet": "铜龙头",
+  "block.fluid.copper_tap": "铜龙头",
   "item.fluid.honeycomb_mold.tooltip.summary": "用于蜜脾的压块塑形配方",
   "item.fluid.baton": "指挥棒",
   "item.fluid.baton.tooltip.summary": "用于配置动力臂，移液器和弹射置物台的交互点",
@@ -27,7 +27,7 @@
   "block.fluid.smart_fluid_interface.tooltip.behaviour2": "作为连接容器的_过滤网关_，防止不需要的流体类型通过",
 
   "block.fluid.centrifugal_pump.tooltip.summary": "比_动力泵_运输距离更远，传输速率更高，可以用_铜机壳_来封装",
-  "block.fluid.copper_faucet.tooltip.summary": "右键开关。可以填充下方的工作盆，炼药锅，或对下方的置物台进行注液加工",
+  "block.fluid.copper_tap.tooltip.summary": "右键开关。可以填充下方的工作盆，炼药锅，或对下方的置物台进行注液加工",
 
   "create.fluid.mechanical_pipette.extract": "从%1$s吸取流体",
   "create.fluid.mechanical_pipette.deposit": "将流体注入%1$s",

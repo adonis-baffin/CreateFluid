@@ -3,7 +3,7 @@
   "block.fluid.fluid_interface": "Fluid Interface",
   "block.fluid.smart_fluid_interface": "Smart Fluid Interface",
   "block.fluid.centrifugal_pump": "Centrifugal Pump",
-  "block.fluid.copper_faucet": "Copper Faucet",
+  "block.fluid.copper_tap": "Copper Tap",
   "item.fluid.honeycomb_mold": "Honeycomb Mold",
   "item.fluid.honeycomb_mold.tooltip.summary": "Used for honeycomb compacting recipe",
   "item.fluid.baton": "Conductor's Baton",
@@ -27,7 +27,7 @@
   "block.fluid.smart_fluid_interface.tooltip.behaviour2": "Functions as a _filtered gateway_ to the attached container, preventing unwanted fluid types from passing through",
 
   "block.fluid.centrifugal_pump.tooltip.summary": "Transports further and faster than _Mechanical Pumps_, can be encased with _Copper Casing_",
-  "block.fluid.copper_faucet.tooltip.summary": "Right-click to switch. Can fill Basins, Cauldrons below, or perform spout processing on Depots below",
+  "block.fluid.copper_tap.tooltip.summary": "Right-click to switch. Can fill Basins, Cauldrons below, or perform spout processing on Depots below",
 
   "create.fluid.mechanical_pipette.extract": "Drain fluid from %1$s",
   "create.fluid.mechanical_pipette.deposit": "Inject fluid to %1$s",

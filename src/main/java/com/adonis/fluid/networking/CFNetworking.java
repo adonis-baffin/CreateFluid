@@ -1,6 +1,6 @@
 package com.adonis.fluid.networking;
 
-import com.adonis.fluid.packet.CopperFaucetParticlePacket;
+import com.adonis.fluid.packet.CopperTapParticlePacket;
 import com.adonis.fluid.packet.PipetteFluidPlacementPacket;
 import com.adonis.fluid.packet.PipetteParticlePacket;
 import com.adonis.fluid.packet.QuartzLampTogglePacket;
@@ -41,9 +41,9 @@ public class CFNetworking {
                 });
 
         // 注册铜龙头粒子效果包
-        channel.registerMessage(id++, CopperFaucetParticlePacket.class,
+        channel.registerMessage(id++, CopperTapParticlePacket.class,
                 (msg, buf) -> msg.write(buf),
-                CopperFaucetParticlePacket::new,
+                CopperTapParticlePacket::new,
                 (msg, ctxSupplier) -> {
                     msg.handle(ctxSupplier.get());
                     ctxSupplier.get().setPacketHandled(true);

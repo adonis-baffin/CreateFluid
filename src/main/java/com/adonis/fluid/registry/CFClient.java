@@ -6,7 +6,7 @@ import com.adonis.fluid.block.Pipette.PipetteRenderer;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceRenderer;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceRenderer;
 import com.adonis.fluid.block.Aqueduct.AqueductRenderer;
-import com.adonis.fluid.block.CopperFaucet.CopperFaucetRenderer;
+import com.adonis.fluid.block.CopperTap.CopperTapRenderer;
 import com.adonis.fluid.handler.PipetteFluidInteractionPointHandler;
 import com.adonis.fluid.item.BatonItemPropertyFunction;
 import com.adonis.fluid.ponder.CFPonderPlugin;
@@ -36,7 +36,7 @@ public class CFClient {
             ItemBlockRenderTypes.setRenderLayer(CFBlock.SMART_FLUID_INTERFACE.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(CFBlock.AQUEDUCT.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(CFBlock.CENTRIFUGAL_PUMP.get(), RenderType.cutout());
-            ItemBlockRenderTypes.setRenderLayer(CFBlock.COPPER_FAUCET.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(CFBlock.COPPER_TAP.get(), RenderType.cutout());
 
             // 注册方块实体渲染器
             BlockEntityRenderers.register(CFBlockEntity.PIPETTE.get(), PipetteRenderer::new);
@@ -44,7 +44,7 @@ public class CFClient {
             BlockEntityRenderers.register(CFBlockEntity.SMART_FLUID_INTERFACE.get(), SmartFluidInterfaceRenderer::new);
             BlockEntityRenderers.register(CFBlockEntity.AQUEDUCT.get(), AqueductRenderer::new);
             BlockEntityRenderers.register(CFBlockEntity.CENTRIFUGAL_PUMP.get(), CentrifugalPumpRenderer::new);
-            BlockEntityRenderers.register(CFBlockEntity.COPPER_FAUCET.get(), CopperFaucetRenderer::new);
+            BlockEntityRenderers.register(CFBlockEntity.COPPER_TAP.get(), CopperTapRenderer::new);
 
             // 注册 Ponder 插件
             PonderIndex.addPlugin(new CFPonderPlugin());

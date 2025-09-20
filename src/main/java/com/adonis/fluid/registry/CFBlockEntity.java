@@ -1,7 +1,8 @@
 package com.adonis.fluid.registry;
 
 import com.adonis.fluid.CreateFluid;
-import com.adonis.fluid.block.CopperFaucet.CopperFaucetBlockEntity;
+import com.adonis.fluid.block.CopperTap.CopperTapBlockEntity;
+import com.adonis.fluid.block.CopperTap.CopperTapProxyBlockEntity;
 import com.adonis.fluid.block.Pipette.PipetteBlockEntity;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlockEntity;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlockEntity;
@@ -9,7 +10,6 @@ import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlockEntity;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpRenderer;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpVisual;
 import com.adonis.fluid.block.Aqueduct.AqueductBlockEntity;
-import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -51,10 +51,16 @@ public class CFBlockEntity {
                     .renderer(() -> CentrifugalPumpRenderer::new)
                     .register();
 
-    public static final RegistryObject<BlockEntityType<CopperFaucetBlockEntity>> COPPER_FAUCET =
-            BLOCK_ENTITIES.register("copper_faucet", () -> BlockEntityType.Builder.of(
-                    (pos, state) -> new CopperFaucetBlockEntity(CFBlockEntity.COPPER_FAUCET.get(), pos, state),
-                    CFBlock.COPPER_FAUCET.get()).build(null));
+    public static final RegistryObject<BlockEntityType<CopperTapBlockEntity>> COPPER_TAP =
+            BLOCK_ENTITIES.register("copper_tap", () -> BlockEntityType.Builder.of(
+                    (pos, state) -> new CopperTapBlockEntity(CFBlockEntity.COPPER_TAP.get(), pos, state),
+                    CFBlock.COPPER_TAP.get()).build(null));
+
+    // 在其他方块实体注册后添加
+    public static final RegistryObject<BlockEntityType<CopperTapProxyBlockEntity>> COPPER_TAP_PROXY =
+            BLOCK_ENTITIES.register("copper_tap_proxy", () -> BlockEntityType.Builder.of(
+                    (pos, state) -> new CopperTapProxyBlockEntity(CFBlockEntity.COPPER_TAP_PROXY.get(), pos, state),
+                    CFBlock.COPPER_TAP_PROXY.get()).build(null));
 
     // 为了保持兼容性，提供一个RegistryObject访问器
     public static final RegistryObject<BlockEntityType<CentrifugalPumpBlockEntity>> CENTRIFUGAL_PUMP =

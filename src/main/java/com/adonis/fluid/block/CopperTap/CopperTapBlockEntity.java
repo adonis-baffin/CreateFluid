@@ -1,7 +1,10 @@
-package com.adonis.fluid.block.CopperFaucet;
+package com.adonis.fluid.block.CopperTap;
 
 import com.simibubi.create.AllSoundEvents;
 import com.simibubi.create.content.fluids.spout.FillingBySpout;
+import com.simibubi.create.content.kinetics.belt.behaviour.BeltProcessingBehaviour;
+import com.simibubi.create.content.kinetics.belt.behaviour.TransportedItemStackHandlerBehaviour;
+import com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import net.minecraft.core.BlockPos;
@@ -25,9 +28,10 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class CopperFaucetBlockEntity extends SmartBlockEntity {
+public class CopperTapBlockEntity extends SmartBlockEntity {
 
     private FluidStack renderingFluid = FluidStack.EMPTY;
     private int processingTicks = 0;
@@ -41,12 +45,17 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
     private Direction sourceDirection = null;
     private BlockPos sourceBlockPos = null;
 
-    private static final TagKey<Block> FAUCET_FILLABLE = TagKey.create(
+    // 传送带处理相关
+    private TransportedItemStack currentBeltItem = null;
+    private TransportedItemStackHandlerBehaviour currentHandler = null;
+    private int beltProcessingTicks = -1;
+
+    private static final TagKey<Block> TAP_FILLABLE = TagKey.create(
             ForgeRegistries.BLOCKS.getRegistryKey(),
-            new ResourceLocation("fluid", "faucet_fillable")
+            new ResourceLocation("fluid", "tap_fillable")
     );
 
-    public CopperFaucetBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+    public CopperTapBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
     }
 
@@ -97,6 +106,149 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
         }
     }
 
+    // 传送带物品处理方法
+    public boolean canProcessBeltItem(ItemStack stack) {
+        if (!getBlockState().getValue(CopperTapBlock.OPEN)) {
+            return false;
+        }
+
+        if (!FillingBySpout.canItemBeFilled(level, stack)) {
+            return false;
+        }
+
+        Direction attached = getBlockState().getValue(CopperTapBlock.FACING);
+        BlockPos sourcePos = worldPosition.relative(attached.getOpposite());
+        IFluidHandler sourceHandler = getSourceHandler(sourcePos, attached);
+
+        if (sourceHandler == null) {
+            return false;
+        }
+
+        FluidStack available = sourceHandler.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
+        if (available.isEmpty()) {
+            return false;
+        }
+
+        int required = FillingBySpout.getRequiredAmountForItem(level, stack, available);
+        return required > 0 && required <= available.getAmount();
+    }
+
+    public BeltProcessingBehaviour.ProcessingResult processBeltItem(
+            TransportedItemStack transported,
+            TransportedItemStackHandlerBehaviour handler) {
+
+        // 初始化处理
+        if (beltProcessingTicks == -1) {
+            currentBeltItem = transported;
+            currentHandler = handler;
+            beltProcessingTicks = FILLING_TIME;
+
+            Direction attached = getBlockState().getValue(CopperTapBlock.FACING);
+            BlockPos sourcePos = worldPosition.relative(attached.getOpposite());
+            IFluidHandler sourceHandler = getSourceHandler(sourcePos, attached);
+
+            if (sourceHandler != null) {
+                FluidStack available = sourceHandler.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
+                int required = FillingBySpout.getRequiredAmountForItem(level, transported.stack, available);
+
+                if (required > 0 && required <= available.getAmount()) {
+                    pendingFluid = new FluidStack(available, required);
+                    renderingFluid = pendingFluid.copy();
+                    sourceDirection = attached;
+                    sourceBlockPos = sourcePos.immutable();
+
+                    AllSoundEvents.SPOUTING.playOnServer(level, worldPosition, 0.75f, 0.9f + 0.2f * level.random.nextFloat());
+                    notifyUpdate();
+                }
+            }
+
+            return BeltProcessingBehaviour.ProcessingResult.HOLD;
+        }
+
+        // 处理中
+        if (beltProcessingTicks > 0) {
+            return BeltProcessingBehaviour.ProcessingResult.HOLD;
+        }
+
+        // 处理完成
+        beltProcessingTicks = -1;
+        currentBeltItem = null;
+        currentHandler = null;
+        return BeltProcessingBehaviour.ProcessingResult.PASS;
+    }
+
+    private void finishBeltItemFilling() {
+        if (currentBeltItem == null || pendingFluid.isEmpty()) {
+            return;
+        }
+
+        IFluidHandler sourceHandler = getSourceHandler(sourceBlockPos, sourceDirection);
+        if (sourceHandler == null) {
+            return;
+        }
+
+        // 消耗流体
+        FluidStack drained = sourceHandler.drain(pendingFluid, IFluidHandler.FluidAction.EXECUTE);
+        if (drained.isEmpty() || drained.getAmount() < pendingFluid.getAmount()) {
+            return;
+        }
+
+        // 填充物品
+        ItemStack result = FillingBySpout.fillItem(level, pendingFluid.getAmount(),
+                currentBeltItem.stack.copy(), pendingFluid);
+
+        if (!result.isEmpty() && currentHandler != null) {
+            List<TransportedItemStack> outputs = new ArrayList<>();
+            TransportedItemStack held = null;
+
+            currentBeltItem.stack.shrink(1);
+            if (!currentBeltItem.stack.isEmpty()) {
+                held = currentBeltItem.copy();
+            }
+
+            TransportedItemStack output = currentBeltItem.copy();
+            output.stack = result;
+            output.clearFanProcessingData();
+            outputs.add(output);
+
+            currentHandler.handleProcessingOnItem(currentBeltItem,
+                    TransportedItemStackHandlerBehaviour.TransportedResult.convertToAndLeaveHeld(outputs, held));
+        }
+
+        // 清理状态
+        renderingFluid = FluidStack.EMPTY;
+        pendingFluid = FluidStack.EMPTY;
+        sourceDirection = null;
+        sourceBlockPos = null;
+        notifyUpdate();
+    }
+
+    private IFluidHandler getSourceHandler(BlockPos sourcePos, Direction fromDir) {
+        if (sourcePos == null || level == null) {
+            return null;
+        }
+
+        BlockState sourceState = level.getBlockState(sourcePos);
+
+        // 处理含水树叶
+        if (sourceState.is(BlockTags.LEAVES)) {
+            if (sourceState.hasProperty(BlockStateProperties.WATERLOGGED) &&
+                    sourceState.getValue(BlockStateProperties.WATERLOGGED)) {
+                return new WaterloggedLeavesFluidHandler();
+            }
+            return null;
+        }
+
+        // 常规流体处理器
+        BlockEntity sourceEntity = level.getBlockEntity(sourcePos);
+        if (sourceEntity == null) {
+            return null;
+        }
+
+        return sourceEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, fromDir)
+                .orElse(sourceEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, null).orElse(null));
+    }
+
     @Override
     public void tick() {
         super.tick();
@@ -104,19 +256,22 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
         if (level == null || level.isClientSide)
             return;
 
+        // 处理传送带物品
+        if (beltProcessingTicks > 0) {
+            beltProcessingTicks--;
+
+            if (beltProcessingTicks == 5) {
+                finishBeltItemFilling();
+            }
+            return;
+        }
+
         BlockState state = getBlockState();
         boolean isOpen = state.getValue(BlockStateProperties.OPEN);
 
         if (!isOpen) {
             if (!renderingFluid.isEmpty() || !pendingFluid.isEmpty()) {
-                renderingFluid = FluidStack.EMPTY;
-                pendingFluid = FluidStack.EMPTY;
-                isFillingItem = false;
-                processingTicks = 0;
-                processingItem = ItemStack.EMPTY;
-                sourceDirection = null;
-                sourceBlockPos = null;
-                notifyUpdate();
+                clearFluidStates();
             }
             transferCooldown = 0;
             return;
@@ -186,45 +341,27 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
         notifyUpdate();
     }
 
+    private void clearFluidStates() {
+        renderingFluid = FluidStack.EMPTY;
+        pendingFluid = FluidStack.EMPTY;
+        isFillingItem = false;
+        processingTicks = 0;
+        processingItem = ItemStack.EMPTY;
+        sourceDirection = null;
+        sourceBlockPos = null;
+        beltProcessingTicks = -1;
+        currentBeltItem = null;
+        currentHandler = null;
+        notifyUpdate();
+    }
+
     private void tryTransferFluid() {
-        Direction attached = getBlockState().getValue(CopperFaucetBlock.FACING);
+        Direction attached = getBlockState().getValue(CopperTapBlock.FACING);
         BlockPos sourcePos = worldPosition.relative(attached.getOpposite());
-        BlockState sourceState = level.getBlockState(sourcePos);
 
-        IFluidHandler sourceHandler = null;
-
-        // 检查是否是树叶
-        if (sourceState.is(BlockTags.LEAVES)) {
-            // 只有含水的树叶才提供水
-            if (sourceState.hasProperty(BlockStateProperties.WATERLOGGED) &&
-                    sourceState.getValue(BlockStateProperties.WATERLOGGED)) {
-                sourceHandler = new WaterloggedLeavesFluidHandler();
-            } else {
-                // 树叶不含水，无法提供流体，但不要关闭龙头
-                if (!renderingFluid.isEmpty()) {
-                    renderingFluid = FluidStack.EMPTY;
-                    notifyUpdate();
-                }
-                return;
-            }
-        } else {
-            // 原有的获取流体处理器逻辑
-            BlockEntity sourceEntity = level.getBlockEntity(sourcePos);
-            if (sourceEntity == null) {
-                // 没有源方块实体，但不要立即关闭，可能只是暂时的
-                if (!renderingFluid.isEmpty()) {
-                    renderingFluid = FluidStack.EMPTY;
-                    notifyUpdate();
-                }
-                return;
-            }
-
-            sourceHandler = sourceEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, attached)
-                    .orElse(sourceEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, null).orElse(null));
-        }
+        IFluidHandler sourceHandler = getSourceHandler(sourcePos, attached);
 
         if (sourceHandler == null) {
-            // 没有流体处理器，清空渲染但不关闭龙头
             if (!renderingFluid.isEmpty()) {
                 renderingFluid = FluidStack.EMPTY;
                 notifyUpdate();
@@ -245,27 +382,7 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
         }
     }
 
-    private void closeFaucet() {
-        BlockState state = getBlockState();
-        // 只有在没有红石信号时才能自动关闭
-        if (!state.getValue(BlockStateProperties.POWERED)) {
-            level.setBlockAndUpdate(worldPosition, state.setValue(BlockStateProperties.OPEN, false));
-            clearFluidStates();
-        }
-    }
-
-    // 添加一个辅助方法来清理流体状态
-    private void clearFluidStates() {
-        renderingFluid = FluidStack.EMPTY;
-        pendingFluid = FluidStack.EMPTY;
-        isFillingItem = false;
-        processingTicks = 0;
-        processingItem = ItemStack.EMPTY;
-        sourceDirection = null;
-        sourceBlockPos = null;
-        notifyUpdate();
-    }
-
+    // [保持其余原有方法不变...]
     private boolean tryProcess(IFluidHandler sourceHandler, BlockPos targetPos, Direction sourceDir, BlockPos sourcePos) {
         BlockEntity targetEntity = level.getBlockEntity(targetPos);
         BlockState targetState = level.getBlockState(targetPos);
@@ -282,7 +399,7 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
             return tryFillCauldron(sourceHandler, targetPos, targetState);
         }
 
-        if (targetState.is(FAUCET_FILLABLE) && targetEntity != null) {
+        if (targetState.is(TAP_FILLABLE) && targetEntity != null) {
             return tryFillContainer(sourceHandler, targetEntity);
         }
 
@@ -330,7 +447,6 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
         }
 
         level.setBlockAndUpdate(targetPos, cauldronInfo.cauldron());
-
         renderingFluid = drained.copy();
 
         level.playSound(null, targetPos,
@@ -339,7 +455,6 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
                 0.5f, 1.0f);
 
         sendFillingParticles(targetPos, drained);
-
         notifyUpdate();
         return true;
     }
@@ -372,7 +487,6 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
                 0.5f, pitch);
 
         sendFillingParticles(targetPos, drained);
-
         notifyUpdate();
         return true;
     }
@@ -400,9 +514,7 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
         sourceBlockPos = sourcePos.immutable();
 
         AllSoundEvents.SPOUTING.playOnServer(level, worldPosition, 0.75f, 0.9f + 0.2f * level.random.nextFloat());
-
         sendFillingParticles(targetPos, simulatedDrain);
-
         notifyUpdate();
         return true;
     }
@@ -418,7 +530,7 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
                 net.minecraftforge.network.PacketDistributor.TRACKING_CHUNK.with(
                         () -> level.getChunkAt(targetPos)
                 ),
-                new com.adonis.fluid.packet.CopperFaucetParticlePacket(startPos, endPos, fluid)
+                new com.adonis.fluid.packet.CopperTapParticlePacket(startPos, endPos, fluid)
         );
     }
 
@@ -439,26 +551,11 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
 
             boolean fluidConsumed = false;
             if (sourceBlockPos != null && sourceDirection != null) {
-                BlockState sourceState = level.getBlockState(sourceBlockPos);
-
-                // 检查是否是含水树叶（无限水源）
-                if (sourceState.is(BlockTags.LEAVES) &&
-                        sourceState.hasProperty(BlockStateProperties.WATERLOGGED) &&
-                        sourceState.getValue(BlockStateProperties.WATERLOGGED) &&
-                        pendingFluid.getFluid() == Fluids.WATER) {
-                    fluidConsumed = true;
-                } else {
-                    BlockEntity sourceEntity = level.getBlockEntity(sourceBlockPos);
-                    if (sourceEntity != null) {
-                        IFluidHandler sourceHandler = sourceEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, sourceDirection)
-                                .orElse(sourceEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, null).orElse(null));
-
-                        if (sourceHandler != null) {
-                            FluidStack drained = sourceHandler.drain(pendingFluid, IFluidHandler.FluidAction.EXECUTE);
-                            if (!drained.isEmpty() && drained.getAmount() >= pendingFluid.getAmount()) {
-                                fluidConsumed = true;
-                            }
-                        }
+                IFluidHandler sourceHandler = getSourceHandler(sourceBlockPos, sourceDirection);
+                if (sourceHandler != null) {
+                    FluidStack drained = sourceHandler.drain(pendingFluid, IFluidHandler.FluidAction.EXECUTE);
+                    if (!drained.isEmpty() && drained.getAmount() >= pendingFluid.getAmount()) {
+                        fluidConsumed = true;
                     }
                 }
             }
@@ -484,7 +581,7 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
                         if (itemOnDepot.isEmpty()) {
                             behaviour.removeHeldItem();
                         } else {
-                            var updatedStack = new com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack(itemOnDepot);
+                            var updatedStack = new TransportedItemStack(itemOnDepot);
                             updatedStack.beltPosition = 0.5f;
                             updatedStack.prevBeltPosition = 0.5f;
                             behaviour.setCenteredHeldItem(updatedStack);
@@ -512,7 +609,7 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
                                 );
                             }
                         } catch (Exception e) {
-                            var newTIS = new com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack(result);
+                            var newTIS = new TransportedItemStack(result);
                             newTIS.beltPosition = 0.5f;
                             newTIS.prevBeltPosition = 0.5f;
                             behaviour.setCenteredHeldItem(newTIS);
@@ -561,7 +658,6 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
             return false;
 
         targetHandler.fill(actualDrain, IFluidHandler.FluidAction.EXECUTE);
-
         renderingFluid = actualDrain.copy();
 
         if (level.random.nextFloat() < 0.1f) {
@@ -569,7 +665,6 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
         }
 
         sendFillingParticles(targetEntity.getBlockPos(), actualDrain);
-
         notifyUpdate();
         return true;
     }
@@ -607,6 +702,8 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
         tag.putBoolean("IsFillingItem", isFillingItem);
         tag.putInt("ProcessingTicks", processingTicks);
         tag.putInt("TransferCooldown", transferCooldown);
+        tag.putInt("BeltProcessingTicks", beltProcessingTicks);
+
         if (!processingItem.isEmpty()) {
             tag.put("ProcessingItem", processingItem.save(new CompoundTag()));
         }
@@ -626,6 +723,8 @@ public class CopperFaucetBlockEntity extends SmartBlockEntity {
         isFillingItem = tag.getBoolean("IsFillingItem");
         processingTicks = tag.getInt("ProcessingTicks");
         transferCooldown = tag.getInt("TransferCooldown");
+        beltProcessingTicks = tag.getInt("BeltProcessingTicks");
+
         if (tag.contains("ProcessingItem")) {
             processingItem = ItemStack.of(tag.getCompound("ProcessingItem"));
         }

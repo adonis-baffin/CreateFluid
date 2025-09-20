@@ -9,18 +9,18 @@ import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.network.NetworkEvent;
 
-public class CopperFaucetParticlePacket extends SimplePacketBase {
+public class CopperTapParticlePacket extends SimplePacketBase {
     private final Vec3 startPos;
     private final Vec3 endPos;
     private final FluidStack fluid;
 
-    public CopperFaucetParticlePacket(Vec3 startPos, Vec3 endPos, FluidStack fluid) {
+    public CopperTapParticlePacket(Vec3 startPos, Vec3 endPos, FluidStack fluid) {
         this.startPos = startPos;
         this.endPos = endPos;
         this.fluid = fluid;
     }
 
-    public CopperFaucetParticlePacket(FriendlyByteBuf buffer) {
+    public CopperTapParticlePacket(FriendlyByteBuf buffer) {
         this.startPos = new Vec3(
                 buffer.readDouble(),
                 buffer.readDouble(),
