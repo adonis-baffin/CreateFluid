@@ -2,10 +2,8 @@ package com.adonis.fluid.registry;
 
 import static com.adonis.fluid.CreateFluid.REGISTRATE;
 import static com.simibubi.create.foundation.data.TagGen.axeOrPickaxe;
-
 import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.block.CopperTap.CopperTapBlock;
-import com.adonis.fluid.block.CopperTap.CopperTapProxyBlock;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlock;
 import com.adonis.fluid.block.Pipette.PipetteBlock;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlock;
@@ -18,7 +16,6 @@ import com.simibubi.create.foundation.data.TagGen;
 import com.tterrag.registrate.util.entry.BlockEntry;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.level.material.MapColor;
@@ -213,19 +210,6 @@ public class CFBlock {
             .item()
             .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), prov.modLoc("block/copper_tap")))
             .build()
-            .register();
-
-    // 在其他方块注册后添加
-    public static final BlockEntry<CopperTapProxyBlock> COPPER_TAP_PROXY = REGISTRATE
-            .block("copper_tap_proxy", CopperTapProxyBlock::new)
-            .initialProperties(() -> Blocks.AIR)
-            .properties(prop -> prop
-                    .noCollission()
-                    .noOcclusion()
-                    .noLootTable()
-                    .replaceable())
-            .blockstate((ctx, prov) -> prov.simpleBlock(ctx.get(),
-                    prov.models().getBuilder(ctx.getName()).texture("particle", "minecraft:block/air")))
             .register();
 
     public static void register() {

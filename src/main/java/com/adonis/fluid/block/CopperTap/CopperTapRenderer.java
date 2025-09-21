@@ -2,6 +2,7 @@ package com.adonis.fluid.block.CopperTap;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import com.simibubi.create.content.fluids.FluidFX;
 import com.simibubi.create.foundation.blockEntity.renderer.SafeBlockEntityRenderer;
 import net.minecraft.client.Minecraft;
@@ -9,10 +10,14 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Vec3i;
 import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.Fluid;
@@ -52,17 +57,17 @@ public class CopperTapRenderer extends SafeBlockEntityRenderer<CopperTapBlockEnt
         switch (facing) {
             case SOUTH:
                 ms.translate(0.5, 0, 0.5);
-                ms.mulPose(com.mojang.math.Axis.YP.rotationDegrees(180));
+                ms.mulPose(Axis.YP.rotationDegrees(180));
                 ms.translate(-0.5, 0, -0.5);
                 break;
             case WEST:
                 ms.translate(0.5, 0, 0.5);
-                ms.mulPose(com.mojang.math.Axis.YP.rotationDegrees(270));
+                ms.mulPose(Axis.YP.rotationDegrees(270));
                 ms.translate(-0.5, 0, -0.5);
                 break;
             case EAST:
                 ms.translate(0.5, 0, 0.5);
-                ms.mulPose(com.mojang.math.Axis.YP.rotationDegrees(90));
+                ms.mulPose(Axis.YP.rotationDegrees(90));
                 ms.translate(-0.5, 0, -0.5);
                 break;
         }
@@ -100,8 +105,9 @@ public class CopperTapRenderer extends SafeBlockEntityRenderer<CopperTapBlockEnt
             endZ = center + (endZ - center) * scale;
         }
 
-        // 使用自定义流体渲染方法
-        renderFluidBox(fluid, startX, endY, startZ, endX, startY, endZ,
+        // 使用Catnip风格的流体渲染
+        renderFluidBox(fluid, startX, endY, startZ,
+                endX, startY, endZ,
                 buffer, ms, light, false, true);
     }
 
@@ -127,7 +133,8 @@ public class CopperTapRenderer extends SafeBlockEntityRenderer<CopperTapBlockEnt
             float endY = -12f / 16f; // 延伸到下方
 
             // 渲染细流
-            renderFluidBox(fluid, startX, endY, startZ, endX, startY, endZ,
+            renderFluidBox(fluid, startX, endY, startZ,
+                    endX, startY, endZ,
                     buffer, ms, light, false, true);
 
             // 渲染飞溅效果
@@ -145,131 +152,190 @@ public class CopperTapRenderer extends SafeBlockEntityRenderer<CopperTapBlockEnt
     }
 
     /**
-     * 自定义流体渲染方法
-     * 基于Catnip的实现，但使用机械动力和原版的API
+     * Catnip风格的流体渲染方法 - 完整实现
+     * 这是从Catnip库中提取并适配的代码
      */
     private void renderFluidBox(FluidStack fluidStack, float xMin, float yMin, float zMin,
                                 float xMax, float yMax, float zMax,
                                 MultiBufferSource buffer, PoseStack ms, int light,
-                                boolean renderBottom, boolean flowing) {
+                                boolean renderBottom, boolean invertGasses) {
+        // 使用translucent渲染类型，与Catnip的fluid()类型效果相同
+        VertexConsumer builder = buffer.getBuffer(RenderType.translucent());
+        renderFluidBox(fluidStack, xMin, yMin, zMin, xMax, yMax, zMax,
+                builder, ms, light, renderBottom, invertGasses);
+    }
+
+    private void renderFluidBox(FluidStack fluidStack, float xMin, float yMin, float zMin,
+                                float xMax, float yMax, float zMax,
+                                VertexConsumer builder, PoseStack ms, int light,
+                                boolean renderBottom, boolean invertGasses) {
         if (fluidStack.isEmpty())
             return;
 
+        // 获取流体属性
         Fluid fluid = fluidStack.getFluid();
         IClientFluidTypeExtensions fluidAttributes = IClientFluidTypeExtensions.of(fluid);
 
-        // 获取流体纹理
-        TextureAtlasSprite fluidTexture;
-        if (flowing) {
-            fluidTexture = Minecraft.getInstance()
-                    .getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
-                    .apply(fluidAttributes.getFlowingTexture(fluidStack));
-        } else {
-            fluidTexture = Minecraft.getInstance()
-                    .getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
-                    .apply(fluidAttributes.getStillTexture(fluidStack));
-        }
+        // 获取纹理
+        ResourceLocation textureLocation = fluidAttributes.getStillTexture(fluidStack);
+        TextureAtlasSprite fluidTexture = Minecraft.getInstance()
+                .getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
+                .apply(textureLocation);
 
-        // 获取流体颜色
+        // 获取颜色
         int color = fluidAttributes.getTintColor(fluidStack);
 
-        // 获取渲染类型 - 使用半透明渲染类型
-        RenderType renderType = RenderType.translucent();
-        VertexConsumer builder = buffer.getBuffer(renderType);
+        // 调整光照
+        int blockLightIn = light >> 4 & 15;
+        int luminosity = Math.max(blockLightIn, fluid.getFluidType().getLightLevel());
+        light = (light & 0xF00000) | (luminosity << 4);
 
-        // 使用类似Catnip的方式渲染每个面
-        renderFluidFaces(builder, ms, fluidTexture, xMin, yMin, zMin, xMax, yMax, zMax,
-                color, light, renderBottom);
+        Vec3 center = new Vec3(
+                xMin + (xMax - xMin) / 2.0,
+                yMin + (yMax - yMin) / 2.0,
+                zMin + (zMax - zMin) / 2.0
+        );
+
+        ms.pushPose();
+
+        // 如果是比空气轻的气体，翻转渲染
+        if (invertGasses && fluid.getFluidType().isLighterThanAir()) {
+            ms.translate(center.x, center.y, center.z);
+            ms.mulPose(Axis.XP.rotationDegrees(180.0F));
+            ms.translate(-center.x, -center.y, -center.z);
+        }
+
+        // 渲染所有面
+        Direction[] directions = Direction.values();
+        for (Direction side : directions) {
+            if (side == Direction.DOWN && !renderBottom) {
+                continue;
+            }
+
+            boolean positive = side.getAxisDirection() == Direction.AxisDirection.POSITIVE;
+
+            if (side.getAxis().isHorizontal()) {
+                if (side.getAxis() == Direction.Axis.X) {
+                    renderStillTiledFace(side, zMin, yMin, zMax, yMax,
+                            positive ? xMax : xMin,
+                            builder, ms, light, color, fluidTexture);
+                } else {
+                    renderStillTiledFace(side, xMin, yMin, xMax, yMax,
+                            positive ? zMax : zMin,
+                            builder, ms, light, color, fluidTexture);
+                }
+            } else {
+                renderStillTiledFace(side, xMin, zMin, xMax, zMax,
+                        positive ? yMax : yMin,
+                        builder, ms, light, color, fluidTexture);
+            }
+        }
+
+        ms.popPose();
     }
 
-    private void renderFluidFaces(VertexConsumer builder, PoseStack ms, TextureAtlasSprite texture,
-                                  float xMin, float yMin, float zMin, float xMax, float yMax, float zMax,
-                                  int color, int light, boolean renderBottom) {
-        // 提取颜色分量
+    /**
+     * 渲染平铺的流体面 - 从Catnip提取
+     */
+    private static void renderStillTiledFace(Direction dir, float left, float down,
+                                             float right, float up, float depth,
+                                             VertexConsumer builder, PoseStack ms,
+                                             int light, int color, TextureAtlasSprite texture) {
+        renderTiledFace(dir, left, down, right, up, depth, builder, ms,
+                light, color, texture, 1.0F);
+    }
+
+    private static void renderTiledFace(Direction dir, float left, float down,
+                                        float right, float up, float depth,
+                                        VertexConsumer builder, PoseStack ms, int light,
+                                        int color, TextureAtlasSprite texture, float textureScale) {
+        boolean positive = dir.getAxisDirection() == Direction.AxisDirection.POSITIVE;
+        boolean horizontal = dir.getAxis().isHorizontal();
+        boolean x = dir.getAxis() == Direction.Axis.X;
+
+        float shrink = texture.uvShrinkRatio() * 0.25F * textureScale;
+        float centerU = texture.getU0() + (texture.getU1() - texture.getU0()) * 0.5F * textureScale;
+        float centerV = texture.getV0() + (texture.getV1() - texture.getV0()) * 0.5F * textureScale;
+
+        float x2 = 0.0F;
+        float y2 = 0.0F;
+
+        for (float x1 = left; x1 < right; x1 = x2) {
+            float f = (float) Mth.floor(x1);
+            x2 = Math.min(f + 1.0F, right);
+
+            float u1, u2;
+            if (dir == Direction.NORTH || dir == Direction.EAST) {
+                f = (float) Mth.ceil(x2);
+                u1 = texture.getU((f - x2) * 16.0F * textureScale);
+                u2 = texture.getU((f - x1) * 16.0F * textureScale);
+            } else {
+                u1 = texture.getU((x1 - f) * 16.0F * textureScale);
+                u2 = texture.getU((x2 - f) * 16.0F * textureScale);
+            }
+
+            u1 = Mth.lerp(shrink, u1, centerU);
+            u2 = Mth.lerp(shrink, u2, centerU);
+
+            for (float y1 = down; y1 < up; y1 = y2) {
+                f = (float) Mth.floor(y1);
+                y2 = Math.min(f + 1.0F, up);
+
+                float v1, v2;
+                if (dir == Direction.UP) {
+                    v1 = texture.getV((y1 - f) * 16.0F * textureScale);
+                    v2 = texture.getV((y2 - f) * 16.0F * textureScale);
+                } else {
+                    f = (float) Mth.ceil(y2);
+                    v1 = texture.getV((f - y2) * 16.0F * textureScale);
+                    v2 = texture.getV((f - y1) * 16.0F * textureScale);
+                }
+
+                v1 = Mth.lerp(shrink, v1, centerV);
+                v2 = Mth.lerp(shrink, v2, centerV);
+
+                if (horizontal) {
+                    if (x) {
+                        putVertex(builder, ms, depth, y2, positive ? x2 : x1, color, u1, v1, dir, light);
+                        putVertex(builder, ms, depth, y1, positive ? x2 : x1, color, u1, v2, dir, light);
+                        putVertex(builder, ms, depth, y1, positive ? x1 : x2, color, u2, v2, dir, light);
+                        putVertex(builder, ms, depth, y2, positive ? x1 : x2, color, u2, v1, dir, light);
+                    } else {
+                        putVertex(builder, ms, positive ? x1 : x2, y2, depth, color, u1, v1, dir, light);
+                        putVertex(builder, ms, positive ? x1 : x2, y1, depth, color, u1, v2, dir, light);
+                        putVertex(builder, ms, positive ? x2 : x1, y1, depth, color, u2, v2, dir, light);
+                        putVertex(builder, ms, positive ? x2 : x1, y2, depth, color, u2, v1, dir, light);
+                    }
+                } else {
+                    putVertex(builder, ms, x1, depth, positive ? y1 : y2, color, u1, v1, dir, light);
+                    putVertex(builder, ms, x1, depth, positive ? y2 : y1, color, u1, v2, dir, light);
+                    putVertex(builder, ms, x2, depth, positive ? y2 : y1, color, u2, v2, dir, light);
+                    putVertex(builder, ms, x2, depth, positive ? y1 : y2, color, u2, v1, dir, light);
+                }
+            }
+        }
+    }
+
+    /**
+     * 添加顶点 - 从Catnip提取
+     */
+    private static void putVertex(VertexConsumer builder, PoseStack ms,
+                                  float x, float y, float z,
+                                  int color, float u, float v,
+                                  Direction face, int light) {
+        Vec3i normal = face.getNormal();
+        PoseStack.Pose peek = ms.last();
+
         int a = (color >> 24) & 0xFF;
         int r = (color >> 16) & 0xFF;
         int g = (color >> 8) & 0xFF;
         int b = color & 0xFF;
-        if (a == 0) a = 255;
 
-        // 纹理坐标
-        float u0 = texture.getU0();
-        float u1 = texture.getU1();
-        float v0 = texture.getV0();
-        float v1 = texture.getV1();
-
-        PoseStack.Pose pose = ms.last();
-
-        // 渲染各个面（按照Catnip的顺序）
-        Direction[] directions = Direction.values();
-        for (Direction dir : directions) {
-            if (dir == Direction.DOWN && !renderBottom) {
-                continue;
-            }
-
-            renderFace(builder, pose, dir, xMin, yMin, zMin, xMax, yMax, zMax,
-                    u0, u1, v0, v1, r, g, b, a, light);
-        }
-    }
-
-    private void renderFace(VertexConsumer builder, PoseStack.Pose pose, Direction dir,
-                            float xMin, float yMin, float zMin, float xMax, float yMax, float zMax,
-                            float u0, float u1, float v0, float v1,
-                            int r, int g, int b, int a, int light) {
-        float nx = dir.getNormal().getX();
-        float ny = dir.getNormal().getY();
-        float nz = dir.getNormal().getZ();
-
-        switch (dir) {
-            case DOWN: // Y-
-                addVertex(builder, pose, xMin, yMin, zMin, u0, v0, r, g, b, a, light, nx, ny, nz);
-                addVertex(builder, pose, xMax, yMin, zMin, u1, v0, r, g, b, a, light, nx, ny, nz);
-                addVertex(builder, pose, xMax, yMin, zMax, u1, v1, r, g, b, a, light, nx, ny, nz);
-                addVertex(builder, pose, xMin, yMin, zMax, u0, v1, r, g, b, a, light, nx, ny, nz);
-                break;
-            case UP: // Y+
-                addVertex(builder, pose, xMin, yMax, zMin, u0, v0, r, g, b, a, light, nx, ny, nz);
-                addVertex(builder, pose, xMin, yMax, zMax, u0, v1, r, g, b, a, light, nx, ny, nz);
-                addVertex(builder, pose, xMax, yMax, zMax, u1, v1, r, g, b, a, light, nx, ny, nz);
-                addVertex(builder, pose, xMax, yMax, zMin, u1, v0, r, g, b, a, light, nx, ny, nz);
-                break;
-            case NORTH: // Z-
-                addVertex(builder, pose, xMin, yMin, zMin, u0, v1, r, g, b, a, light, nx, ny, nz);
-                addVertex(builder, pose, xMin, yMax, zMin, u0, v0, r, g, b, a, light, nx, ny, nz);
-                addVertex(builder, pose, xMax, yMax, zMin, u1, v0, r, g, b, a, light, nx, ny, nz);
-                addVertex(builder, pose, xMax, yMin, zMin, u1, v1, r, g, b, a, light, nx, ny, nz);
-                break;
-            case SOUTH: // Z+
-                addVertex(builder, pose, xMin, yMin, zMax, u0, v1, r, g, b, a, light, nx, ny, nz);
-                addVertex(builder, pose, xMax, yMin, zMax, u1, v1, r, g, b, a, light, nx, ny, nz);
-                addVertex(builder, pose, xMax, yMax, zMax, u1, v0, r, g, b, a, light, nx, ny, nz);
-                addVertex(builder, pose, xMin, yMax, zMax, u0, v0, r, g, b, a, light, nx, ny, nz);
-                break;
-            case WEST: // X-
-                addVertex(builder, pose, xMin, yMin, zMin, u0, v1, r, g, b, a, light, nx, ny, nz);
-                addVertex(builder, pose, xMin, yMin, zMax, u1, v1, r, g, b, a, light, nx, ny, nz);
-                addVertex(builder, pose, xMin, yMax, zMax, u1, v0, r, g, b, a, light, nx, ny, nz);
-                addVertex(builder, pose, xMin, yMax, zMin, u0, v0, r, g, b, a, light, nx, ny, nz);
-                break;
-            case EAST: // X+
-                addVertex(builder, pose, xMax, yMin, zMin, u0, v1, r, g, b, a, light, nx, ny, nz);
-                addVertex(builder, pose, xMax, yMax, zMin, u0, v0, r, g, b, a, light, nx, ny, nz);
-                addVertex(builder, pose, xMax, yMax, zMax, u1, v0, r, g, b, a, light, nx, ny, nz);
-                addVertex(builder, pose, xMax, yMin, zMax, u1, v1, r, g, b, a, light, nx, ny, nz);
-                break;
-        }
-    }
-
-    private void addVertex(VertexConsumer builder, PoseStack.Pose pose,
-                           float x, float y, float z,
-                           float u, float v,
-                           int r, int g, int b, int a, int light,
-                           float nx, float ny, float nz) {
-        builder.vertex(pose.pose(), x, y, z)
+        builder.vertex(peek.pose(), x, y, z)
                 .color(r, g, b, a)
                 .uv(u, v)
                 .uv2(light)
-                .normal(pose.normal(), nx, ny, nz)
+                .normal(peek.normal(), normal.getX(), normal.getY(), normal.getZ())
                 .endVertex();
     }
 

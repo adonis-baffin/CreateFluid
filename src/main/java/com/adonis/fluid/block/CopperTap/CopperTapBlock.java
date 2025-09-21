@@ -34,7 +34,6 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import com.simibubi.create.content.fluids.transfer.GenericItemFilling;
-import com.adonis.fluid.registry.CFBlock;
 
 import javax.annotation.Nullable;
 
@@ -42,9 +41,10 @@ public class CopperTapBlock extends HorizontalDirectionalBlock implements IBE<Co
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final BooleanProperty OPEN = BlockStateProperties.OPEN;
-    public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
+    public static final BooleanProperty POWERED = BlockStateProperties.POWERED;  // 使用正确的导入
 
-    // [保持原有的VoxelShape定义...]
+    // [保持原有的VoxelShape定义不变...]
+    // NORTH shapes
     private static final VoxelShape NORTH_OUTLET = Block.box(3, 3, 15, 13, 12.9, 16);
     private static final VoxelShape NORTH_PIPE = Block.box(6, 6, 6, 10, 10, 15);
     private static final VoxelShape NORTH_DROP = Block.box(6, 4, 6, 10, 6, 10);
@@ -55,6 +55,7 @@ public class CopperTapBlock extends HorizontalDirectionalBlock implements IBE<Co
             NORTH_OUTLET, NORTH_PIPE, NORTH_DROP, NORTH_BASE, NORTH_VALVE_TOP, NORTH_VALVE_HANDLE
     );
 
+    // [其他方向的shapes保持不变...]
     private static final VoxelShape SOUTH_OUTLET = Block.box(3, 3, 0, 13, 12.9, 1);
     private static final VoxelShape SOUTH_PIPE = Block.box(6, 6, 1, 10, 10, 10);
     private static final VoxelShape SOUTH_DROP = Block.box(6, 4, 6, 10, 6, 10);
@@ -90,12 +91,12 @@ public class CopperTapBlock extends HorizontalDirectionalBlock implements IBE<Co
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(FACING, Direction.NORTH)
                 .setValue(OPEN, false)
-                .setValue(POWERED, false));
+                .setValue(POWERED, false));  // 添加POWERED的默认值
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING, OPEN, POWERED);
+        builder.add(FACING, OPEN, POWERED);  // 添加POWERED属性
     }
 
     @Override
@@ -114,50 +115,10 @@ public class CopperTapBlock extends HorizontalDirectionalBlock implements IBE<Co
         return getShape(state, level, pos, context);
     }
 
-    @Override
-    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
-        super.onPlace(state, level, pos, oldState, movedByPiston);
-
-        if (!level.isClientSide) {
-            // 在铜龙头上方放置代理方块
-            BlockPos proxyPos = pos.above();
-            if (level.getBlockState(proxyPos).isAir()) {
-                level.setBlock(proxyPos, CFBlock.COPPER_TAP_PROXY.get().defaultBlockState(), 3);
-            }
-
-            // 同时在铜龙头下方的位置上方2格也放置代理方块（为传送带准备）
-            BlockPos beltProxyPos = pos.below().above(2); // 即 pos.above()
-            // 这里实际上是同一个位置，所以上面的代码已经处理了
-        }
-    }
-
-    // 添加一个方法来检查并更新代理方块
-    public void updateProxyBlocks(Level level, BlockPos pos) {
-        if (!level.isClientSide) {
-            // 确保代理方块在正确位置
-            BlockPos proxyPos = pos.above();
-            if (level.getBlockState(proxyPos).isAir()) {
-                level.setBlock(proxyPos, CFBlock.COPPER_TAP_PROXY.get().defaultBlockState(), 3);
-            }
-        }
-    }
-
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (!state.is(newState.getBlock())) {
-            // 移除上方的代理方块
-            BlockPos proxyPos = pos.above();
-            if (level.getBlockState(proxyPos).is(CFBlock.COPPER_TAP_PROXY.get())) {
-                level.removeBlock(proxyPos, movedByPiston);
-            }
-        }
-
-        IBE.onRemove(state, level, pos, newState);
-    }
-
     private boolean hasFluidCapability(LevelReader level, BlockPos pos, Direction fromDirection) {
         BlockState blockState = level.getBlockState(pos);
 
+        // 可以放在任何树叶上
         if (blockState.is(BlockTags.LEAVES)) {
             return true;
         }
@@ -287,6 +248,7 @@ public class CopperTapBlock extends HorizontalDirectionalBlock implements IBE<Co
         if (level.isClientSide())
             return InteractionResult.SUCCESS;
 
+        // 如果被红石信号锁定，播放声音提示但不切换状态
         if (state.getValue(POWERED)) {
             level.playSound(null, pos,
                     net.minecraft.sounds.SoundEvents.IRON_TRAPDOOR_CLOSE,
@@ -351,6 +313,11 @@ public class CopperTapBlock extends HorizontalDirectionalBlock implements IBE<Co
     @Override
     public float getShadeBrightness(BlockState state, BlockGetter level, BlockPos pos) {
         return 1.0F;
+    }
+
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        IBE.onRemove(state, level, pos, newState);
     }
 
     @Override
