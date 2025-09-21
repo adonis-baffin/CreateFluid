@@ -219,12 +219,6 @@ public class CentrifugalPumpScenes {
         }, false);
         scene.idle(20);
 
-        // 在储罐1中添加水
-        scene.world().modifyBlockEntity(tank1BottomPos, FluidTankBlockEntity.class, be -> {
-            be.getTankInventory().fill(new FluidStack(Fluids.WATER, 2000), IFluidHandler.FluidAction.EXECUTE);
-        });
-        scene.idle(10);
-
         // 第八句话
         scene.overlay().showText(100)
                 .attachKeyFrame()
