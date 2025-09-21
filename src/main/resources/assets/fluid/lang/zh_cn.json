@@ -27,7 +27,7 @@
   "block.fluid.smart_fluid_interface.tooltip.behaviour2": "作为连接容器的_过滤网关_，防止不需要的流体类型通过",
 
   "block.fluid.centrifugal_pump.tooltip.summary": "比_动力泵_运输距离更远，传输速率更高，可以用_铜机壳_来封装",
-  "block.fluid.copper_tap.tooltip.summary": "右键开关。可以填充下方的工作盆，炼药锅，或对下方的置物台进行注液加工",
+  "block.fluid.copper_tap.tooltip.summary": "右键开关。可以填充下方的_工作盆_，_炼药锅_，或对下方的_置物台_进行注液加工",
 
   "create.fluid.mechanical_pipette.extract": "从%1$s吸取流体",
   "create.fluid.mechanical_pipette.deposit": "将流体注入%1$s",
@@ -56,6 +56,14 @@
   "create_fluid.centrifugal_pump.pump_mode": "泵送模式",
   "create_fluid.centrifugal_pump.mode.pump_in": "泵入",
   "create_fluid.centrifugal_pump.mode.pump_out": "泵出",
+
+  "create.create_fluid.centrifugal_pump.pump_mode": "泵送模式",
+  "create.create_fluid.centrifugal_pump.mode.pump_in": "泵入",
+  "create.create_fluid.centrifugal_pump.mode.pump_out": "泵出",
+
+  "create.mechanical_arm.selection_mode.forced_round_robin": "强制轮询调度",
+  "create.mechanical_arm.selection_mode.prefer_first": "第一目标优先",
+  "create.mechanical_arm.selection_mode.round_robin": "轮询调度",
 
   "fluid.ponder.mechanical_pipette.header": "配置动力移液器",
   "fluid.ponder.mechanical_pipette.text_1": "输入",

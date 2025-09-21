@@ -27,7 +27,7 @@
   "block.fluid.smart_fluid_interface.tooltip.behaviour2": "Functions as a _filtered gateway_ to the attached container, preventing unwanted fluid types from passing through",
 
   "block.fluid.centrifugal_pump.tooltip.summary": "Transports further and faster than _Mechanical Pumps_, can be encased with _Copper Casing_",
-  "block.fluid.copper_tap.tooltip.summary": "Right-click to switch. Can fill Basins, Cauldrons below, or perform spout processing on Depots below",
+  "block.fluid.copper_tap.tooltip.summary": "Right-click to switch. Can fill _Basins_, _Cauldrons_ below, or perform spout processing on _Depots_ below",
 
   "create.fluid.mechanical_pipette.extract": "Drain fluid from %1$s",
   "create.fluid.mechanical_pipette.deposit": "Inject fluid to %1$s",
@@ -60,6 +60,14 @@
   "create_fluid.centrifugal_pump.pump_mode": "Pump Mode",
   "create_fluid.centrifugal_pump.mode.pump_in": "Pump in",
   "create_fluid.centrifugal_pump.mode.pump_out": "Pump out",
+
+  "create.create_fluid.centrifugal_pump.pump_mode": "Pump Mode",
+  "create.create_fluid.centrifugal_pump.mode.pump_in": "Pump in",
+  "create.create_fluid.centrifugal_pump.mode.pump_out": "Pump out",
+
+  "create.mechanical_arm.selection_mode.forced_round_robin": "Forced Round Robin",
+  "create.mechanical_arm.selection_mode.prefer_first": "Prefer First Target",
+  "create.mechanical_arm.selection_mode.round_robin": "Round Robin",
 
   "fluid.ponder.mechanical_pipette.header": "Setting up Mechanical Pipette",
   "fluid.ponder.mechanical_pipette.text_1": "Inputs",
