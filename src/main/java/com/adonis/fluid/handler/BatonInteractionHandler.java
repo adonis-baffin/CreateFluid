@@ -1,9 +1,12 @@
 package com.adonis.fluid.handler;
 
+import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlock;
+import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlockEntity;
 import com.adonis.fluid.block.Pipette.PipetteBlockEntity;
 import com.adonis.fluid.content.pipette.FluidInteractionPoint;
 import com.adonis.fluid.item.BatonItem;
 import com.adonis.fluid.mixin.accessor.ArmBlockEntityAccessor;
+import com.adonis.fluid.packet.CentrifugalPumpModeTogglePacket;
 import com.adonis.fluid.packet.PipetteFluidPlacementPacket;
 import com.adonis.fluid.packet.QuartzLampTogglePacket;
 import com.simibubi.create.AllPackets;
@@ -126,6 +129,15 @@ public class BatonInteractionHandler {
             // 但是要检查是否需要在服务端取消某些交互
             BlockEntity be = level.getBlockEntity(pos);
 
+            // 处理离心泵 - 服务端也要取消事件
+            if (be instanceof CentrifugalPumpBlockEntity) {
+                if (!state.hasProperty(CentrifugalPumpBlock.ENCASED) ||
+                        !state.getValue(CentrifugalPumpBlock.ENCASED)) {
+                    event.setCanceled(true);
+                    event.setCancellationResult(InteractionResult.SUCCESS);
+                }
+            }
+
             // 这些方块在服务端也要取消事件
             if (be instanceof ArmBlockEntity ||
                     be instanceof PipetteBlockEntity ||
@@ -157,16 +169,40 @@ public class BatonInteractionHandler {
             return;
         }
 
-        if (state.getBlock() instanceof RoseQuartzLampBlock) {
-            // 发送数据包到服务端处理
-            AllPackets.getChannel().sendToServer(new QuartzLampTogglePacket(pos));
+        // 处理离心泵
+        if (be instanceof CentrifugalPumpBlockEntity pump) {
+            // 检查是否是封装状态
+            if (!state.hasProperty(CentrifugalPumpBlock.ENCASED) ||
+                    !state.getValue(CentrifugalPumpBlock.ENCASED)) {
 
-            // 播放音效
-            level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                    SoundEvents.LEVER_CLICK, SoundSource.BLOCKS, 0.3f, 1.0f, false);
+                // 非封装状态下可以切换模式
+                if (!sneaking && pump.pumpMode != null) {
+                    // 发送数据包到服务器
+                    AllPackets.getChannel().sendToServer(new CentrifugalPumpModeTogglePacket(pos));
 
-            event.setCanceled(true);
-            event.setCancellationResult(InteractionResult.SUCCESS);
+                    // 客户端预览效果
+                    int currentMode = pump.pumpMode.getValue();
+                    int nextMode = (currentMode + 1) % CentrifugalPumpBlockEntity.PumpMode.values().length;
+                    CentrifugalPumpBlockEntity.PumpMode newMode =
+                            CentrifugalPumpBlockEntity.PumpMode.values()[nextMode];
+
+                    // 发送反馈消息
+                    CreateLang.builder()
+                            .translate(newMode.getTranslationKey())
+                            .style(ChatFormatting.AQUA)
+                            .sendStatus(player);
+
+                    // 播放音效和粒子效果
+                    level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                            SoundEvents.LEVER_CLICK, SoundSource.BLOCKS, 0.3f, 1.5f, false);
+                    createPumpModeToggleParticles(level, pos);
+
+                    event.setCanceled(true);
+                    event.setCancellationResult(InteractionResult.SUCCESS);
+                    return;
+                }
+            }
+            // 封装状态下不响应
             return;
         }
 
@@ -784,7 +820,7 @@ public class BatonInteractionHandler {
         }
     }
 
-    // 辅助方法保持不变...
+    // 辅助方法
     private static void playSelectionEffects(Level level, BlockPos pos, boolean isNew) {
         if (isNew) {
             level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
@@ -824,6 +860,22 @@ public class BatonInteractionHandler {
             double z = pos.getZ() + 0.5 + Math.sin(angle) * radius;
             level.addParticle(ParticleTypes.NOTE,
                     x, y, z, random.nextDouble(), 0, 0);
+        }
+    }
+
+    private static void createPumpModeToggleParticles(Level level, BlockPos pos) {
+        Random random = new Random();
+        // 创建螺旋上升的粒子效果
+        for (int i = 0; i < 12; i++) {
+            double angle = (Math.PI * 2) * i / 12;
+            double radius = 0.5;
+            double x = pos.getX() + 0.5 + Math.cos(angle) * radius;
+            double y = pos.getY() + 0.5 + (i * 0.05); // 螺旋上升
+            double z = pos.getZ() + 0.5 + Math.sin(angle) * radius;
+
+            // 使用青色粒子表示流体相关
+            level.addParticle(new DustParticleOptions(new Vector3f(0.0F, 1.0F, 1.0F), 1.0F),
+                    x, y, z, 0, 0.02, 0);
         }
     }
 

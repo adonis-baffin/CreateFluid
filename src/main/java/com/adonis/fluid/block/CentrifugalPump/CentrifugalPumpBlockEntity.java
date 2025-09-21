@@ -43,7 +43,7 @@ import java.util.*;
 
 public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
 
-    protected ScrollOptionBehaviour<PumpMode> pumpMode;
+    public ScrollOptionBehaviour<PumpMode> pumpMode;
     Couple<MutableBoolean> sidesToUpdate = Couple.create(MutableBoolean::new);
     boolean pressureUpdate;
 
@@ -160,7 +160,7 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         }
     }
 
-    private void onModeChanged() {
+    public void onModeChanged() {
         if (!level.isClientSide || isVirtual()) {
             updatePressureChange();
         }

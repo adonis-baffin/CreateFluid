@@ -1,9 +1,6 @@
 package com.adonis.fluid.networking;
 
-import com.adonis.fluid.packet.CopperTapParticlePacket;
-import com.adonis.fluid.packet.PipetteFluidPlacementPacket;
-import com.adonis.fluid.packet.PipetteParticlePacket;
-import com.adonis.fluid.packet.QuartzLampTogglePacket;
+import com.adonis.fluid.packet.*;
 import com.simibubi.create.AllPackets;
 import net.minecraftforge.network.simple.SimpleChannel;
 
@@ -53,6 +50,15 @@ public class CFNetworking {
         channel.registerMessage(id++, QuartzLampTogglePacket.class,
                 (msg, buf) -> msg.write(buf),
                 QuartzLampTogglePacket::new,
+                (msg, ctxSupplier) -> {
+                    msg.handle(ctxSupplier.get());
+                    ctxSupplier.get().setPacketHandled(true);
+                });
+
+        // 注册离心泵模式切换包
+        channel.registerMessage(id++, CentrifugalPumpModeTogglePacket.class,
+                (msg, buf) -> msg.write(buf),
+                CentrifugalPumpModeTogglePacket::new,
                 (msg, ctxSupplier) -> {
                     msg.handle(ctxSupplier.get());
                     ctxSupplier.get().setPacketHandled(true);
