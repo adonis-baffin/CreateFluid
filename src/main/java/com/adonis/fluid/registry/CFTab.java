@@ -5,6 +5,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
@@ -30,7 +31,10 @@ public class CFTab {
                         // 流体接口
                         output.accept(CFBlock.FLUID_INTERFACE.get());
                         output.accept(CFBlock.SMART_FLUID_INTERFACE.get());
+
+                        //其他
                         output.accept(CFItem.HONEYCOMB_MOLD.get());
+                        output.accept(Items.POWDER_SNOW_BUCKET);
 
                     })
                     .build());

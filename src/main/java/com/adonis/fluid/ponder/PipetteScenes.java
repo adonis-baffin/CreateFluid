@@ -383,7 +383,7 @@ public class PipetteScenes {
         scene.idle(90);
 
         // 问题5修复：修正过滤槽位置（x坐标+3）
-        Vec3 filterSlot = util.vector().of(3.6, 2.5, 1.5); // x从0.5改为3.2
+        Vec3 filterSlot = util.vector().of(3.6, 2.5, 1.5);
         scene.overlay().showFilterSlotInput(filterSlot, Direction.WEST, 80);
         scene.idle(10);
 

@@ -92,5 +92,27 @@
   "fluid.ponder.baton.text_4": "用指挥棒对其右键，进入指挥模式。指挥模式下，动力臂所有的交互点会持续高亮显示",
   "fluid.ponder.baton.text_5": "现在，你可以像手持动力臂一样，自由地在之前的基础上，调整动力臂的交互点",
   "fluid.ponder.baton.text_6": "修改完成后，再次右键动力臂，即可为其更新交互点信息",
-  "fluid.ponder.baton.text_7": "动力移液器和弹射置物台的交互点同样可以用指挥棒修改"
+  "fluid.ponder.baton.text_7": "动力移液器和弹射置物台的交互点同样可以用指挥棒修改",
+
+  "fluid.ponder.powder_snow.header": "细雪流体",
+  "fluid.ponder.powder_snow.text_1": "细雪现在是一种流体，它可以被流体管道或动力移液器从炼药锅中收集",
+  "fluid.ponder.powder_snow.text_2": "可以用细雪桶来设置对细雪流体的过滤",
+  "fluid.ponder.powder_snow.text_3": "也可以通过动力搅拌器来制作细雪流体",
+  "fluid.ponder.powder_snow.text_4": "右键工作盆即可获得细雪桶",
+
+  "fluid.ponder.centrifugal_pump.header": "使用离心泵",
+  "fluid.ponder.centrifugal_pump.text_1": "离心泵具有比动力泵更强大的传输速率，更远的传输距离，当然它消耗的应力也更大",
+  "fluid.ponder.centrifugal_pump.text_2": "离心泵的压力最多沿管线传递20格，与输入动力无关",
+  "fluid.ponder.centrifugal_pump.text_3": "相同的转速下，离心泵的传输速度是动力泵的两倍",
+  "fluid.ponder.centrifugal_pump.text_4": "离心泵的传输方向不受旋转方向影响",
+  "fluid.ponder.centrifugal_pump.text_5": "取而代之的是，可以通过侧面的面板来控制离心泵的传输方向",
+  "fluid.ponder.centrifugal_pump.text_6": "如果觉得使用面板太麻烦，使用指挥棒对其右键可以实现便捷切换",
+  "fluid.ponder.centrifugal_pump.text_7": "铜机壳可用于封装离心泵",
+  "fluid.ponder.centrifugal_pump.text_8": "封装后的离心泵不再具有面板，其传输方向由旋转方向控制",
+
+  "fluid.ponder.copper_tap.header": "使用铜龙头",
+  "fluid.ponder.copper_tap.text_1": "铜龙头从它身后的流体容器中获取流体，可以填充下方的炼药锅、工作盆",
+  "fluid.ponder.copper_tap.text_2": "铜龙头可以依附在树叶上，并且可以从含水树叶中无限输出水",
+  "fluid.ponder.copper_tap.text_3": "铜龙头可以对下方的置物台进行注液加工",
+  "fluid.ponder.copper_tap.text_4": "可以用红石信号来控制铜龙头的开关"
 }

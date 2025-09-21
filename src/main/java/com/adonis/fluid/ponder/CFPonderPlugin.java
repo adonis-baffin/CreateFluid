@@ -33,6 +33,18 @@ public class CFPonderPlugin implements PonderPlugin {
         // 注册指挥棒的场景
         HELPER.forComponents(CFItem.BATON)
                 .addStoryBoard("baton", ConductorBatonScenes::usage);
+
+        // 注册离心泵的场景
+        HELPER.forComponents(CFBlock.CENTRIFUGAL_PUMP)
+                .addStoryBoard("centrifugal_pump", CentrifugalPumpScenes::centrifugalpump);
+
+        // 注册铜龙头的场景
+        HELPER.forComponents(CFBlock.COPPER_TAP)
+                .addStoryBoard("tap", CopperTapScenes::tap);
+
+        // 注册细雪桶的场景（绑定到原版物品）
+        helper.forComponents(new ResourceLocation("minecraft", "powder_snow_bucket"))
+                .addStoryBoard("powder_snow", PowderSnowScenes::snow);
     }
 
     @Override
@@ -41,13 +53,16 @@ public class CFPonderPlugin implements PonderPlugin {
 
         PonderTagRegistrationHelper<RegistryEntry<?>> HELPER = helper.withKeyFunction(RegistryEntry::getId);
 
-        // 将动力移液器添加到机械动力的既有标签中
+        // 将动力移液器和离心泵添加到机械动力的既有标签中
         HELPER.addToTag(AllCreatePonderTags.KINETIC_APPLIANCES)
-                .add(CFBlock.PIPETTE);
+                .add(CFBlock.PIPETTE)
+                .add(CFBlock.CENTRIFUGAL_PUMP);
 
-        // 也可以添加到流体相关标签
+        // 添加到流体相关标签
         HELPER.addToTag(AllCreatePonderTags.FLUIDS)
-                .add(CFBlock.PIPETTE);
+                .add(CFBlock.PIPETTE)
+                .add(CFBlock.CENTRIFUGAL_PUMP)
+                .add(CFBlock.COPPER_TAP);
 
         // 将指挥棒添加到工具标签
         HELPER.addToTag(AllCreatePonderTags.ARM_TARGETS)

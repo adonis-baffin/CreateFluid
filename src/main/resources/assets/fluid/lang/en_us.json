@@ -96,5 +96,27 @@
   "fluid.ponder.baton.text_4": "Right-Click it with the Conductor's Baton to enter conducting mode. All interaction points will be continuously highlighted",
   "fluid.ponder.baton.text_5": "Now you can adjust the Arm's interaction points just as if you were holding the Arm itself",
   "fluid.ponder.baton.text_6": "Once finished, Right-Click the Arm again to update its interaction point configuration",
-  "fluid.ponder.baton.text_7": "Interaction points of Mechanical Pipette and Ejector Depot can also be modified with the Conductor's Baton"
+  "fluid.ponder.baton.text_7": "Interaction points of Mechanical Pipette and Ejector Depot can also be modified with the Conductor's Baton",
+
+  "fluid.ponder.powder_snow.header": "Powder Snow as Fluid",
+  "fluid.ponder.powder_snow.text_1": "Powder Snow is now a fluid that can be collected from Cauldrons using pipes or Mechanical Pipettes",
+  "fluid.ponder.powder_snow.text_2": "Powder Snow Buckets can be used to set filters for Powder Snow fluid",
+  "fluid.ponder.powder_snow.text_3": "Powder Snow fluid can also be created using a Mechanical Mixer",
+  "fluid.ponder.powder_snow.text_4": "Right-click the Basin to obtain Powder Snow Buckets",
+
+  "fluid.ponder.centrifugal_pump.header": "Using Centrifugal Pumps",
+  "fluid.ponder.centrifugal_pump.text_1": "Centrifugal Pumps have more powerful transfer rates and longer transfer distances than Mechanical Pumps, but consume more stress",
+  "fluid.ponder.centrifugal_pump.text_2": "The pump's pressure travels up to 20 blocks along pipes, regardless of input power",
+  "fluid.ponder.centrifugal_pump.text_3": "At the same speed, Centrifugal Pumps transfer fluids twice as fast as Mechanical Pumps",
+  "fluid.ponder.centrifugal_pump.text_4": "The pump's transfer direction is not affected by rotation direction",
+  "fluid.ponder.centrifugal_pump.text_5": "Instead, the side panel can be used to control the pump's transfer direction",
+  "fluid.ponder.centrifugal_pump.text_6": "If using the panel is inconvenient, right-click with the Conductor's Baton for quick switching",
+  "fluid.ponder.centrifugal_pump.text_7": "Copper Casing can be used to encase the Centrifugal Pump",
+  "fluid.ponder.centrifugal_pump.text_8": "Encased pumps no longer have a panel; their transfer direction is controlled by rotation direction",
+
+  "fluid.ponder.copper_tap.header": "Using Copper Taps",
+  "fluid.ponder.copper_tap.text_1": "Copper Taps draw fluid from containers behind them and can fill Cauldrons or Basins below",
+  "fluid.ponder.copper_tap.text_2": "Copper Taps can be attached to leaves and infinitely output water from waterlogged leaves",
+  "fluid.ponder.copper_tap.text_3": "Copper Taps can perform spout processing on Depots below",
+  "fluid.ponder.copper_tap.text_4": "Redstone signals can be used to control the tap's on/off state"
 }
