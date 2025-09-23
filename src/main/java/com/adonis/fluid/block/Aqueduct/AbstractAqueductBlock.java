@@ -151,7 +151,6 @@ public abstract class AbstractAqueductBlock extends HorizontalDirectionalBlock
                 }
                 return InteractionResult.PASS;
             } catch (Exception e) {
-                LOGGER.error("Error handling fluid interaction at {}", pos, e);
                 return InteractionResult.PASS;
             }
         });

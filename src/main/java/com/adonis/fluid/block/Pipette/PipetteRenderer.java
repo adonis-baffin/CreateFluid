@@ -26,15 +26,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.fluids.FluidStack;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import static com.simibubi.create.content.kinetics.mechanicalArm.ArmRenderer.*;
 
 public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEntity> {
-
-    private static final Logger LOGGER = LogManager.getLogger();
-    private static boolean hasLoggedError = false; // 避免日志刷屏
 
     public PipetteRenderer(BlockEntityRendererProvider.Context context) {
         super(context);
@@ -85,11 +80,7 @@ public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEnti
             }
 
         } catch (Exception e) {
-            // 记录错误但不崩溃
-            if (!hasLoggedError) {
-                LOGGER.error("Error rendering pipette at {}: {}", be.getBlockPos(), e.getMessage());
-                hasLoggedError = true;
-            }
+            // 静默处理
         }
     }
 
@@ -128,8 +119,7 @@ public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEnti
 
             ms.popPose();
         } catch (Exception e) {
-            // 流体渲染失败不应该影响整体
-            LOGGER.debug("Failed to render fluid in pipette: {}", e.getMessage());
+            // 静默处理
         }
     }
 
@@ -159,10 +149,6 @@ public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEnti
 
             // 如果所有模型都失败，直接返回
             if (base == null || lowerBody == null || upperBody == null || head == null) {
-                if (!hasLoggedError) {
-                    LOGGER.error("Failed to load pipette models, skipping render");
-                    hasLoggedError = true;
-                }
                 return;
             }
 
@@ -186,10 +172,7 @@ public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEnti
             head.transform(msLocal).renderInto(ms, builder);
 
         } catch (Exception e) {
-            if (!hasLoggedError) {
-                LOGGER.error("Error rendering pipette parts: {}", e.getMessage());
-                hasLoggedError = true;
-            }
+            // 静默处理
         }
     }
 
@@ -207,7 +190,7 @@ public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEnti
         try {
             buffer = CachedBuffers.partial(model, blockState);
         } catch (Exception e) {
-            LOGGER.debug("Failed to get buffer for model, trying fallback: {}", e.getMessage());
+            // 静默处理
         }
 
         // 如果失败，尝试后备模型
@@ -215,7 +198,7 @@ public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEnti
             try {
                 buffer = CachedBuffers.partial(fallback, blockState);
             } catch (Exception e) {
-                LOGGER.debug("Failed to get buffer for fallback model: {}", e.getMessage());
+                // 静默处理
             }
         }
 
@@ -286,7 +269,7 @@ public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEnti
             // ... [原有的六个面渲染代码]
 
         } catch (Exception e) {
-            LOGGER.debug("Failed to render fluid in needle: {}", e.getMessage());
+            // 静默处理
         }
     }
 
@@ -301,7 +284,6 @@ public class PipetteRenderer extends KineticBlockEntityRenderer<PipetteBlockEnti
             try {
                 return CachedBuffers.partial(AllPartialModels.ARM_COG, state);
             } catch (Exception e2) {
-                LOGGER.error("Failed to get cog model: {}", e2.getMessage());
                 return null;
             }
         }

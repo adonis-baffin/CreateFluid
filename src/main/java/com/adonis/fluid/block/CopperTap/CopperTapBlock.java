@@ -43,7 +43,6 @@ public class CopperTapBlock extends HorizontalDirectionalBlock implements IBE<Co
     public static final BooleanProperty OPEN = BlockStateProperties.OPEN;
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;  // 使用正确的导入
 
-    // [保持原有的VoxelShape定义不变...]
     // NORTH shapes
     private static final VoxelShape NORTH_OUTLET = Block.box(3, 3, 15, 13, 12.9, 16);
     private static final VoxelShape NORTH_PIPE = Block.box(6, 6, 6, 10, 10, 15);

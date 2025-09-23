@@ -4,11 +4,8 @@ import com.adonis.fluid.CreateFluid;
 import com.simibubi.create.AllPartialModels;
 import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 import net.minecraft.resources.ResourceLocation;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class CFPartialModels {
-    private static final Logger LOGGER = LogManager.getLogger();
     private static boolean initialized = false;
     private static boolean useFallback = false;
 
@@ -47,16 +44,13 @@ public class CFPartialModels {
                 PIPETTE_HEAD_1000 = createPartialModel("pipette/head_1000");
                 PIPETTE_HEAD = PIPETTE_HEAD_EMPTY;
 
-                LOGGER.info("Successfully loaded custom pipette models");
             } catch (Exception e) {
-                LOGGER.warn("Failed to load custom pipette models, using Create defaults", e);
                 initFallbackModels();
             }
 
             initialized = true;
 
         } catch (Exception e) {
-            LOGGER.error("Critical error initializing pipette models", e);
             initFallbackModels();
         }
     }
@@ -78,7 +72,6 @@ public class CFPartialModels {
 
         useFallback = true;
         initialized = true;
-        LOGGER.info("Using fallback models from Create");
     }
 
     private static PartialModel createPartialModel(String path) {
@@ -86,7 +79,6 @@ public class CFPartialModels {
             ResourceLocation location = new ResourceLocation(CreateFluid.MODID, "block/" + path);
             return PartialModel.of(location);
         } catch (Exception e) {
-            LOGGER.error("Failed to create partial model for path: {}", path, e);
             throw e;
         }
     }
@@ -113,7 +105,7 @@ public class CFPartialModels {
             if (fluidAmount >= 250 && PIPETTE_HEAD_250 != null) return PIPETTE_HEAD_250;
             if (PIPETTE_HEAD_EMPTY != null) return PIPETTE_HEAD_EMPTY;
         } catch (Exception e) {
-            LOGGER.error("Error selecting pipette head model", e);
+            // 静默处理
         }
 
         // 最终后备

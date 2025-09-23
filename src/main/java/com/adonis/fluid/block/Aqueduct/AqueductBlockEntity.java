@@ -223,7 +223,6 @@ public class AqueductBlockEntity extends AbstractAqueductBlockEntity {
                 // 进入结对工作状态
                 this.setAsSource(currentCheckPos);
                 target.setAsTarget(worldPosition);
-                LOGGER.debug("水渠 {} 与 {} 进入结对工作状态", worldPosition, currentCheckPos);
                 break;
             }
 
@@ -412,7 +411,6 @@ public class AqueductBlockEntity extends AbstractAqueductBlockEntity {
                 // 标记为虚拟源工作
                 this.setAsSource(currentCheckPos);
                 target.setAsTarget(worldPosition);
-                LOGGER.debug("虚拟源 {} 开始填充 {}", worldPosition, currentCheckPos);
                 break;
             }
 

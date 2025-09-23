@@ -22,8 +22,6 @@ import dev.engine_room.flywheel.lib.visual.SimpleDynamicVisual;
 import net.createmod.catnip.data.Iterate;
 import net.minecraft.util.Mth;
 import net.minecraftforge.fluids.FluidStack;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -31,7 +29,6 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> implements SimpleDynamicVisual {
-    private static final Logger LOGGER = LogManager.getLogger();
 
     final TransformedInstance base;
     final TransformedInstance lowerBody;
@@ -84,7 +81,7 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
         try {
             tempFluidVisual = new PipetteFluidVisual(context);
         } catch (Exception e) {
-            LOGGER.error("Failed to create fluid visual", e);
+            // 静默处理
         }
         this.fluidVisual = tempFluidVisual;
 
@@ -105,7 +102,7 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
                 return CFPartialModels.PIPETTE_COG;
             }
         } catch (Exception e) {
-            LOGGER.debug("Failed to get custom cog model, using default");
+            // 静默处理
         }
         return AllPartialModels.ARM_COG;
     }
@@ -122,15 +119,13 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
                     .instancer(InstanceTypes.TRANSFORMED, Models.partial(modelToUse))
                     .createInstance();
         } catch (Exception e) {
-            LOGGER.error("Failed to create instance for model, trying fallback", e);
-
             if (fallback != null && fallback != modelToUse) {
                 try {
                     return (TransformedInstance) this.instancerProvider()
                             .instancer(InstanceTypes.TRANSFORMED, Models.partial(fallback))
                             .createInstance();
                 } catch (Exception e2) {
-                    LOGGER.error("Failed to create instance even with fallback", e2);
+                    // 静默处理
                 }
             }
         }
@@ -141,7 +136,6 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
                     .instancer(InstanceTypes.TRANSFORMED, Models.partial(AllPartialModels.ARM_BASE))
                     .createInstance();
         } catch (Exception e) {
-            LOGGER.error("Critical: Cannot create any instance", e);
             return null;
         }
     }
@@ -156,7 +150,7 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
                 fluidVisual.end();
             }
         } catch (Exception e) {
-            LOGGER.debug("Error in beginFrame", e);
+            // 静默处理
         }
     }
 
@@ -186,7 +180,7 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
                 this.updateFluidRendering(pt);
             }
         } catch (Exception e) {
-            LOGGER.debug("Error animating pipette", e);
+            // 静默处理
         }
     }
 
@@ -222,7 +216,7 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
                 updateFluidTransform(currentFluid, pt);
             }
         } catch (Exception e) {
-            LOGGER.debug("Error updating fluid rendering", e);
+            // 静默处理
         }
     }
 
@@ -256,7 +250,6 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
 
             this.poseStack.popPose();
         } catch (Exception e) {
-            LOGGER.debug("Error updating fluid transform", e);
             this.poseStack.popPose(); // 确保堆栈平衡
         }
     }
@@ -317,7 +310,6 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
 
             this.poseStack.popPose();
         } catch (Exception e) {
-            LOGGER.debug("Error updating angles", e);
             // 确保堆栈平衡
             try {
                 this.poseStack.popPose();
@@ -343,7 +335,7 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
                     .instancer(InstanceTypes.TRANSFORMED, Models.partial(clawModel))
                     .stealInstance(this.claw);
         } catch (Exception e) {
-            LOGGER.debug("Error in update", e);
+            // 静默处理
         }
     }
 
@@ -355,7 +347,7 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
                     .toArray(FlatLit[]::new);
             this.relight(litModels);
         } catch (Exception e) {
-            LOGGER.debug("Error updating light", e);
+            // 静默处理
         }
     }
 
@@ -371,7 +363,7 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
                 fluidVisual.delete();
             }
         } catch (Exception e) {
-            LOGGER.debug("Error during deletion", e);
+            // 静默处理
         }
     }
 
@@ -382,7 +374,7 @@ public class PipetteVisual extends SingleAxisRotatingVisual<PipetteBlockEntity> 
                     .filter(Objects::nonNull)
                     .forEach(consumer);
         } catch (Exception e) {
-            LOGGER.debug("Error collecting crumbling instances", e);
+            // 静默处理
         }
     }
 }
