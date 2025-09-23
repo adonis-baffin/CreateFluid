@@ -63,5 +63,14 @@ public class CFNetworking {
                     msg.handle(ctxSupplier.get());
                     ctxSupplier.get().setPacketHandled(true);
                 });
+
+        // 注册动力臂交互点同步包（客户端接收）
+        channel.registerMessage(id++, ArmInteractionPointSyncPacket.class,
+                (msg, buf) -> msg.write(buf),
+                ArmInteractionPointSyncPacket::new,
+                (msg, ctxSupplier) -> {
+                    msg.handle(ctxSupplier.get());
+                    ctxSupplier.get().setPacketHandled(true);
+                });
     }
 }

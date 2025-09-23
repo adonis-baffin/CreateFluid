@@ -6,6 +6,7 @@
   "refmap": "fluid.mixins.refmap.json",
   "mixins": [
     "AllArmInteractionPointTypesMixin",
+    "accessor.ArmBlockEntityAccessor",
     "accessor.DepotBehaviourAccessor",
     "accessor.ItemDrainBlockEntityAccessor",
     "accessor.BasinBlockEntityAccessor",
@@ -21,7 +22,7 @@
     "FluidUtilMixin"
   ],
   "client": [
-    "accessor.ArmBlockEntityAccessor"
+    "ArmBlockEntityWrenchUpdateMixin"
   ],
   "server": []
 }
