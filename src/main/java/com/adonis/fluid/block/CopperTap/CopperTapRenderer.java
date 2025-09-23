@@ -72,15 +72,36 @@ public class CopperTapRenderer extends SafeBlockEntityRenderer<CopperTapBlockEnt
                 break;
         }
 
-        // 渲染流体流
+        // 只渲染主流体流
         renderFluidStream(be, fluid, ms, buffer, light, partialTicks);
 
-        // 如果正在注液，渲染额外的注液效果
+        // 如果正在注液，只渲染飞溅效果（不渲染细流）
         if (be.isProcessing()) {
-            renderFillingEffect(be, fluid, ms, buffer, light, partialTicks);
+            renderSplashEffect(be, fluid, ms, buffer, light, partialTicks);
         }
 
         ms.popPose();
+    }
+
+    // 新增一个只渲染飞溅效果的方法
+    private void renderSplashEffect(CopperTapBlockEntity be, FluidStack fluid, PoseStack ms,
+                                    MultiBufferSource buffer, int light, float partialTicks) {
+        int processingTicks = be.getProcessingTicks();
+        if (processingTicks <= 0) return;
+
+        float processingProgress = ((float) processingTicks - partialTicks) / 20f;
+
+        // 只渲染飞溅效果，不渲染细流
+        float splash = 1f - processingProgress;
+        if (splash < 0.3f) {
+            float splashRadius = splash * 0.5f;
+
+            // 在底部渲染扩散的流体池
+            renderFluidBox(fluid,
+                    0.5f - splashRadius, -15.5f / 16f, 0.5f - splashRadius,
+                    0.5f + splashRadius, -15f / 16f, 0.5f + splashRadius,
+                    buffer, ms, light, false, true);
+        }
     }
 
     private void renderFluidStream(CopperTapBlockEntity be, FluidStack fluid, PoseStack ms,

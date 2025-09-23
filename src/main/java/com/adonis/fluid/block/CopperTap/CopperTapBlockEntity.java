@@ -40,6 +40,7 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
     private FluidStack pendingFluid = FluidStack.EMPTY;
     private Direction sourceDirection = null;
     private BlockPos sourceBlockPos = null;
+    private int continuousProcessingDelay = 0;
 
     private static final TagKey<Block> TAP_FILLABLE = TagKey.create(
             ForgeRegistries.BLOCKS.getRegistryKey(),
@@ -116,9 +117,20 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
                 processingItem = ItemStack.EMPTY;
                 sourceDirection = null;
                 sourceBlockPos = null;
+                continuousProcessingDelay = 0;
                 notifyUpdate();
             }
             transferCooldown = 0;
+            return;
+        }
+
+        // 处理连续填充延迟
+        if (continuousProcessingDelay > 0) {
+            continuousProcessingDelay--;
+            if (continuousProcessingDelay == 0) {
+                // 延迟结束，尝试继续处理
+                transferCooldown = 0;
+            }
             return;
         }
 
@@ -150,6 +162,7 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
             cancelItemFilling();
         }
         transferCooldown = 0;
+        continuousProcessingDelay = 0;
         notifyUpdate();
     }
 
@@ -165,8 +178,9 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
 
         ItemStack currentItem = getItemOnDepot(targetEntity);
 
+        // 只需要确保至少有一个相同的物品
         return ItemStack.isSameItemSameTags(currentItem, processingItem) &&
-                currentItem.getCount() >= processingItem.getCount();
+                currentItem.getCount() >= 1;
     }
 
     private void cancelItemFilling() {
@@ -177,6 +191,7 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
         pendingFluid = FluidStack.EMPTY;
         sourceDirection = null;
         sourceBlockPos = null;
+        continuousProcessingDelay = 0;
 
         level.playSound(null, worldPosition,
                 net.minecraft.sounds.SoundEvents.FIRE_EXTINGUISH,
@@ -236,7 +251,8 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
         boolean success = tryProcess(sourceHandler, targetPos, attached, sourcePos);
 
         if (success) {
-            transferCooldown = TRANSFER_INTERVAL;
+            // 使用较短的冷却时间以便快速处理序列组装
+            transferCooldown = 5;
         } else {
             if (!renderingFluid.isEmpty()) {
                 renderingFluid = FluidStack.EMPTY;
@@ -263,6 +279,7 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
         processingItem = ItemStack.EMPTY;
         sourceDirection = null;
         sourceBlockPos = null;
+        continuousProcessingDelay = 0;
         notifyUpdate();
     }
 
@@ -394,6 +411,7 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
         isFillingItem = true;
         processingTicks = FILLING_TIME;
         processingItem = item.copy();
+        processingItem.setCount(1); // 只记录单个物品
         pendingFluid = simulatedDrain.copy();
         renderingFluid = simulatedDrain.copy();
         sourceDirection = sourceDir;
@@ -432,7 +450,7 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
         if (targetEntity != null && isDepot(targetEntity)) {
             ItemStack currentItem = getItemOnDepot(targetEntity);
             if (!ItemStack.isSameItemSameTags(currentItem, processingItem) ||
-                    currentItem.getCount() < processingItem.getCount()) {
+                    currentItem.getCount() < 1) {
                 cancelItemFilling();
                 return;
             }
@@ -475,50 +493,75 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
                 ItemStack itemOnDepot = behaviour.getHeldItemStack();
 
                 if (!itemOnDepot.isEmpty()) {
+                    // 只处理单个物品
+                    ItemStack singleItem = itemOnDepot.copy();
+                    singleItem.setCount(1);
+
                     ItemStack result = FillingBySpout.fillItem(level, pendingFluid.getAmount(),
-                            itemOnDepot.copy(), pendingFluid);
+                            singleItem, pendingFluid);
 
                     if (!result.isEmpty()) {
+                        // 减少置物台上的一个物品
                         itemOnDepot.shrink(1);
 
+                        // 如果置物台上没有物品了，直接设置结果
                         if (itemOnDepot.isEmpty()) {
-                            behaviour.removeHeldItem();
+                            var resultTIS = new com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack(result);
+                            behaviour.setHeldItem(resultTIS);
                         } else {
-                            var updatedStack = new com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack(itemOnDepot);
-                            updatedStack.beltPosition = 0.5f;
-                            updatedStack.prevBeltPosition = 0.5f;
-                            behaviour.setCenteredHeldItem(updatedStack);
-                        }
+                            // 还有剩余物品，更新置物台上的物品数量
+                            var updatedTIS = new com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack(itemOnDepot);
+                            behaviour.setHeldItem(updatedTIS);
 
-                        try {
-                            java.lang.reflect.Field bufferField = com.simibubi.create.content.logistics.depot.DepotBehaviour.class.getDeclaredField("processingOutputBuffer");
-                            bufferField.setAccessible(true);
-                            net.minecraftforge.items.ItemStackHandler outputBuffer =
-                                    (net.minecraftforge.items.ItemStackHandler) bufferField.get(behaviour);
+                            // 将结果放入输出缓冲区或掉落
+                            try {
+                                java.lang.reflect.Field bufferField = com.simibubi.create.content.logistics.depot.DepotBehaviour.class.getDeclaredField("processingOutputBuffer");
+                                bufferField.setAccessible(true);
+                                net.minecraftforge.items.ItemStackHandler outputBuffer =
+                                        (net.minecraftforge.items.ItemStackHandler) bufferField.get(behaviour);
 
-                            ItemStack remainder = result.copy();
-                            for (int slot = 0; slot < outputBuffer.getSlots() && !remainder.isEmpty(); slot++) {
-                                remainder = outputBuffer.insertItem(slot, remainder, false);
-                            }
+                                ItemStack remainder = result.copy();
+                                for (int slot = 0; slot < outputBuffer.getSlots() && !remainder.isEmpty(); slot++) {
+                                    remainder = outputBuffer.insertItem(slot, remainder, false);
+                                }
 
-                            if (!remainder.isEmpty()) {
+                                if (!remainder.isEmpty()) {
+                                    Vec3 dropPos = Vec3.atCenterOf(targetPos);
+                                    net.minecraft.world.Containers.dropItemStack(
+                                            level,
+                                            dropPos.x,
+                                            dropPos.y + 0.5,
+                                            dropPos.z,
+                                            remainder
+                                    );
+                                }
+                            } catch (Exception e) {
+                                // 如果反射失败，直接掉落
                                 Vec3 dropPos = Vec3.atCenterOf(targetPos);
                                 net.minecraft.world.Containers.dropItemStack(
                                         level,
                                         dropPos.x,
                                         dropPos.y + 0.5,
                                         dropPos.z,
-                                        remainder
+                                        result
                                 );
                             }
-                        } catch (Exception e) {
-                            var newTIS = new com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack(result);
-                            newTIS.beltPosition = 0.5f;
-                            newTIS.prevBeltPosition = 0.5f;
-                            behaviour.setCenteredHeldItem(newTIS);
                         }
 
+                        // 关键：同步到客户端
                         targetEntity.setChanged();
+
+                        // 强制发送方块更新包
+                        if (!level.isClientSide) {
+                            // 发送方块更新
+                            level.sendBlockUpdated(targetPos, targetEntity.getBlockState(),
+                                    targetEntity.getBlockState(), 3);
+
+                            // 如果是DepotBlockEntity，调用notifyUpdate
+                            if (targetEntity instanceof com.simibubi.create.foundation.blockEntity.SmartBlockEntity smartBE) {
+                                smartBE.notifyUpdate();
+                            }
+                        }
 
                         level.playSound(null, targetPos,
                                 net.minecraft.sounds.SoundEvents.BOTTLE_FILL,
@@ -526,11 +569,27 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
                                 0.5f, 1.0f + level.random.nextFloat() * 0.2f);
 
                         sendFillingParticles(targetPos, renderingFluid);
+
+                        // 检查是否需要继续序列组装
+                        if (itemOnDepot.isEmpty() && FillingBySpout.canItemBeFilled(level, result)) {
+                            // 只有当置物台上现在是结果物品时才继续
+                            continuousProcessingDelay = 0;
+
+                            isFillingItem = false;
+                            processingTicks = 0;
+                            processingItem = ItemStack.EMPTY;
+                            renderingFluid = FluidStack.EMPTY;
+                            pendingFluid = FluidStack.EMPTY;
+
+                            notifyUpdate();
+                            return;
+                        }
                     }
                 }
             }
         }
 
+        // 完全完成，清空所有状态
         isFillingItem = false;
         processingTicks = 0;
         processingItem = ItemStack.EMPTY;
@@ -538,6 +597,7 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
         pendingFluid = FluidStack.EMPTY;
         sourceDirection = null;
         sourceBlockPos = null;
+        continuousProcessingDelay = 0;
         notifyUpdate();
     }
 
@@ -607,6 +667,7 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
         tag.putBoolean("IsFillingItem", isFillingItem);
         tag.putInt("ProcessingTicks", processingTicks);
         tag.putInt("TransferCooldown", transferCooldown);
+        tag.putInt("ContinuousProcessingDelay", continuousProcessingDelay);
         if (!processingItem.isEmpty()) {
             tag.put("ProcessingItem", processingItem.save(new CompoundTag()));
         }
@@ -626,6 +687,7 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
         isFillingItem = tag.getBoolean("IsFillingItem");
         processingTicks = tag.getInt("ProcessingTicks");
         transferCooldown = tag.getInt("TransferCooldown");
+        continuousProcessingDelay = tag.getInt("ContinuousProcessingDelay");
         if (tag.contains("ProcessingItem")) {
             processingItem = ItemStack.of(tag.getCompound("ProcessingItem"));
         }
