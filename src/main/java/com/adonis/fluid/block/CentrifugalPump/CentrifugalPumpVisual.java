@@ -20,11 +20,24 @@ public class CentrifugalPumpVisual extends KineticBlockEntityVisual<CentrifugalP
 
     protected final RotatingInstance shaft;
     protected final Direction shaftDirection;
+    protected final boolean isEncased;
 
     public CentrifugalPumpVisual(VisualizationContext context, CentrifugalPumpBlockEntity blockEntity, float partialTick) {
         super(context, blockEntity, partialTick);
 
         BlockState state = blockEntity.getBlockState();
+
+        // 检查是否封装
+        this.isEncased = state.hasProperty(CentrifugalPumpBlock.ENCASED) && state.getValue(CentrifugalPumpBlock.ENCASED);
+
+        if (isEncased) {
+            // 封装状态下不创建轴实例
+            this.shaft = null;
+            this.shaftDirection = null;
+            return;
+        }
+
+        // 非封装状态下创建轴
         this.shaftDirection = CentrifugalPumpBlock.getShaftDirection(state);
         Direction opposite = shaftDirection.getOpposite();
         AttachFace face = state.getValue(CentrifugalPumpBlock.FACE);
@@ -40,7 +53,7 @@ public class CentrifugalPumpVisual extends KineticBlockEntityVisual<CentrifugalP
 
     private void setupShaft(CentrifugalPumpBlockEntity be, BlockState state, AttachFace face, Direction shaftOpposite) {
         shaft.setup(be)
-             .setPosition(this.getVisualPosition());
+                .setPosition(this.getVisualPosition());
 
         if (face == AttachFace.WALL) {
             // 垂直模式：轴垂直向上
@@ -63,22 +76,30 @@ public class CentrifugalPumpVisual extends KineticBlockEntityVisual<CentrifugalP
 
     @Override
     public void update(float pt) {
-        shaft.setup((KineticBlockEntity) blockEntity).setChanged();
+        if (!isEncased && shaft != null) {
+            shaft.setup((KineticBlockEntity) blockEntity).setChanged();
+        }
     }
 
     @Override
     public void updateLight(float partialTick) {
-        // 像蒸汽引擎一样，直接使用relight而不指定位置
-        relight(new FlatLit[]{shaft});
+        if (!isEncased && shaft != null) {
+            // 像蒸汽引擎一样，直接使用relight而不指定位置
+            relight(new FlatLit[]{shaft});
+        }
     }
 
     @Override
     protected void _delete() {
-        shaft.delete();
+        if (shaft != null) {
+            shaft.delete();
+        }
     }
 
     @Override
     public void collectCrumblingInstances(Consumer<Instance> consumer) {
-        consumer.accept(shaft);
+        if (shaft != null) {
+            consumer.accept(shaft);
+        }
     }
 }

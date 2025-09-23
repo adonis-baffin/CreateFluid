@@ -25,22 +25,14 @@ public class CentrifugalPumpRenderer extends KineticBlockEntityRenderer<Centrifu
                               MultiBufferSource buffer, int light, int overlay) {
 
         BlockState state = be.getBlockState();
+        boolean isEncased = state.hasProperty(CentrifugalPumpBlock.ENCASED) && state.getValue(CentrifugalPumpBlock.ENCASED);
 
-        // 检查是否封装
-        if (state.hasProperty(CentrifugalPumpBlock.ENCASED) && state.getValue(CentrifugalPumpBlock.ENCASED)) {
-            // 封装状态不渲染传动杆
-            return;
-        }
+        // 始终调用父类的renderSafe来处理BlockEntityBehaviour（包括ValueBox等）
+        super.renderSafe(be, partialTicks, ms, buffer, light, overlay);
 
-        // 只在Flywheel未启用时渲染传动杆
-        if (!VisualizationManager.supportsVisualization(be.getLevel())) {
+        // 只在非封装状态且Flywheel未启用时渲染传动杆
+        if (!isEncased && !VisualizationManager.supportsVisualization(be.getLevel())) {
             renderShaft(be, ms, buffer, light, overlay);
-        }
-
-        // 渲染ValueBox和其他UI元素（仅在非封装状态下）
-        if (be.pumpMode != null) {
-            // 父类会处理 BlockEntityBehaviour 的渲染
-            super.renderSafe(be, partialTicks, ms, buffer, light, overlay);
         }
     }
 
