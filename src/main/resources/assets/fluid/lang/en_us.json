@@ -69,6 +69,10 @@
   "create.mechanical_arm.selection_mode.prefer_first": "Prefer First Target",
   "create.mechanical_arm.selection_mode.round_robin": "Round Robin",
 
+  "create.mechanical_pipette.selection_mode.forced_round_robin": "Forced Round Robin",
+  "create.mechanical_pipette.selection_mode.prefer_first": "Prefer First Target",
+  "create.mechanical_pipette.selection_mode.round_robin": "Round Robin",
+
   "fluid.ponder.mechanical_pipette.header": "Setting up Mechanical Pipette",
   "fluid.ponder.mechanical_pipette.text_1": "Inputs",
   "fluid.ponder.mechanical_pipette.text_2": "Outputs",

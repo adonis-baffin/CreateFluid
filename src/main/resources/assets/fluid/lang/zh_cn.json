@@ -65,6 +65,10 @@
   "create.mechanical_arm.selection_mode.prefer_first": "第一目标优先",
   "create.mechanical_arm.selection_mode.round_robin": "轮询调度",
 
+  "create.mechanical_pipette.selection_mode.forced_round_robin": "强制轮询调度",
+  "create.mechanical_pipette.selection_mode.prefer_first": "第一目标优先",
+  "create.mechanical_pipette.selection_mode.round_robin": "轮询调度",
+
   "fluid.ponder.mechanical_pipette.header": "配置动力移液器",
   "fluid.ponder.mechanical_pipette.text_1": "输入",
   "fluid.ponder.mechanical_pipette.text_2": "输出",

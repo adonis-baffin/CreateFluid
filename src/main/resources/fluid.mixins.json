@@ -3,7 +3,7 @@
   "minVersion": "0.8.5",
   "package": "com.adonis.fluid.mixin",
   "compatibilityLevel": "JAVA_17",
-  "refmap": "fluid.refmap.json",
+  "refmap": "fluid.mixins.refmap.json",
   "mixins": [
     "AllArmInteractionPointTypesMixin",
     "accessor.DepotBehaviourAccessor",

@@ -12,7 +12,7 @@
 	"elements": [
 		{
 			"name": "pipe_front",
-			"from": [3, 3, 0],
+			"from": [3, 3, -0.01],
 			"to": [13, 13, 2],
 			"rotation": {"angle": 0, "axis": "y", "origin": [8, 28, 8]},
 			"faces": {
