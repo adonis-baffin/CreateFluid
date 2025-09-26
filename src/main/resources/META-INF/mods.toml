@@ -13,7 +13,7 @@ logoFile="fluid.png"
 credits="adonis"
 authors="adonis"
 description='''
-A Create mod addon that allows for automatic fishing and item collection
+Enhance fluid logistics and processing system for Create
 '''
 
 [[dependencies.fluid]]
