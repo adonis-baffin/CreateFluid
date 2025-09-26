@@ -1,7 +1,7 @@
 {
   "block.fluid.pipette": "Pipeta Mecânica",
-  "block.fluid.fluid_interface": "Interface de Fluido",
-  "block.fluid.smart_fluid_interface": "Interface de Fluido Inteligente",
+  "block.fluid.fluid_interface": "Interface de Fluidos",
+  "block.fluid.smart_fluid_interface": "Interface de Fluidos Inteligente",
   "block.fluid.centrifugal_pump": "Bomba Centrífuga",
   "block.fluid.copper_tap": "Torneira de Cobre",
   "item.fluid.honeycomb_mold": "Molde de Favo de Mel",
