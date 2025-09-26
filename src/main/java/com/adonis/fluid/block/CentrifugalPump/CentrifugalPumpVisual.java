@@ -20,24 +20,13 @@ public class CentrifugalPumpVisual extends KineticBlockEntityVisual<CentrifugalP
 
     protected final RotatingInstance shaft;
     protected final Direction shaftDirection;
-    protected final boolean isEncased;
 
     public CentrifugalPumpVisual(VisualizationContext context, CentrifugalPumpBlockEntity blockEntity, float partialTick) {
         super(context, blockEntity, partialTick);
 
         BlockState state = blockEntity.getBlockState();
 
-        // 检查是否封装
-        this.isEncased = state.hasProperty(CentrifugalPumpBlock.ENCASED) && state.getValue(CentrifugalPumpBlock.ENCASED);
-
-        if (isEncased) {
-            // 封装状态下不创建轴实例
-            this.shaft = null;
-            this.shaftDirection = null;
-            return;
-        }
-
-        // 非封装状态下创建轴
+        // 无论是否封装，都需要创建轴
         this.shaftDirection = CentrifugalPumpBlock.getShaftDirection(state);
         Direction opposite = shaftDirection.getOpposite();
         AttachFace face = state.getValue(CentrifugalPumpBlock.FACE);
@@ -76,14 +65,14 @@ public class CentrifugalPumpVisual extends KineticBlockEntityVisual<CentrifugalP
 
     @Override
     public void update(float pt) {
-        if (!isEncased && shaft != null) {
+        if (shaft != null) {
             shaft.setup((KineticBlockEntity) blockEntity).setChanged();
         }
     }
 
     @Override
     public void updateLight(float partialTick) {
-        if (!isEncased && shaft != null) {
+        if (shaft != null) {
             // 像蒸汽引擎一样，直接使用relight而不指定位置
             relight(new FlatLit[]{shaft});
         }

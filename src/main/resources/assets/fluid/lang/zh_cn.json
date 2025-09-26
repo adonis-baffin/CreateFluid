@@ -32,10 +32,9 @@
   "create.fluid.mechanical_pipette.extract": "从%1$s吸取流体",
   "create.fluid.mechanical_pipette.deposit": "将流体注入%1$s",
   "create.fluid.mechanical_pipette.points_outside_range": "由于距离限制，%1$s 个已选定的交互点已被移除。",
-  "create.fluid.mechanical_pipette.summary": "已配置的流体交互点：%1$s 个输入，%2$s 个输出",
+  "create.fluid.mechanical_pipette.summary": "动力移液器当前有 %1$s 个输入， %2$s 个输出",
   "create.fluid.mechanical_pipette.no_targets.title": "没有目标",
   "create.fluid.mechanical_pipette.no_targets": "看起来这个_动力移液器_没有被分配任何_目标_。_手持动力移液器_，_右击_选取工作盆、分液池、流体接口或其他元件来设置目标。",
-
 
   "create.create.mechanical_arm.extract_from": "从 %1$s 中拿取物品",
   "create.create.mechanical_arm.deposit_to": "将物品存储至 %1$s",
@@ -43,6 +42,10 @@
   "create.hint.mechanical_arm_no_targets": "看起来这个_动力臂_没有被分配任何_目标_。_手持动力臂_，_右击_选取传送带、置物台、漏斗或其他元件来设置目标。",
   "create.hint.mechanical_arm_no_targets.title": "没有目标",
   "create.create.mechanical_arm.points_outside_range": "由于距离限制，%1$s 个已选定的交互点已被移除。",
+  "create.create.mechanical_arm.selection_mode.forced_round_robin": "强制轮询调度",
+  "create.create.mechanical_arm.selection_mode.prefer_first": "第一目标优先",
+  "create.create.mechanical_arm.selection_mode.round_robin": "轮询调度",
+  "create.create.mechanical_arm.summary": "动力臂当前有 %1$s 个输入， %2$s 个输出",
 
   "create.fluid.baton.arm.dance_started": "动力臂开始跳舞",
   "create.fluid.baton.arm.dance_stopped": "动力臂停止跳舞",
