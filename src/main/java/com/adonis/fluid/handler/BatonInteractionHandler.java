@@ -104,23 +104,30 @@ public class BatonInteractionHandler {
 
         // 特殊处理置物台 - 在客户端和服务端都要处理
         if (com.simibubi.create.AllBlocks.DEPOT.has(state)) {
-            if (!sneaking) {
-                // 普通右键：阻止放置
-                event.setCanceled(true);
-                event.setCancellationResult(InteractionResult.SUCCESS);
+            BlockEntity be = level.getBlockEntity(pos);
 
-                // 只在客户端处理交互点选择
-                if (level.isClientSide && isInSelectionMode()) {
-                    if (selectionType == SelectionType.ARM) {
-                        handleArmPointInteraction(level, pos, state, player);
-                    } else if (selectionType == SelectionType.PIPETTE) {
-                        handlePipettePointInteraction(level, pos, state, player);
+            // 弹射置物台需要特殊处理，不在这里return
+            if (!(be instanceof EjectorBlockEntity)) {
+                if (!sneaking) {
+                    // 普通右键：阻止放置
+                    event.setCanceled(true);
+                    event.setCancellationResult(InteractionResult.SUCCESS);
+
+                    // 只在客户端处理交互点选择
+                    if (level.isClientSide && isInSelectionMode()) {
+                        if (selectionType == SelectionType.ARM) {
+                            handleArmPointInteraction(level, pos, state, player);
+                        } else if (selectionType == SelectionType.PIPETTE) {
+                            handlePipettePointInteraction(level, pos, state, player);
+                        } else if (selectionType == SelectionType.EJECTOR) {
+                            handleEjectorTargetSelection(pos, player, level);
+                        }
                     }
+                    return;
+                } else {
+                    // 潜行右键：允许正常放置
+                    return;
                 }
-                return;
-            } else {
-                // 潜行右键：允许正常放置
-                return;
             }
         }
 
@@ -312,11 +319,21 @@ public class BatonInteractionHandler {
     }
 
     private static void handleEjectorClick(BlockEntity be, BlockPos pos, Player player, Level level, boolean sneaking) {
+        // 情况1：已经在对这个弹射置物台进行选取，再次点击确认
         if (selectionType == SelectionType.EJECTOR && selectedEjectorPos != null && selectedEjectorPos.equals(pos)) {
-            // 再次点击同一个弹射置物台，确认并发送设置
             flushEjectorSettings(pos, player, level);
-        } else {
-            // 进入弹射置物台选择模式
+            return;
+        }
+
+        // 情况2：已经在对另一个弹射置物台进行选取，这次点击作为选择目标点
+        if (selectionType == SelectionType.EJECTOR && selectedEjectorPos != null && !selectedEjectorPos.equals(pos)) {
+            // 作为目标点处理
+            handleEjectorTargetSelection(pos, player, level);
+            return;
+        }
+
+        // 情况3：不在选取模式，或在其他类型的选取模式，开始新的弹射置物台选取
+        if (selectionType != SelectionType.EJECTOR) {
             cancelSelection();
             selectionType = SelectionType.EJECTOR;
             selectedEjectorPos = pos;
