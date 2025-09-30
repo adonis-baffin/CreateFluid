@@ -133,11 +133,13 @@ public class CFBlock {
                             boolean encased = state.getValue(CentrifugalPumpBlock.ENCASED);
 
                             ConfiguredModel.Builder<?> builder = ConfiguredModel.builder();
-                            String modelPrefix = encased ? "encased_pump" : "block";
+                            String modelName;
 
                             if (face == AttachFace.WALL) {
+                                // 垂直模式
+                                modelName = encased ? "encased_pump_vertical" : "block_vertical";
                                 builder.modelFile(prov.models().getExistingFile(
-                                        prov.modLoc("block/centrifugal_pump/" + modelPrefix + "_vertical")));
+                                        prov.modLoc("block/centrifugal_pump/" + modelName)));
                                 switch (facing) {
                                     case NORTH: builder.rotationY(0); break;
                                     case SOUTH: builder.rotationY(180); break;
@@ -145,8 +147,15 @@ public class CFBlock {
                                     case EAST: builder.rotationY(90); break;
                                 }
                             } else if (face == AttachFace.CEILING) {
+                                // 天花板模式
+                                if (encased) {
+                                    boolean isNorthSouth = (facing == Direction.NORTH || facing == Direction.SOUTH);
+                                    modelName = isNorthSouth ? "encased_pump_ns" : "encased_pump_ew";
+                                } else {
+                                    modelName = "block";
+                                }
                                 builder.modelFile(prov.models().getExistingFile(
-                                        prov.modLoc("block/centrifugal_pump/" + modelPrefix)));
+                                        prov.modLoc("block/centrifugal_pump/" + modelName)));
                                 builder.rotationX(180);
                                 switch (facing) {
                                     case NORTH: builder.rotationY(180); break;
@@ -154,9 +163,16 @@ public class CFBlock {
                                     case WEST: builder.rotationY(90); break;
                                     case EAST: builder.rotationY(270); break;
                                 }
-                            } else { // AttachFace.FLOOR
+                            } else { // FLOOR
+                                // 地板模式
+                                if (encased) {
+                                    boolean isNorthSouth = (facing == Direction.NORTH || facing == Direction.SOUTH);
+                                    modelName = isNorthSouth ? "encased_pump_ns" : "encased_pump_ew";
+                                } else {
+                                    modelName = "block";
+                                }
                                 builder.modelFile(prov.models().getExistingFile(
-                                        prov.modLoc("block/centrifugal_pump/" + modelPrefix)));
+                                        prov.modLoc("block/centrifugal_pump/" + modelName)));
                                 switch (facing) {
                                     case NORTH: builder.rotationY(0); break;
                                     case SOUTH: builder.rotationY(180); break;

@@ -4,9 +4,9 @@
 	"parent": "block/block",
 	"texture_size": [32, 32],
 	"textures": {
-		"8": "create:block/copper_casing",
+		"8": "fluid:block/copper_casing",
 		"10": "fluid:block/encased_pump",
-		"particle": "create:block/copper_casing"
+		"particle": "fluid:block/copper_casing"
 	},
 	"elements": [
 		{
