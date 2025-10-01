@@ -4,6 +4,50 @@
     "minecraft:water_cauldron",
     "minecraft:lava_cauldron",
     "minecraft:powder_snow_cauldron",
-    "create:basin"
+    "create:basin",
+    {
+      "id": "irons_spellbooks:alchemist_cauldron",
+      "required": false
+    },
+    {
+      "id": "createmetallurgy:foundry_basin",
+      "required": false
+    },
+    {
+      "id": "createmetallurgy:casting_basin",
+      "required": false
+    },
+    {
+      "id": "tconstruct:scorched_basin",
+      "required": false
+    },
+    {
+      "id": "tconstruct:seared_basin",
+      "required": false
+    },
+    {
+      "id": "youkaisfeasts:fermentation_tank",
+      "required": false
+    },
+    {
+      "id": "youkaisfeasts:wood_basin",
+      "required": false
+    },
+    {
+      "id": "embers:fluid_vessel",
+      "required": false
+    },
+    {
+      "id": "youkaishomecoming:fermentation_tank",
+      "required": false
+    },
+    {
+      "id": "youkaishomecoming:wood_basin",
+      "required": false
+    },
+    {
+      "id": "goety:witch_cauldron",
+      "required": false
+    }
   ]
 }
