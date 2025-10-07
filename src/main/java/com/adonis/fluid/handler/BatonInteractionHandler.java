@@ -102,38 +102,8 @@ public class BatonInteractionHandler {
         BlockState state = level.getBlockState(pos);
         boolean sneaking = player.isShiftKeyDown();
 
-        // 特殊处理置物台 - 在客户端和服务端都要处理
-        if (com.simibubi.create.AllBlocks.DEPOT.has(state)) {
-            BlockEntity be = level.getBlockEntity(pos);
-
-            // 弹射置物台需要特殊处理，不在这里return
-            if (!(be instanceof EjectorBlockEntity)) {
-                if (!sneaking) {
-                    // 普通右键：阻止放置
-                    event.setCanceled(true);
-                    event.setCancellationResult(InteractionResult.SUCCESS);
-
-                    // 只在客户端处理交互点选择
-                    if (level.isClientSide && isInSelectionMode()) {
-                        if (selectionType == SelectionType.ARM) {
-                            handleArmPointInteraction(level, pos, state, player);
-                        } else if (selectionType == SelectionType.PIPETTE) {
-                            handlePipettePointInteraction(level, pos, state, player);
-                        } else if (selectionType == SelectionType.EJECTOR) {
-                            handleEjectorTargetSelection(pos, player, level);
-                        }
-                    }
-                    return;
-                } else {
-                    // 潜行右键：允许正常放置
-                    return;
-                }
-            }
-        }
-
         // 后续的处理仍然只在客户端
         if (!level.isClientSide) {
-            // 但是要检查是否需要在服务端取消某些交互
             BlockEntity be = level.getBlockEntity(pos);
 
             // 处理离心泵 - 服务端也要取消事件
@@ -145,10 +115,10 @@ public class BatonInteractionHandler {
                 }
             }
 
-            // 这些方块在服务端也要取消事件
+            // 修改：在ARM或PIPETTE模式下，不要在服务端拦截弹射置物台
             if (be instanceof ArmBlockEntity ||
                     be instanceof PipetteBlockEntity ||
-                    be instanceof EjectorBlockEntity ||
+                    (be instanceof EjectorBlockEntity && selectionType != SelectionType.ARM && selectionType != SelectionType.PIPETTE) ||
                     state.getBlock() instanceof RoseQuartzLampBlock) {
                 event.setCanceled(true);
                 event.setCancellationResult(InteractionResult.SUCCESS);
@@ -165,6 +135,30 @@ public class BatonInteractionHandler {
 
         // 以下是客户端处理逻辑
         BlockEntity be = level.getBlockEntity(pos);
+
+        // 优先处理选择模式下的交互点添加
+        if (isInSelectionMode() && selectionType != SelectionType.EJECTOR) {
+            if (!sneaking) {
+                // 检查是否可以作为交互点（包括弹射置物台）
+                if (selectionType == SelectionType.ARM) {
+                    // 对于弹射置物台，强制创建交互点
+                    if (be instanceof EjectorBlockEntity || canBeInteractionPoint(level, pos, state)) {
+                        handleArmPointInteraction(level, pos, state, player);
+                        event.setCanceled(true);
+                        event.setCancellationResult(InteractionResult.SUCCESS);
+                        return;
+                    }
+                } else if (selectionType == SelectionType.PIPETTE) {
+                    // 对于弹射置物台，强制创建交互点
+                    if (be instanceof EjectorBlockEntity || canBeInteractionPoint(level, pos, state)) {
+                        handlePipettePointInteraction(level, pos, state, player);
+                        event.setCanceled(true);
+                        event.setCancellationResult(InteractionResult.SUCCESS);
+                        return;
+                    }
+                }
+            }
+        }
 
         // 处理石英灯
         if (state.getBlock() instanceof RoseQuartzLampBlock) {
@@ -259,20 +253,6 @@ public class BatonInteractionHandler {
             // 潜行右键什么都不做
             return;
         }
-
-        // 在其他选择模式下点击方块
-        if (isInSelectionMode() && selectionType != SelectionType.EJECTOR) {
-            if (!sneaking) {
-                if (selectionType == SelectionType.ARM) {
-                    handleArmPointInteraction(level, pos, state, player);
-                } else if (selectionType == SelectionType.PIPETTE) {
-                    handlePipettePointInteraction(level, pos, state, player);
-                }
-
-                event.setCanceled(true);
-                event.setCancellationResult(InteractionResult.SUCCESS);
-            }
-        }
     }
 
     private static boolean canBeInteractionPoint(Level level, BlockPos pos, BlockState state) {
@@ -327,14 +307,12 @@ public class BatonInteractionHandler {
 
         // 情况2：已经在对另一个弹射置物台进行选取，这次点击作为选择目标点
         if (selectionType == SelectionType.EJECTOR && selectedEjectorPos != null && !selectedEjectorPos.equals(pos)) {
-            // 作为目标点处理
             handleEjectorTargetSelection(pos, player, level);
             return;
         }
 
-        // 情况3：不在选取模式，或在其他类型的选取模式，开始新的弹射置物台选取
-        if (selectionType != SelectionType.EJECTOR) {
-            cancelSelection();
+        // 情况3：只有当前不在任何选择模式时，才开始弹射置物台选取
+        if (selectionType == SelectionType.NONE) {
             selectionType = SelectionType.EJECTOR;
             selectedEjectorPos = pos;
             launcher = null;
@@ -352,7 +330,6 @@ public class BatonInteractionHandler {
                     .style(ChatFormatting.GOLD)
                     .sendStatus(player);
 
-            // 播放音效和粒子效果
             level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
                     SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 0.5f, 1.0f, false);
             createSelectionSuccessParticles(level, pos);
