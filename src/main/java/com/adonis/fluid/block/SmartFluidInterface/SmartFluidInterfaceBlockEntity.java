@@ -6,9 +6,12 @@ import com.simibubi.create.foundation.blockEntity.behaviour.filtering.FilteringB
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
@@ -63,8 +66,16 @@ public class SmartFluidInterfaceBlockEntity extends SmartBlockEntity {
         // 获取接口面向的方向的相反方向（背后的方块）
         Direction attachedDirection = state.getValue(SmartFluidInterfaceBlock.FACING).getOpposite();
         BlockPos targetPos = worldPosition.relative(attachedDirection);
-        BlockEntity targetBlockEntity = level.getBlockEntity(targetPos);
 
+        // 特殊处理含水树叶
+        BlockState targetState = level.getBlockState(targetPos);
+        if (targetState.is(BlockTags.LEAVES) &&
+                targetState.hasProperty(BlockStateProperties.WATERLOGGED) &&
+                targetState.getValue(BlockStateProperties.WATERLOGGED)) {
+            return new WaterloggedBlockFluidHandler();
+        }
+
+        BlockEntity targetBlockEntity = level.getBlockEntity(targetPos);
         if (targetBlockEntity == null) return null;
 
         // 首先尝试从流体接口面向的方向获取流体能力
@@ -212,6 +223,51 @@ public class SmartFluidInterfaceBlockEntity extends SmartBlockEntity {
         Direction attachedDirection = state.getValue(SmartFluidInterfaceBlock.FACING).getOpposite();
         BlockPos targetPos = worldPosition.relative(attachedDirection);
         return level.getBlockEntity(targetPos);
+    }
+
+    /**
+     * 内部类：模拟含水方块（树叶）作为无限水源
+     */
+    private static class WaterloggedBlockFluidHandler implements IFluidHandler {
+        private static final FluidStack WATER = new FluidStack(Fluids.WATER, 1000);
+
+        @Override
+        public int getTanks() {
+            return 1;
+        }
+
+        @Override
+        public FluidStack getFluidInTank(int tank) {
+            return WATER.copy();
+        }
+
+        @Override
+        public int getTankCapacity(int tank) {
+            return Integer.MAX_VALUE;
+        }
+
+        @Override
+        public boolean isFluidValid(int tank, FluidStack stack) {
+            return false; // 不能往含水方块里填充流体
+        }
+
+        @Override
+        public int fill(FluidStack resource, FluidAction action) {
+            return 0; // 不能往含水方块里填充流体
+        }
+
+        @Override
+        public FluidStack drain(FluidStack resource, FluidAction action) {
+            if (resource.getFluid() == Fluids.WATER) {
+                return new FluidStack(Fluids.WATER, Math.min(resource.getAmount(), 1000));
+            }
+            return FluidStack.EMPTY;
+        }
+
+        @Override
+        public FluidStack drain(int maxDrain, FluidAction action) {
+            return new FluidStack(Fluids.WATER, Math.min(maxDrain, 1000));
+        }
     }
 
     @Override

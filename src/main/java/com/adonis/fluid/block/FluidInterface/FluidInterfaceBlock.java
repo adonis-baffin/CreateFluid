@@ -15,6 +15,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -32,7 +33,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -100,8 +103,15 @@ public class FluidInterfaceBlock extends HorizontalDirectionalBlock implements I
         return getShape(state, level, pos, context);
     }
 
-    // 辅助方法：检查方块是否有流体存储能力
+    // 辅助方法：检查方块是否有流体存储能力 - 支持树叶
     private boolean hasFluidCapability(LevelReader level, BlockPos pos, Direction fromDirection) {
+        BlockState blockState = level.getBlockState(pos);
+
+        // 检查是否是树叶（可以作为无限水源）
+        if (blockState.is(BlockTags.LEAVES)) {
+            return true;
+        }
+
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity == null) {
             return false;
@@ -145,6 +155,13 @@ public class FluidInterfaceBlock extends HorizontalDirectionalBlock implements I
     public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
         Direction direction = state.getValue(FACING);
         BlockPos attachedPos = pos.relative(direction.getOpposite());
+        BlockState attachedState = level.getBlockState(attachedPos);
+
+        // 如果背后是树叶，可以生存
+        if (attachedState.is(BlockTags.LEAVES)) {
+            return true;
+        }
+
         // 需要背后的方块有流体存储能力才能存活
         return hasFluidCapability(level, attachedPos, direction);
     }
@@ -185,18 +202,28 @@ public class FluidInterfaceBlock extends HorizontalDirectionalBlock implements I
         // 关键修复：获取流体接口贴附的方块（在接口的相反方向）
         Direction attachedDirection = state.getValue(FACING).getOpposite();
         BlockPos targetPos = pos.relative(attachedDirection);
-        BlockEntity targetBlockEntity = level.getBlockEntity(targetPos);
+        BlockState targetState = level.getBlockState(targetPos);
 
-        if (targetBlockEntity == null)
-            return InteractionResult.FAIL;
+        IFluidHandler tankCapability;
 
-        // 尝试从目标方块获取流体处理能力
-        // 首先尝试从流体接口面向的方向获取
-        IFluidHandler tankCapability = targetBlockEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, state.getValue(FACING)).orElse(null);
+        // 特殊处理：如果是含水树叶，创建虚拟的无限水源处理器
+        if (targetState.is(BlockTags.LEAVES) &&
+                targetState.hasProperty(BlockStateProperties.WATERLOGGED) &&
+                targetState.getValue(BlockStateProperties.WATERLOGGED)) {
+            tankCapability = new WaterloggedBlockFluidHandler();
+        } else {
+            // 正常获取流体能力
+            BlockEntity targetBlockEntity = level.getBlockEntity(targetPos);
+            if (targetBlockEntity == null)
+                return InteractionResult.FAIL;
 
-        // 如果没有，尝试获取默认的流体处理能力
-        if (tankCapability == null)
-            tankCapability = targetBlockEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, null).orElse(null);
+            // 尝试从目标方块获取流体处理能力
+            tankCapability = targetBlockEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, state.getValue(FACING)).orElse(null);
+
+            // 如果没有，尝试获取默认的流体处理能力
+            if (tankCapability == null)
+                tankCapability = targetBlockEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, null).orElse(null);
+        }
 
         if (tankCapability == null)
             return InteractionResult.FAIL;
@@ -206,7 +233,7 @@ public class FluidInterfaceBlock extends HorizontalDirectionalBlock implements I
 
         // 尝试将物品中的流体倒入容器
         if (GenericItemEmptying.canItemBeEmptied(level, stack)) {
-            fluidStack = tryEmptyItem(level, player, hand, stack, targetBlockEntity, tankCapability);
+            fluidStack = tryEmptyItem(level, player, hand, stack, targetPos, tankCapability);
             if (!fluidStack.isEmpty()) {
                 exchange = FluidExchange.ITEM_TO_TANK;
             }
@@ -214,7 +241,7 @@ public class FluidInterfaceBlock extends HorizontalDirectionalBlock implements I
 
         // 如果倒入失败，尝试从容器中取出流体
         if (exchange == null && GenericItemFilling.canItemBeFilled(level, stack)) {
-            fluidStack = tryFillItem(level, player, hand, stack, targetBlockEntity, tankCapability);
+            fluidStack = tryFillItem(level, player, hand, stack, targetPos, tankCapability);
             if (!fluidStack.isEmpty()) {
                 exchange = FluidExchange.TANK_TO_ITEM;
             }
@@ -241,7 +268,7 @@ public class FluidInterfaceBlock extends HorizontalDirectionalBlock implements I
     }
 
     private FluidStack tryEmptyItem(Level level, Player player, InteractionHand hand, ItemStack stack,
-                                    BlockEntity blockEntity, IFluidHandler capability) {
+                                    BlockPos targetPos, IFluidHandler capability) {
         if (!GenericItemEmptying.canItemBeEmptied(level, stack))
             return FluidStack.EMPTY;
 
@@ -268,13 +295,16 @@ public class FluidInterfaceBlock extends HorizontalDirectionalBlock implements I
         ItemStack resultItem = result.getSecond();
 
         capability.fill(fluidStack.copy(), FluidAction.EXECUTE);
-        blockEntity.setChanged();
 
-        if (level instanceof ServerLevel serverLevel)
-            serverLevel.getChunkSource().blockChanged(blockEntity.getBlockPos());
+        BlockEntity targetBlockEntity = level.getBlockEntity(targetPos);
+        if (targetBlockEntity != null) {
+            targetBlockEntity.setChanged();
+            if (level instanceof ServerLevel serverLevel)
+                serverLevel.getChunkSource().blockChanged(targetPos);
+        }
 
         // 更新玩家物品
-        if (!player.isCreative() && !(blockEntity instanceof CreativeFluidTankBlockEntity)) {
+        if (!player.isCreative() && !(targetBlockEntity instanceof CreativeFluidTankBlockEntity)) {
             if (stack.getCount() == 1) {
                 player.setItemInHand(hand, resultItem);
             } else {
@@ -287,9 +317,11 @@ public class FluidInterfaceBlock extends HorizontalDirectionalBlock implements I
     }
 
     private FluidStack tryFillItem(Level level, Player player, InteractionHand hand, ItemStack stack,
-                                   BlockEntity blockEntity, IFluidHandler capability) {
+                                   BlockPos targetPos, IFluidHandler capability) {
         if (!GenericItemFilling.canItemBeFilled(level, stack))
             return FluidStack.EMPTY;
+
+        BlockEntity targetBlockEntity = level.getBlockEntity(targetPos);
 
         // 遍历所有储罐
         for (int i = 0; i < capability.getTanks(); i++) {
@@ -308,7 +340,7 @@ public class FluidInterfaceBlock extends HorizontalDirectionalBlock implements I
 
             // 准备要填充的物品
             ItemStack fillStack = stack;
-            if (player.isCreative() || blockEntity instanceof CreativeFluidTankBlockEntity)
+            if (player.isCreative() || targetBlockEntity instanceof CreativeFluidTankBlockEntity)
                 fillStack = stack.copy();
 
             // 填充物品
@@ -329,14 +361,61 @@ public class FluidInterfaceBlock extends HorizontalDirectionalBlock implements I
                 }
             }
 
-            blockEntity.setChanged();
-            if (level instanceof ServerLevel serverLevel)
-                serverLevel.getChunkSource().blockChanged(blockEntity.getBlockPos());
+            if (targetBlockEntity != null) {
+                targetBlockEntity.setChanged();
+                if (level instanceof ServerLevel serverLevel)
+                    serverLevel.getChunkSource().blockChanged(targetPos);
+            }
 
             return drainFluid;
         }
 
         return FluidStack.EMPTY;
+    }
+
+    /**
+     * 内部类：模拟含水方块（树叶）作为无限水源
+     */
+    private static class WaterloggedBlockFluidHandler implements IFluidHandler {
+        private static final FluidStack WATER = new FluidStack(Fluids.WATER, 1000);
+
+        @Override
+        public int getTanks() {
+            return 1;
+        }
+
+        @Override
+        public FluidStack getFluidInTank(int tank) {
+            return WATER.copy();
+        }
+
+        @Override
+        public int getTankCapacity(int tank) {
+            return Integer.MAX_VALUE;
+        }
+
+        @Override
+        public boolean isFluidValid(int tank, FluidStack stack) {
+            return false; // 不能往含水方块里填充流体
+        }
+
+        @Override
+        public int fill(FluidStack resource, FluidAction action) {
+            return 0; // 不能往含水方块里填充流体
+        }
+
+        @Override
+        public FluidStack drain(FluidStack resource, FluidAction action) {
+            if (resource.getFluid() == Fluids.WATER) {
+                return new FluidStack(Fluids.WATER, Math.min(resource.getAmount(), 1000));
+            }
+            return FluidStack.EMPTY;
+        }
+
+        @Override
+        public FluidStack drain(int maxDrain, FluidAction action) {
+            return new FluidStack(Fluids.WATER, Math.min(maxDrain, 1000));
+        }
     }
 
     @Override
