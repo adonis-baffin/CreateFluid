@@ -54,7 +54,7 @@ public class FluidInteractionPoint {
     @Nullable
     public static FluidInteractionPoint create(Level level, BlockPos pos, BlockState state) {
         // 优先检查是否为置物台
-        if (AllBlocks.DEPOT.has(state)) {
+        if (AllBlocks.DEPOT.has(state) || AllBlocks.WEIGHTED_EJECTOR.has(state)) {
             return new DepotFluidInteractionPoint(level, pos, state);
         }
 
@@ -92,7 +92,7 @@ public class FluidInteractionPoint {
         }
 
         // 支持置物台
-        if (AllBlocks.DEPOT.has(state)) {
+        if (AllBlocks.DEPOT.has(state) || AllBlocks.WEIGHTED_EJECTOR.has(state)) {
             return true;
         }
 

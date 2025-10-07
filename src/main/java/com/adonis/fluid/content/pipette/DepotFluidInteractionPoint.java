@@ -24,18 +24,16 @@ public class DepotFluidInteractionPoint extends FluidInteractionPoint {
             return false;
         }
 
-        // 检查是否仍然是置物台
+        // 检查是否仍然是置物台或弹射置物台
         BlockState currentState = level.getBlockState(pos);
-        if (!com.simibubi.create.AllBlocks.DEPOT.has(currentState)) {
+        if (!com.simibubi.create.AllBlocks.DEPOT.has(currentState) &&
+                !com.simibubi.create.AllBlocks.WEIGHTED_EJECTOR.has(currentState)) {
             return false;
         }
 
-        // 检查是否有 DepotBehaviour
+        // 检查是否有 DepotBehaviour（两种置物台都使用相同的behaviour）
         DepotBehaviour behaviour = BlockEntityBehaviour.get(level, pos, DepotBehaviour.TYPE);
-        boolean hasBehaviour = behaviour != null;
-        if (!hasBehaviour) {
-        }
-        return hasBehaviour;
+        return behaviour != null;
     }
 
     @Override
