@@ -6,7 +6,6 @@ import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -63,8 +62,8 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
     }
 
-    // 内部类：模拟含水树叶的无限水源
-    private static class WaterloggedLeavesFluidHandler implements IFluidHandler {
+    // Internal class: Simulates waterlogged blocks (leaves) as infinite water source
+    private static class WaterloggedBlockFluidHandler implements IFluidHandler {
         private static final FluidStack WATER = new FluidStack(Fluids.WATER, 1000);
 
         @Override
@@ -180,7 +179,28 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
             dripTickCounter++;
             if (dripTickCounter >= DRIP_INTERVAL) {
                 dripTickCounter = 0;
-                spawnDripParticle();
+                // Now handled on the server by sending a packet
+                if (level instanceof ServerLevel serverLevel && !dripFluid.isEmpty()) {
+                    Vec3 dripPos = Vec3.atCenterOf(worldPosition).add(0, -0.3, 0);
+                    com.simibubi.create.AllPackets.getChannel().send(
+                            net.minecraftforge.network.PacketDistributor.TRACKING_CHUNK.with(
+                                    () -> level.getChunkAt(worldPosition)
+                            ),
+                            new com.adonis.fluid.packet.CopperTapParticlePacket(
+                                    com.adonis.fluid.packet.CopperTapParticlePacket.ParticleType.DRIP,
+                                    dripPos, Vec3.ZERO, dripFluid
+                            )
+                    );
+
+                    // Play sound from the server
+                    if (level.random.nextFloat() < 0.2f) {
+                        level.playSound(null, worldPosition,
+                                net.minecraft.sounds.SoundEvents.POINTED_DRIPSTONE_DRIP_WATER,
+                                net.minecraft.sounds.SoundSource.BLOCKS,
+                                0.2f,
+                                0.8f + level.random.nextFloat() * 0.4f);
+                    }
+                }
             }
         }
     }
@@ -238,11 +258,11 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
 
         IFluidHandler sourceHandler = null;
 
-        // 检查是否是树叶
+        // 检查是否是含水树叶
         if (sourceState.is(BlockTags.LEAVES)) {
             if (sourceState.hasProperty(BlockStateProperties.WATERLOGGED) &&
                     sourceState.getValue(BlockStateProperties.WATERLOGGED)) {
-                sourceHandler = new WaterloggedLeavesFluidHandler();
+                sourceHandler = new WaterloggedBlockFluidHandler();
             } else {
                 if (!renderingFluid.isEmpty() || shouldDrip) {
                     renderingFluid = FluidStack.EMPTY;
@@ -265,7 +285,8 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
             }
 
             sourceHandler = sourceEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, attached)
-                    .orElse(sourceEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, null).orElse(null));
+                    .orElse(sourceEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, null)
+                            .orElse(null));
         }
 
         if (sourceHandler == null) {
@@ -314,7 +335,9 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
             newDripFluid.setAmount(Math.min(newDripFluid.getAmount(), 250));
 
             // 检查流体是否发生了变化
-            if (!dripFluid.isEmpty() && !dripFluid.isFluidEqual(newDripFluid)) {
+            if (!dripFluid.isEmpty() &&
+                    (dripFluid.getFluid() != newDripFluid.getFluid() ||
+                            !FluidStack.areFluidStackTagsEqual(dripFluid, newDripFluid))) {
                 fluidChanged = true;
             }
 
@@ -330,64 +353,6 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
                 renderingFluid = FluidStack.EMPTY;
                 notifyUpdate();
             }
-        }
-    }
-
-    /**
-     * 生成滴水粒子效果 - 模仿滴水石锥的效果
-     */
-    private void spawnDripParticle() {
-        if (level == null || !(level instanceof ServerLevel serverLevel))
-            return;
-
-        if (dripFluid.isEmpty())
-            return;
-
-        // 使用 Create 的 FluidFX 获取流体粒子
-        ParticleOptions fluidParticle = com.simibubi.create.content.fluids.FluidFX.getFluidParticle(dripFluid);
-
-        // 龙头出口位置
-        Vec3 spoutPos = Vec3.atCenterOf(worldPosition).add(0, -0.3, 0);
-
-        // 阶段1：悬挂在出水口的水滴，缓慢向下生长
-        // 在出水口附近生成多个粒子，模拟水滴逐渐变大
-        for (int i = 0; i < 2; i++) {
-            double yOffset = -0.05 * i; // 水滴向下延伸
-            serverLevel.sendParticles(
-                    fluidParticle,
-                    spoutPos.x, spoutPos.y + yOffset, spoutPos.z,
-                    1,
-                    0.005, 0.0, 0.005, // 几乎不扩散
-                    0.005 // 非常缓慢向下
-            );
-        }
-
-        // 阶段2：脱离出水口的水滴，自由落体
-        // 在稍微下方的位置生成，给予较大的向下速度
-        serverLevel.sendParticles(
-                fluidParticle,
-                spoutPos.x, spoutPos.y - 0.15, spoutPos.z,
-                1,
-                0.01, 0.0, 0.01,
-                0.15 // 较大的向下速度，模拟自由落体
-        );
-
-        // 阶段3：落下途中的水滴
-        serverLevel.sendParticles(
-                fluidParticle,
-                spoutPos.x, spoutPos.y - 0.3, spoutPos.z,
-                1,
-                0.015, 0.0, 0.015,
-                0.25 // 更大的向下速度
-        );
-
-        // 偶尔播放滴水声音
-        if (level.random.nextFloat() < 0.2f) {
-            level.playSound(null, worldPosition,
-                    net.minecraft.sounds.SoundEvents.POINTED_DRIPSTONE_DRIP_WATER,
-                    net.minecraft.sounds.SoundSource.BLOCKS,
-                    0.2f,
-                    0.8f + level.random.nextFloat() * 0.4f);
         }
     }
 
@@ -544,7 +509,10 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
                 net.minecraftforge.network.PacketDistributor.TRACKING_CHUNK.with(
                         () -> level.getChunkAt(targetPos)
                 ),
-                new com.adonis.fluid.packet.CopperTapParticlePacket(startPos, endPos, fluid)
+                new com.adonis.fluid.packet.CopperTapParticlePacket(
+                        com.adonis.fluid.packet.CopperTapParticlePacket.ParticleType.STREAM,
+                        startPos, endPos, fluid
+                )
         );
     }
 
@@ -567,7 +535,7 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
             if (sourceBlockPos != null && sourceDirection != null) {
                 BlockState sourceState = level.getBlockState(sourceBlockPos);
 
-                // 检查是否是含水树叶（无限水源）
+                // 检查是否是含水树叶
                 if (sourceState.is(BlockTags.LEAVES) &&
                         sourceState.hasProperty(BlockStateProperties.WATERLOGGED) &&
                         sourceState.getValue(BlockStateProperties.WATERLOGGED) &&
@@ -576,8 +544,11 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
                 } else {
                     BlockEntity sourceEntity = level.getBlockEntity(sourceBlockPos);
                     if (sourceEntity != null) {
-                        IFluidHandler sourceHandler = sourceEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, sourceDirection)
-                                .orElse(sourceEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, null).orElse(null));
+                        IFluidHandler sourceHandler = sourceEntity.getCapability(
+                                        ForgeCapabilities.FLUID_HANDLER, sourceDirection)
+                                .orElse(sourceEntity.getCapability(
+                                                ForgeCapabilities.FLUID_HANDLER, null)
+                                        .orElse(null));
 
                         if (sourceHandler != null) {
                             FluidStack drained = sourceHandler.drain(pendingFluid, IFluidHandler.FluidAction.EXECUTE);
@@ -698,7 +669,8 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
 
     private boolean tryFillContainer(IFluidHandler sourceHandler, BlockEntity targetEntity) {
         IFluidHandler targetHandler = targetEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.UP)
-                .orElse(targetEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, null).orElse(null));
+                .orElse(targetEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, null)
+                        .orElse(null));
 
         if (targetHandler == null)
             return false;
@@ -744,11 +716,9 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
             return behaviour.getHeldItemStack();
         }
 
-        if (depot.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).isPresent()) {
-            var handler = depot.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).resolve().get();
-            if (handler.getSlots() > 0) {
-                return handler.getStackInSlot(0);
-            }
+        net.minecraftforge.items.IItemHandler handler = depot.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElse(null);
+        if (handler != null && handler.getSlots() > 0) {
+            return handler.getStackInSlot(0);
         }
 
         return ItemStack.EMPTY;
