@@ -25,7 +25,7 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import java.util.*;
 
-@Mixin(value = FluidPropagator.class, remap = false)
+@Mixin(value = FluidPropagator.class, remap = false, priority = 1145)
 public class FluidPropagatorMixin {
 
     @Unique
@@ -37,9 +37,10 @@ public class FluidPropagatorMixin {
         centrifugalPumpsToUpdate.get().clear();
     }
 
+    // 使用混淆后的方法名 m_7702_ (getBlockEntity 的 SRG 名)
     @Inject(method = "propagateChangedPipe",
             at = @At(value = "INVOKE",
-                    target = "Lnet/minecraft/world/level/LevelAccessor;getBlockEntity(Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/block/entity/BlockEntity;",
+                    target = "Lnet/minecraft/world/level/LevelAccessor;m_7702_(Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/block/entity/BlockEntity;",
                     shift = At.Shift.AFTER),
             locals = LocalCapture.CAPTURE_FAILHARD)
     private static void detectCentrifugalPump(
@@ -125,3 +126,7 @@ public class FluidPropagatorMixin {
         }
     }
 }
+
+
+
+
