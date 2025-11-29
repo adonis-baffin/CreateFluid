@@ -4,6 +4,7 @@
   "package": "com.adonis.fluid.mixin",
   "compatibilityLevel": "JAVA_17",
   "refmap": "fluid.mixins.refmap.json",
+  "plugin": "com.adonis.fluid.mixin.FluidMixinPlugin",
   "mixins": [
     "AllArmInteractionPointTypesMixin",
     "accessor.ArmBlockEntityAccessor",
@@ -19,10 +20,14 @@
     "FluidNetworkMixin",
     "FluidTransportBehaviourMixin",
     "VanillaFluidTargetsMixin",
-    "FluidUtilMixin"
+    "FluidUtilMixin",
+    "compat.FluidPropagatorMixin_TFMGCompat"
   ],
   "client": [
     "ArmBlockEntityWrenchUpdateMixin"
   ],
-  "server": []
+  "server": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
 }
