@@ -53,36 +53,8 @@ public class FluidInteractionPoint {
 
     @Nullable
     public static FluidInteractionPoint create(Level level, BlockPos pos, BlockState state) {
-        // 优先检查是否为置物台
-        if (AllBlocks.DEPOT.has(state) || AllBlocks.WEIGHTED_EJECTOR.has(state)) {
-            return new DepotFluidInteractionPoint(level, pos, state);
-        }
-
-        // 检查是否为分液池
-        if (AllBlocks.ITEM_DRAIN.has(state)) {
-            return new ItemDrainFluidInteractionPoint(level, pos, state);
-        }
-
-        // 传送带创建普通的交互点（用于选择），实际处理由虚拟中继器完成
-        if (AllBlocks.BELT.has(state)) {
-            // 只有能传输物品的传送带才创建交互点
-            if (com.simibubi.create.content.kinetics.belt.BeltBlock.canTransportObjects(state)) {
-                return new FluidInteractionPoint(level, pos, state);
-            }
-            return null;
-        }
-
-        // 检查是否为炼药锅 - 添加特殊处理
-        if (isCauldron(state)) {
-            return new FluidInteractionPoint(level, pos, state);
-        }
-
-        // 检查其他有效的流体方块
-        if (isValidFluidBlock(state)) {
-            return new FluidInteractionPoint(level, pos, state);
-        }
-
-        return null;
+        // 使用注册表系统创建交互点
+        return FluidInteractionPointTypes.tryCreate(level, pos, state);
     }
 
     private static boolean isValidFluidBlock(BlockState state) {

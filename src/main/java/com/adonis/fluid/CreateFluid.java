@@ -2,6 +2,7 @@ package com.adonis.fluid;
 
 import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.config.CFStress;
+import com.adonis.fluid.content.pipette.FluidInteractionPointCompat;
 import com.adonis.fluid.networking.CFNetworking;
 import com.adonis.fluid.registry.*;
 import com.mojang.logging.LogUtils;
@@ -85,8 +86,11 @@ public class CreateFluid {
             BlockStressValues.IMPACTS.registerProvider(STRESS_CONFIG::getImpact);
             BlockStressValues.CAPACITIES.registerProvider(STRESS_CONFIG::getCapacity);
 
-            // 使用新的网络注册类
             CFNetworking.register();
+
+            // ↓↓↓ 添加这一行 ↓↓↓
+            FluidInteractionPointCompat.init();
+            // ↑↑↑ 添加这一行 ↑↑↑
         });
     }
 
