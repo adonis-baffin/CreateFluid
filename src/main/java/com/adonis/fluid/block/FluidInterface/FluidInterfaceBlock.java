@@ -1,5 +1,6 @@
 package com.adonis.fluid.block.FluidInterface;
 
+import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlock;
 import com.adonis.fluid.registry.CFBlock;
 import com.adonis.fluid.registry.CFBlockEntity;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
@@ -106,6 +107,12 @@ public class FluidInterfaceBlock extends HorizontalDirectionalBlock implements I
     // 辅助方法：检查方块是否有流体存储能力 - 支持树叶
     private boolean hasFluidCapability(LevelReader level, BlockPos pos, Direction fromDirection) {
         BlockState blockState = level.getBlockState(pos);
+
+        // 新增：不允许依附于流体接口
+        if (blockState.getBlock() instanceof FluidInterfaceBlock ||
+                blockState.getBlock() instanceof SmartFluidInterfaceBlock) {
+            return false;
+        }
 
         // 检查是否是树叶（可以作为无限水源）
         if (blockState.is(BlockTags.LEAVES)) {
