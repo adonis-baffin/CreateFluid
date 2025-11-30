@@ -141,12 +141,6 @@ public class FluidInteractionPointCompat {
                     GenericFluidInteractionPoint::new
             );
 
-            // 印刷机
-            FluidInteractionPointTypes.registerDeferred(
-                    CREATE_ENCHANTMENT_INDUSTRY, "printer",
-                    GenericFluidInteractionPoint::new
-            );
-
             CreateFluid.LOGGER.info("Registered Create Enchantment Industry compatibility");
         }
 
