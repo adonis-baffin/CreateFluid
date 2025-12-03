@@ -43,6 +43,12 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
     private BlockPos sourceBlockPos = null;
     private int continuousProcessingDelay = 0;
 
+    private boolean beltProcessing = false;
+    private BlockPos beltProcessingPos = null;
+    private int beltProcessingTicks = 0;
+    private FluidStack beltProcessingFluid = FluidStack.EMPTY;
+    private static final int BELT_FILLING_TIME = 20;
+
     // 滴水效果相关
     private boolean shouldDrip = false;
     private int dripTickCounter = 0;
@@ -84,6 +90,64 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
         if (level != null && !level.isClientSide) {
             com.adonis.fluid.content.tap.TapVirtualRelayManager.unregisterTap(worldPosition);
         }
+    }
+
+    /**
+     * 开始传送带加工（由虚拟中继器调用）
+     */
+    public void startBeltProcessing(BlockPos beltPos, FluidStack fluid) {
+        this.beltProcessing = true;
+        this.beltProcessingPos = beltPos;
+        this.beltProcessingTicks = BELT_FILLING_TIME;
+        this.beltProcessingFluid = fluid.copy();
+        notifyUpdate();
+    }
+
+    /**
+     * 更新传送带加工进度
+     */
+    public void updateBeltProcessingTicks(int ticks) {
+        this.beltProcessingTicks = ticks;
+        // 不需要每tick都notifyUpdate，渲染器会自动获取最新状态
+    }
+
+    /**
+     * 停止传送带加工
+     */
+    public void stopBeltProcessing() {
+        this.beltProcessing = false;
+        this.beltProcessingPos = null;
+        this.beltProcessingTicks = 0;
+        this.beltProcessingFluid = FluidStack.EMPTY;
+        notifyUpdate();
+    }
+
+    /**
+     * 是否正在进行传送带加工
+     */
+    public boolean isBeltProcessing() {
+        return beltProcessing && beltProcessingTicks > 0;
+    }
+
+    /**
+     * 获取传送带加工的剩余ticks
+     */
+    public int getBeltProcessingTicks() {
+        return beltProcessingTicks;
+    }
+
+    /**
+     * 获取传送带加工使用的流体
+     */
+    public FluidStack getBeltProcessingFluid() {
+        return beltProcessingFluid;
+    }
+
+    /**
+     * 获取传送带位置
+     */
+    public BlockPos getBeltProcessingPos() {
+        return beltProcessingPos;
     }
 
     // Internal class: Simulates waterlogged blocks (leaves) as infinite water source
@@ -781,6 +845,18 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
         if (sourceBlockPos != null) {
             tag.putLong("SourcePos", sourceBlockPos.asLong());
         }
+
+        // 传送带加工状态（客户端需要）
+        if (clientPacket && beltProcessing) {
+            tag.putBoolean("BeltProcessing", true);
+            tag.putInt("BeltProcessingTicks", beltProcessingTicks);
+            if (!beltProcessingFluid.isEmpty()) {
+                tag.put("BeltProcessingFluid", beltProcessingFluid.writeToNBT(new CompoundTag()));
+            }
+            if (beltProcessingPos != null) {
+                tag.putLong("BeltProcessingPos", beltProcessingPos.asLong());
+            }
+        }
     }
 
     @Override
@@ -832,9 +908,31 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
         } else {
             sourceBlockPos = null;
         }
+
+        // 读取传送带加工状态
+        if (clientPacket) {
+            beltProcessing = tag.getBoolean("BeltProcessing");
+            if (beltProcessing) {
+                beltProcessingTicks = tag.getInt("BeltProcessingTicks");
+                if (tag.contains("BeltProcessingFluid")) {
+                    beltProcessingFluid = FluidStack.loadFluidStackFromNBT(tag.getCompound("BeltProcessingFluid"));
+                }
+                if (tag.contains("BeltProcessingPos")) {
+                    beltProcessingPos = BlockPos.of(tag.getLong("BeltProcessingPos"));
+                }
+            } else {
+                beltProcessingTicks = 0;
+                beltProcessingFluid = FluidStack.EMPTY;
+                beltProcessingPos = null;
+            }
+        }
     }
 
     public FluidStack getRenderingFluid() {
+        // 传送带加工时返回传送带加工流体
+        if (isBeltProcessing() && !beltProcessingFluid.isEmpty()) {
+            return beltProcessingFluid;
+        }
         return renderingFluid;
     }
 
@@ -847,7 +945,8 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
     }
 
     public boolean hasFluidToRender() {
-        return !renderingFluid.isEmpty();
+        // 传送带加工或普通加工都需要渲染流体
+        return !renderingFluid.isEmpty() || isBeltProcessing();
     }
 
     public boolean shouldDrip() {

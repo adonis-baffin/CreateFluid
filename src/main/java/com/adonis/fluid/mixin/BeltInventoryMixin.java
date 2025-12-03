@@ -38,10 +38,6 @@ public class BeltInventoryMixin {
         if (pipetteRelay != null) {
             BeltProcessingBehaviour behaviour = pipetteRelay.getProcessingBehaviour();
             if (behaviour != null) {
-                System.out.println("[BeltMixin] getBeltProcessing: segment=" + segment +
-                        ", beltPos=" + beltPos.toShortString() +
-                        ", checkPos=" + checkPos.toShortString() +
-                        " -> PIPETTE relay found!");
                 cir.setReturnValue(behaviour);
                 return;
             }
@@ -52,10 +48,6 @@ public class BeltInventoryMixin {
         if (tapRelay != null) {
             BeltProcessingBehaviour behaviour = tapRelay.getProcessingBehaviour();
             if (behaviour != null) {
-                System.out.println("[BeltMixin] getBeltProcessing: segment=" + segment +
-                        ", beltPos=" + beltPos.toShortString() +
-                        ", checkPos=" + checkPos.toShortString() +
-                        " -> TAP relay found! Behaviour=" + behaviour);
                 cir.setReturnValue(behaviour);
                 return;
             }
@@ -75,10 +67,8 @@ public class BeltInventoryMixin {
         // 1. 先检查移液器虚拟中继器
         VirtualRelayManager.VirtualRelay pipetteRelay = VirtualRelayManager.getRelayAt(checkPos);
         if (pipetteRelay != null) {
-            System.out.println("[BeltMixin] getHandler: segment=" + segment + " -> PIPETTE relay found");
             TransportedItemStackHandlerBehaviour handler = BlockEntityBehaviour.get(
                     belt.getLevel(), beltPos, TransportedItemStackHandlerBehaviour.TYPE);
-            System.out.println("[BeltMixin] getHandler: Belt handler = " + handler);
             if (handler != null) {
                 cir.setReturnValue(handler);
                 return;
@@ -88,15 +78,11 @@ public class BeltInventoryMixin {
         // 2. 再检查铜龙头虚拟中继器
         TapVirtualRelayManager.TapVirtualRelay tapRelay = TapVirtualRelayManager.getRelayAt(checkPos);
         if (tapRelay != null) {
-            System.out.println("[BeltMixin] getHandler: segment=" + segment + " -> TAP relay found");
             TransportedItemStackHandlerBehaviour handler = BlockEntityBehaviour.get(
                     belt.getLevel(), beltPos, TransportedItemStackHandlerBehaviour.TYPE);
-            System.out.println("[BeltMixin] getHandler: Belt handler = " + handler);
             if (handler != null) {
                 cir.setReturnValue(handler);
                 return;
-            } else {
-                System.out.println("[BeltMixin] getHandler: WARNING - Handler is NULL!");
             }
         }
     }
@@ -136,12 +122,12 @@ public class BeltInventoryMixin {
             BeltProcessingBehaviour.ProcessingResult result = behaviour.handleHeldItem(currentItem, handler);
 
             if (result == BeltProcessingBehaviour.ProcessingResult.REMOVE) {
-                cir.setReturnValue(true); // 物品被移除
+                cir.setReturnValue(true);
                 return;
             }
 
             if (result == BeltProcessingBehaviour.ProcessingResult.HOLD) {
-                cir.setReturnValue(false); // 继续锁定
+                cir.setReturnValue(false);
                 return;
             }
 
@@ -157,17 +143,15 @@ public class BeltInventoryMixin {
         boolean willCross = currentItem.beltPosition < segmentCenter && nextOffset >= segmentCenter;
 
         if (!willCross || noMovement) {
-            return; // 物品没有跨越中心点，让原方法处理
+            return;
         }
 
         // 物品正在跨越铜龙头下方的 segment 中心点
-        // 手动调用处理逻辑，绕过 isBlocked 检查
-
         // 调用 handleReceivedItem
         BeltProcessingBehaviour.ProcessingResult result = behaviour.handleReceivedItem(currentItem, handler);
 
         if (result == BeltProcessingBehaviour.ProcessingResult.REMOVE) {
-            cir.setReturnValue(true); // 物品被移除
+            cir.setReturnValue(true);
             return;
         }
 
@@ -176,10 +160,8 @@ public class BeltInventoryMixin {
             currentItem.beltPosition = segmentCenter + (beltMovementPositive ? 1/512f : -1/512f);
             currentItem.locked = true;
             belt.notifyUpdate();
-            cir.setReturnValue(false); // 物品被锁定，但没有被移除
+            cir.setReturnValue(false);
             return;
         }
-
-        // PASS - 让原方法继续处理
     }
 }

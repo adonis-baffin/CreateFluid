@@ -47,37 +47,26 @@ public class TapVirtualRelayManager {
             this.relayPos = beltPos.above(2);
             this.tapPos = tapPos;
 
-            System.out.println("[TapRelay] Creating TapVirtualRelay");
-            System.out.println("[TapRelay]   beltPos: " + beltPos);
-            System.out.println("[TapRelay]   relayPos: " + relayPos);
-            System.out.println("[TapRelay]   tapPos: " + tapPos);
-
             BlockEntity be = level.getBlockEntity(tapPos);
             if (be instanceof CopperTapBlockEntity tap) {
                 this.tapRef = new WeakReference<>(tap);
-                System.out.println("[TapRelay]   tapRef: OK");
             } else {
                 this.tapRef = new WeakReference<>(null);
-                System.out.println("[TapRelay]   tapRef: FAILED (be=" + be + ")");
             }
 
             this.processingBehaviour = new BeltProcessingBehaviour(null) {
                 @Override
                 public ProcessingResult handleReceivedItem(TransportedItemStack transported,
                                                            TransportedItemStackHandlerBehaviour handler) {
-                    System.out.println("[TapRelay] >>> handleReceivedItem called! <<<");
                     return onItemReceived(transported, handler);
                 }
 
                 @Override
                 public ProcessingResult handleHeldItem(TransportedItemStack transported,
                                                        TransportedItemStackHandlerBehaviour handler) {
-                    System.out.println("[TapRelay] >>> handleHeldItem called! <<<");
                     return whenItemHeld(transported, handler);
                 }
             };
-
-            System.out.println("[TapRelay]   processingBehaviour created: " + this.processingBehaviour);
         }
 
         public BeltProcessingBehaviour getProcessingBehaviour() {
@@ -86,56 +75,37 @@ public class TapVirtualRelayManager {
 
         private BeltProcessingBehaviour.ProcessingResult onItemReceived(TransportedItemStack transported,
                                                                         TransportedItemStackHandlerBehaviour handler) {
-            System.out.println("[TapRelay] ===== onItemReceived =====");
-            System.out.println("[TapRelay] Item: " + transported.stack.getItem().toString());
-
             CopperTapBlockEntity tap = tapRef.get();
             if (tap == null || tap.isRemoved()) {
-                System.out.println("[TapRelay] FAIL: Tap is null or removed");
                 return BeltProcessingBehaviour.ProcessingResult.PASS;
             }
 
             // 检查龙头是否打开
             if (!isTapOpen(tap)) {
-                System.out.println("[TapRelay] FAIL: Tap is closed");
                 return BeltProcessingBehaviour.ProcessingResult.PASS;
             }
-            System.out.println("[TapRelay] Tap is open: OK");
 
             // 检查物品是否可以被填充
             Level level = tap.getLevel();
             if (level == null) {
-                System.out.println("[TapRelay] FAIL: Level is null");
                 return BeltProcessingBehaviour.ProcessingResult.PASS;
             }
 
-            boolean canBeFilled = FillingBySpout.canItemBeFilled(level, transported.stack);
-            System.out.println("[TapRelay] Can item be filled: " + canBeFilled);
-            if (!canBeFilled) {
-                System.out.println("[TapRelay] FAIL: Item cannot be filled");
+            if (!FillingBySpout.canItemBeFilled(level, transported.stack)) {
                 return BeltProcessingBehaviour.ProcessingResult.PASS;
             }
 
             // 获取可用流体
             FluidStack availableFluid = getAvailableFluid(tap);
-            System.out.println("[TapRelay] Available fluid: " + (availableFluid.isEmpty() ? "EMPTY" : availableFluid.getFluid().toString() + " x" + availableFluid.getAmount()));
             if (availableFluid.isEmpty()) {
-                System.out.println("[TapRelay] FAIL: No fluid available");
                 return BeltProcessingBehaviour.ProcessingResult.PASS;
             }
 
             // 检查是否有足够的流体
             ItemStack singleItem = ItemHandlerHelper.copyStackWithSize(transported.stack, 1);
             int required = FillingBySpout.getRequiredAmountForItem(level, singleItem, availableFluid);
-            System.out.println("[TapRelay] Required amount: " + required);
 
-            if (required <= 0) {
-                System.out.println("[TapRelay] FAIL: Required amount <= 0 (no recipe?)");
-                return BeltProcessingBehaviour.ProcessingResult.PASS;
-            }
-
-            if (required > availableFluid.getAmount()) {
-                System.out.println("[TapRelay] FAIL: Not enough fluid (need " + required + ", have " + availableFluid.getAmount() + ")");
+            if (required <= 0 || required > availableFluid.getAmount()) {
                 return BeltProcessingBehaviour.ProcessingResult.PASS;
             }
 
@@ -144,37 +114,34 @@ public class TapVirtualRelayManager {
             processingTicks = FILLING_TIME;
             particlesSent = false;
 
-            System.out.println("[TapRelay] SUCCESS: Starting processing, will take " + FILLING_TIME + " ticks");
+            // 通知铜龙头开始传送带加工，用于渲染
+            tap.startBeltProcessing(beltPos, availableFluid);
+
             return BeltProcessingBehaviour.ProcessingResult.HOLD;
         }
 
         private BeltProcessingBehaviour.ProcessingResult whenItemHeld(TransportedItemStack transported,
                                                                       TransportedItemStackHandlerBehaviour handler) {
-            System.out.println("[TapRelay] ===== whenItemHeld =====");
-            System.out.println("[TapRelay] Processing ticks remaining: " + processingTicks);
-
             if (currentlyProcessing != transported) {
-                System.out.println("[TapRelay] PASS: Not the item we're processing");
                 return BeltProcessingBehaviour.ProcessingResult.PASS;
             }
 
             CopperTapBlockEntity tap = tapRef.get();
             if (tap == null || tap.isRemoved()) {
-                System.out.println("[TapRelay] RESET: Tap is null or removed");
                 resetState();
                 return BeltProcessingBehaviour.ProcessingResult.PASS;
             }
 
             // 检查龙头是否关闭了
             if (!isTapOpen(tap)) {
-                System.out.println("[TapRelay] RESET: Tap was closed");
+                tap.stopBeltProcessing();
                 resetState();
                 return BeltProcessingBehaviour.ProcessingResult.PASS;
             }
 
             Level level = tap.getLevel();
             if (level == null) {
-                System.out.println("[TapRelay] RESET: Level is null");
+                tap.stopBeltProcessing();
                 resetState();
                 return BeltProcessingBehaviour.ProcessingResult.PASS;
             }
@@ -182,23 +149,24 @@ public class TapVirtualRelayManager {
             if (processingTicks > 0) {
                 processingTicks--;
 
+                // 更新铜龙头的处理进度
+                tap.updateBeltProcessingTicks(processingTicks);
+
                 // 在中间时刻发送粒子和播放声音
                 if (processingTicks == FILLING_TIME / 2 && !particlesSent) {
                     FluidStack fluid = getAvailableFluid(tap);
                     if (!fluid.isEmpty()) {
-                        System.out.println("[TapRelay] Sending filling effects");
                         sendFillingEffects(tap, fluid);
                         particlesSent = true;
                     }
                 }
 
-                System.out.println("[TapRelay] HOLD: Still processing (" + processingTicks + " ticks left)");
                 return BeltProcessingBehaviour.ProcessingResult.HOLD;
             }
 
             // 处理完成，执行实际填充
-            System.out.println("[TapRelay] Processing complete, performing filling");
             performFilling(transported, handler, tap);
+            tap.stopBeltProcessing();
             resetState();
 
             return BeltProcessingBehaviour.ProcessingResult.PASS;
@@ -380,45 +348,27 @@ public class TapVirtualRelayManager {
 
         // 铜龙头下方是传送带位置
         BlockPos beltPos = tapPos.below();
-        // 虚拟中继器在传送带上方2格
+        // 虚拟中继器在传送带上方2格（与注液器位置对应）
         BlockPos relayPos = beltPos.above(2);
-
-        // ===== 调试输出 =====
-        System.out.println("[TapRelay] ========================================");
-        System.out.println("[TapRelay] Registering tap at: " + tapPos.toShortString());
-        System.out.println("[TapRelay] Belt pos (tap-1): " + beltPos.toShortString());
-        System.out.println("[TapRelay] Relay pos (belt+2): " + relayPos.toShortString());
 
         // 检查是否已经注册
         if (activeRelays.containsKey(relayPos)) {
-            System.out.println("[TapRelay] Already registered at " + relayPos.toShortString());
             return;
         }
 
         TapVirtualRelay relay = new TapVirtualRelay(beltPos, tapPos, level);
         activeRelays.put(relayPos, relay);
         tapToRelay.put(tapPos, relayPos);
-
-        System.out.println("[TapRelay] Successfully registered!");
-        System.out.println("[TapRelay] Total active relays: " + activeRelays.size());
-        System.out.println("[TapRelay] All relay positions: " + getAllRelayPositions());
     }
 
     /**
      * 注销铜龙头的虚拟中继器
      */
     public static void unregisterTap(BlockPos tapPos) {
-        System.out.println("[TapRelay] Unregistering tap at: " + tapPos.toShortString());
-
         BlockPos relayPos = tapToRelay.remove(tapPos);
         if (relayPos != null) {
             activeRelays.remove(relayPos);
-            System.out.println("[TapRelay] Removed relay at: " + relayPos.toShortString());
-        } else {
-            System.out.println("[TapRelay] No relay found for tap at: " + tapPos.toShortString());
         }
-
-        System.out.println("[TapRelay] Remaining relays: " + activeRelays.size());
     }
 
     /**
@@ -441,26 +391,5 @@ public class TapVirtualRelayManager {
     public static void cleanup() {
         activeRelays.entrySet().removeIf(entry -> !entry.getValue().isValid());
         tapToRelay.entrySet().removeIf(entry -> !activeRelays.containsKey(entry.getValue()));
-    }
-
-    /**
-     * 调试用：获取所有已注册的中继器位置
-     */
-    public static String getAllRelayPositions() {
-        if (activeRelays.isEmpty()) {
-            return "[]";
-        }
-        StringBuilder sb = new StringBuilder("[");
-        boolean first = true;
-        for (Map.Entry<BlockPos, TapVirtualRelay> entry : activeRelays.entrySet()) {
-            if (!first) sb.append(", ");
-            sb.append(entry.getKey().toShortString());
-            sb.append(" (tap at ");
-            sb.append(entry.getValue().getTapPos().toShortString());
-            sb.append(")");
-            first = false;
-        }
-        sb.append("]");
-        return sb.toString();
     }
 }

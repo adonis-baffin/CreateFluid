@@ -17,7 +17,6 @@ import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.InventoryMenu;
-import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.Fluid;
@@ -34,12 +33,8 @@ public class CopperTapRenderer extends SafeBlockEntityRenderer<CopperTapBlockEnt
     protected void renderSafe(CopperTapBlockEntity be, float partialTicks, PoseStack ms,
                               MultiBufferSource buffer, int light, int overlay) {
 
-        // 只在有流体要渲染时才渲染
+        // 检查是否需要渲染
         if (!be.hasFluidToRender())
-            return;
-
-        FluidStack fluid = be.getRenderingFluid();
-        if (fluid.isEmpty())
             return;
 
         BlockState state = be.getBlockState();
@@ -70,20 +65,39 @@ public class CopperTapRenderer extends SafeBlockEntityRenderer<CopperTapBlockEnt
                 ms.mulPose(Axis.YP.rotationDegrees(90));
                 ms.translate(-0.5, 0, -0.5);
                 break;
+            default:
+                break;
         }
 
-        // 只渲染主流体流
-        renderFluidStream(be, fluid, ms, buffer, light, partialTicks);
-
-        // 如果正在注液，只渲染飞溅效果（不渲染细流）
-        if (be.isProcessing()) {
-            renderSplashEffect(be, fluid, ms, buffer, light, partialTicks);
+        // 判断渲染类型
+        if (be.isBeltProcessing()) {
+            // 传送带加工时也用和置物台完全一样的渲染
+            FluidStack beltFluid = be.getBeltProcessingFluid();
+            if (!beltFluid.isEmpty()) {
+                renderFluidStream(be, beltFluid, ms, buffer, light, partialTicks);
+                renderSplashEffect(be, beltFluid, ms, buffer, light, partialTicks);  // 加上这行就有收尾水洼了
+            }
+        } else if (be.isProcessing()) {
+            // 原来的置物台逻辑保持不变
+            FluidStack fluid = be.getRenderingFluid();
+            if (!fluid.isEmpty()) {
+                renderFluidStream(be, fluid, ms, buffer, light, partialTicks);
+                renderSplashEffect(be, fluid, ms, buffer, light, partialTicks);
+            }
+        } else {
+            // 普通流出一律保持短水柱
+            FluidStack fluid = be.getRenderingFluid();
+            if (!fluid.isEmpty()) {
+                renderFluidStream(be, fluid, ms, buffer, light, partialTicks);
+            }
         }
 
         ms.popPose();
     }
 
-    // 新增一个只渲染飞溅效果的方法
+    /**
+     * 渲染飞溅效果（普通加工用）
+     */
     private void renderSplashEffect(CopperTapBlockEntity be, FluidStack fluid, PoseStack ms,
                                     MultiBufferSource buffer, int light, float partialTicks) {
         int processingTicks = be.getProcessingTicks();
@@ -91,7 +105,7 @@ public class CopperTapRenderer extends SafeBlockEntityRenderer<CopperTapBlockEnt
 
         float processingProgress = ((float) processingTicks - partialTicks) / 20f;
 
-        // 只渲染飞溅效果，不渲染细流
+        // 只渲染飞溅效果
         float splash = 1f - processingProgress;
         if (splash < 0.3f) {
             float splashRadius = splash * 0.5f;
@@ -104,6 +118,9 @@ public class CopperTapRenderer extends SafeBlockEntityRenderer<CopperTapBlockEnt
         }
     }
 
+    /**
+     * 普通流体流渲染
+     */
     private void renderFluidStream(CopperTapBlockEntity be, FluidStack fluid, PoseStack ms,
                                    MultiBufferSource buffer, int light, float partialTicks) {
         // 流体流从出水口到下方
@@ -112,7 +129,7 @@ public class CopperTapRenderer extends SafeBlockEntityRenderer<CopperTapBlockEnt
         float startZ = 6f / 16f;
         float endZ = 10f / 16f;
         float startY = 4f / 16f; // 出水口底部
-        float endY = -8f / 16f; // 延伸到下方方块
+        float endY = -6f / 16f; // 延伸到下方方块
 
         // 根据处理进度调整流的大小
         if (be.isProcessing()) {
@@ -132,55 +149,13 @@ public class CopperTapRenderer extends SafeBlockEntityRenderer<CopperTapBlockEnt
                 buffer, ms, light, false, true);
     }
 
-    private void renderFillingEffect(CopperTapBlockEntity be, FluidStack fluid, PoseStack ms,
-                                     MultiBufferSource buffer, int light, float partialTicks) {
-        // 注液时的特效，类似注液器
-        int processingTicks = be.getProcessingTicks();
-        if (processingTicks <= 0) return;
-
-        float processingProgress = ((float) processingTicks - partialTicks) / 20f;
-
-        // 渲染注液流
-        if (processingProgress > 0) {
-            // 计算流体流的动态大小
-            float flowScale = 0.5f + 0.5f * Mth.sin(processingProgress * 3.14159f);
-
-            // 流体流的范围
-            float startX = 0.5f - 0.0625f * flowScale;
-            float endX = 0.5f + 0.0625f * flowScale;
-            float startZ = 0.5f - 0.0625f * flowScale;
-            float endZ = 0.5f + 0.0625f * flowScale;
-            float startY = 3f / 16f; // 从龙头底部开始
-            float endY = -12f / 16f; // 延伸到下方
-
-            // 渲染细流
-            renderFluidBox(fluid, startX, endY, startZ,
-                    endX, startY, endZ,
-                    buffer, ms, light, false, true);
-
-            // 渲染飞溅效果
-            float splash = 1f - processingProgress;
-            if (splash < 0.3f) {
-                float splashRadius = splash * 0.5f;
-
-                // 在底部渲染扩散的流体池
-                renderFluidBox(fluid,
-                        0.5f - splashRadius, -15.5f / 16f, 0.5f - splashRadius,
-                        0.5f + splashRadius, -15f / 16f, 0.5f + splashRadius,
-                        buffer, ms, light, false, true);
-            }
-        }
-    }
-
     /**
-     * Catnip风格的流体渲染方法 - 完整实现
-     * 这是从Catnip库中提取并适配的代码
+     * Catnip风格的流体渲染方法
      */
     private void renderFluidBox(FluidStack fluidStack, float xMin, float yMin, float zMin,
                                 float xMax, float yMax, float zMax,
                                 MultiBufferSource buffer, PoseStack ms, int light,
                                 boolean renderBottom, boolean invertGasses) {
-        // 使用translucent渲染类型，与Catnip的fluid()类型效果相同
         VertexConsumer builder = buffer.getBuffer(RenderType.translucent());
         renderFluidBox(fluidStack, xMin, yMin, zMin, xMax, yMax, zMax,
                 builder, ms, light, renderBottom, invertGasses);
@@ -256,7 +231,7 @@ public class CopperTapRenderer extends SafeBlockEntityRenderer<CopperTapBlockEnt
     }
 
     /**
-     * 渲染平铺的流体面 - 从Catnip提取
+     * 渲染平铺的流体面
      */
     private static void renderStillTiledFace(Direction dir, float left, float down,
                                              float right, float up, float depth,
@@ -338,7 +313,7 @@ public class CopperTapRenderer extends SafeBlockEntityRenderer<CopperTapBlockEnt
     }
 
     /**
-     * 添加顶点 - 从Catnip提取
+     * 添加顶点
      */
     private static void putVertex(VertexConsumer builder, PoseStack ms,
                                   float x, float y, float z,
@@ -360,7 +335,9 @@ public class CopperTapRenderer extends SafeBlockEntityRenderer<CopperTapBlockEnt
                 .endVertex();
     }
 
-    // 客户端粒子效果（可选）
+    /**
+     * 客户端粒子效果
+     */
     public static void spawnFluidParticles(CopperTapBlockEntity be) {
         if (be.getLevel() == null || !be.getLevel().isClientSide)
             return;
@@ -369,7 +346,6 @@ public class CopperTapRenderer extends SafeBlockEntityRenderer<CopperTapBlockEnt
         if (fluid.isEmpty() || !be.getBlockState().getValue(BlockStateProperties.OPEN))
             return;
 
-        // 生成流体粒子
         Vec3 pos = Vec3.atCenterOf(be.getBlockPos()).add(0, -0.25, 0);
         ParticleOptions particle = FluidFX.getFluidParticle(fluid);
 
