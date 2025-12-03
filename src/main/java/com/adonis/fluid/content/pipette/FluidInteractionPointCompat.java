@@ -120,6 +120,14 @@ public class FluidInteractionPointCompat {
                     FluidInteractionPoint::new
             );
         }
+
+        // 集水器
+        if (CFBlock.GUTTER_OUTLET != null) {
+            FluidInteractionPointTypes.register(
+                    CFBlock.GUTTER_OUTLET.get(),
+                    FluidInteractionPoint::new
+            );
+        }
     }
 
     /**

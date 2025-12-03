@@ -73,6 +73,11 @@ public class FluidInteractionPoint {
             return true;
         }
 
+        // 支持集水器
+        if (CFBlock.GUTTER_OUTLET.has(state)) {
+            return true;
+        }
+
         // 支持工作盆、流体接口等
         if (AllBlocks.BASIN.has(state) ||
                 CFBlock.FLUID_INTERFACE.has(state) ||

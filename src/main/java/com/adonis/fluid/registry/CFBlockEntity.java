@@ -2,6 +2,7 @@ package com.adonis.fluid.registry;
 
 import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.block.CopperTap.CopperTapBlockEntity;
+import com.adonis.fluid.block.GutterOutlet.GutterOutletBlockEntity;
 import com.adonis.fluid.block.Pipette.PipetteBlockEntity;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlockEntity;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlockEntity;
@@ -54,6 +55,11 @@ public class CFBlockEntity {
             BLOCK_ENTITIES.register("copper_tap", () -> BlockEntityType.Builder.of(
                     (pos, state) -> new CopperTapBlockEntity(CFBlockEntity.COPPER_TAP.get(), pos, state),
                     CFBlock.COPPER_TAP.get()).build(null));
+
+    public static final RegistryObject<BlockEntityType<GutterOutletBlockEntity>> GUTTER_OUTLET =
+            BLOCK_ENTITIES.register("gutter_outlet", () -> BlockEntityType.Builder.of(
+                    (pos, state) -> new GutterOutletBlockEntity(CFBlockEntity.GUTTER_OUTLET.get(), pos, state),
+                    CFBlock.GUTTER_OUTLET.get()).build(null));
 
     // 为了保持兼容性，提供一个RegistryObject访问器
     public static final RegistryObject<BlockEntityType<CentrifugalPumpBlockEntity>> CENTRIFUGAL_PUMP =

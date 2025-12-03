@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "fluid:block/gutter_outlet",
+      "y": 0
+    },
+    "facing=south": {
+      "model": "fluid:block/gutter_outlet",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "fluid:block/gutter_outlet",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "fluid:block/gutter_outlet",
+      "y": 90
+    }
+  }
+}

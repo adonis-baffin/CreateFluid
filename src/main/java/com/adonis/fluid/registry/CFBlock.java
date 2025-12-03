@@ -4,6 +4,7 @@ import static com.adonis.fluid.CreateFluid.REGISTRATE;
 import static com.simibubi.create.foundation.data.TagGen.axeOrPickaxe;
 import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.block.CopperTap.CopperTapBlock;
+import com.adonis.fluid.block.GutterOutlet.GutterOutletBlock;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlock;
 import com.adonis.fluid.block.Pipette.PipetteBlock;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlock;
@@ -225,6 +226,31 @@ public class CFBlock {
             })
             .item()
             .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), prov.modLoc("block/copper_tap")))
+            .build()
+            .register();
+
+    // 集水器注册
+    public static final BlockEntry<GutterOutletBlock> GUTTER_OUTLET = REGISTRATE
+            .block("gutter_outlet", GutterOutletBlock::new)
+            .initialProperties(SharedProperties::copperMetal)
+            .properties(prop -> prop
+                    .mapColor(MapColor.COLOR_ORANGE)
+                    .sound(SoundType.COPPER)
+                    .noOcclusion())
+            .transform(axeOrPickaxe())
+            .blockstate((ctx, prov) -> {
+                prov.getVariantBuilder(ctx.get())
+                        .forAllStates(state -> {
+                            Direction facing = state.getValue(GutterOutletBlock.FACING);
+                            int yRot = (int) facing.toYRot();
+                            return ConfiguredModel.builder()
+                                    .modelFile(prov.models().getExistingFile(prov.modLoc("block/gutter_outlet")))
+                                    .rotationY(yRot)
+                                    .build();
+                        });
+            })
+            .item()
+            .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), prov.modLoc("block/gutter_outlet")))
             .build()
             .register();
 

@@ -5,6 +5,7 @@
     "minecraft:lava_cauldron",
     "minecraft:powder_snow_cauldron",
     "create:basin",
+    "fluid:gutter_outlet",
     {
       "id": "irons_spellbooks:alchemist_cauldron",
       "required": false

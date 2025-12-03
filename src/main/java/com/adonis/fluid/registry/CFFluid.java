@@ -25,7 +25,6 @@ public class CFFluid {
         IEventBus modEventBus = net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext.get().getModEventBus();
         FLUIDS.register(modEventBus);
         PowderSnowFluidType.FLUID_TYPES.register(modEventBus);
-        CreateFluid.LOGGER.info("Registering CF Fluids");
     }
 
     /**
