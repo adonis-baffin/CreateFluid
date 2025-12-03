@@ -62,6 +62,30 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
     }
 
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (level != null && !level.isClientSide) {
+            com.adonis.fluid.content.tap.TapVirtualRelayManager.registerTap(worldPosition, level);
+        }
+    }
+
+    @Override
+    public void invalidate() {
+        super.invalidate();
+        if (level != null && !level.isClientSide) {
+            com.adonis.fluid.content.tap.TapVirtualRelayManager.unregisterTap(worldPosition);
+        }
+    }
+
+    @Override
+    public void destroy() {
+        super.destroy();
+        if (level != null && !level.isClientSide) {
+            com.adonis.fluid.content.tap.TapVirtualRelayManager.unregisterTap(worldPosition);
+        }
+    }
+
     // Internal class: Simulates waterlogged blocks (leaves) as infinite water source
     private static class WaterloggedBlockFluidHandler implements IFluidHandler {
         private static final FluidStack WATER = new FluidStack(Fluids.WATER, 1000);
