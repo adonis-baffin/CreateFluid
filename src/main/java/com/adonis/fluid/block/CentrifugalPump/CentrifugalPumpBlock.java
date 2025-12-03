@@ -215,33 +215,8 @@ public class CentrifugalPumpBlock extends KineticBlock
 
     @Override
     public InteractionResult onSneakWrenched(BlockState state, UseOnContext context) {
-        Level world = context.getLevel();
-        BlockPos pos = context.getClickedPos();
-        Player player = context.getPlayer();
-
-        // 如果是封装状态，移除封装
-        if (state.getValue(ENCASED)) {
-            if (!world.isClientSide) {
-                BlockState newState = state.setValue(ENCASED, false);
-                world.setBlock(pos, newState, 3);
-
-                // 掉落铜机壳
-                if (player != null && !player.isCreative()) {
-                    Block.popResource(world, pos, AllBlocks.COPPER_CASING.asStack());
-                }
-
-                // 播放破坏声音
-                world.playSound(null, pos, SoundEvents.COPPER_BREAK, SoundSource.BLOCKS, 1.0F, 1.0F);
-
-                // 通知流体网络更新
-                if (world.getBlockEntity(pos) instanceof CentrifugalPumpBlockEntity pump) {
-                    pump.onEncasedStateChanged(false);
-                }
-            }
-            return InteractionResult.SUCCESS;
-        }
-
-        // 非封装状态，使用默认的潜行扳手行为（拆除方块）
+        // 无论是否封装，都使用默认的潜行扳手行为（拆除方块）
+        // 封装状态下拆除整个方块，只掉落离心泵本身
         return super.onSneakWrenched(state, context);
     }
 

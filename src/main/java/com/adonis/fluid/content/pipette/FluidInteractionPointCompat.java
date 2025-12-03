@@ -175,6 +175,12 @@ public class FluidInteractionPointCompat {
                     (level, pos, state) -> new GenericFluidInteractionPoint(level, pos, state, FluidInteractionPoint.Mode.DEPOSIT)
             );
 
+            // 模块化柴油引擎
+            FluidInteractionPointTypes.registerDeferred(
+                    CREATE_DIESEL, "large_diesel_engine",
+                    (level, pos, state) -> new GenericFluidInteractionPoint(level, pos, state, FluidInteractionPoint.Mode.DEPOSIT)
+            );
+
             // 大型柴油引擎
             FluidInteractionPointTypes.registerDeferred(
                     CREATE_DIESEL, "huge_diesel_engine",

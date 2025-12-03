@@ -1,6 +1,5 @@
 {
   "type": "create:compacting",
-  "heatRequirement": "heated",
   "ingredients": [
     {
       "amount": 1000,
@@ -9,8 +8,7 @@
   ],
   "results": [
     {
-      "amount": 1000,
-      "fluid": "minecraft:water"
+      "item": "minecraft:snow_block"
     }
   ]
 }
