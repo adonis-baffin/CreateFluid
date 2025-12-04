@@ -1,6 +1,7 @@
 package com.adonis.fluid.content.tap;
 
 import com.adonis.fluid.block.CopperTap.CopperTapBlockEntity;
+import com.simibubi.create.content.kinetics.belt.BeltBlockEntity;
 import com.simibubi.create.content.kinetics.belt.behaviour.BeltProcessingBehaviour;
 import com.simibubi.create.content.kinetics.belt.behaviour.TransportedItemStackHandlerBehaviour;
 import com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack;
@@ -164,62 +165,86 @@ public class TapVirtualRelayManager {
                 return BeltProcessingBehaviour.ProcessingResult.HOLD;
             }
 
-            // 处理完成，执行实际填充
-            performFilling(transported, handler, tap);
+            // 处理完成，执行实际填充并获取剩余物品
+            TransportedItemStack leftover = performFillingAndGetLeftover(transported, handler, tap);
+
+            // 如果有剩余物品且可以继续处理，立即开始下一个
+            if (leftover != null && leftover.stack.getCount() > 0) {
+                FluidStack availableFluid = getAvailableFluid(tap);
+                if (!availableFluid.isEmpty() && FillingBySpout.canItemBeFilled(level, leftover.stack)) {
+                    ItemStack singleItem = ItemHandlerHelper.copyStackWithSize(leftover.stack, 1);
+                    int required = FillingBySpout.getRequiredAmountForItem(level, singleItem, availableFluid);
+
+                    if (required > 0 && required <= availableFluid.getAmount()) {
+                        // 继续处理剩余物品
+                        currentlyProcessing = leftover;
+                        processingTicks = FILLING_TIME;
+                        particlesSent = false;
+                        tap.updateBeltProcessingTicks(processingTicks);
+                        return BeltProcessingBehaviour.ProcessingResult.HOLD;
+                    }
+                }
+            }
+
             tap.stopBeltProcessing();
             resetState();
-
             return BeltProcessingBehaviour.ProcessingResult.PASS;
         }
 
-        private void performFilling(TransportedItemStack transported,
-                                    TransportedItemStackHandlerBehaviour handler,
-                                    CopperTapBlockEntity tap) {
+        /**
+         * 执行填充并返回剩余的 TransportedItemStack
+         */
+        private TransportedItemStack performFillingAndGetLeftover(TransportedItemStack transported,
+                                                                  TransportedItemStackHandlerBehaviour handler,
+                                                                  CopperTapBlockEntity tap) {
             Level level = tap.getLevel();
-            if (level == null) return;
+            if (level == null) return null;
 
             FluidStack availableFluid = getAvailableFluid(tap);
-            if (availableFluid.isEmpty()) return;
+            if (availableFluid.isEmpty()) return null;
 
             ItemStack toProcess = ItemHandlerHelper.copyStackWithSize(transported.stack, 1);
             int required = FillingBySpout.getRequiredAmountForItem(level, toProcess, availableFluid);
 
-            if (required <= 0 || required > availableFluid.getAmount()) return;
+            if (required <= 0 || required > availableFluid.getAmount()) return null;
 
             // 实际消耗流体
             FluidStack consumed = consumeFluid(tap, required);
-            if (consumed.isEmpty()) return;
+            if (consumed.isEmpty()) return null;
 
             // 执行填充
             FluidStack fluidForFilling = consumed.copy();
             ItemStack filledResult = FillingBySpout.fillItem(level, required, toProcess, fluidForFilling);
 
-            if (!filledResult.isEmpty()) {
-                transported.clearFanProcessingData();
+            if (filledResult.isEmpty()) return null;
 
-                List<TransportedItemStack> outList = new ArrayList<>();
-                TransportedItemStack resultTransported = transported.copy();
-                resultTransported.stack = filledResult;
-                outList.add(resultTransported);
+            transported.clearFanProcessingData();
 
-                TransportedItemStack leftover = null;
-                if (transported.stack.getCount() > 1) {
-                    leftover = transported.copy();
-                    leftover.stack = transported.stack.copy();
-                    leftover.stack.shrink(1);
-                }
+            List<TransportedItemStack> outList = new ArrayList<>();
+            TransportedItemStack resultTransported = transported.copy();
+            resultTransported.stack = filledResult;
+            outList.add(resultTransported);
 
-                TransportedItemStackHandlerBehaviour.TransportedResult result =
-                        TransportedItemStackHandlerBehaviour.TransportedResult
-                                .convertToAndLeaveHeld(outList, leftover);
-                handler.handleProcessingOnItem(transported, result);
-
-                // 播放完成音效
-                level.playSound(null, beltPos,
-                        net.minecraft.sounds.SoundEvents.BOTTLE_FILL,
-                        net.minecraft.sounds.SoundSource.BLOCKS,
-                        0.5f, 1.0f + level.random.nextFloat() * 0.2f);
+            TransportedItemStack leftover = null;
+            if (transported.stack.getCount() > 1) {
+                leftover = transported.copy();
+                leftover.stack = transported.stack.copy();
+                leftover.stack.shrink(1);
+                leftover.locked = true; // 保持锁定状态
             }
+
+            TransportedItemStackHandlerBehaviour.TransportedResult result =
+                    TransportedItemStackHandlerBehaviour.TransportedResult
+                            .convertToAndLeaveHeld(outList, leftover);
+            handler.handleProcessingOnItem(transported, result);
+
+            // 播放完成音效
+            level.playSound(null, beltPos,
+                    net.minecraft.sounds.SoundEvents.BOTTLE_FILL,
+                    net.minecraft.sounds.SoundSource.BLOCKS,
+                    0.5f, 1.0f + level.random.nextFloat() * 0.2f);
+
+            return leftover;
         }
 
         private boolean isTapOpen(CopperTapBlockEntity tap) {
@@ -324,6 +349,47 @@ public class TapVirtualRelayManager {
             currentlyProcessing = null;
             processingTicks = -1;
             particlesSent = false;
+        }
+
+        /**
+         * 检查是否正在处理物品，同时验证物品是否还存在
+         */
+        public boolean isProcessing() {
+            if (currentlyProcessing == null || processingTicks < 0) {
+                return false;
+            }
+
+            // 验证物品是否还在传送带上
+            CopperTapBlockEntity tap = tapRef.get();
+            if (tap == null || tap.isRemoved() || tap.getLevel() == null) {
+                resetState();
+                return false;
+            }
+
+            Level level = tap.getLevel();
+            BlockEntity beltEntity = level.getBlockEntity(beltPos);
+            if (!(beltEntity instanceof BeltBlockEntity beltBE)) {
+                resetState();
+                return false;
+            }
+
+            var inventory = beltBE.getInventory();
+            if (inventory == null) {
+                resetState();
+                return false;
+            }
+
+            // 直接检查引用是否还存在于传送带物品列表中
+            for (TransportedItemStack item : inventory.getTransportedItems()) {
+                if (item == currentlyProcessing) {
+                    return true;
+                }
+            }
+
+            // 物品不在了，停止处理
+            tap.stopBeltProcessing();
+            resetState();
+            return false;
         }
 
         public boolean isValid() {

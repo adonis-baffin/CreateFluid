@@ -1,5 +1,6 @@
 package com.adonis.fluid.block.CopperTap;
 
+import com.adonis.fluid.content.tap.TapVirtualRelayManager;
 import com.simibubi.create.AllSoundEvents;
 import com.simibubi.create.content.fluids.spout.FillingBySpout;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
@@ -199,6 +200,15 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
 
         if (level == null || level.isClientSide)
             return;
+
+        // 验证传送带加工状态
+        if (beltProcessing) {
+            BlockPos relayPos = worldPosition.above();
+            TapVirtualRelayManager.TapVirtualRelay relay = TapVirtualRelayManager.getRelayAt(relayPos);
+            if (relay == null || !relay.isProcessing()) {
+                stopBeltProcessing();
+            }
+        }
 
         BlockState state = getBlockState();
         boolean isOpen = state.getValue(BlockStateProperties.OPEN);
