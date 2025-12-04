@@ -1,6 +1,5 @@
 package com.adonis.fluid.block.GutterOutlet;
 
-import com.adonis.fluid.registry.CFBlockEntity;
 import com.adonis.fluid.registry.CFFluid;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.content.kinetics.belt.behaviour.DirectBeltInputBehaviour;
@@ -34,14 +33,14 @@ import java.util.List;
 
 /**
  * 集水器方块实体
- * 处理流体存储、雨雪收集、向下排出
+ * 处理流体存储、世界流体收集、雨雪收集、向下排出
  */
 public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGoggleInformation {
 
-    // 容量：1500 mB
+    // 容量：1500 mB（与软管滑轮一致）
     public static final int CAPACITY = 1500;
 
-    // 每秒收集 50 mB（每 tick 约 2.5 mB，用累积方式处理）
+    // 每秒收集雨雪 50 mB（每 tick 约 2.5 mB，用累积方式处理）
     private static final int COLLECT_RATE_PER_SECOND = 50;
 
     // 每秒排出 1000 mB（每 tick 50 mB）
@@ -50,7 +49,10 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
     protected SmartFluidTankBehaviour tankBehaviour;
     protected LazyOptional<IFluidHandler> fluidCapability;
 
-    // 用于收集累积（因为每 tick 2.5 mB 不是整数）
+    // 世界流体收集行为
+    protected GutterFluidDrainingBehaviour drainer;
+
+    // 用于雨雪收集累积（因为每 tick 2.5 mB 不是整数）
     private int collectAccumulator = 0;
 
     // 用于平滑液面渲染
@@ -69,8 +71,11 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
                 .whenFluidUpdates(this::onFluidChanged);
         behaviours.add(tankBehaviour);
 
+        // 添加世界流体收集行为
+        drainer = new GutterFluidDrainingBehaviour(this);
+        behaviours.add(drainer);
+
         // 添加 DirectBeltInputBehaviour 以支持工作盆侧面输出检测
-        // 这个行为本身用于物品传输，但工作盆的 canOutputTo 会检查它
         behaviours.add(new DirectBeltInputBehaviour(this).allowingBeltFunnels());
 
         fluidCapability = LazyOptional.of(this::getFluidHandler);
@@ -111,8 +116,73 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
         }
 
         // 服务端逻辑
-        handlePrecipitationCollection();
+        // 优先处理世界流体收集
+        boolean collectedWorldFluid = handleWorldFluidCollection();
+
+        // 如果没有收集到世界流体，且上方没有世界流体可收集，才收集雨雪
+        if (!collectedWorldFluid && !drainer.hasFluidToDrain()) {
+            handlePrecipitationCollection();
+        }
+
         handleDrainToBelow();
+    }
+
+    /**
+     * 处理世界流体收集（从上方收集流体源）
+     * @return 是否成功收集到流体
+     */
+    private boolean handleWorldFluidCollection() {
+        if (level == null || level.isClientSide) return false;
+
+        // 检查是否有流体可收集
+        if (!drainer.hasFluidToDrain()) return false;
+
+        FluidStack drainableFluid = drainer.getDrainableFluid(drainer.getRootPos());
+        if (drainableFluid.isEmpty()) return false;
+
+        FluidStack currentFluid = getFluid();
+
+        // 检查是否与当前流体兼容
+        if (!currentFluid.isEmpty() && !currentFluid.getFluid().isSame(drainableFluid.getFluid())) {
+            return false;
+        }
+
+        // 检查是否有空间
+        IFluidHandler tank = tankBehaviour.getCapability().orElse(null);
+        if (tank == null) return false;
+
+        int space = CAPACITY - currentFluid.getAmount();
+        if (space < 1000 && !drainer.isInfinite()) {
+            // 空间不足1000mB，且不是无限源，不收集
+            // （无限源可以少量收集）
+            return false;
+        }
+
+        // 尝试收集
+        // 模拟填充
+        FluidStack toFill = new FluidStack(drainableFluid.getFluid(), Math.min(1000, space));
+        int accepted = tank.fill(toFill.copy(), IFluidHandler.FluidAction.SIMULATE);
+
+        if (accepted <= 0) return false;
+
+        // 如果是无限源，直接填充
+        if (drainer.isInfinite()) {
+            // 无限源：直接填充，不消耗世界流体
+            if (drainer.pullNext(drainer.getRootPos(), false)) {
+                tank.fill(new FluidStack(drainableFluid.getFluid(), accepted), IFluidHandler.FluidAction.EXECUTE);
+                return true;
+            }
+        } else {
+            // 非无限源：需要满1000mB才收集
+            if (accepted >= 1000) {
+                if (drainer.pullNext(drainer.getRootPos(), false)) {
+                    tank.fill(new FluidStack(drainableFluid.getFluid(), 1000), IFluidHandler.FluidAction.EXECUTE);
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -185,8 +255,6 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
         FluidStack currentFluid = getFluid();
         if (currentFluid.isEmpty()) return;
 
-
-
         // 检测下方是否有流体容器
         BlockPos belowPos = worldPosition.below();
         BlockEntity belowBE = level.getBlockEntity(belowPos);
@@ -252,6 +320,13 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
      */
     public LerpedFloat getFluidLevel() {
         return fluidLevel;
+    }
+
+    /**
+     * 获取流体收集行为（供外部使用）
+     */
+    public GutterFluidDrainingBehaviour getDrainer() {
+        return drainer;
     }
 
     // ============== Capability ==============
@@ -340,6 +415,9 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
                             .style(ChatFormatting.DARK_GREEN))
                     .style(ChatFormatting.DARK_GRAY)
                     .forGoggles(tooltip, 1);
+
+            // 显示收集状态
+            addDrainerInfo(tooltip);
             return true;
         }
 
@@ -360,7 +438,48 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
                 .style(ChatFormatting.DARK_GRAY)
                 .forGoggles(tooltip, 1);
 
+        // 显示收集状态
+        addDrainerInfo(tooltip);
+
         return true;
+    }
+
+    /**
+     * 在工程师护目镜信息中添加收集器状态
+     */
+    private void addDrainerInfo(List<Component> tooltip) {
+        if (drainer == null) return;
+
+        // 调试信息：显示搜索状态
+        if (drainer.isCurrentlySearching()) {
+            CreateLang.text("Searching...")
+                    .style(ChatFormatting.YELLOW)
+                    .forGoggles(tooltip, 1);
+            return;
+        }
+
+        if (drainer.isInfinite()) {
+            // 无限流体源
+            CreateLang.text("∞ ")
+                    .style(ChatFormatting.AQUA)
+                    .add(CreateLang.text("Infinite Source")
+                            .style(ChatFormatting.DARK_AQUA))
+                    .forGoggles(tooltip, 1);
+        } else if (drainer.hasFluidToDrain()) {
+            // 有限流体源，显示源方块数量
+            int sourceCount = drainer.getSourceCount();
+            CreateLang.text("")
+                    .add(CreateLang.number(sourceCount)
+                            .style(ChatFormatting.GOLD))
+                    .add(CreateLang.text(" Source Blocks")
+                            .style(ChatFormatting.GRAY))
+                    .forGoggles(tooltip, 1);
+        } else {
+            // 没有流体可收集
+            CreateLang.text("No fluid above")
+                    .style(ChatFormatting.DARK_GRAY)
+                    .forGoggles(tooltip, 1);
+        }
     }
 
     // ============== 内部类：仅输出的流体处理器包装 ==============
