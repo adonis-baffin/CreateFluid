@@ -2,9 +2,7 @@ package com.adonis.fluid.mixin;
 
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlock;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlockEntity;
-import com.adonis.fluid.compat.TFMGCompat;
 import com.simibubi.create.AllBlocks;
-import com.simibubi.create.AllTags;
 import com.simibubi.create.content.fluids.FluidPropagator;
 import com.simibubi.create.content.fluids.FluidTransportBehaviour;
 import com.simibubi.create.content.fluids.pipes.AxisPipeBlock;
@@ -34,16 +32,10 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 
 import javax.annotation.Nullable;
 import java.util.*;
 
-/**
- * 这个 Mixin 的优先级设置为 900，低于 TFMG 的 1000（默认）
- * 这样当 TFMG 存在时，TFMG 的 Overwrite 会覆盖这个
- * 我们通过 FluidPropagatorMixin_TFMGCompat 来处理 TFMG 存在时的情况
- */
 @Mixin(value = FluidPropagator.class, remap = false, priority = 900)
 public class FluidPropagatorMixin {
 
@@ -86,7 +78,6 @@ public class FluidPropagatorMixin {
                 BlockEntity tileEntity = world.getBlockEntity(target);
                 BlockState targetState = world.getBlockState(target);
 
-                // 检查离心泵
                 if (tileEntity instanceof CentrifugalPumpBlockEntity centrifugalPump) {
                     if (targetState.getBlock() instanceof CentrifugalPumpBlock) {
                         if (CentrifugalPumpBlock.isOpenAt(targetState, direction.getOpposite())) {
@@ -96,7 +87,6 @@ public class FluidPropagatorMixin {
                     continue;
                 }
 
-                // 原有的机械泵检查
                 if (tileEntity instanceof PumpBlockEntity) {
                     if (!AllBlocks.MECHANICAL_PUMP.has(targetState)
                             || targetState.getValue(PumpBlock.FACING).getAxis() != direction.getAxis())
@@ -163,7 +153,6 @@ public class FluidPropagatorMixin {
         BlockPos connectedPos = pos.relative(side);
         BlockState connectedState = reader.getBlockState(connectedPos);
 
-        // 检查离心泵
         if (connectedState.getBlock() instanceof CentrifugalPumpBlock) {
             if (CentrifugalPumpBlock.isOpenAt(connectedState, side.getOpposite())) {
                 return false;
@@ -179,7 +168,7 @@ public class FluidPropagatorMixin {
         if (VanillaFluidTargets.canProvideFluidWithoutCapability(connectedState))
             return true;
         if (BlockHelper.hasBlockSolidSide(connectedState, reader, connectedPos, side.getOpposite())
-                && !AllTags.AllBlockTags.FAN_TRANSPARENT.matches(connectedState))
+                && !com.simibubi.create.AllTags.AllBlockTags.FAN_TRANSPARENT.matches(connectedState))
             return false;
         if (hasFluidCapability(reader, connectedPos, side.getOpposite()))
             return false;

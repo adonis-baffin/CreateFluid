@@ -16,9 +16,6 @@
     "ArmPlacementPacketMixin",
     "FluidPropagatorMixin",
     "FluidPipeBlockMixin",
-    "PipeConnectionMixin",
-    "FluidNetworkMixin",
-    "FluidTransportBehaviourMixin",
     "VanillaFluidTargetsMixin",
     "FluidUtilMixin",
     "compat.FluidPropagatorMixin_TFMGCompat"
