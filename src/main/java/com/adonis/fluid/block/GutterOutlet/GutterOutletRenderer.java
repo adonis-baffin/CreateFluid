@@ -16,6 +16,8 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.fluids.FluidStack;
 
+import static org.joml.Math.lerp;
+
 /**
  * 集水器渲染器
  * 渲染梯形流体，参考 AqueductRenderer 实现
@@ -61,20 +63,14 @@ public class GutterOutletRenderer extends SmartBlockEntityRenderer<GutterOutletB
         float maxHeight = 9f / 16f; // 14/16 - 5/16 = 9/16
         float currentY = baseY + maxHeight * level;
 
-        // FACING 表示宽面朝向的方向
-        // 如果 FACING 是南北，则宽面在南北，窄面在东西 -> 梯形沿 X 轴
-        // 如果 FACING 是东西，则宽面在东西，窄面在南北 -> 梯形沿 Z 轴
-// 在 renderTrapezoidalFluid 方法中
         boolean isNorthSouth = (facing.getAxis() == Direction.Axis.X);  // 改成 X
 
         ms.pushPose();
 
         if (isNorthSouth) {
-            // 宽面在南北（Z方向），窄面在东西（X方向）
-            renderNorthSouthFluid(builder, ms, stillTexture, currentY, baseY, light, color);
+            renderNorthSouthFluid(builder, ms, stillTexture, currentY, baseY, light, color, level);
         } else {
-            // 宽面在东西（X方向），窄面在南北（Z方向）
-            renderEastWestFluid(builder, ms, stillTexture, currentY, baseY, light, color);
+            renderEastWestFluid(builder, ms, stillTexture, currentY, baseY, light, color, level);
         }
 
         ms.popPose();
@@ -84,35 +80,45 @@ public class GutterOutletRenderer extends SmartBlockEntityRenderer<GutterOutletB
      * 南北朝向时的流体渲染
      * 宽面在南北（Z方向宽），窄面在东西（X方向窄）
      */
+    /**
+     * 南北朝向时的流体渲染（宽面在 Z 方向，窄面在 X 方向）
+     */
     private void renderNorthSouthFluid(VertexConsumer builder, PoseStack ms,
                                        TextureAtlasSprite texture, float topY, float bottomY,
-                                       int light, int color) {
+                                       int light, int color, float level) {  // 多传 level
+
         float wallThickness = 2f / 16f;
 
-        // 底部较窄，顶部较宽（X方向）
-        float bottomMinX = 4.5f / 16f;
-        float bottomMaxX = 11.5f / 16f;
-        float topMinX = wallThickness + 0.5f / 16f;
-        float topMaxX = 1f - wallThickness - 0.5f / 16f;
+        // 底部永远窄（固定 7/16 宽）
+        final float bottomMinX = 4.5f / 16f;
+        final float bottomMaxX = 11.5f / 16f;
 
-        // Z方向保持边距
+        // 满水时的最大顶面宽度
+        final float fullTopMinX = wallThickness + 0.5f / 16f;   // ~2.5/16
+        final float fullTopMaxX = 1f - wallThickness - 0.5f / 16f; // ~13.5/16
+
+        // 关键：当前液面宽度随水位线性插值
+        float currentTopMinX = lerp(bottomMinX, fullTopMinX, level);
+        float currentTopMaxX = lerp(bottomMaxX, fullTopMaxX, level);
+
         float zMin = 1f / 16f;
         float zMax = 15f / 16f;
 
-        // 顶面
+        // === 顶面：使用随水位变化的宽度 ===
         FluidRenderHelper.renderStillTiledFace(Direction.UP,
-                topMinX, zMin, topMaxX, zMax, topY,
+                currentTopMinX, zMin, currentTopMaxX, zMax, topY,
                 builder, ms, light, color, texture);
 
-        // 底面
-        if (bottomY > 0) {
+        // === 底面：永远用窄的 ===
+        if (bottomY > 0f) {
             FluidRenderHelper.renderStillTiledFace(Direction.DOWN,
                     bottomMinX, zMin, bottomMaxX, zMax, bottomY,
                     builder, ms, light, color, texture);
         }
 
+        // === 四侧斜面：把当前顶面边界传进去，斜率自动正确 ===
         renderNorthSouthSides(builder, ms, texture,
-                bottomMinX, bottomMaxX, topMinX, topMaxX,
+                bottomMinX, bottomMaxX, currentTopMinX, currentTopMaxX,
                 bottomY, topY, zMin, zMax, light, color);
     }
 
@@ -120,35 +126,45 @@ public class GutterOutletRenderer extends SmartBlockEntityRenderer<GutterOutletB
      * 东西朝向时的流体渲染
      * 宽面在东西（X方向宽），窄面在南北（Z方向窄）
      */
+    /**
+     * 东西朝向时的流体渲染（宽面在 X 方向，窄面在 Z 方向）
+     */
     private void renderEastWestFluid(VertexConsumer builder, PoseStack ms,
                                      TextureAtlasSprite texture, float topY, float bottomY,
-                                     int light, int color) {
+                                     int light, int color, float level) {  // 多传 level
+
         float wallThickness = 2f / 16f;
 
-        // 底部较窄，顶部较宽（Z方向）
-        float bottomMinZ = 4.5f / 16f;
-        float bottomMaxZ = 11.5f / 16f;
-        float topMinZ = wallThickness + 0.5f / 16f;
-        float topMaxZ = 1f - wallThickness - 0.5f / 16f;
+        // 底部永远窄
+        final float bottomMinZ = 4.5f / 16f;
+        final float bottomMaxZ = 11.5f / 16f;
 
-        // X方向保持边距
+        // 满水时的最大顶面宽度
+        final float fullTopMinZ = wallThickness + 0.5f / 16f;
+        final float fullTopMaxZ = 1f - wallThickness - 0.5f / 16f;
+
+        // 当前液面宽度随水位插值
+        float currentTopMinZ = lerp(bottomMinZ, fullTopMinZ, level);
+        float currentTopMaxZ = lerp(bottomMaxZ, fullTopMaxZ, level);
+
         float xMin = 1f / 16f;
         float xMax = 15f / 16f;
 
-        // 顶面
+        // === 顶面 ===
         FluidRenderHelper.renderStillTiledFace(Direction.UP,
-                xMin, topMinZ, xMax, topMaxZ, topY,
+                xMin, currentTopMinZ, xMax, currentTopMaxZ, topY,
                 builder, ms, light, color, texture);
 
-        // 底面
-        if (bottomY > 0) {
+        // === 底面 ===
+        if (bottomY > 0f) {
             FluidRenderHelper.renderStillTiledFace(Direction.DOWN,
                     xMin, bottomMinZ, xMax, bottomMaxZ, bottomY,
                     builder, ms, light, color, texture);
         }
 
+        // === 四侧斜面 ===
         renderEastWestSides(builder, ms, texture,
-                bottomMinZ, bottomMaxZ, topMinZ, topMaxZ,
+                bottomMinZ, bottomMaxZ, currentTopMinZ, currentTopMaxZ,
                 bottomY, topY, xMin, xMax, light, color);
     }
 
