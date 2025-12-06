@@ -5,6 +5,7 @@
   "block.fluid.centrifugal_pump": "Centrifugal Pump",
   "block.fluid.copper_tap": "Copper Tap",
   "block.fluid.gutter_outlet": "Gutter Outlet",
+  "block.fluid.siphonator": "Siphonator",
   "item.fluid.honeycomb_mold": "Honeycomb Mold",
   "item.fluid.honeycomb_mold.tooltip.summary": "Used for honeycomb compacting recipe",
   "item.fluid.baton": "Conductor's Baton",
