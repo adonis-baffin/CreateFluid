@@ -4,6 +4,7 @@ import static com.adonis.fluid.CreateFluid.REGISTRATE;
 import static com.simibubi.create.foundation.data.TagGen.axeOrPickaxe;
 import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.block.CopperTap.CopperTapBlock;
+import com.adonis.fluid.block.Gutter.GutterBlock;
 import com.adonis.fluid.block.GutterOutlet.GutterOutletBlock;
 import com.adonis.fluid.block.Siphonator.SiphonatorBlock;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlock;
@@ -113,6 +114,25 @@ public class CFBlock {
             // 关键：modLoc 前面是 "fluid"，不是 "createfluid"
             .blockstate((c, p) -> p.simpleBlock(c.get(),
                     p.models().getExistingFile(p.modLoc("block/siphonator"))))
+            .item()
+            .transform(ModelGen.customItemModel()) // 物品模型也用同一个
+            .register();
+
+    // 虹吸器（无状态、自定义模型、完整碰撞箱）
+    public static final BlockEntry<GutterBlock> GUTTER = REGISTRATE
+            .block("gutter", GutterBlock::new)
+            .initialProperties(SharedProperties::copperMetal)
+            .properties(p -> p
+                    .mapColor(MapColor.COLOR_ORANGE)
+                    .strength(3.5F, 6.0F)
+                    .sound(SoundType.COPPER)
+                    .requiresCorrectToolForDrops()
+                    .noOcclusion())
+            .transform(TagGen.pickaxeOnly())
+
+            // 关键：modLoc 前面是 "fluid"，不是 "createfluid"
+            .blockstate((c, p) -> p.simpleBlock(c.get(),
+                    p.models().getExistingFile(p.modLoc("block/gutter"))))
             .item()
             .transform(ModelGen.customItemModel()) // 物品模型也用同一个
             .register();

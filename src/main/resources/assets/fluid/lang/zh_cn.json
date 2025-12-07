@@ -7,6 +7,7 @@
   "block.fluid.copper_tap": "铜龙头",
   "block.fluid.gutter_outlet": "集水器",
   "block.fluid.siphonator": "虹吸器",
+  "block.fluid.gutter": "导流管",
   "item.fluid.honeycomb_mold.tooltip.summary": "用于蜜脾的压块塑形配方",
   "item.fluid.baton": "指挥棒",
   "item.fluid.baton.tooltip.summary": "用于配置_动力臂_，_动力移液器_和_弹射置物台_的交互点",
