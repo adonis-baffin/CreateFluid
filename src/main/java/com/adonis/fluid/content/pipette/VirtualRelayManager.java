@@ -146,14 +146,13 @@ public class VirtualRelayManager {
                 return BeltProcessingBehaviour.ProcessingResult.HOLD;
             }
 
-// 等待移液器动画
+            // 等待移液器动画
             if (waitingForPipetteAnimation) {
                 if (processor instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
                     com.adonis.fluid.block.Pipette.PipetteBlockEntity.SpeedMode mode = pipette.getSpeedMode();
 
                     switch (mode) {
                         case HIGH:
-                            // 高速处理：使用预测
                             boolean willReachSoon = pipette.willReachInjectionPoint();
                             if (injectionReadySignalReceived || pipette.isReadyToInject() || willReachSoon) {
                                 waitingForPipetteAnimation = false;
@@ -162,7 +161,6 @@ public class VirtualRelayManager {
                             break;
 
                         case LOW:
-                            // 低速处理
                             if (pipette.isContinuousProcessing() && pipette.getWorkProgress() >= 0.95F) {
                                 waitingForPipetteAnimation = false;
                                 localProcessingTicks = 8;
@@ -173,14 +171,10 @@ public class VirtualRelayManager {
                             break;
 
                         case ULTRA_LOW:
-                            // 超低速处理：延迟处理直到移液器真正到位
                             if (injectionReadySignalReceived) {
-                                // 收到信号但还要等待移液器实际到位
                                 float progress = pipette.getWorkProgress();
                                 if (progress >= 0.8F) {
-                                    // 接近到位，可以开始处理
                                     waitingForPipetteAnimation = false;
-                                    // 计算剩余时间
                                     float speed = Math.abs(pipette.getSpeed());
                                     int remainingTicks = (int)((1.0F - progress) * 1024.0F / Math.max(speed, 1.0F));
                                     localProcessingTicks = Math.min(remainingTicks + 5, 15);
@@ -192,11 +186,10 @@ public class VirtualRelayManager {
                 return BeltProcessingBehaviour.ProcessingResult.HOLD;
             }
 
-            // 处理阶段 - 时机调整
+            // 处理阶段
             if (localProcessingTicks > 0) {
                 localProcessingTicks--;
 
-                // 立即发送粒子（因为已经在注液动画中）
                 if (localProcessingTicks == 4 && !particlesSent) {
                     BlockEntity ws = workstationRef.get();
                     if (ws instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
@@ -206,7 +199,6 @@ public class VirtualRelayManager {
                     }
                 }
 
-                // 稍后执行实际填充
                 if (localProcessingTicks == 2) {
                     performActualFilling(transported, handler, processor);
                 }
@@ -216,23 +208,17 @@ public class VirtualRelayManager {
                 }
             }
 
-// 找到这部分代码并替换
-// 处理完成，清理状态
-            boolean wasContinuous = false;
+            // 处理完成 - 修复：始终通知移液器完成，不管是否连续处理
             if (processor instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
-                wasContinuous = pipette.isContinuousProcessing();
+                // 先结束连续处理状态
+                if (pipette.isContinuousProcessing()) {
+                    pipette.endContinuousProcessing();
+                }
+                // 然后通知完成
+                pipette.onBeltProcessingFinished(beltSegmentPos);
             }
 
             resetState();
-
-// 通知移液器
-            if (processor instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
-                // 如果不是连续处理，正常通知完成
-                if (!wasContinuous) {
-                    pipette.onBeltProcessingFinished(beltSegmentPos);
-                }
-            }
-
             return BeltProcessingBehaviour.ProcessingResult.PASS;
         }
 
@@ -302,7 +288,6 @@ public class VirtualRelayManager {
 
                                 switch (mode) {
                                     case HIGH:
-                                        // 高速处理
                                         if (!pipette.isContinuousProcessing()) {
                                             pipette.startContinuousProcessing();
                                         }
@@ -311,10 +296,9 @@ public class VirtualRelayManager {
                                         injectionReadySignalReceived = true;
                                         particlesSent = false;
                                         localProcessingTicks = 3;
-                                        return;
+                                        return;  // 继续处理，不结束
 
                                     case LOW:
-                                        // 低速处理
                                         if (!pipette.isContinuousProcessing()) {
                                             pipette.startContinuousProcessing();
                                         }
@@ -323,29 +307,20 @@ public class VirtualRelayManager {
                                         injectionReadySignalReceived = false;
                                         particlesSent = false;
                                         localProcessingTicks = 8;
-                                        return;
+                                        return;  // 继续处理，不结束
 
                                     case ULTRA_LOW:
-                                        // 超低速：等待移液器完全到位后再处理
                                         if (!pipette.isContinuousProcessing()) {
                                             pipette.startContinuousProcessing();
                                         }
                                         pipette.incrementContinuousProcessing();
-                                        // 需要等待移液器
                                         waitingForPipetteAnimation = true;
                                         injectionReadySignalReceived = false;
                                         particlesSent = false;
                                         localProcessingTicks = -1;
-                                        return;
+                                        return;  // 继续处理，不结束
                                 }
                             }
-                        }
-                    }
-
-                    // 如果没有更多物品，结束连续处理
-                    if (processor instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
-                        if (pipette.isContinuousProcessing()) {
-                            pipette.endContinuousProcessing();
                         }
                     }
                 }

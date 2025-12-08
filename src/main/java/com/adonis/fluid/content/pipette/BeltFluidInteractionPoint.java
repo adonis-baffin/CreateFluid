@@ -41,8 +41,19 @@ public class BeltFluidInteractionPoint extends FluidInteractionPoint {
         return belt != null;
     }
 
+    public boolean hasItemForFilling(FluidStack fluid) {
+        if (fluid == null || fluid.isEmpty()) {
+            return false;
+        }
+        return findItemForFilling(fluid) != null;
+    }
+
     @Nullable
     private TransportedItemStack findItemForFilling(FluidStack fluid) {
+        if (level == null || !level.isLoaded(pos)) {
+            return null;
+        }
+
         BeltBlockEntity controller = BeltHelper.getControllerBE(level, pos);
         if (controller == null) return null;
 
@@ -55,6 +66,10 @@ public class BeltFluidInteractionPoint extends FluidInteractionPoint {
         int segmentIndex = segment.index;
         List<TransportedItemStack> items = inventory.getTransportedItems();
 
+        if (items == null || items.isEmpty()) {
+            return null;
+        }
+
         for (TransportedItemStack transported : items) {
             float itemPos = transported.beltPosition;
 
@@ -62,6 +77,11 @@ public class BeltFluidInteractionPoint extends FluidInteractionPoint {
             if (Math.abs(itemPos - segmentIndex - 0.5f) < 0.75f) {
                 // 跳过已锁定的物品
                 if (transported.locked || transported.lockedExternally) {
+                    continue;
+                }
+
+                // 跳过空物品
+                if (transported.stack == null || transported.stack.isEmpty()) {
                     continue;
                 }
 
@@ -77,30 +97,6 @@ public class BeltFluidInteractionPoint extends FluidInteractionPoint {
         }
 
         return null;
-    }
-
-    public boolean hasItemForFilling(FluidStack fluid) {
-        return findItemForFilling(fluid) != null;
-    }
-
-    public boolean lockItemForProcessing(FluidStack fluid) {
-        if (lockedItem != null) return false;
-
-        TransportedItemStack item = findItemForFilling(fluid);
-        if (item == null) return false;
-
-        // 使用 locked 而不是 lockedExternally 来停止物品
-        item.locked = true;
-        lockedItem = item;
-
-        // 立即通知传送带更新
-        BeltBlockEntity controller = BeltHelper.getControllerBE(level, pos);
-        if (controller != null) {
-            controller.setChanged();
-            controller.sendData();
-        }
-
-        return true;
     }
 
     /**
@@ -198,7 +194,6 @@ public class BeltFluidInteractionPoint extends FluidInteractionPoint {
 
     @Override
     public void cycleMode() {
-        // 传送带只能作为输出端
         return;
     }
 }

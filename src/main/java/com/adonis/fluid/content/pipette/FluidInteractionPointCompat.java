@@ -84,7 +84,7 @@ public class FluidInteractionPointCompat {
         FluidInteractionPointTypes.registerConditional(
                 state -> AllBlocks.BELT.has(state) &&
                         com.simibubi.create.content.kinetics.belt.BeltBlock.canTransportObjects(state),
-                FluidInteractionPoint::new,
+                BeltFluidInteractionPoint::new,  // ← 改成这个！
                 100
         );
 
