@@ -31,12 +31,15 @@ import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -50,9 +53,10 @@ import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 
 import javax.annotation.Nullable;
 
-public class SmartFluidInterfaceBlock extends HorizontalDirectionalBlock implements IBE<SmartFluidInterfaceBlockEntity>, IWrenchable {
+public class SmartFluidInterfaceBlock extends HorizontalDirectionalBlock implements IBE<SmartFluidInterfaceBlockEntity>, IWrenchable, SimpleWaterloggedBlock {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+    public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
     // 定义正确方向的形状，第一层上边缘下降0.1
     // NORTH: 向北伸出（贴在南边方块上）
@@ -81,12 +85,14 @@ public class SmartFluidInterfaceBlock extends HorizontalDirectionalBlock impleme
 
     public SmartFluidInterfaceBlock(Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        this.registerDefaultState(this.stateDefinition.any()
+                .setValue(FACING, Direction.NORTH)
+                .setValue(WATERLOGGED, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, WATERLOGGED);
     }
 
     @Override
@@ -100,9 +106,16 @@ public class SmartFluidInterfaceBlock extends HorizontalDirectionalBlock impleme
         };
     }
 
+    // 无碰撞体积
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return getShape(state, level, pos, context);
+        return Shapes.empty();
+    }
+
+    // Waterlogged 支持
+    @Override
+    public FluidState getFluidState(BlockState state) {
+        return state.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(state);
     }
 
     // 辅助方法：检查方块是否有流体存储能力 - 支持树叶
@@ -143,16 +156,24 @@ public class SmartFluidInterfaceBlock extends HorizontalDirectionalBlock impleme
         BlockPos blockpos = context.getClickedPos();
         BlockPos attachedPos = blockpos.relative(direction.getOpposite());
 
+        // 检查是否在水中
+        FluidState fluidState = context.getLevel().getFluidState(blockpos);
+        boolean waterlogged = fluidState.getType() == Fluids.WATER;
+
         // 检查是否可以贴在这个方向（需要有流体存储能力）
         if (hasFluidCapability(context.getLevel(), attachedPos, direction)) {
-            return this.defaultBlockState().setValue(FACING, direction);
+            return this.defaultBlockState()
+                    .setValue(FACING, direction)
+                    .setValue(WATERLOGGED, waterlogged);
         }
 
         // 如果不能直接贴，尝试其他水平方向
         for (Direction dir : Direction.Plane.HORIZONTAL) {
             BlockPos testPos = blockpos.relative(dir.getOpposite());
             if (hasFluidCapability(context.getLevel(), testPos, dir)) {
-                return this.defaultBlockState().setValue(FACING, dir);
+                return this.defaultBlockState()
+                        .setValue(FACING, dir)
+                        .setValue(WATERLOGGED, waterlogged);
             }
         }
 
@@ -175,6 +196,11 @@ public class SmartFluidInterfaceBlock extends HorizontalDirectionalBlock impleme
 
     @Override
     public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos currentPos, BlockPos neighborPos) {
+        // 处理 waterlogged 状态的水流更新
+        if (state.getValue(WATERLOGGED)) {
+            level.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+        }
+
         if (direction.getOpposite() == state.getValue(FACING) && !state.canSurvive(level, currentPos)) {
             return Blocks.AIR.defaultBlockState();
         }
