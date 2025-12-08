@@ -1,5 +1,6 @@
 package com.adonis.fluid.content.pipette;
 
+import com.simibubi.create.content.fluids.spout.FillingBySpout;
 import com.simibubi.create.content.logistics.depot.DepotBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import net.minecraft.core.BlockPos;
@@ -134,5 +135,19 @@ public class DepotFluidInteractionPoint extends FluidInteractionPoint {
                 .getRequiredAmountForItem(level, heldItem, stack);
 
         return required > 0 && required <= stack.getAmount();
+    }
+
+    // 在 DepotFluidInteractionPoint 类中添加
+    public ItemStack getItemForFilling() {
+        DepotBehaviour behaviour = BlockEntityBehaviour.get(level, pos, DepotBehaviour.TYPE);
+        if (behaviour == null) return ItemStack.EMPTY;
+
+        ItemStack heldItem = behaviour.getHeldItemStack();
+        if (heldItem != null && !heldItem.isEmpty()) {
+            if (FillingBySpout.canItemBeFilled(level, heldItem)) {
+                return heldItem.copy();
+            }
+        }
+        return ItemStack.EMPTY;
     }
 }

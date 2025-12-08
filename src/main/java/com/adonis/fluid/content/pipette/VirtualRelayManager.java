@@ -83,8 +83,9 @@ public class VirtualRelayManager {
             int required = FillingBySpout.getRequiredAmountForItem(
                     workstation.getLevel(), singleItem, fluid);
 
-            // 如果流体不足或为空，请求取液
-            if (fluid.isEmpty() || (required > 0 && required > fluid.getAmount())) {
+            // 情况1：没有流体或流体不足
+            if (fluid.isEmpty() || required <= 0 || required > fluid.getAmount()) {
+                // 请求取液（移液器会自动处理流体不匹配的情况）
                 if (processor.requestFluidForItem(transported.stack, beltSegmentPos)) {
                     currentlyProcessing = transported;
                     waitingForFluid = true;
@@ -93,10 +94,11 @@ public class VirtualRelayManager {
                     particlesSent = false;
                     return BeltProcessingBehaviour.ProcessingResult.HOLD;
                 }
+                // 无法获取流体，让物品通过
                 return BeltProcessingBehaviour.ProcessingResult.PASS;
             }
 
-            // 流体充足，等待移液器就位
+            // 情况2：流体充足且匹配，等待移液器就位
             if (required > 0 && required <= fluid.getAmount()) {
                 currentlyProcessing = transported;
                 waitingForFluid = false;
