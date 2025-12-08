@@ -1,6 +1,5 @@
 package com.adonis.fluid.mixin;
 
-import net.minecraftforge.fml.loading.LoadingModList;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -9,17 +8,18 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Mixin 插件，用于根据 TFMG 是否存在来决定加载哪些 Mixin
+ * Mixin 插件
+ *
+ * 当前版本的 FluidPropagatorMixin 已经同时兼容原版 Create 和 TFMG，
+ * 不再需要条件加载不同的 Mixin。
+ *
+ * 保留此插件用于未来可能的扩展。
  */
 public class FluidMixinPlugin implements IMixinConfigPlugin {
 
-    private static final String TFMG_MODID = "tfmg";
-    private static Boolean isTFMGLoaded = null;
-
     @Override
     public void onLoad(String mixinPackage) {
-        // 在加载时检测 TFMG
-        isTFMGLoaded = LoadingModList.get().getModFileById(TFMG_MODID) != null;
+        // 不再需要检测 TFMG
     }
 
     @Override
@@ -29,17 +29,7 @@ public class FluidMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        // FluidPropagatorMixin - 只在 TFMG 不存在时加载（使用 Overwrite 方式）
-        if (mixinClassName.equals("com.adonis.fluid.mixin.FluidPropagatorMixin")) {
-            return !isTFMGLoaded;
-        }
-        
-        // FluidPropagatorMixin_TFMGCompat - 只在 TFMG 存在时加载（使用 Inject 方式补充）
-        if (mixinClassName.equals("com.adonis.fluid.mixin.compat.FluidPropagatorMixin_TFMGCompat")) {
-            return isTFMGLoaded;
-        }
-        
-        // 其他 Mixin 正常加载
+        // 所有 Mixin 正常加载
         return true;
     }
 

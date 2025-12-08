@@ -1,20 +1,12 @@
 {
   "variants": {
-    "facing=north": {
-      "model": "fluid:block/gutter_outlet",
-      "y": 0
-    },
-    "facing=south": {
-      "model": "fluid:block/gutter_outlet",
-      "y": 180
-    },
-    "facing=west": {
-      "model": "fluid:block/gutter_outlet",
-      "y": 270
-    },
-    "facing=east": {
-      "model": "fluid:block/gutter_outlet",
-      "y": 90
-    }
+    "facing=north,waterlogged=false": { "model": "fluid:block/gutter_outlet", "y": 0 },
+    "facing=north,waterlogged=true": { "model": "fluid:block/gutter_outlet", "y": 0 },
+    "facing=south,waterlogged=false": { "model": "fluid:block/gutter_outlet", "y": 180 },
+    "facing=south,waterlogged=true": { "model": "fluid:block/gutter_outlet", "y": 180 },
+    "facing=west,waterlogged=false": { "model": "fluid:block/gutter_outlet", "y": 270 },
+    "facing=west,waterlogged=true": { "model": "fluid:block/gutter_outlet", "y": 270 },
+    "facing=east,waterlogged=false": { "model": "fluid:block/gutter_outlet", "y": 90 },
+    "facing=east,waterlogged=true": { "model": "fluid:block/gutter_outlet", "y": 90 }
   }
 }

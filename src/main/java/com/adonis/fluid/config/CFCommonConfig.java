@@ -5,35 +5,35 @@ import net.minecraftforge.common.ForgeConfigSpec;
 public class CFCommonConfig {
     public static final ForgeConfigSpec CONFIG_SPEC;
 
-    // Aqueduct 配置
-    public static final ForgeConfigSpec.IntValue AQUEDUCT_TRANSFER_RATE;
-    public static final ForgeConfigSpec.IntValue WATER_SOURCE_FILL_RATE;
-    public static final ForgeConfigSpec.IntValue MAX_AQUEDUCT_LENGTH;
-    public static final ForgeConfigSpec.BooleanValue PRIORITIZE_AQUEDUCT;
+    // GutterOutlet 配置
+    public static final ForgeConfigSpec.BooleanValue GUTTER_COLLECT_RAIN;
+    public static final ForgeConfigSpec.BooleanValue GUTTER_COLLECT_SNOW;
+    public static final ForgeConfigSpec.BooleanValue GUTTER_COLLECT_DRIPSTONE;
+    public static final ForgeConfigSpec.BooleanValue GUTTER_COLLECT_WORLD_FLUID;
 
     private static boolean isConfigLoaded = false;
 
     static {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
 
-        builder.comment("Aqueduct system settings")
-                .push("aqueduct");
+        builder.comment("Gutter Outlet settings")
+                .push("gutter_outlet");
 
-        AQUEDUCT_TRANSFER_RATE = builder
-                .comment("Transfer rate for aqueduct system in mB per tick")
-                .defineInRange("transferRate", 50, 1, 1000);
+        GUTTER_COLLECT_RAIN = builder
+                .comment("Whether gutter outlet can collect rain water")
+                .define("collectRain", true);
 
-        WATER_SOURCE_FILL_RATE = builder
-                .comment("Fill rate from water source blocks in mB per tick")
-                .defineInRange("waterFillRate", 50, 1, 1000);
+        GUTTER_COLLECT_SNOW = builder
+                .comment("Whether gutter outlet can collect snow as powder snow fluid")
+                .define("collectSnow", true);
 
-        MAX_AQUEDUCT_LENGTH = builder
-                .comment("Maximum length of a single aqueduct network")
-                .defineInRange("maxLength", 256, 16, 1024);
+        GUTTER_COLLECT_DRIPSTONE = builder
+                .comment("Whether gutter outlet can collect fluid from dripstone (lava/water)")
+                .define("collectDripstone", true);
 
-        PRIORITIZE_AQUEDUCT = builder
-                .comment("Whether aqueduct transfer takes priority over pipe transfer")
-                .define("prioritizeAqueduct", true);
+        GUTTER_COLLECT_WORLD_FLUID = builder
+                .comment("Whether gutter outlet can collect world fluid sources from above")
+                .define("collectWorldFluid", true);
 
         builder.pop();
 
@@ -48,46 +48,46 @@ public class CFCommonConfig {
         isConfigLoaded = true;
     }
 
-    // Aqueduct 系统配置获取方法
-    public static int getAqueductTransferRate() {
-        if (!isConfigLoaded) {
-            return 50;
-        }
-        try {
-            return AQUEDUCT_TRANSFER_RATE.get();
-        } catch (IllegalStateException e) {
-            return 50;
-        }
-    }
-
-    public static int getWaterSourceFillRate() {
-        if (!isConfigLoaded) {
-            return 50;
-        }
-        try {
-            return WATER_SOURCE_FILL_RATE.get();
-        } catch (IllegalStateException e) {
-            return 50;
-        }
-    }
-
-    public static int getMaxAqueductLength() {
-        if (!isConfigLoaded) {
-            return 256;
-        }
-        try {
-            return MAX_AQUEDUCT_LENGTH.get();
-        } catch (IllegalStateException e) {
-            return 256;
-        }
-    }
-
-    public static boolean isPrioritizeAqueduct() {
+    // GutterOutlet 配置获取方法
+    public static boolean canGutterCollectRain() {
         if (!isConfigLoaded) {
             return true;
         }
         try {
-            return PRIORITIZE_AQUEDUCT.get();
+            return GUTTER_COLLECT_RAIN.get();
+        } catch (IllegalStateException e) {
+            return true;
+        }
+    }
+
+    public static boolean canGutterCollectSnow() {
+        if (!isConfigLoaded) {
+            return true;
+        }
+        try {
+            return GUTTER_COLLECT_SNOW.get();
+        } catch (IllegalStateException e) {
+            return true;
+        }
+    }
+
+    public static boolean canGutterCollectDripstone() {
+        if (!isConfigLoaded) {
+            return true;
+        }
+        try {
+            return GUTTER_COLLECT_DRIPSTONE.get();
+        } catch (IllegalStateException e) {
+            return true;
+        }
+    }
+
+    public static boolean canGutterCollectWorldFluid() {
+        if (!isConfigLoaded) {
+            return true;
+        }
+        try {
+            return GUTTER_COLLECT_WORLD_FLUID.get();
         } catch (IllegalStateException e) {
             return true;
         }

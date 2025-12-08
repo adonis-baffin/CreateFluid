@@ -28,8 +28,7 @@ public class CFTab {
                         output.accept(CFBlock.CENTRIFUGAL_PUMP.get());
                         output.accept(CFBlock.COPPER_TAP.get());
                         output.accept(CFBlock.GUTTER_OUTLET.get());
-                        output.accept(CFBlock.SIPHONATOR.get());
-                        output.accept(CFBlock.GUTTER.get());
+                        output.accept(CFBlock.SMART_GUTTER_OUTLET.get());
 
                         // 流体接口
                         output.accept(CFBlock.FLUID_INTERFACE.get());

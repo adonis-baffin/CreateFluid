@@ -3,6 +3,7 @@ package com.adonis.fluid.block.CentrifugalPump;
 import com.adonis.fluid.mixin.accessor.PipeConnectionAccessor;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.content.fluids.*;
+import com.simibubi.create.content.fluids.pipes.FluidPipeBlock;
 import com.simibubi.create.content.fluids.pump.PumpBlock;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.foundation.advancement.AllAdvancements;
@@ -24,6 +25,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -47,7 +49,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
 
     // 封装状态
     private boolean isEncased = false;
-    private boolean updatingNetwork = false;
 
     private static final int BASE_PUMP_RANGE = 20;
     private static final float SPEED_MULTIPLIER = 2.0f;
@@ -565,43 +566,14 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
     }
 
     public void updatePipesOnSide(Direction side) {
-        if (updatingNetwork) {
-            return;
-        }
-
         if (isSideAccessible(side)) {
-            updatingNetwork = true;
-            try {
-                Direction primary = getFront();
-                Direction secondary = getSecondaryFront();
-
-                if (primary != null) {
-                    BlockPos primaryPos = worldPosition.relative(primary);
-                    BlockState primaryState = level.getBlockState(primaryPos);
-                    if (!(primaryState.getBlock() instanceof CentrifugalPumpBlock)) {
-                        FluidPropagator.propagateChangedPipe(level, primaryPos, primaryState);
-                    }
-                }
-                if (secondary != null) {
-                    BlockPos secondaryPos = worldPosition.relative(secondary);
-                    BlockState secondaryState = level.getBlockState(secondaryPos);
-                    if (!(secondaryState.getBlock() instanceof CentrifugalPumpBlock)) {
-                        FluidPropagator.propagateChangedPipe(level, secondaryPos, secondaryState);
-                    }
-                }
-
-                FluidTransportBehaviour behaviour = getBehaviour(FluidTransportBehaviour.TYPE);
-                if (behaviour != null) {
-                    behaviour.wipePressure();
-                }
-
-                sidesToUpdate.forEach(MutableBoolean::setTrue);
-            } finally {
-                updatingNetwork = false;
+            updatePipeNetwork(side == getFront());
+            FluidTransportBehaviour behaviour = getBehaviour(FluidTransportBehaviour.TYPE);
+            if (behaviour != null) {
+                behaviour.wipePressure();
             }
         }
     }
-
 
     protected boolean isFront(Direction side) {
         BlockState blockState = getBlockState();

@@ -4,14 +4,13 @@ import static com.adonis.fluid.CreateFluid.REGISTRATE;
 import static com.simibubi.create.foundation.data.TagGen.axeOrPickaxe;
 import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.block.CopperTap.CopperTapBlock;
-import com.adonis.fluid.block.Gutter.GutterBlock;
 import com.adonis.fluid.block.GutterOutlet.GutterOutletBlock;
-import com.adonis.fluid.block.Siphonator.SiphonatorBlock;
+import com.adonis.fluid.block.GutterOutlet.SmartGutterOutletBlock;
+
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlock;
 import com.adonis.fluid.block.Pipette.PipetteBlock;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlock;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlock;
-import com.adonis.fluid.block.Aqueduct.AqueductBlock;
 import com.adonis.fluid.item.PipetteItem;
 import com.simibubi.create.foundation.data.ModelGen;
 import com.simibubi.create.foundation.data.SharedProperties;
@@ -75,66 +74,28 @@ public class CFBlock {
             .simpleItem()
             .register();
 
-    public static final BlockEntry<AqueductBlock> AQUEDUCT = REGISTRATE
-            .block("aqueduct", AqueductBlock::new)
-            .initialProperties(SharedProperties::stone)
-            .properties(p -> p
-                    .mapColor(DyeColor.GRAY)
-                    .sound(SoundType.STONE)
+    public static final BlockEntry<SmartGutterOutletBlock> SMART_GUTTER_OUTLET = REGISTRATE
+            .block("smart_gutter_outlet", SmartGutterOutletBlock::new)
+            .initialProperties(SharedProperties::copperMetal)
+            .properties(prop -> prop
+                    .mapColor(MapColor.COLOR_ORANGE)
+                    .sound(SoundType.COPPER)
                     .noOcclusion())
             .transform(axeOrPickaxe())
             .blockstate((ctx, prov) -> {
                 prov.getVariantBuilder(ctx.get())
                         .forAllStates(state -> {
-                            Direction dir = state.getValue(AqueductBlock.FACING);
-                            int yRot = (int) dir.toYRot();
+                            Direction facing = state.getValue(SmartGutterOutletBlock.FACING);
+                            int yRot = (int) facing.toYRot();
                             return ConfiguredModel.builder()
-                                    .modelFile(prov.models().getExistingFile(prov.modLoc("block/aqueduct")))
+                                    .modelFile(prov.models().getExistingFile(prov.modLoc("block/smart_gutter_outlet")))
                                     .rotationY(yRot)
                                     .build();
                         });
             })
             .item()
-            .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), prov.modLoc("block/aqueduct")))
+            .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), prov.modLoc("block/smart_gutter_outlet")))
             .build()
-            .register();
-
-    // 虹吸器（无状态、自定义模型、完整碰撞箱）
-    public static final BlockEntry<SiphonatorBlock> SIPHONATOR = REGISTRATE
-            .block("siphonator", SiphonatorBlock::new)
-            .initialProperties(SharedProperties::copperMetal)
-            .properties(p -> p
-                    .mapColor(MapColor.COLOR_ORANGE)
-                    .strength(3.5F, 6.0F)
-                    .sound(SoundType.COPPER)
-                    .requiresCorrectToolForDrops()
-                    .noOcclusion())
-            .transform(TagGen.pickaxeOnly())
-
-            // 关键：modLoc 前面是 "fluid"，不是 "createfluid"
-            .blockstate((c, p) -> p.simpleBlock(c.get(),
-                    p.models().getExistingFile(p.modLoc("block/siphonator"))))
-            .item()
-            .transform(ModelGen.customItemModel()) // 物品模型也用同一个
-            .register();
-
-    // 虹吸器（无状态、自定义模型、完整碰撞箱）
-    public static final BlockEntry<GutterBlock> GUTTER = REGISTRATE
-            .block("gutter", GutterBlock::new)
-            .initialProperties(SharedProperties::copperMetal)
-            .properties(p -> p
-                    .mapColor(MapColor.COLOR_ORANGE)
-                    .strength(3.5F, 6.0F)
-                    .sound(SoundType.COPPER)
-                    .requiresCorrectToolForDrops()
-                    .noOcclusion())
-            .transform(TagGen.pickaxeOnly())
-
-            // 关键：modLoc 前面是 "fluid"，不是 "createfluid"
-            .blockstate((c, p) -> p.simpleBlock(c.get(),
-                    p.models().getExistingFile(p.modLoc("block/gutter"))))
-            .item()
-            .transform(ModelGen.customItemModel()) // 物品模型也用同一个
             .register();
 
     public static final BlockEntry<PipetteBlock> PIPETTE = REGISTRATE
@@ -282,6 +243,7 @@ public class CFBlock {
                 prov.getVariantBuilder(ctx.get())
                         .forAllStates(state -> {
                             Direction facing = state.getValue(GutterOutletBlock.FACING);
+                            // waterlogged 不影响模型，只需要处理 facing
                             int yRot = (int) facing.toYRot();
                             return ConfiguredModel.builder()
                                     .modelFile(prov.models().getExistingFile(prov.modLoc("block/gutter_outlet")))

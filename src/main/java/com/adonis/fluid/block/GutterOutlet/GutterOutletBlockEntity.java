@@ -1,5 +1,6 @@
 package com.adonis.fluid.block.GutterOutlet;
 
+import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.registry.CFFluid;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.content.kinetics.belt.behaviour.DirectBeltInputBehaviour;
@@ -14,11 +15,16 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.PointedDripstoneBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.DripstoneThickness;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -30,18 +36,22 @@ import net.minecraftforge.fluids.capability.templates.FluidTank;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 集水器方块实体
- * 处理流体存储、世界流体收集、雨雪收集、向下排出
+ * 处理流体存储、世界流体收集、雨雪收集、滴水石锥收集、向下排出
  */
 public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGoggleInformation {
 
-    // 容量：1500 mB（与软管滑轮一致）
-    public static final int CAPACITY = 1500;
+    // 容量：2000 mB
+    public static final int CAPACITY = 2000;
 
     // 每秒收集雨雪 50 mB（每 tick 约 2.5 mB，用累积方式处理）
-    private static final int COLLECT_RATE_PER_SECOND = 50;
+    private static final int PRECIPITATION_COLLECT_RATE_PER_SECOND = 50;
+
+    // 滴水石锥收集速率：每秒 10 mB
+    private static final int DRIPSTONE_COLLECT_RATE_PER_SECOND = 10;
 
     // 每秒排出 1000 mB（每 tick 50 mB）
     private static final int DRAIN_RATE_PER_TICK = 50;
@@ -52,8 +62,11 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
     // 世界流体收集行为
     protected GutterFluidDrainingBehaviour drainer;
 
-    // 用于雨雪收集累积（因为每 tick 2.5 mB 不是整数）
-    private int collectAccumulator = 0;
+    // 用于雨雪收集累积
+    private int precipitationAccumulator = 0;
+
+    // 用于滴水石锥收集累积
+    private int dripstoneAccumulator = 0;
 
     // 用于平滑液面渲染
     private LerpedFloat fluidLevel;
@@ -108,7 +121,6 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
         if (level == null) return;
 
         if (level.isClientSide) {
-            // 客户端：更新液面动画
             if (fluidLevel != null) {
                 fluidLevel.tickChaser();
             }
@@ -116,12 +128,21 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
         }
 
         // 服务端逻辑
-        // 优先处理世界流体收集
-        boolean collectedWorldFluid = handleWorldFluidCollection();
+        boolean collectedWorldFluid = false;
 
-        // 如果没有收集到世界流体，且上方没有世界流体可收集，才收集雨雪
+        // 世界流体收集（受配置控制）
+        if (CFCommonConfig.canGutterCollectWorldFluid()) {
+            collectedWorldFluid = handleWorldFluidCollection();
+        }
+
+        // 雨雪收集（受配置控制）
         if (!collectedWorldFluid && !drainer.hasFluidToDrain()) {
             handlePrecipitationCollection();
+        }
+
+        // 滴水石锥收集（受配置控制）
+        if (CFCommonConfig.canGutterCollectDripstone()) {
+            handleDripstoneCollection();
         }
 
         handleDrainToBelow();
@@ -153,27 +174,21 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
 
         int space = CAPACITY - currentFluid.getAmount();
         if (space < 1000 && !drainer.isInfinite()) {
-            // 空间不足1000mB，且不是无限源，不收集
-            // （无限源可以少量收集）
             return false;
         }
 
         // 尝试收集
-        // 模拟填充
         FluidStack toFill = new FluidStack(drainableFluid.getFluid(), Math.min(1000, space));
         int accepted = tank.fill(toFill.copy(), IFluidHandler.FluidAction.SIMULATE);
 
         if (accepted <= 0) return false;
 
-        // 如果是无限源，直接填充
         if (drainer.isInfinite()) {
-            // 无限源：直接填充，不消耗世界流体
             if (drainer.pullNext(drainer.getRootPos(), false)) {
                 tank.fill(new FluidStack(drainableFluid.getFluid(), accepted), IFluidHandler.FluidAction.EXECUTE);
                 return true;
             }
         } else {
-            // 非无限源：需要满1000mB才收集
             if (accepted >= 1000) {
                 if (drainer.pullNext(drainer.getRootPos(), false)) {
                     tank.fill(new FluidStack(drainableFluid.getFluid(), 1000), IFluidHandler.FluidAction.EXECUTE);
@@ -191,10 +206,7 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
     private void handlePrecipitationCollection() {
         if (level == null || level.isClientSide) return;
 
-        // 检查是否能看到天空
         if (!level.canSeeSky(worldPosition.above())) return;
-
-        // 检查是否在下雨/雪
         if (!level.isRaining()) return;
 
         Biome.Precipitation precipitation = level.getBiome(worldPosition).value()
@@ -205,36 +217,107 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
         FluidStack currentFluid = getFluid();
 
         if (precipitation == Biome.Precipitation.RAIN) {
-            // 下雨：收集水
-            // 如果容器内有非水流体，不收集
+            // 下雨：收集水（受配置控制）
+            if (!CFCommonConfig.canGutterCollectRain()) return;
+
             if (!currentFluid.isEmpty() && !currentFluid.getFluid().isSame(Fluids.WATER)) {
                 return;
             }
-
-            accumulateAndFill(new FluidStack(Fluids.WATER, 1));
+            accumulateAndFill(new FluidStack(Fluids.WATER, 1), true);
 
         } else if (precipitation == Biome.Precipitation.SNOW) {
-            // 下雪：收集细雪流体
-            // 如果容器内有非细雪流体，不收集
+            // 下雪：收集细雪流体（受配置控制）
+            if (!CFCommonConfig.canGutterCollectSnow()) return;
+
             if (!currentFluid.isEmpty() && !CFFluid.isPowderSnowFluid(currentFluid.getFluid())) {
                 return;
             }
-
-            accumulateAndFill(CFFluid.getPowderSnowFluidStack(1));
+            accumulateAndFill(CFFluid.getPowderSnowFluidStack(1), true);
         }
     }
 
     /**
-     * 累积收集流体（处理非整数每 tick 收集量）
+     * 处理滴水石锥收集
+     * 与原版炼药锅机制对齐
      */
-    private void accumulateAndFill(FluidStack template) {
-        // 每秒 50 mB = 每 tick 2.5 mB
-        // 使用累积器：每 tick 加 50，每累积到 20 就填充 1 mB
-        collectAccumulator += COLLECT_RATE_PER_SECOND;
+    private void handleDripstoneCollection() {
+        if (level == null || level.isClientSide) return;
 
-        int toFill = collectAccumulator / 20; // 20 tick = 1 秒
+        // 查找上方的滴水石锥尖端（使用原版方法）
+        BlockPos tipPos = findStalactiteTipAbove();
+        if (tipPos == null) return;
+
+        // 获取滴水石锥能滴落的流体类型（使用原版方法）
+        Fluid dripFluid = getDripFluid((ServerLevel) level, tipPos);
+        if (dripFluid == Fluids.EMPTY) return;
+
+        FluidStack currentFluid = getFluid();
+
+        // 检查流体兼容性
+        if (!currentFluid.isEmpty() && !currentFluid.getFluid().isSame(dripFluid)) {
+            return;
+        }
+
+        // 累积收集（使用独立的累积器）
+        accumulateAndFill(new FluidStack(dripFluid, 1), false);
+    }
+
+    /**
+     * 查找集水器上方的滴水石锥尖端
+     * 参考原版 PointedDripstoneBlock.findStalactiteTipAboveCauldron
+     */
+    @Nullable
+    private BlockPos findStalactiteTipAbove() {
+        BlockPos abovePos = worldPosition.above();
+        BlockState aboveState = level.getBlockState(abovePos);
+
+        // 检查上方是否是滴水石锥
+        if (!aboveState.is(Blocks.POINTED_DRIPSTONE)) return null;
+
+        // 检查是否尖端朝下
+        if (aboveState.getValue(PointedDripstoneBlock.TIP_DIRECTION) != Direction.DOWN) return null;
+
+        // 检查是否是尖端（TIP 或 TIP_MERGE）
+        DripstoneThickness thickness = aboveState.getValue(PointedDripstoneBlock.THICKNESS);
+        if (thickness != DripstoneThickness.TIP && thickness != DripstoneThickness.TIP_MERGE) return null;
+
+        return abovePos;
+    }
+
+    /**
+     * 获取滴水石锥能滴落的流体
+     * 参考原版 PointedDripstoneBlock.getCauldronFillFluidType
+     */
+    private Fluid getDripFluid(ServerLevel level, BlockPos tipPos) {
+        return PointedDripstoneBlock.getCauldronFillFluidType(level, tipPos);
+    }
+
+    /**
+     * 累积收集流体
+     * @param template 流体模板
+     * @param isPrecipitation true=雨雪收集(50mB/s), false=滴水石锥收集(10mB/s)
+     */
+    protected void accumulateAndFill(FluidStack template, boolean isPrecipitation) {
+        int rate;
+        int accumulator;
+
+        if (isPrecipitation) {
+            rate = PRECIPITATION_COLLECT_RATE_PER_SECOND;
+            precipitationAccumulator += rate;
+            accumulator = precipitationAccumulator;
+        } else {
+            rate = DRIPSTONE_COLLECT_RATE_PER_SECOND;
+            dripstoneAccumulator += rate;
+            accumulator = dripstoneAccumulator;
+        }
+
+        int toFill = accumulator / 20; // 20 tick = 1 秒
         if (toFill > 0) {
-            collectAccumulator -= toFill * 20;
+            if (isPrecipitation) {
+                precipitationAccumulator -= toFill * 20;
+            } else {
+                dripstoneAccumulator -= toFill * 20;
+            }
 
             FluidStack toInsert = template.copy();
             toInsert.setAmount(toFill);
@@ -249,7 +332,7 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
     /**
      * 处理向下排出流体
      */
-    private void handleDrainToBelow() {
+    protected void handleDrainToBelow() {
         if (level == null || level.isClientSide) return;
 
         FluidStack currentFluid = getFluid();
@@ -264,7 +347,6 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
                 ForgeCapabilities.FLUID_HANDLER, Direction.UP);
 
         if (!belowCapability.isPresent()) {
-            // 尝试无方向获取
             belowCapability = belowBE.getCapability(ForgeCapabilities.FLUID_HANDLER);
         }
 
@@ -272,14 +354,11 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
             IFluidHandler myTank = getFluidHandler();
             if (myTank == null) return;
 
-            // 尝试排出
             int drainAmount = Math.min(DRAIN_RATE_PER_TICK, currentFluid.getAmount());
             FluidStack toDrain = new FluidStack(currentFluid.getFluid(), drainAmount);
 
-            // 先模拟填充目标
             int accepted = targetTank.fill(toDrain.copy(), IFluidHandler.FluidAction.SIMULATE);
             if (accepted > 0) {
-                // 实际执行
                 FluidStack drained = myTank.drain(accepted, IFluidHandler.FluidAction.EXECUTE);
                 if (!drained.isEmpty()) {
                     targetTank.fill(drained, IFluidHandler.FluidAction.EXECUTE);
@@ -335,7 +414,6 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
     @Override
     public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            // 根据方向决定是否暴露能力
             if (side == null) {
                 return fluidCapability.cast();
             }
@@ -351,12 +429,12 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
                 return LazyOptional.of(() -> new OutputOnlyFluidHandler(getFluidHandler())).cast();
             }
 
-            // 东西窄面：可输入输出
+            // 窄面：可输入输出
             if (GutterOutletBlock.isNarrowSide(state, side)) {
                 return fluidCapability.cast();
             }
 
-            // 南北宽面：不暴露
+            // 宽面：不暴露
             return LazyOptional.empty();
         }
 
@@ -377,7 +455,8 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
     protected void read(CompoundTag compound, boolean clientPacket) {
         super.read(compound, clientPacket);
 
-        collectAccumulator = compound.getInt("CollectAccumulator");
+        precipitationAccumulator = compound.getInt("PrecipitationAccumulator");
+        dripstoneAccumulator = compound.getInt("DripstoneAccumulator");
 
         if (clientPacket) {
             float fillState = getFillState();
@@ -392,7 +471,8 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
     protected void write(CompoundTag compound, boolean clientPacket) {
         super.write(compound, clientPacket);
 
-        compound.putInt("CollectAccumulator", collectAccumulator);
+        compound.putInt("PrecipitationAccumulator", precipitationAccumulator);
+        compound.putInt("DripstoneAccumulator", dripstoneAccumulator);
 
         if (clientPacket && forceFluidLevelUpdate) {
             compound.putBoolean("ForceFluidLevel", true);
@@ -416,8 +496,7 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
                     .style(ChatFormatting.DARK_GRAY)
                     .forGoggles(tooltip, 1);
 
-            // 显示收集状态
-            addDrainerInfo(tooltip);
+            addCollectionStatusInfo(tooltip);
             return true;
         }
 
@@ -438,47 +517,60 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
                 .style(ChatFormatting.DARK_GRAY)
                 .forGoggles(tooltip, 1);
 
-        // 显示收集状态
-        addDrainerInfo(tooltip);
+        addCollectionStatusInfo(tooltip);
 
         return true;
     }
 
     /**
-     * 在工程师护目镜信息中添加收集器状态
+     * 在工程师护目镜信息中添加收集状态
      */
-    private void addDrainerInfo(List<Component> tooltip) {
-        if (drainer == null) return;
-
-        // 调试信息：显示搜索状态
-        if (drainer.isCurrentlySearching()) {
-            CreateLang.text("Searching...")
-                    .style(ChatFormatting.YELLOW)
-                    .forGoggles(tooltip, 1);
-            return;
+    private void addCollectionStatusInfo(List<Component> tooltip) {
+        // 世界流体收集状态
+        if (drainer != null) {
+            if (drainer.isCurrentlySearching()) {
+                CreateLang.text("Searching...")
+                        .style(ChatFormatting.YELLOW)
+                        .forGoggles(tooltip, 1);
+            } else if (drainer.isInfinite()) {
+                CreateLang.text("∞ ")
+                        .style(ChatFormatting.AQUA)
+                        .add(CreateLang.text("Infinite Source")
+                                .style(ChatFormatting.DARK_AQUA))
+                        .forGoggles(tooltip, 1);
+            } else if (drainer.hasFluidToDrain()) {
+                int sourceCount = drainer.getSourceCount();
+                CreateLang.text("")
+                        .add(CreateLang.number(sourceCount)
+                                .style(ChatFormatting.GOLD))
+                        .add(CreateLang.text(" Source Blocks")
+                                .style(ChatFormatting.GRAY))
+                        .forGoggles(tooltip, 1);
+            }
         }
 
-        if (drainer.isInfinite()) {
-            // 无限流体源
-            CreateLang.text("∞ ")
-                    .style(ChatFormatting.AQUA)
-                    .add(CreateLang.text("Infinite Source")
-                            .style(ChatFormatting.DARK_AQUA))
-                    .forGoggles(tooltip, 1);
-        } else if (drainer.hasFluidToDrain()) {
-            // 有限流体源，显示源方块数量
-            int sourceCount = drainer.getSourceCount();
-            CreateLang.text("")
-                    .add(CreateLang.number(sourceCount)
-                            .style(ChatFormatting.GOLD))
-                    .add(CreateLang.text(" Source Blocks")
-                            .style(ChatFormatting.GRAY))
-                    .forGoggles(tooltip, 1);
-        } else {
-            // 没有流体可收集
-            CreateLang.text("No fluid above")
-                    .style(ChatFormatting.DARK_GRAY)
-                    .forGoggles(tooltip, 1);
+        // 滴水石锥收集状态（客户端安全版本）
+        if (level != null) {
+            BlockPos tipPos = findStalactiteTipAbove();
+            if (tipPos != null) {
+                // 客户端不调用 getCauldronFillFluidType，直接根据当前流体或简单判断显示
+                FluidStack currentFluid = getFluid();
+                if (!currentFluid.isEmpty()) {
+                    String fluidName = currentFluid.getFluid().isSame(Fluids.LAVA) ? "Lava" : "Water";
+                    CreateLang.text("☵ ")
+                            .style(ChatFormatting.GRAY)
+                            .add(CreateLang.text("Dripping " + fluidName)
+                                    .style(currentFluid.getFluid().isSame(Fluids.LAVA) ? ChatFormatting.GOLD : ChatFormatting.AQUA))
+                            .forGoggles(tooltip, 1);
+                } else {
+                    // 容器为空时，显示正在滴落
+                    CreateLang.text("☵ ")
+                            .style(ChatFormatting.GRAY)
+                            .add(CreateLang.text("Dripstone Active")
+                                    .style(ChatFormatting.GREEN))
+                            .forGoggles(tooltip, 1);
+                }
+            }
         }
     }
 
@@ -508,12 +600,12 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
 
         @Override
         public boolean isFluidValid(int tank, @Nonnull FluidStack stack) {
-            return false; // 不允许输入
+            return false;
         }
 
         @Override
         public int fill(@Nonnull FluidStack resource, FluidAction action) {
-            return 0; // 不允许输入
+            return 0;
         }
 
         @Override
