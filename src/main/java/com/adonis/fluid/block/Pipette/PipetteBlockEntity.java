@@ -105,6 +105,7 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
     // 添加传送带处理相关字段
     private boolean processingBelt = false;
     private BlockPos processingBeltPos = null;
+    private boolean isServingBelt = false;
     private int beltProcessingTicks = 0;
     private boolean isPerformingInjection = false;
     private float injectionStartProgress = 0.8f;
@@ -580,14 +581,18 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             return;
         }
 
-        // 首先检查是否有可以用当前流体加工的物品（非传送带）
+        // 终极保险：只要正在给传送带服务，就坚决不归还！（不管有没有物品）
+        // 因为 VirtualRelayManager 会在最后一个物品处理完后调用 onBeltProcessingFinished()
+        // 那时候我们再放开归还
+        if (this.isServingBelt) {
+            return;
+        }
+
+        // 下面才是真正的“空闲归还”逻辑
+        // 1. 先看有没有非传送带的活干
         for (int i = 0; i < this.outputs.size(); i++) {
             FluidInteractionPoint point = this.outputs.get(i);
-
-            // 跳过传送带（传送带由 VirtualRelayManager 处理）
-            if (point instanceof BeltFluidInteractionPoint) {
-                continue;
-            }
+            if (point instanceof BeltFluidInteractionPoint) continue;
 
             if (point.isValid() && point.canInsert(this.heldFluid)) {
                 this.selectIndex(false, i);
@@ -595,85 +600,48 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             }
         }
 
-        // 没有找到可以使用当前流体的输出
-        // 检查是否有其他物品需要不同的流体（只检查非传送带）
-        ItemStack itemNeedingDifferentFluid = ItemStack.EMPTY;
-
+        // 2. 没有非传送带任务，看有没有需要换液的非传送带物品
         for (FluidInteractionPoint output : this.outputs) {
-            if (output instanceof BeltFluidInteractionPoint) {
-                continue;
-            }
-
+            if (output instanceof BeltFluidInteractionPoint) continue;
             if (output instanceof DepotFluidInteractionPoint depotPoint) {
                 if (depotPoint.hasItemForFilling()) {
-                    ItemStack itemOnDepot = depotPoint.getItemForFilling();
-                    if (!itemOnDepot.isEmpty() && !canFluidProcessItem(this.heldFluid, itemOnDepot)) {
-                        itemNeedingDifferentFluid = itemOnDepot;
-                        break;
+                    ItemStack item = depotPoint.getItemForFilling();
+                    if (!item.isEmpty() && !canFluidProcessItem(this.heldFluid, item)) {
+                        int[] inputIdx = new int[1];
+                        FluidStack needed = findFluidForItem(item, inputIdx);
+                        if (!needed.isEmpty()) {
+                            FluidInteractionPoint returnTarget = findFluidReturnTarget(this.heldFluid);
+                            if (returnTarget != null) {
+                                this.pendingFluidForItem = needed;
+                                this.pendingInputIndex = inputIdx[0];
+                                startReturnFluidPhase();
+                                return;
+                            }
+                        }
                     }
                 }
             }
         }
 
-        if (!itemNeedingDifferentFluid.isEmpty()) {
-            int[] inputIndexHolder = new int[1];
-            FluidStack neededFluid = findFluidForItem(itemNeedingDifferentFluid, inputIndexHolder);
-
-            if (!neededFluid.isEmpty()) {
-                FluidInteractionPoint returnTarget = findFluidReturnTarget(this.heldFluid);
-
-                if (returnTarget != null) {
-                    this.pendingFluidForItem = neededFluid;
-                    this.pendingInputIndex = inputIndexHolder[0];
-                    startReturnFluidPhase();
-                    return;
-                }
-            }
+        // 3. 完全空闲 → 归还流体
+        FluidInteractionPoint returnTarget = findFluidReturnTarget(this.heldFluid);
+        if (returnTarget != null) {
+            this.pendingFluidForItem = FluidStack.EMPTY;
+            this.pendingInputIndex = -1;
+            startReturnFluidPhase();
+            return;
         }
 
-        // 检查是否有任何非传送带的任务
-        boolean hasNonBeltTask = false;
-        for (FluidInteractionPoint output : this.outputs) {
-            if (output instanceof BeltFluidInteractionPoint) {
-                continue;
-            }
-
-            if (output instanceof DepotFluidInteractionPoint depotPoint) {
-                if (depotPoint.hasItemForFilling()) {
-                    hasNonBeltTask = true;
-                    break;
-                }
-            } else if (output.isValid() && output.canInsert(this.heldFluid)) {
-                hasNonBeltTask = true;
-                break;
-            }
+        // 4. 实在没地方还 → 丢掉（防止卡死）
+        if (!level.isClientSide && !heldFluid.isEmpty()) {
+            net.minecraft.world.Containers.dropItemStack(
+                    level,
+                    worldPosition.getX() + 0.5, worldPosition.getY() + 1, worldPosition.getZ() + 0.5,
+                    net.minecraftforge.fluids.FluidUtil.getFilledBucket(heldFluid)
+            );
+            this.heldFluid = FluidStack.EMPTY;
         }
 
-        if (!hasNonBeltTask) {
-            // 检查传送带是否能处理当前流体
-            boolean beltCanUseFluid = false;
-            for (FluidInteractionPoint output : this.outputs) {
-                if (output instanceof BeltFluidInteractionPoint beltPoint) {
-                    if (beltPoint.hasItemForFilling(this.heldFluid)) {
-                        beltCanUseFluid = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!beltCanUseFluid) {
-                // 尝试归还流体（空闲归还）
-                FluidInteractionPoint returnTarget = findFluidReturnTarget(this.heldFluid);
-                if (returnTarget != null) {
-                    this.pendingFluidForItem = FluidStack.EMPTY;
-                    this.pendingInputIndex = -1;
-                    startReturnFluidPhase();
-                    return;
-                }
-            }
-        }
-
-        // 回到 SEARCH_INPUTS 等待
         this.phase = Phase.SEARCH_INPUTS;
         this.chasedPointProgress = 1.0F;
         this.chasedPointIndex = -1;
@@ -1234,30 +1202,12 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
     }
 
     public void onBeltProcessingFinished(BlockPos beltPos) {
-        // 清理传送带处理状态
         this.processingBelt = false;
         this.processingBeltPos = null;
         this.beltProcessingTicks = 0;
         this.isPerformingInjection = false;
 
-        // 清理连续处理状态
-        this.continuousProcessing = false;
-        this.continuousProcessingCount = 0;
-
-        // 重置移动状态
-        this.chasedPointIndex = -1;
-
-        // 根据流体状态决定下一阶段
-        if (!heldFluid.isEmpty()) {
-            // 还有流体，回到 SEARCH_INPUTS 让系统决定下一步
-            // （可能继续处理传送带上的新物品，或处理置物台，或归还流体）
-            this.phase = Phase.SEARCH_INPUTS;
-            this.chasedPointProgress = 1.0F;
-        } else {
-            // 没有流体，搜索新的输入
-            this.phase = Phase.SEARCH_INPUTS;
-            this.chasedPointProgress = 1.0F;
-        }
+        this.isServingBelt = false;  // 新增这行！清零标记，让系统能进入归还逻辑
 
         sendData();
         setChanged();
@@ -1457,12 +1407,14 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         }
 
         // 修改这里：确保进入正确的搜索阶段
+// 修改这里：
         if (this.heldFluid.isEmpty()) {
             this.phase = Phase.SEARCH_INPUTS;
         } else {
-            // 还有流体，进入 SEARCH_OUTPUTS 让 searchForDestinationOrReturn 处理
+            // 永远进入 SEARCH_OUTPUTS，让 searchForDestinationOrReturn 决定要不要归还
             this.phase = Phase.SEARCH_OUTPUTS;
         }
+        this.chasedPointProgress = 1.0F;
         this.chasedPointProgress = 1.0F;  // 设为1.0确保下一tick能触发搜索
         this.chasedPointIndex = -1;
         this.sendData();
@@ -1627,7 +1579,10 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
 
     protected void initInteractionPoints() {
         if (this.updateInteractionPoints && this.interactionPointTag != null) {
-            if (this.isAreaActuallyLoaded(this.worldPosition, getRange() + 1)) {
+            // 关键修改：客户端加载时直接跳过区域加载检查！
+            boolean shouldCheckArea = !level.isClientSide;
+
+            if (!shouldCheckArea || this.isAreaActuallyLoaded(this.worldPosition, getRange() + 1)) {
                 this.inputs.clear();
                 this.outputs.clear();
 
@@ -1697,6 +1652,9 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             compound.putBoolean("ProcessingBelt", true);
             compound.putLong("ProcessingBeltPos", processingBeltPos.asLong());
             compound.putInt("BeltProcessingTicks", beltProcessingTicks);
+
+            // 新增：保存 isServingBelt 状态
+            compound.putBoolean("IsServingBelt", this.isServingBelt);
         }
     }
 
@@ -1743,11 +1701,24 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                 DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> VisualizationHelper.queueUpdate(this));
             }
 
-            boolean forceUpdate = compound.getBoolean("ForceUpdate");
+            // ========== 关键修复：强制客户端重新解析交互点 ==========
+            boolean forceUpdate = compound.contains("ForceUpdate") && compound.getBoolean("ForceUpdate");
+            boolean hasInteractionPoints = this.interactionPointTag != null && !this.interactionPointTag.isEmpty();
             boolean tagChanged = interactionPointTagBefore == null ||
                     interactionPointTagBefore.size() != this.interactionPointTag.size();
 
-            if (forceUpdate || tagChanged) {
+            if (forceUpdate || hasInteractionPoints || tagChanged) {
+                this.updateInteractionPoints = true;  // 强制下次tick重新初始化
+                this.inputs.clear();                  // 清空旧列表，防止残留空数据
+                this.outputs.clear();                 // 清空旧列表
+            }
+            // ========================================================
+
+            boolean forceUpdateOld = compound.getBoolean("ForceUpdate");
+            boolean tagChangedOld = interactionPointTagBefore == null ||
+                    interactionPointTagBefore.size() != this.interactionPointTag.size();
+
+            if (forceUpdateOld || tagChangedOld) {
                 this.inputs.clear();
                 this.outputs.clear();
 
@@ -1764,8 +1735,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                         }
                     }
                 }
-
-                this.updateInteractionPoints = false;
             }
 
             if (previousIndex != this.chasedPointIndex || previousPhase != this.phase) {
@@ -1791,6 +1760,7 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                     targetedPoint.updateCachedState();
                 }
             }
+            this.isServingBelt = compound.contains("IsServingBelt") && compound.getBoolean("IsServingBelt");
         }
     }
 
@@ -1842,6 +1812,7 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
     public void startBeltProcessing(BlockPos beltPos) {
         this.processingBelt = true;
         this.processingBeltPos = beltPos;
+        this.isServingBelt = true;
         this.isPerformingInjection = false;
 
         // 根据当前状态决定动画时长

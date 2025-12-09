@@ -1,5 +1,6 @@
 package com.adonis.fluid.content.pipette;
 
+import com.adonis.fluid.block.Pipette.PipetteBlockEntity;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.kinetics.belt.behaviour.BeltProcessingBehaviour;
 import com.simibubi.create.content.kinetics.belt.behaviour.TransportedItemStackHandlerBehaviour;
@@ -208,16 +209,6 @@ public class VirtualRelayManager {
                 }
             }
 
-            // 处理完成 - 修复：始终通知移液器完成，不管是否连续处理
-            if (processor instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
-                // 先结束连续处理状态
-                if (pipette.isContinuousProcessing()) {
-                    pipette.endContinuousProcessing();
-                }
-                // 然后通知完成
-                pipette.onBeltProcessingFinished(beltSegmentPos);
-            }
-
             resetState();
             return BeltProcessingBehaviour.ProcessingResult.PASS;
         }
@@ -322,6 +313,15 @@ public class VirtualRelayManager {
                                 }
                             }
                         }
+                    }
+
+// 走到这里说明：这是最后一个物品！必须结束服务
+                    if (processor instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
+                        if (pipette.isContinuousProcessing()) {
+                            pipette.endContinuousProcessing();
+                        }
+                        // 关键！在这里调用结束服务
+                        pipette.onBeltProcessingFinished(beltSegmentPos);
                     }
                 }
             }
