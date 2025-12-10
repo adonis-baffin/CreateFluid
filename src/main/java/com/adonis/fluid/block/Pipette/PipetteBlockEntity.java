@@ -784,141 +784,97 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
     }
 
     protected void searchForFluid() {
-        if (this.redstoneLocked) {
-            return;
-        }
+        if (this.redstoneLocked) return;
 
-        // === 第一步：检查是否有需要加工的物品（只检查非传送带） ===
-        boolean hasValidTask = false;
-        ItemStack itemNeedingFluid = ItemStack.EMPTY;
-        FluidInteractionPoint targetOutput = null;
+        for (FluidInteractionPoint output : outputs) {
+            if (output instanceof BeltFluidInteractionPoint) continue;
 
-        for (FluidInteractionPoint output : this.outputs) {
-            // 跳过传送带（由 VirtualRelayManager 处理）
-            if (output instanceof BeltFluidInteractionPoint) {
-                continue;
-            }
+            if (output instanceof DepotFluidInteractionPoint depotPoint && depotPoint.hasItemForFilling()) {
+                ItemStack item = depotPoint.getItemForFilling();
 
-            if (output instanceof DepotFluidInteractionPoint depotPoint) {
-                if (depotPoint.hasItemForFilling()) {
-                    ItemStack itemOnDepot = depotPoint.getItemForFilling();
-                    if (!itemOnDepot.isEmpty()) {
-                        hasValidTask = true;
-                        itemNeedingFluid = itemOnDepot;
-                        targetOutput = output;
-                        break;
+                // 手里流体正好能填这个物品 → 直接去注液
+                if (!heldFluid.isEmpty() && canFluidProcessItem(heldFluid, item)) {
+                    this.phase = Phase.SEARCH_OUTPUTS;
+                    this.chasedPointProgress = 1.0F;
+                    sendData();
+                    setChanged();
+                    return;
+                }
+
+                // 手里流体不对 → 先归还，再取正确的
+                int[] idx = new int[1];
+                FluidStack needed = findFluidForItem(item, idx);
+                if (!needed.isEmpty()) {
+                    FluidInteractionPoint returnTarget = findFluidReturnTarget(heldFluid);
+                    if (returnTarget != null) {
+                        pendingFluidForItem = needed;
+                        pendingInputIndex = idx[0];
+                        startReturnFluidPhase();
+                        return;
                     }
                 }
-            } else if (output.isValid()) {
-                // 非置物台的流体容器（如储罐）
-                if (!this.heldFluid.isEmpty() && output.canInsert(this.heldFluid)) {
-                    hasValidTask = true;
-                    targetOutput = output;
+            }
+        }
+
+        // Step 2: 手里有流体 → 优先尝试输出到任意能接受的地方（包括普通容器）
+        if (!heldFluid.isEmpty()) {
+            boolean canOutputSomewhere = false;
+            for (FluidInteractionPoint output : outputs) {
+                if (output instanceof BeltFluidInteractionPoint) continue; // 传送带另外处理
+                if (output.isValid() && output.canInsert(heldFluid)) {
+                    canOutputSomewhere = true;
                     break;
                 }
             }
-        }
 
-        // === 第二步：根据任务状态和流体状态决定行为 ===
-        if (!hasValidTask) {
-            // 没有非传送带的加工任务
-            if (!this.heldFluid.isEmpty()) {
-                // 检查传送带是否需要当前流体
-                boolean beltNeedsFluid = false;
-                for (FluidInteractionPoint output : this.outputs) {
-                    if (output instanceof BeltFluidInteractionPoint beltPoint) {
-                        if (beltPoint.hasItemForFilling(this.heldFluid)) {
-                            beltNeedsFluid = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (!beltNeedsFluid) {
-                    // 传送带也不需要，尝试归还流体
-                    startReturnFluidPhase();
-                }
+            if (canOutputSomewhere) {
+                this.phase = Phase.SEARCH_OUTPUTS;
+                this.chasedPointProgress = 1.0F;
+                sendData();
+                setChanged();
+                return;
             }
+
+            // 输出不了 → 尝试归还
+            FluidInteractionPoint returnTarget = findFluidReturnTarget(heldFluid);
+            if (returnTarget != null) {
+                pendingFluidForItem = FluidStack.EMPTY;
+                pendingInputIndex = -1;
+                startReturnFluidPhase();
+                return;
+            }
+
+            // 完全没地方放 → 只能等
             return;
         }
 
-        // 有非传送带的加工任务
-        if (!this.heldFluid.isEmpty()) {
-            // 检查持有的流体是否可以用于加工
-            if (!itemNeedingFluid.isEmpty()) {
-                boolean canProcess = canFluidProcessItem(this.heldFluid, itemNeedingFluid);
-
-                if (canProcess && targetOutput.canInsert(this.heldFluid)) {
-                    // 流体匹配，直接去注液
-                    this.phase = Phase.SEARCH_OUTPUTS;
-                    this.chasedPointProgress = 1.0F;
-                    this.chasedPointIndex = -1;
-                    this.sendData();
-                    this.setChanged();
-                    return;
-                } else if (!canProcess) {
-                    // 流体不匹配，需要先归还再取正确的流体
-                    int[] inputIndexHolder = new int[1];
-                    FluidStack neededFluid = findFluidForItem(itemNeedingFluid, inputIndexHolder);
-
-                    if (!neededFluid.isEmpty()) {
-                        FluidInteractionPoint returnTarget = findFluidReturnTarget(this.heldFluid);
-
-                        if (returnTarget != null) {
-                            this.pendingFluidForItem = neededFluid;
-                            this.pendingInputIndex = inputIndexHolder[0];
-                            startReturnFluidPhase();
-                            return;
-                        }
-                    }
-                }
-            } else if (targetOutput != null && targetOutput.canInsert(this.heldFluid)) {
-                // 纯流体容器输出
-                this.phase = Phase.SEARCH_OUTPUTS;
-                this.chasedPointProgress = 1.0F;
-                this.chasedPointIndex = -1;
-                this.sendData();
-                this.setChanged();
-                return;
-            }
-        }
-
-        // === 第三步：没有持有流体或需要取新流体，搜索输入 ===
+        // Step 3: 手里没流体 && 目前没有任何注液需求 → 才执行“普通流体转运”
+        // 即：从输入点取液 → 只要有一个输出点能接受就行
         boolean foundInput = false;
-        int startIndex = this.selectionMode.get() == SelectionMode.PREFER_FIRST ? 0 : this.lastInputIndex + 1;
-        int scanRange = this.selectionMode.get() == SelectionMode.FORCED_ROUND_ROBIN ?
-                this.lastInputIndex + 2 : this.inputs.size();
-        if (scanRange > this.inputs.size()) {
-            scanRange = this.inputs.size();
-        }
+        int startIndex = selectionMode.get() == SelectionMode.PREFER_FIRST ? 0 : lastInputIndex + 1;
+        int size = inputs.size();
 
-        for (int i = startIndex; i < scanRange; ++i) {
-            FluidInteractionPoint point = this.inputs.get(i);
+        for (int i = 0; i < size; i++) {
+            int index = (startIndex + i) % size;
+            FluidInteractionPoint point = inputs.get(index);
 
-            if (point.isValid() && point.canExtract()) {
-                FluidStack simulatedFluid = point.extract(TRANSFER_AMOUNT, true);
+            if (!point.isValid() || !point.canExtract()) continue;
 
-                if (!simulatedFluid.isEmpty()) {
-                    boolean canOutputToNonBelt = canFluidBeOutputtedToNonBelt(simulatedFluid);
+            FluidStack available = point.extract(TRANSFER_AMOUNT, true);
+            if (available.isEmpty()) continue;
 
-                    if (canOutputToNonBelt) {
-                        this.selectIndex(true, i);
-                        foundInput = true;
-                        break;
-                    }
-                }
+            // 关键：只要有一个非传送带的输出点能接受这瓶流体，就开始取液
+            if (canFluidBeOutputtedToNonBelt(available)) {
+                selectIndex(true, index);
+                foundInput = true;
+                break;
             }
         }
 
-        if (!foundInput && this.selectionMode.get() == SelectionMode.ROUND_ROBIN) {
-            this.lastInputIndex = -1;
-        }
-
-        if (this.lastInputIndex == this.inputs.size() - 1) {
-            this.lastInputIndex = -1;
+        if (!foundInput && selectionMode.get() != SelectionMode.PREFER_FIRST) {
+            lastInputIndex = -1;
         }
     }
-
     /**
      * 检查流体是否可以输出到非传送带的目标
      * 传送带的流体输出由 VirtualRelayManager 通过 requestFluidForItem 请求
