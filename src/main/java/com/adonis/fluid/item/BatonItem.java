@@ -90,4 +90,24 @@ public class BatonItem extends Item {
             }
         });
     }
+
+    @Override
+    public boolean hurtEnemy(ItemStack stack, net.minecraft.world.entity.LivingEntity target, net.minecraft.world.entity.LivingEntity attacker) {
+        // 只有攻击者是玩家且处于创造模式时才触发秒杀
+        if (attacker instanceof Player player && player.getAbilities().instabuild) {
+            // 排除玩家自己（防止误点自己被杀）
+            if (target != player) {
+                // 直接清除生物（不掉落物品、不播放死亡动画，和 /kill 一样）
+                target.discard();
+
+                // 可选：给拿着指挥棒的玩家一点反馈（伤害动画）
+                target.hurtMarked = true;
+            }
+            // 返回 true 表示这次攻击“成功处理”，不会继续走原版伤害流程
+            return true;
+        }
+
+        // 非创造模式下走正常流程（本来指挥棒也没伤害，就直接返回 true 也行）
+        return super.hurtEnemy(stack, target, attacker);
+    }
 }
