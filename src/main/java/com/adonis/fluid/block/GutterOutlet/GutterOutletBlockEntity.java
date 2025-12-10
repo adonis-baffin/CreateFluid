@@ -1,5 +1,6 @@
 package com.adonis.fluid.block.GutterOutlet;
 
+import com.adonis.fluid.compat.TwilightForestHelper;
 import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.registry.CFFluid;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
@@ -32,6 +33,7 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
+import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -201,38 +203,52 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
     }
 
     /**
-     * 处理雨雪收集
+     * 处理雨雪收集（完全软兼容暮色森林的雨云使/雪云使，不强依赖）
      */
     private void handlePrecipitationCollection() {
         if (level == null || level.isClientSide) return;
-
         if (!level.canSeeSky(worldPosition.above())) return;
+
+        // === 第一优先级：尝试调用暮色森林的云判断（软依赖）===
+        if (TwilightForestHelper.isTwilightForestLoaded()) {
+            Pair<Biome.Precipitation, Float> tfPrecip = TwilightForestHelper.getCloudPrecipitationAt(level, worldPosition.above());
+            if (tfPrecip.getLeft() != Biome.Precipitation.NONE) {
+                FluidStack current = getFluid();
+
+                if (tfPrecip.getLeft() == Biome.Precipitation.RAIN) {
+                    if (CFCommonConfig.canGutterCollectRain()
+                            && (current.isEmpty() || current.getFluid().isSame(Fluids.WATER))) {
+                        accumulateAndFill(new FluidStack(Fluids.WATER, 1), true);
+                    }
+                    return; // 已经处理了暮色雨，直接跳过原版判断
+                } else if (tfPrecip.getLeft() == Biome.Precipitation.SNOW) {
+                    if (CFCommonConfig.canGutterCollectSnow()
+                            && (current.isEmpty() || CFFluid.isPowderSnowFluid(current.getFluid()))) {
+                        accumulateAndFill(CFFluid.getPowderSnowFluidStack(1), true);
+                    }
+                    return;
+                }
+            }
+        }
+
+        // === 降级：原版天气判断 ===
         if (!level.isRaining()) return;
 
         Biome.Precipitation precipitation = level.getBiome(worldPosition).value()
-                .getPrecipitationAt(worldPosition);
-
+                .getPrecipitationAt(worldPosition.above());
         if (precipitation == Biome.Precipitation.NONE) return;
 
-        FluidStack currentFluid = getFluid();
-
+        FluidStack current = getFluid();
         if (precipitation == Biome.Precipitation.RAIN) {
-            // 下雨：收集水（受配置控制）
-            if (!CFCommonConfig.canGutterCollectRain()) return;
-
-            if (!currentFluid.isEmpty() && !currentFluid.getFluid().isSame(Fluids.WATER)) {
-                return;
+            if (CFCommonConfig.canGutterCollectRain()
+                    && (current.isEmpty() || current.getFluid().isSame(Fluids.WATER))) {
+                accumulateAndFill(new FluidStack(Fluids.WATER, 1), true);
             }
-            accumulateAndFill(new FluidStack(Fluids.WATER, 1), true);
-
         } else if (precipitation == Biome.Precipitation.SNOW) {
-            // 下雪：收集细雪流体（受配置控制）
-            if (!CFCommonConfig.canGutterCollectSnow()) return;
-
-            if (!currentFluid.isEmpty() && !CFFluid.isPowderSnowFluid(currentFluid.getFluid())) {
-                return;
+            if (CFCommonConfig.canGutterCollectSnow()
+                    && (current.isEmpty() || CFFluid.isPowderSnowFluid(current.getFluid()))) {
+                accumulateAndFill(CFFluid.getPowderSnowFluidStack(1), true);
             }
-            accumulateAndFill(CFFluid.getPowderSnowFluidStack(1), true);
         }
     }
 

@@ -1,0 +1,62 @@
+{
+	"format_version": "1.9.0",
+	"credit": "Made with Blockbench",
+	"parent": "block/block",
+	"texture_size": [32, 32],
+	"textures": {
+		"1": "fluid:block/copper_sink_inside",
+		"3": "fluid:block/copper_sink",
+		"particle": "fluid:block/copper_sink"
+	},
+	"elements": [
+		{
+			"name": "outside",
+			"from": [0, 0, 0],
+			"to": [16, 16, 16],
+			"rotation": {"angle": 0, "axis": "y", "origin": [8, 10, 8]},
+			"faces": {
+				"north": {"uv": [0, 0, 8, 8], "texture": "#3"},
+				"east": {"uv": [0, 0, 8, 8], "texture": "#3"},
+				"south": {"uv": [0, 0, 8, 8], "texture": "#3"},
+				"west": {"uv": [0, 0, 8, 8], "texture": "#3"},
+				"up": {"uv": [16, 0, 8, 8], "texture": "#3"},
+				"down": {"uv": [0, 8, 8, 16], "rotation": 180, "texture": "#3"}
+			}
+		},
+		{
+			"name": "inside",
+			"from": [14, 16, 14],
+			"to": [2, 2, 2],
+			"rotation": {"angle": 0, "axis": "y", "origin": [8, 2.5, 8]},
+			"faces": {
+				"north": {"uv": [1, 0, 7, 7], "rotation": 180, "texture": "#1"},
+				"east": {"uv": [1, 0, 7, 7], "rotation": 180, "texture": "#1"},
+				"south": {"uv": [1, 0, 7, 7], "rotation": 180, "texture": "#1"},
+				"west": {"uv": [1, 0, 7, 7], "rotation": 180, "texture": "#1"},
+				"up": {"uv": [9, 1, 15, 7], "texture": "#1"}
+			}
+		},
+		{
+			"from": [2, 13, 12],
+			"to": [14, 15, 14],
+			"rotation": {"angle": 0, "axis": "y", "origin": [2, 13, 12]},
+			"faces": {
+				"north": {"uv": [0, 0, 6, 1], "texture": "#1"},
+				"east": {"uv": [0, 0, 1, 1], "texture": "#1"},
+				"south": {"uv": [0, 0, 6, 1], "texture": "#1"},
+				"west": {"uv": [0, 0, 1, 1], "texture": "#1"},
+				"up": {"uv": [0, 0, 6, 1], "texture": "#1"},
+				"down": {"uv": [0, 0, 6, 1], "texture": "#1"}
+			}
+		}
+	],
+	"display": {},
+	"groups": [
+		{
+			"name": "copper_sink",
+			"origin": [8, 18.19445, 14.00877],
+			"color": 0,
+			"children": [0, 1, 2]
+		}
+	]
+}

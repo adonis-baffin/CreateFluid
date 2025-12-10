@@ -1,5 +1,6 @@
 package com.adonis.fluid.block.GutterOutlet;
 
+import com.adonis.fluid.compat.TwilightForestHelper;
 import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.registry.CFFluid;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
@@ -17,6 +18,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -163,43 +165,63 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
     }
 
     /**
-     * 处理雨雪收集（带过滤）
+     * 处理雨雪收集（带过滤器 + 完全软兼容暮色森林雨云/雪云）
      */
     private void handlePrecipitationCollectionFiltered() {
         if (level == null || level.isClientSide) return;
-
         if (!level.canSeeSky(worldPosition.above())) return;
-        if (!level.isRaining()) return;
-
-        Biome.Precipitation precipitation = level.getBiome(worldPosition).value()
-                .getPrecipitationAt(worldPosition);
-
-        if (precipitation == Biome.Precipitation.NONE) return;
 
         FluidStack currentFluid = getFluid();
 
+        // === 第一优先：暮色森林云块下雨判断（软依赖）===
+        if (TwilightForestHelper.isTwilightForestLoaded()) {
+            Pair<Biome.Precipitation, Float> tfPrecip = TwilightForestHelper.getCloudPrecipitationAt(level, worldPosition.above());
+            if (tfPrecip.getLeft() != Biome.Precipitation.NONE) {
+
+                if (tfPrecip.getLeft() == Biome.Precipitation.RAIN) {
+                    if (!CFCommonConfig.canGutterCollectRain()) return;
+                    if (!testFluidFilter(Fluids.WATER)) return;                         // 过滤器检查
+                    if (!currentFluid.isEmpty() && !currentFluid.getFluid().isSame(Fluids.WATER)) return;
+
+                    accumulateAndFill(new FluidStack(Fluids.WATER, 1), true);
+                    return;
+                }
+
+
+
+                if (tfPrecip.getLeft() == Biome.Precipitation.SNOW) {
+                    if (!CFCommonConfig.canGutterCollectSnow()) return;
+                    FluidStack snowStack = CFFluid.getPowderSnowFluidStack(1);
+                    if (!testFluidFilter(snowStack)) return;                           // 过滤器检查
+                    if (!currentFluid.isEmpty() && !CFFluid.isPowderSnowFluid(currentFluid.getFluid())) return;
+
+                    accumulateAndFill(snowStack, true);
+                    return;
+                }
+            }
+        }
+
+        // === 降级：原版天气判断 ===
+        if (!level.isRaining()) return;
+
+        Biome.Precipitation precipitation = level.getBiome(worldPosition).value()
+                .getPrecipitationAt(worldPosition.above());
+        if (precipitation == Biome.Precipitation.NONE) return;
+
         if (precipitation == Biome.Precipitation.RAIN) {
             if (!CFCommonConfig.canGutterCollectRain()) return;
-
-            // 过滤器检查
             if (!testFluidFilter(Fluids.WATER)) return;
+            if (!currentFluid.isEmpty() && !currentFluid.getFluid().isSame(Fluids.WATER)) return;
 
-            if (!currentFluid.isEmpty() && !currentFluid.getFluid().isSame(Fluids.WATER)) {
-                return;
-            }
             accumulateAndFill(new FluidStack(Fluids.WATER, 1), true);
 
         } else if (precipitation == Biome.Precipitation.SNOW) {
             if (!CFCommonConfig.canGutterCollectSnow()) return;
+            FluidStack snowStack = CFFluid.getPowderSnowFluidStack(1);
+            if (!testFluidFilter(snowStack)) return;
+            if (!currentFluid.isEmpty() && !CFFluid.isPowderSnowFluid(currentFluid.getFluid())) return;
 
-            FluidStack snowFluid = CFFluid.getPowderSnowFluidStack(1);
-            // 过滤器检查
-            if (!testFluidFilter(snowFluid)) return;
-
-            if (!currentFluid.isEmpty() && !CFFluid.isPowderSnowFluid(currentFluid.getFluid())) {
-                return;
-            }
-            accumulateAndFill(snowFluid, true);
+            accumulateAndFill(snowStack, true);
         }
     }
 
