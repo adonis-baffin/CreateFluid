@@ -3,17 +3,19 @@
   "category": "misc",
   "key": {
     "A": {
-      "tag": "forge:ingots/copper"
-    },
-    "C": {
       "tag": "forge:plates/copper"
+    },
+    "B": {
+      "item": "minecraft:water_bucket"
     }
   },
   "pattern": [
-    "AC"
+    " A ",
+    " B ",
+    " A "
   ],
   "result": {
-    "item": "fluid:fluid_interface"
+    "item": "fluid:copper_sink"
   },
   "show_notification": true
 }

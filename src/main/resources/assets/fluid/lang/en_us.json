@@ -6,6 +6,7 @@
   "block.fluid.copper_tap": "Copper Tap",
   "block.fluid.gutter_outlet": "Gutter Outlet",
   "block.fluid.smart_gutter_outlet": "Smart Gutter Outlet",
+  "block.fluid.copper_sink": "Copper Sink",
   "item.fluid.honeycomb_mold": "Honeycomb Mold",
   "item.fluid.honeycomb_mold.tooltip.summary": "Used for honeycomb compacting recipe",
   "item.fluid.baton": "Conductor's Baton",
@@ -57,6 +58,9 @@
   "create.fluid.baton.ejector.invalid_target": "Invalid target position",
   "create.fluid.baton.ejector.target_cleared": "Target position cleared",
   "create.fluid.baton.interaction_point_removed": "Interaction point removed",
+
+  "block.fluid.copper_sink.tooltip.summary": "A beautiful copper sink that always stays full. Any fluid input is destroyed；Infinite water output",
+  "create.block.fluid.copper_sink.infinite_source": "Infinite Water Source",
 
   "create_fluid.centrifugal_pump.pump_mode": "Pump Mode",
   "create_fluid.centrifugal_pump.mode.pump_in": "Pump in",

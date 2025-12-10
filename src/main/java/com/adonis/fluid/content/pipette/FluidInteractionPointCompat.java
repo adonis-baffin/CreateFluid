@@ -128,6 +128,22 @@ public class FluidInteractionPointCompat {
                     FluidInteractionPoint::new
             );
         }
+
+        // 智能集水器
+        if (CFBlock.SMART_GUTTER_OUTLET != null) {
+            FluidInteractionPointTypes.register(
+                    CFBlock.SMART_GUTTER_OUTLET.get(),
+                    FluidInteractionPoint::new
+            );
+        }
+
+        // 铜水槽
+        if (CFBlock.COPPER_SINK != null) {
+            FluidInteractionPointTypes.register(
+                    CFBlock.COPPER_SINK.get(),
+                    FluidInteractionPoint::new
+            );
+        }
     }
 
     /**

@@ -8,6 +8,7 @@ import com.simibubi.create.content.kinetics.belt.behaviour.DirectBeltInputBehavi
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.fluid.SmartFluidTankBehaviour;
+import com.simibubi.create.foundation.item.TooltipHelper;
 import com.simibubi.create.foundation.utility.CreateLang;
 import net.createmod.catnip.animation.LerpedFloat;
 import net.createmod.catnip.lang.LangBuilder;
@@ -542,17 +543,17 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
      * 在工程师护目镜信息中添加收集状态
      */
     private void addCollectionStatusInfo(List<Component> tooltip) {
-        // 世界流体收集状态
+        if (drainer != null && drainer.isInfinite()) {
+            // 直接复用软管滑轮的提示方式
+            TooltipHelper.addHint(tooltip, "hint.hose_pulley");
+            return;
+        }
+
+        // 其他情况（有限源、搜索中、滴水石锥等）保持原有显示
         if (drainer != null) {
             if (drainer.isCurrentlySearching()) {
                 CreateLang.text("Searching...")
                         .style(ChatFormatting.YELLOW)
-                        .forGoggles(tooltip, 1);
-            } else if (drainer.isInfinite()) {
-                CreateLang.text("∞ ")
-                        .style(ChatFormatting.AQUA)
-                        .add(CreateLang.text("Infinite Source")
-                                .style(ChatFormatting.DARK_AQUA))
                         .forGoggles(tooltip, 1);
             } else if (drainer.hasFluidToDrain()) {
                 int sourceCount = drainer.getSourceCount();
@@ -565,25 +566,21 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
             }
         }
 
-        // 滴水石锥收集状态（客户端安全版本）
+        // 滴水石锥提示保持不变
         if (level != null) {
             BlockPos tipPos = findStalactiteTipAbove();
             if (tipPos != null) {
-                // 客户端不调用 getCauldronFillFluidType，直接根据当前流体或简单判断显示
                 FluidStack currentFluid = getFluid();
                 if (!currentFluid.isEmpty()) {
                     String fluidName = currentFluid.getFluid().isSame(Fluids.LAVA) ? "Lava" : "Water";
-                    CreateLang.text("☵ ")
+                    CreateLang.text("Dripping ")
                             .style(ChatFormatting.GRAY)
-                            .add(CreateLang.text("Dripping " + fluidName)
+                            .add(CreateLang.text(fluidName)
                                     .style(currentFluid.getFluid().isSame(Fluids.LAVA) ? ChatFormatting.GOLD : ChatFormatting.AQUA))
                             .forGoggles(tooltip, 1);
                 } else {
-                    // 容器为空时，显示正在滴落
-                    CreateLang.text("☵ ")
-                            .style(ChatFormatting.GRAY)
-                            .add(CreateLang.text("Dripstone Active")
-                                    .style(ChatFormatting.GREEN))
+                    CreateLang.text("Dripstone Active")
+                            .style(ChatFormatting.GREEN)
                             .forGoggles(tooltip, 1);
                 }
             }

@@ -8,6 +8,7 @@
 		"3": "fluid:block/copper_sink",
 		"particle": "fluid:block/copper_sink"
 	},
+  "render_type": "minecraft:cutout",
 	"elements": [
 		{
 			"name": "outside",

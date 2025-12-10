@@ -3,6 +3,7 @@ package com.adonis.fluid.registry;
 import static com.adonis.fluid.CreateFluid.REGISTRATE;
 import static com.simibubi.create.foundation.data.TagGen.axeOrPickaxe;
 import com.adonis.fluid.CreateFluid;
+import com.adonis.fluid.block.CopperSink.CopperSinkBlock;
 import com.adonis.fluid.block.CopperTap.CopperTapBlock;
 import com.adonis.fluid.block.GutterOutlet.GutterOutletBlock;
 import com.adonis.fluid.block.GutterOutlet.SmartGutterOutletBlock;
@@ -254,6 +255,22 @@ public class CFBlock {
             .item()
             .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), prov.modLoc("block/gutter_outlet")))
             .build()
+            .register();
+
+    public static final BlockEntry<CopperSinkBlock> COPPER_SINK = REGISTRATE
+            .block("copper_sink", CopperSinkBlock::new)
+            .initialProperties(SharedProperties::copperMetal)
+            .properties(p -> p
+                    .mapColor(MapColor.COLOR_ORANGE)
+                    .sound(SoundType.COPPER)
+                    .strength(3.5f)
+                    .noOcclusion())
+            .transform(axeOrPickaxe())
+            // 重点：modLoc 必须是 "fluid:block/xxx"
+            .blockstate((c, p) -> p.horizontalBlock(c.get(),
+                    p.models().getExistingFile(p.modLoc("block/copper_sink"))))
+            .item()
+            .transform(ModelGen.customItemModel("copper_sink"))
             .register();
 
     public static void register() {
