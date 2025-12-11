@@ -55,7 +55,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PipetteBlockEntity extends KineticBlockEntity implements TransformableBlockEntity, IRemoteFluidProcessor, IHaveGoggleInformation {
-    // 字段定义
     public List<FluidInteractionPoint> inputs = new ArrayList<>();
     public List<FluidInteractionPoint> outputs = new ArrayList<>();
     public ListTag interactionPointTag = null;
@@ -83,26 +82,22 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
     private static final int PROCESSING_TIME = 20;
     private VirtualRelayManager.VirtualRelay activeRelay = null;
 
-    // 修改速度阈值常量
     private static final float HIGH_SPEED_THRESHOLD = 64.0F;
     private static final float LOW_SPEED_THRESHOLD = 32.0F;
     private float previousProgressForInjection = 0.0F;
     private boolean continuousProcessing = false;
     private int continuousProcessingCount = 0;
 
-    // 在字段定义区域添加
     protected int returnTargetIndex = -1;
-    private FluidStack pendingFluidForItem = FluidStack.EMPTY;  // 记录需要取的流体类型
-    private int pendingInputIndex = -1;  // 记录需要去取液的输入点索引
+    private FluidStack pendingFluidForItem = FluidStack.EMPTY;
+    private int pendingInputIndex = -1;
 
-    // 添加速度模式枚举
     public enum SpeedMode {
         ULTRA_LOW,  // < 32
         LOW,        // 32-64
         HIGH        // >= 64
     }
 
-    // 添加传送带处理相关字段
     private boolean processingBelt = false;
     private BlockPos processingBeltPos = null;
     private boolean isServingBelt = false;
@@ -110,7 +105,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
     private boolean isPerformingInjection = false;
     private float injectionStartProgress = 0.8f;
 
-    // 流体相关常量
     private static final int TRANSFER_AMOUNT = 1000;
     private static final int FLUID_CAPACITY = 1000;
 
@@ -196,7 +190,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         continuousProcessingCount = 0;
     }
 
-    // 高速处理
     private void handleHighSpeedInjection() {
         injectionStartProgress = 0.8f;
 
@@ -218,7 +211,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         }
     }
 
-    // 低速处理
     private void handleLowSpeedInjection() {
         injectionStartProgress = 0.6f;
 
@@ -242,27 +234,21 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         }
     }
 
-    // 超低速处理
     private void handleUltraLowSpeedInjection() {
-        // 超低速时非常早触发
         injectionStartProgress = 0.3f;
 
         if (this.phase == Phase.MOVE_TO_OUTPUT && processingBelt) {
-            // 超低速时，一旦开始移动就通知
             if (!isPerformingInjection && this.chasedPointProgress > 0.1F) {
                 isPerformingInjection = true;
-                // 立即通知，让物品等待移液器
                 notifyRelayInjectionReady(processingBeltPos);
 
                 if (!level.isClientSide) {
-                    // 根据实际速度计算需要的时间
                     float speed = Math.abs(this.getSpeed());
                     int ticksToComplete = (int)((1.0F - this.chasedPointProgress) * 1024.0F / Math.max(speed, 1.0F));
                     beltProcessingTicks = Math.max(ticksToComplete + 10, 40);
                 }
             }
 
-            // 保持状态直到真正完成
             if (this.chasedPointProgress >= 1.0F) {
                 isPerformingInjection = false;
             }
@@ -272,7 +258,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
     public boolean willReachInjectionPoint() {
         if (this.phase != Phase.MOVE_TO_OUTPUT) return false;
 
-        // 只在高速时使用预测
         if (!isHighSpeed()) return false;
 
         float speed = Math.abs(this.getSpeed());
@@ -289,7 +274,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
     }
 
     public void notifyRelayInjectionReady(BlockPos beltPos) {
-        // 通知虚拟中继器可以开始注液
         VirtualRelayManager.notifyInjectionReady(beltPos);
     }
 
@@ -501,7 +485,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             processingTicks++;
         }
 
-        // 根据速度选择不同的处理策略
         SpeedMode mode = getSpeedMode();
         switch (mode) {
             case HIGH:
@@ -526,7 +509,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             }
         }
 
-        // 保存进度用于下一tick的比较
         previousProgressForInjection = this.chasedPointProgress;
 
         this.initInteractionPoints();
@@ -542,7 +524,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                     point.keepAlive();
                 }
             } else if (this.phase == Phase.MOVE_TO_RETURN) {
-                // 归还移动中也保持目标活跃
                 FluidInteractionPoint point = this.getReturnTargetPoint();
                 if (point != null) {
                     point.keepAlive();
@@ -581,15 +562,10 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             return;
         }
 
-        // 终极保险：只要正在给传送带服务，就坚决不归还！（不管有没有物品）
-        // 因为 VirtualRelayManager 会在最后一个物品处理完后调用 onBeltProcessingFinished()
-        // 那时候我们再放开归还
         if (this.isServingBelt) {
             return;
         }
 
-        // 下面才是真正的“空闲归还”逻辑
-        // 1. 先看有没有非传送带的活干
         for (int i = 0; i < this.outputs.size(); i++) {
             FluidInteractionPoint point = this.outputs.get(i);
             if (point instanceof BeltFluidInteractionPoint) continue;
@@ -600,7 +576,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             }
         }
 
-        // 2. 没有非传送带任务，看有没有需要换液的非传送带物品
         for (FluidInteractionPoint output : this.outputs) {
             if (output instanceof BeltFluidInteractionPoint) continue;
             if (output instanceof DepotFluidInteractionPoint depotPoint) {
@@ -623,7 +598,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             }
         }
 
-        // 3. 完全空闲 → 归还流体
         FluidInteractionPoint returnTarget = findFluidReturnTarget(this.heldFluid);
         if (returnTarget != null) {
             this.pendingFluidForItem = FluidStack.EMPTY;
@@ -632,7 +606,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             return;
         }
 
-        // 4. 实在没地方还 → 丢掉（防止卡死）
         if (!level.isClientSide && !heldFluid.isEmpty()) {
             net.minecraft.world.Containers.dropItemStack(
                     level,
@@ -670,7 +643,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         float speed = Math.abs(this.getSpeed());
         float increment = Math.min(256.0F, speed) / 1024.0F;
 
-        // 根据速度模式调整增量限制
         if (isHighSpeed()) {
             if (speed >= 256.0F && increment > 0.2F) {
                 increment = 0.2F;
@@ -746,7 +718,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         } else if (this.phase == Phase.MOVE_TO_OUTPUT && this.chasedPointIndex < this.outputs.size()) {
             return this.outputs.get(this.chasedPointIndex);
         } else if (this.phase == Phase.MOVE_TO_RETURN) {
-            // 归还阶段使用 returnTargetIndex
             return this.getReturnTargetPoint();
         }
 
@@ -792,7 +763,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             if (output instanceof DepotFluidInteractionPoint depotPoint && depotPoint.hasItemForFilling()) {
                 ItemStack item = depotPoint.getItemForFilling();
 
-                // 手里流体正好能填这个物品 → 直接去注液
                 if (!heldFluid.isEmpty() && canFluidProcessItem(heldFluid, item)) {
                     this.phase = Phase.SEARCH_OUTPUTS;
                     this.chasedPointProgress = 1.0F;
@@ -801,7 +771,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                     return;
                 }
 
-                // 手里流体不对 → 先归还，再取正确的
                 int[] idx = new int[1];
                 FluidStack needed = findFluidForItem(item, idx);
                 if (!needed.isEmpty()) {
@@ -816,7 +785,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             }
         }
 
-        // Step 2: 手里有流体 → 优先尝试输出到任意能接受的地方（包括普通容器）
         if (!heldFluid.isEmpty()) {
             boolean canOutputSomewhere = false;
             for (FluidInteractionPoint output : outputs) {
@@ -835,7 +803,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                 return;
             }
 
-            // 输出不了 → 尝试归还
             FluidInteractionPoint returnTarget = findFluidReturnTarget(heldFluid);
             if (returnTarget != null) {
                 pendingFluidForItem = FluidStack.EMPTY;
@@ -844,12 +811,9 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                 return;
             }
 
-            // 完全没地方放 → 只能等
             return;
         }
 
-        // Step 3: 手里没流体 && 目前没有任何注液需求 → 才执行“普通流体转运”
-        // 即：从输入点取液 → 只要有一个输出点能接受就行
         boolean foundInput = false;
         int startIndex = selectionMode.get() == SelectionMode.PREFER_FIRST ? 0 : lastInputIndex + 1;
         int size = inputs.size();
@@ -863,7 +827,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             FluidStack available = point.extract(TRANSFER_AMOUNT, true);
             if (available.isEmpty()) continue;
 
-            // 关键：只要有一个非传送带的输出点能接受这瓶流体，就开始取液
             if (canFluidBeOutputtedToNonBelt(available)) {
                 selectIndex(true, index);
                 foundInput = true;
@@ -875,15 +838,11 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             lastInputIndex = -1;
         }
     }
-    /**
-     * 检查流体是否可以输出到非传送带的目标
-     * 传送带的流体输出由 VirtualRelayManager 通过 requestFluidForItem 请求
-     */
+
     private boolean canFluidBeOutputtedToNonBelt(FluidStack fluid) {
         if (fluid.isEmpty()) return false;
 
         for (FluidInteractionPoint output : this.outputs) {
-            // 跳过传送带
             if (output instanceof BeltFluidInteractionPoint) {
                 continue;
             }
@@ -904,9 +863,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         return false;
     }
 
-    /**
-     * 开始归还流体阶段
-     */
     private void startReturnFluidPhase() {
         if (this.heldFluid.isEmpty()) {
             this.phase = Phase.SEARCH_INPUTS;
@@ -927,14 +883,10 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         searchForReturnDestination();
     }
 
-    /**
-     * 搜索归还目标并开始移动
-     */
     protected void searchForReturnDestination() {
         FluidInteractionPoint returnTarget = getReturnTargetPoint();
 
         if (returnTarget == null || !returnTarget.isValid() || !returnTarget.canInsert(this.heldFluid)) {
-            // 归还目标无效，重置
             this.returnTargetIndex = -1;
             this.pendingFluidForItem = FluidStack.EMPTY;
             this.pendingInputIndex = -1;
@@ -946,21 +898,16 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
 
         this.phase = Phase.MOVE_TO_RETURN;
         this.chasedPointProgress = 0.0F;
-        // chasedPointIndex 用于动画，设置为一个标记值
         this.chasedPointIndex = returnTargetIndex;
 
         this.sendData();
         this.setChanged();
     }
 
-    /**
-     * 执行流体归还
-     */
     protected void returnFluid() {
         FluidInteractionPoint returnTarget = getReturnTargetPoint();
 
         if (returnTarget == null || !returnTarget.isValid()) {
-            // 归还目标无效
             resetReturnState();
             this.phase = Phase.SEARCH_INPUTS;
             this.sendData();
@@ -968,35 +915,28 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             return;
         }
 
-        // 尝试归还流体
         FluidStack toReturn = this.heldFluid.copy();
         FluidStack remainder = returnTarget.insert(toReturn, false);
         this.heldFluid = remainder;
 
-        // 播放声音
         if (remainder.getAmount() < toReturn.getAmount()) {
             this.level.playSound(null, this.worldPosition, SoundEvents.BUCKET_EMPTY,
                     SoundSource.BLOCKS, 0.125F, 0.5F + this.level.random.nextFloat() * 0.25F);
         }
 
-        // 检查是否有待处理的取液任务
         if (this.heldFluid.isEmpty() && !this.pendingFluidForItem.isEmpty() && this.pendingInputIndex >= 0) {
-            // 流体已归还完毕，去取需要的流体
             this.selectIndex(true, this.pendingInputIndex);
             resetReturnState();
         } else if (this.heldFluid.isEmpty()) {
-            // 流体归还完毕，无待处理任务
             resetReturnState();
             this.phase = Phase.SEARCH_INPUTS;
         } else {
-            // 还有流体没归还完（目标容器满了），尝试找其他目标
             FluidInteractionPoint newTarget = findFluidReturnTarget(this.heldFluid);
             if (newTarget != null && newTarget != returnTarget) {
                 this.returnTargetIndex = getReturnTargetIndex(newTarget);
                 this.phase = Phase.RETURN_FLUID;
                 searchForReturnDestination();
             } else {
-                // 无法继续归还，带着剩余流体搜索任务
                 resetReturnState();
                 this.phase = Phase.SEARCH_INPUTS;
             }
@@ -1008,18 +948,12 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         this.setChanged();
     }
 
-    /**
-     * 重置归还状态
-     */
     private void resetReturnState() {
         this.returnTargetIndex = -1;
         this.pendingFluidForItem = FluidStack.EMPTY;
         this.pendingInputIndex = -1;
     }
 
-    /**
-     * 检查流体是否可用于指定物品的加工
-     */
     private boolean canFluidProcessItem(FluidStack fluid, ItemStack item) {
         if (fluid.isEmpty() || item.isEmpty()) return false;
         if (!FillingBySpout.canItemBeFilled(level, item)) return false;
@@ -1027,10 +961,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         return required > 0 && required <= fluid.getAmount();
     }
 
-    /**
-     * 检查输入点是否有可用于指定物品加工的流体
-     * 返回流体副本，如果没有则返回 EMPTY
-     */
     private FluidStack findFluidForItem(ItemStack item, int[] outInputIndex) {
         if (item.isEmpty() || !FillingBySpout.canItemBeFilled(level, item)) {
             return FluidStack.EMPTY;
@@ -1054,15 +984,9 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         return FluidStack.EMPTY;
     }
 
-    /**
-     * 查找可以接收当前流体的容器
-     * 优先查找纯流体容器，其次是输入源
-     */
     @Nullable
     private FluidInteractionPoint findFluidReturnTarget(FluidStack fluid) {
         if (fluid.isEmpty()) return null;
-
-        // 首先检查输出点中的纯流体容器（排除传送带和置物台）
         for (FluidInteractionPoint output : outputs) {
             if (output instanceof BeltFluidInteractionPoint) continue;
             if (output instanceof DepotFluidInteractionPoint) continue;
@@ -1072,7 +996,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             }
         }
 
-        // 然后检查输入源是否可以放回
         for (FluidInteractionPoint input : inputs) {
             if (input.isValid() && input.canInsert(fluid)) {
                 return input;
@@ -1082,29 +1005,20 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         return null;
     }
 
-    /**
-     * 获取归还目标在所有交互点中的索引
-     * 用于动画系统定位
-     */
     private int getReturnTargetIndex(FluidInteractionPoint target) {
-        // 先在 outputs 中查找
         for (int i = 0; i < outputs.size(); i++) {
             if (outputs.get(i) == target) {
                 return i;
             }
         }
-        // 再在 inputs 中查找（使用负索引或特殊标记）
         for (int i = 0; i < inputs.size(); i++) {
             if (inputs.get(i) == target) {
-                return -(i + 1);  // 使用负数表示是输入点
+                return -(i + 1);
             }
         }
         return -1;
     }
 
-    /**
-     * 根据索引获取归还目标点
-     */
     @Nullable
     private FluidInteractionPoint getReturnTargetPoint() {
         if (returnTargetIndex >= 0 && returnTargetIndex < outputs.size()) {
@@ -1118,9 +1032,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         return null;
     }
 
-    /**
-     * 检查是否有需要加工的物品（置物台或传送带上）
-     */
     private boolean hasItemsNeedingProcessing() {
         for (FluidInteractionPoint output : outputs) {
             if (output instanceof DepotFluidInteractionPoint depotPoint) {
@@ -1128,8 +1039,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                     return true;
                 }
             } else if (output instanceof BeltFluidInteractionPoint) {
-                // 传送带上的物品由 VirtualRelayManager 处理，这里简化判断
-                // 如果传送带是有效的输出点，认为可能有物品
                 if (output.isValid()) {
                     return true;
                 }
@@ -1163,7 +1072,7 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         this.beltProcessingTicks = 0;
         this.isPerformingInjection = false;
 
-        this.isServingBelt = false;  // 新增这行！清零标记，让系统能进入归还逻辑
+        this.isServingBelt = false;
 
         sendData();
         setChanged();
@@ -1362,17 +1271,19 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             this.heldFluid = remainder;
         }
 
-        // 修改这里：确保进入正确的搜索阶段
-// 修改这里：
         if (this.heldFluid.isEmpty()) {
             this.phase = Phase.SEARCH_INPUTS;
+            this.chasedPointProgress = 1.0F;
+            this.chasedPointIndex = -1;
+        } else if (point instanceof DepotFluidInteractionPoint) {
+            this.phase = Phase.SEARCH_INPUTS;
+            this.chasedPointProgress = 1.0F;
         } else {
-            // 永远进入 SEARCH_OUTPUTS，让 searchForDestinationOrReturn 决定要不要归还
             this.phase = Phase.SEARCH_OUTPUTS;
+            this.chasedPointProgress = 1.0F;
+            this.chasedPointIndex = -1;
         }
-        this.chasedPointProgress = 1.0F;
-        this.chasedPointProgress = 1.0F;  // 设为1.0确保下一tick能触发搜索
-        this.chasedPointIndex = -1;
+
         this.sendData();
         this.setChanged();
     }
@@ -1399,7 +1310,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                 maxCanExtract = FLUID_CAPACITY - this.heldFluid.getAmount();
 
                 if (maxCanExtract <= 0) {
-                    // 改为 SEARCH_INPUTS，让系统决定下一步
                     this.phase = Phase.SEARCH_INPUTS;
                     this.chasedPointProgress = 1.0F;
                     this.chasedPointIndex = -1;
@@ -1411,7 +1321,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
 
             int extractAmount = Math.min(TRANSFER_AMOUNT, maxCanExtract);
 
-            // 为传送带请求取液
             if (pendingBeltRequest != null && !pendingBeltItem.isEmpty()) {
                 FluidStack extracted = point.extract(extractAmount, false);
                 if (!extracted.isEmpty()) {
@@ -1430,12 +1339,10 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                         return;
                     }
 
-                    // 为传送带取液完成，回到 SEARCH_INPUTS 等待 VirtualRelayManager
                     this.phase = Phase.SEARCH_INPUTS;
                     this.chasedPointProgress = 1.0F;
                     this.chasedPointIndex = -1;
 
-                    // 清除待处理请求
                     pendingBeltRequest = null;
                     pendingBeltItem = ItemStack.EMPTY;
 
@@ -1448,7 +1355,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                 }
             }
 
-            // 为非传送带目标取液（如置物台）
             FluidStack extracted = point.extract(extractAmount, false);
             if (!extracted.isEmpty()) {
                 if (!this.heldFluid.isEmpty() && this.heldFluid.isFluidEqual(extracted)) {
@@ -1457,7 +1363,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                     this.heldFluid = extracted;
                 }
 
-                // 进入 SEARCH_INPUTS，让 searchForFluid 决定下一步
                 this.phase = Phase.SEARCH_INPUTS;
                 this.chasedPointProgress = 1.0F;
                 this.chasedPointIndex = -1;
@@ -1535,7 +1440,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
 
     protected void initInteractionPoints() {
         if (this.updateInteractionPoints && this.interactionPointTag != null) {
-            // 关键修改：客户端加载时直接跳过区域加载检查！
             boolean shouldCheckArea = !level.isClientSide;
 
             if (!shouldCheckArea || this.isAreaActuallyLoaded(this.worldPosition, getRange() + 1)) {
@@ -1597,7 +1501,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         compound.putInt("TargetPointIndex", this.chasedPointIndex);
         compound.putFloat("MovementProgress", this.chasedPointProgress);
 
-        // 新增：归还相关数据
         compound.putInt("ReturnTargetIndex", this.returnTargetIndex);
         if (!this.pendingFluidForItem.isEmpty()) {
             compound.put("PendingFluid", this.pendingFluidForItem.writeToNBT(new CompoundTag()));
@@ -1608,8 +1511,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             compound.putBoolean("ProcessingBelt", true);
             compound.putLong("ProcessingBeltPos", processingBeltPos.asLong());
             compound.putInt("BeltProcessingTicks", beltProcessingTicks);
-
-            // 新增：保存 isServingBelt 状态
             compound.putBoolean("IsServingBelt", this.isServingBelt);
         }
     }
@@ -1636,8 +1537,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         this.redstoneLocked = compound.getBoolean("Powered");
         boolean hadGoggles = this.goggles;
         this.goggles = compound.getBoolean("Goggles");
-
-        // 新增：读取归还相关数据
         this.returnTargetIndex = compound.getInt("ReturnTargetIndex");
         if (compound.contains("PendingFluid")) {
             this.pendingFluidForItem = FluidStack.loadFluidStackFromNBT(compound.getCompound("PendingFluid"));
@@ -1657,18 +1556,16 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                 DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> VisualizationHelper.queueUpdate(this));
             }
 
-            // ========== 关键修复：强制客户端重新解析交互点 ==========
             boolean forceUpdate = compound.contains("ForceUpdate") && compound.getBoolean("ForceUpdate");
             boolean hasInteractionPoints = this.interactionPointTag != null && !this.interactionPointTag.isEmpty();
             boolean tagChanged = interactionPointTagBefore == null ||
                     interactionPointTagBefore.size() != this.interactionPointTag.size();
 
             if (forceUpdate || hasInteractionPoints || tagChanged) {
-                this.updateInteractionPoints = true;  // 强制下次tick重新初始化
-                this.inputs.clear();                  // 清空旧列表，防止残留空数据
-                this.outputs.clear();                 // 清空旧列表
+                this.updateInteractionPoints = true;
+                this.inputs.clear();
+                this.outputs.clear();
             }
-            // ========================================================
 
             boolean forceUpdateOld = compound.getBoolean("ForceUpdate");
             boolean tagChangedOld = interactionPointTagBefore == null ||
@@ -1771,13 +1668,10 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
         this.isServingBelt = true;
         this.isPerformingInjection = false;
 
-        // 根据当前状态决定动画时长
         if (this.phase == Phase.SEARCH_OUTPUTS ||
                 (this.phase == Phase.MOVE_TO_OUTPUT && this.chasedPointProgress < 0.5f)) {
-            // 需要完整移动
             this.beltProcessingTicks = 20;
         } else {
-            // 已经在路上或接近目标
             this.beltProcessingTicks = 10;
         }
 
@@ -1785,7 +1679,6 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             if (outputs.get(i).getPos().equals(beltPos)) {
                 this.phase = Phase.MOVE_TO_OUTPUT;
                 this.chasedPointIndex = i;
-                // 如果不是已经在移动，才重置进度
                 if (this.chasedPointProgress >= 1.0F) {
                     this.chasedPointProgress = 0.0F;
                 }
@@ -1823,12 +1716,12 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
     }
 
     public enum Phase {
-        SEARCH_INPUTS,      // 搜索输入（取液源）
-        MOVE_TO_INPUT,      // 移动到输入点取液
-        SEARCH_OUTPUTS,     // 搜索输出（注液目标）
-        MOVE_TO_OUTPUT,     // 移动到输出点注液
-        RETURN_FLUID,       // 搜索归还目标
-        MOVE_TO_RETURN      // 移动到归还位置
+        SEARCH_INPUTS,
+        MOVE_TO_INPUT,
+        SEARCH_OUTPUTS,
+        MOVE_TO_OUTPUT,
+        RETURN_FLUID,
+        MOVE_TO_RETURN
     }
 
     public enum SelectionMode implements INamedIconOptions {

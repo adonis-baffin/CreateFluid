@@ -58,12 +58,11 @@ public class GutterOutletRenderer extends SmartBlockEntityRenderer<GutterOutletB
         int color = clientFluid.getTintColor(fluidStack);
         VertexConsumer builder = buffer.getBuffer(RenderType.translucent());
 
-        // 流体 Y 范围：5/16 到 14/16
         float baseY = 5f / 16f;
         float maxHeight = 9f / 16f; // 14/16 - 5/16 = 9/16
         float currentY = baseY + maxHeight * level;
 
-        boolean isNorthSouth = (facing.getAxis() == Direction.Axis.X);  // 改成 X
+        boolean isNorthSouth = (facing.getAxis() == Direction.Axis.X);
 
         ms.pushPose();
 
@@ -76,93 +75,67 @@ public class GutterOutletRenderer extends SmartBlockEntityRenderer<GutterOutletB
         ms.popPose();
     }
 
-    /**
-     * 南北朝向时的流体渲染
-     * 宽面在南北（Z方向宽），窄面在东西（X方向窄）
-     */
-    /**
-     * 南北朝向时的流体渲染（宽面在 Z 方向，窄面在 X 方向）
-     */
     private void renderNorthSouthFluid(VertexConsumer builder, PoseStack ms,
                                        TextureAtlasSprite texture, float topY, float bottomY,
-                                       int light, int color, float level) {  // 多传 level
+                                       int light, int color, float level) {
 
         float wallThickness = 2f / 16f;
 
-        // 底部永远窄（固定 7/16 宽）
         final float bottomMinX = 4.5f / 16f;
         final float bottomMaxX = 11.5f / 16f;
 
-        // 满水时的最大顶面宽度
         final float fullTopMinX = wallThickness + 0.5f / 16f;   // ~2.5/16
         final float fullTopMaxX = 1f - wallThickness - 0.5f / 16f; // ~13.5/16
 
-        // 关键：当前液面宽度随水位线性插值
         float currentTopMinX = lerp(bottomMinX, fullTopMinX, level);
         float currentTopMaxX = lerp(bottomMaxX, fullTopMaxX, level);
 
         float zMin = 1f / 16f;
         float zMax = 15f / 16f;
 
-        // === 顶面：使用随水位变化的宽度 ===
         FluidRenderHelper.renderStillTiledFace(Direction.UP,
                 currentTopMinX, zMin, currentTopMaxX, zMax, topY,
                 builder, ms, light, color, texture);
 
-        // === 底面：永远用窄的 ===
         if (bottomY > 0f) {
             FluidRenderHelper.renderStillTiledFace(Direction.DOWN,
                     bottomMinX, zMin, bottomMaxX, zMax, bottomY,
                     builder, ms, light, color, texture);
         }
 
-        // === 四侧斜面：把当前顶面边界传进去，斜率自动正确 ===
         renderNorthSouthSides(builder, ms, texture,
                 bottomMinX, bottomMaxX, currentTopMinX, currentTopMaxX,
                 bottomY, topY, zMin, zMax, light, color);
     }
 
-    /**
-     * 东西朝向时的流体渲染
-     * 宽面在东西（X方向宽），窄面在南北（Z方向窄）
-     */
-    /**
-     * 东西朝向时的流体渲染（宽面在 X 方向，窄面在 Z 方向）
-     */
     private void renderEastWestFluid(VertexConsumer builder, PoseStack ms,
                                      TextureAtlasSprite texture, float topY, float bottomY,
                                      int light, int color, float level) {  // 多传 level
 
         float wallThickness = 2f / 16f;
 
-        // 底部永远窄
         final float bottomMinZ = 4.5f / 16f;
         final float bottomMaxZ = 11.5f / 16f;
 
-        // 满水时的最大顶面宽度
         final float fullTopMinZ = wallThickness + 0.5f / 16f;
         final float fullTopMaxZ = 1f - wallThickness - 0.5f / 16f;
 
-        // 当前液面宽度随水位插值
         float currentTopMinZ = lerp(bottomMinZ, fullTopMinZ, level);
         float currentTopMaxZ = lerp(bottomMaxZ, fullTopMaxZ, level);
 
         float xMin = 1f / 16f;
         float xMax = 15f / 16f;
 
-        // === 顶面 ===
         FluidRenderHelper.renderStillTiledFace(Direction.UP,
                 xMin, currentTopMinZ, xMax, currentTopMaxZ, topY,
                 builder, ms, light, color, texture);
 
-        // === 底面 ===
         if (bottomY > 0f) {
             FluidRenderHelper.renderStillTiledFace(Direction.DOWN,
                     xMin, bottomMinZ, xMax, bottomMaxZ, bottomY,
                     builder, ms, light, color, texture);
         }
 
-        // === 四侧斜面 ===
         renderEastWestSides(builder, ms, texture,
                 bottomMinZ, bottomMaxZ, currentTopMinZ, currentTopMaxZ,
                 bottomY, topY, xMin, xMax, light, color);
@@ -182,7 +155,6 @@ public class GutterOutletRenderer extends SmartBlockEntityRenderer<GutterOutletB
         float minV = texture.getV0();
         float maxV = texture.getV1();
 
-        // 西侧斜面
         renderQuad(builder, ms,
                 topMinX, topY, zMax,
                 topMinX, topY, zMin,
@@ -191,7 +163,6 @@ public class GutterOutletRenderer extends SmartBlockEntityRenderer<GutterOutletB
                 minU, minV, maxU, maxV,
                 r * 0.6f, g * 0.6f, b * 0.6f, a, light);
 
-        // 东侧斜面
         renderQuad(builder, ms,
                 topMaxX, topY, zMin,
                 topMaxX, topY, zMax,
@@ -200,7 +171,6 @@ public class GutterOutletRenderer extends SmartBlockEntityRenderer<GutterOutletB
                 minU, minV, maxU, maxV,
                 r * 0.6f, g * 0.6f, b * 0.6f, a, light);
 
-        // 北侧端面
         if (zMin > 0) {
             renderQuad(builder, ms,
                     topMinX, topY, zMin,
@@ -211,7 +181,6 @@ public class GutterOutletRenderer extends SmartBlockEntityRenderer<GutterOutletB
                     r * 0.8f, g * 0.8f, b * 0.8f, a, light);
         }
 
-        // 南侧端面
         if (zMax < 1) {
             renderQuad(builder, ms,
                     topMaxX, topY, zMax,
@@ -237,7 +206,6 @@ public class GutterOutletRenderer extends SmartBlockEntityRenderer<GutterOutletB
         float minV = texture.getV0();
         float maxV = texture.getV1();
 
-        // 北侧斜面
         renderQuad(builder, ms,
                 xMin, topY, topMinZ,
                 xMax, topY, topMinZ,
@@ -246,7 +214,6 @@ public class GutterOutletRenderer extends SmartBlockEntityRenderer<GutterOutletB
                 minU, minV, maxU, maxV,
                 r * 0.6f, g * 0.6f, b * 0.6f, a, light);
 
-        // 南侧斜面
         renderQuad(builder, ms,
                 xMin, bottomY, bottomMaxZ,
                 xMax, bottomY, bottomMaxZ,
@@ -255,7 +222,6 @@ public class GutterOutletRenderer extends SmartBlockEntityRenderer<GutterOutletB
                 minU, minV, maxU, maxV,
                 r * 0.6f, g * 0.6f, b * 0.6f, a, light);
 
-        // 西侧端面
         if (xMin > 0) {
             renderQuad(builder, ms,
                     xMin, bottomY, bottomMinZ,
@@ -266,7 +232,6 @@ public class GutterOutletRenderer extends SmartBlockEntityRenderer<GutterOutletB
                     r * 0.8f, g * 0.8f, b * 0.8f, a, light);
         }
 
-        // 东侧端面
         if (xMax < 1) {
             renderQuad(builder, ms,
                     xMax, topY, topMinZ,
@@ -288,7 +253,6 @@ public class GutterOutletRenderer extends SmartBlockEntityRenderer<GutterOutletB
         var pose = ms.last().pose();
         var normal = ms.last().normal();
 
-        // 计算法线
         float e1x = x2 - x1;
         float e1y = y2 - y1;
         float e1z = z2 - z1;

@@ -84,9 +84,7 @@ public class VirtualRelayManager {
             int required = FillingBySpout.getRequiredAmountForItem(
                     workstation.getLevel(), singleItem, fluid);
 
-            // 情况1：没有流体或流体不足
             if (fluid.isEmpty() || required <= 0 || required > fluid.getAmount()) {
-                // 请求取液（移液器会自动处理流体不匹配的情况）
                 if (processor.requestFluidForItem(transported.stack, beltSegmentPos)) {
                     currentlyProcessing = transported;
                     waitingForFluid = true;
@@ -95,11 +93,9 @@ public class VirtualRelayManager {
                     particlesSent = false;
                     return BeltProcessingBehaviour.ProcessingResult.HOLD;
                 }
-                // 无法获取流体，让物品通过
                 return BeltProcessingBehaviour.ProcessingResult.PASS;
             }
 
-            // 情况2：流体充足且匹配，等待移液器就位
             if (required > 0 && required <= fluid.getAmount()) {
                 currentlyProcessing = transported;
                 waitingForFluid = false;
@@ -131,7 +127,6 @@ public class VirtualRelayManager {
                 return BeltProcessingBehaviour.ProcessingResult.PASS;
             }
 
-            // 等待流体阶段
             if (waitingForFluid) {
                 FluidStack fluid = processor.getHeldFluid();
                 ItemStack singleItem = ItemHandlerHelper.copyStackWithSize(transported.stack, 1);
@@ -147,7 +142,6 @@ public class VirtualRelayManager {
                 return BeltProcessingBehaviour.ProcessingResult.HOLD;
             }
 
-            // 等待移液器动画
             if (waitingForPipetteAnimation) {
                 if (processor instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
                     com.adonis.fluid.block.Pipette.PipetteBlockEntity.SpeedMode mode = pipette.getSpeedMode();
@@ -187,7 +181,6 @@ public class VirtualRelayManager {
                 return BeltProcessingBehaviour.ProcessingResult.HOLD;
             }
 
-            // 处理阶段
             if (localProcessingTicks > 0) {
                 localProcessingTicks--;
 
@@ -245,7 +238,6 @@ public class VirtualRelayManager {
                     resultTransported.stack = filledResult;
                     outList.add(resultTransported);
 
-                    // 消耗流体
                     fluid.shrink(required);
                     processor.syncFluid(fluid);
 
@@ -268,7 +260,6 @@ public class VirtualRelayManager {
                         handler.handleProcessingOnItem(transported, result);
                     }
 
-                    // 检查是否还有下一个物品需要处理
                     if (!bulk && transported.stack.getCount() > 1) {
                         ItemStack nextSingle = ItemHandlerHelper.copyStackWithSize(transported.stack, 1);
                         int nextRequired = FillingBySpout.getRequiredAmountForItem(level, nextSingle, fluid);
@@ -287,7 +278,7 @@ public class VirtualRelayManager {
                                         injectionReadySignalReceived = true;
                                         particlesSent = false;
                                         localProcessingTicks = 3;
-                                        return;  // 继续处理，不结束
+                                        return;
 
                                     case LOW:
                                         if (!pipette.isContinuousProcessing()) {
@@ -298,7 +289,7 @@ public class VirtualRelayManager {
                                         injectionReadySignalReceived = false;
                                         particlesSent = false;
                                         localProcessingTicks = 8;
-                                        return;  // 继续处理，不结束
+                                        return;
 
                                     case ULTRA_LOW:
                                         if (!pipette.isContinuousProcessing()) {
@@ -309,18 +300,16 @@ public class VirtualRelayManager {
                                         injectionReadySignalReceived = false;
                                         particlesSent = false;
                                         localProcessingTicks = -1;
-                                        return;  // 继续处理，不结束
+                                        return;
                                 }
                             }
                         }
                     }
 
-// 走到这里说明：这是最后一个物品！必须结束服务
                     if (processor instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
                         if (pipette.isContinuousProcessing()) {
                             pipette.endContinuousProcessing();
                         }
-                        // 关键！在这里调用结束服务
                         pipette.onBeltProcessingFinished(beltSegmentPos);
                     }
                 }
@@ -338,7 +327,6 @@ public class VirtualRelayManager {
         }
 
         private boolean canProcessInBulk() {
-            // 对于蜂蜜瓶这类物品，应该返回false以逐个处理
             return false;
         }
 
@@ -347,7 +335,6 @@ public class VirtualRelayManager {
         }
     }
 
-    // 注册工作站
     public static void registerWorkstation(BlockPos workstationPos, Level level, int range) {
         if (!(level.getBlockEntity(workstationPos) instanceof IRemoteFluidProcessor processor)) {
             return;
@@ -373,7 +360,6 @@ public class VirtualRelayManager {
         }
     }
 
-    // 注销工作站
     public static void unregisterWorkstation(BlockPos workstationPos) {
         Set<BlockPos> relayPositions = workstationToRelays.remove(workstationPos);
         if (relayPositions != null) {
@@ -381,20 +367,16 @@ public class VirtualRelayManager {
         }
     }
 
-    // 获取指定位置的中继器
     public static VirtualRelay getRelayAt(BlockPos pos) {
         return activeRelays.get(pos);
     }
 
-    // 更新工作站的中继器
     public static void updateWorkstationRelays(BlockPos workstationPos, Level level) {
         unregisterWorkstation(workstationPos);
         registerWorkstation(workstationPos, level, 5);
     }
 
-    // 新增：通知虚拟中继器注液准备就绪
     public static void notifyInjectionReady(BlockPos beltPos) {
-        // 查找对应的虚拟中继器
         BlockPos relayPos = beltPos.above(2);
         VirtualRelay relay = activeRelays.get(relayPos);
         if (relay != null) {

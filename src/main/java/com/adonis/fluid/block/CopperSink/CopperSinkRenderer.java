@@ -31,15 +31,12 @@ public class CopperSinkRenderer extends SmartBlockEntityRenderer<CopperSinkBlock
                 .apply(props.getStillTexture(fluid));
         int color = props.getTintColor(fluid);
         VertexConsumer vb = buffer.getBuffer(RenderType.translucent());
-        // 关键修复：留 0.01 的微小间隙，彻底消除 Z-Fighting 重影
         float x1 = 2.01f/16f, x2 = 13.99f/16f;
         float z1 = 2.01f/16f, z2 = 13.99f/16f;
         float yBot = 3.01f/16f;
         ms.pushPose();
-        // 顶面
         FluidRenderHelper.renderStillTiledFace(net.minecraft.core.Direction.UP,
                 x1, z1, x2, z2, topY, vb, ms, light, color, sprite);
-        // 四侧面
         renderSide(vb, ms, x1, topY, z1, x2, topY, z1, x2, yBot, z1, x1, yBot, z1, sprite, color, light); // 北
         renderSide(vb, ms, x2, topY, z2, x1, topY, z2, x1, yBot, z2, x2, yBot, z2, sprite, color, light); // 南
         renderSide(vb, ms, x1, topY, z1, x1, topY, z2, x1, yBot, z2, x1, yBot, z1, sprite, color, light); // 西

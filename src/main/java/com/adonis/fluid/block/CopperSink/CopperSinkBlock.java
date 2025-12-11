@@ -67,7 +67,6 @@ public class CopperSinkBlock extends HorizontalDirectionalBlock implements IBE<C
         return state;
     }
 
-    // 完整碰撞箱
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext ctx) {
         return Shapes.block();
@@ -103,7 +102,6 @@ public class CopperSinkBlock extends HorizontalDirectionalBlock implements IBE<C
         return com.adonis.fluid.registry.CFBlockEntity.COPPER_SINK.get();
     }
 
-    // 扳手右键旋转
     @Override
     public BlockState rotate(BlockState state, net.minecraft.world.level.block.Rotation rot) {
         return state.setValue(FACING, rot.rotate(state.getValue(FACING)));

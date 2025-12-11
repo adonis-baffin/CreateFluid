@@ -1,7 +1,6 @@
 package com.adonis.fluid.block.CopperSink;
 
 import com.adonis.fluid.config.CFCommonConfig;
-import com.adonis.fluid.registry.CFBlockEntity;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
@@ -42,10 +41,8 @@ public class CopperSinkBlockEntity extends SmartBlockEntity implements IHaveGogg
         this.fluidCapability = LazyOptional.of(() -> tank);
     }
 
-    // 修复1：必须实现这个抽象方法
     @Override
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
-        // 铜水槽不需要额外 behaviour
     }
 
     @Override
@@ -101,7 +98,6 @@ public class CopperSinkBlockEntity extends SmartBlockEntity implements IHaveGogg
         return tank;
     }
 
-    // ============================== 真正的无限水槽 Tank ==============================
     public static class CopperSinkTank extends SmartFluidTank {
 
         public CopperSinkTank(int capacity, Consumer<FluidStack> onChange) {
@@ -128,7 +124,7 @@ public class CopperSinkBlockEntity extends SmartBlockEntity implements IHaveGogg
             if (resource.isEmpty() || resource.getFluid() != Fluids.WATER) return FluidStack.EMPTY;
 
             if (!CFCommonConfig.isCopperSinkInfinite()) {
-                return super.drain(resource, action); // 有限模式：正常抽取
+                return super.drain(resource, action);
             }
 
             if (action.execute()) onContentsChanged();
@@ -153,7 +149,6 @@ public class CopperSinkBlockEntity extends SmartBlockEntity implements IHaveGogg
         }
     }
 
-    // ============================== 护目镜信息 ==============================
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
         CreateLang.translate("gui.goggles.fluid_container")

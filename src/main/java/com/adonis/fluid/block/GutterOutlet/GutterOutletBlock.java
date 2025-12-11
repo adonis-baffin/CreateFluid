@@ -141,7 +141,8 @@ public class GutterOutletBlock extends Block implements IBE<GutterOutletBlockEnt
         FluidState fluidState = ctx.getLevel().getFluidState(ctx.getClickedPos());
         Direction facing = ctx.getHorizontalDirection();
         // 旋转90度，让窄面朝向玩家
-        Direction rotated = facing.getClockWise();
+//        Direction rotated = facing.getClockWise();
+        Direction rotated = facing.getOpposite();
         return this.defaultBlockState()
                 .setValue(FACING, rotated)
                 .setValue(WATERLOGGED, fluidState.getType() == Fluids.WATER);
