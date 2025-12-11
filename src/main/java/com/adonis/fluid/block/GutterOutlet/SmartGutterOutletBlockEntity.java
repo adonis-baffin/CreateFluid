@@ -23,10 +23,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import javax.annotation.Nullable;
 import java.util.List;
 
-/**
- * 智能集水器方块实体
- * 继承集水器，添加流体过滤和红石控制功能
- */
+
 public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
 
     protected FilteringBehaviour filtering;
@@ -37,35 +34,24 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
 
     @Override
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
-        // 先添加过滤行为
         filtering = new FilteringBehaviour(this, new SmartGutterOutletFilterSlot())
                 .forFluids();
         behaviours.add(filtering);
 
-        // 再调用父类添加其他行为
         super.addBehaviours(behaviours);
     }
 
-    /**
-     * 检查是否可以激活（未被红石信号控制）
-     */
     protected boolean canActivate() {
         BlockState blockState = getBlockState();
         return blockState.hasProperty(SmartGutterOutletBlock.POWERED)
                 && !blockState.getValue(SmartGutterOutletBlock.POWERED);
     }
 
-    /**
-     * 检查流体是否通过过滤器
-     */
     protected boolean testFluidFilter(FluidStack fluid) {
         if (filtering == null) return true;
         return filtering.test(fluid);
     }
 
-    /**
-     * 检查流体是否通过过滤器（通过 Fluid 类型）
-     */
     protected boolean testFluidFilter(Fluid fluid) {
         if (fluid == null || fluid == Fluids.EMPTY) return false;
         return testFluidFilter(new FluidStack(fluid, 1000));
@@ -75,7 +61,6 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
     public void tick() {
         if (level == null) return;
 
-        // 客户端：更新液面动画
         if (level.isClientSide) {
             if (getFluidLevel() != null) {
                 getFluidLevel().tickChaser();
@@ -84,29 +69,23 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
             return;
         }
 
-        // 调用行为的tick（包括drainer）
         forEachBehaviour(BlockEntityBehaviour::tick);
 
-        // 如果被红石信号控制，只处理排出，停止所有收集
         if (!canActivate()) {
             handleDrainToBelow();
             return;
         }
 
-        // 服务端逻辑
         boolean collectedWorldFluid = false;
 
-        // 世界流体收集（受配置和过滤器控制）
         if (CFCommonConfig.canGutterCollectWorldFluid()) {
             collectedWorldFluid = handleWorldFluidCollectionFiltered();
         }
 
-        // 雨雪收集（受配置和过滤器控制）
         if (!collectedWorldFluid && !getDrainer().hasFluidToDrain()) {
             handlePrecipitationCollectionFiltered();
         }
 
-        // 滴水石锥收集（受配置和过滤器控制）
         if (CFCommonConfig.canGutterCollectDripstone()) {
             handleDripstoneCollectionFiltered();
         }
@@ -114,9 +93,6 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
         handleDrainToBelow();
     }
 
-    /**
-     * 处理世界流体收集（带过滤）
-     */
     private boolean handleWorldFluidCollectionFiltered() {
         if (level == null || level.isClientSide) return false;
 
@@ -125,7 +101,6 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
         FluidStack drainableFluid = getDrainer().getDrainableFluid(getDrainer().getRootPos());
         if (drainableFluid.isEmpty()) return false;
 
-        // 过滤器检查
         if (!testFluidFilter(drainableFluid)) return false;
 
         FluidStack currentFluid = getFluid();
@@ -164,35 +139,28 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
         return false;
     }
 
-    /**
-     * 处理雨雪收集（带过滤器 + 完全软兼容暮色森林雨云/雪云）
-     */
     private void handlePrecipitationCollectionFiltered() {
         if (level == null || level.isClientSide) return;
         if (!level.canSeeSky(worldPosition.above())) return;
 
         FluidStack currentFluid = getFluid();
 
-        // === 第一优先：暮色森林云块下雨判断（软依赖）===
         if (TwilightForestHelper.isTwilightForestLoaded()) {
             Pair<Biome.Precipitation, Float> tfPrecip = TwilightForestHelper.getCloudPrecipitationAt(level, worldPosition.above());
             if (tfPrecip.getLeft() != Biome.Precipitation.NONE) {
 
                 if (tfPrecip.getLeft() == Biome.Precipitation.RAIN) {
                     if (!CFCommonConfig.canGutterCollectRain()) return;
-                    if (!testFluidFilter(Fluids.WATER)) return;                         // 过滤器检查
+                    if (!testFluidFilter(Fluids.WATER)) return;
                     if (!currentFluid.isEmpty() && !currentFluid.getFluid().isSame(Fluids.WATER)) return;
 
                     accumulateAndFill(new FluidStack(Fluids.WATER, 1), true);
                     return;
                 }
-
-
-
                 if (tfPrecip.getLeft() == Biome.Precipitation.SNOW) {
                     if (!CFCommonConfig.canGutterCollectSnow()) return;
                     FluidStack snowStack = CFFluid.getPowderSnowFluidStack(1);
-                    if (!testFluidFilter(snowStack)) return;                           // 过滤器检查
+                    if (!testFluidFilter(snowStack)) return;
                     if (!currentFluid.isEmpty() && !CFFluid.isPowderSnowFluid(currentFluid.getFluid())) return;
 
                     accumulateAndFill(snowStack, true);
@@ -201,7 +169,6 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
             }
         }
 
-        // === 降级：原版天气判断 ===
         if (!level.isRaining()) return;
 
         Biome.Precipitation precipitation = level.getBiome(worldPosition).value()
@@ -225,9 +192,6 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
         }
     }
 
-    /**
-     * 处理滴水石锥收集（带过滤）
-     */
     private void handleDripstoneCollectionFiltered() {
         if (level == null || level.isClientSide) return;
 
@@ -237,7 +201,6 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
         Fluid dripFluid = PointedDripstoneBlock.getCauldronFillFluidType((ServerLevel) level, tipPos);
         if (dripFluid == Fluids.EMPTY) return;
 
-        // 过滤器检查
         if (!testFluidFilter(dripFluid)) return;
 
         FluidStack currentFluid = getFluid();
@@ -249,9 +212,6 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
         accumulateAndFill(new FluidStack(dripFluid, 1), false);
     }
 
-    /**
-     * 查找上方滴水石锥尖端
-     */
     @Nullable
     private BlockPos findStalactiteTipAboveInternal() {
         if (level == null) return null;

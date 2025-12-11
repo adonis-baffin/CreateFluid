@@ -6,6 +6,7 @@ import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.simibubi.create.foundation.fluid.SmartFluidTank;
 import com.simibubi.create.foundation.utility.CreateLang;
+import net.createmod.catnip.animation.LerpedFloat;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -32,13 +33,35 @@ public class CopperSinkBlockEntity extends SmartBlockEntity implements IHaveGogg
     private final CopperSinkTank tank;
     private final LazyOptional<IFluidHandler> fluidCapability;
 
+    // Add LerpedFloat for smooth fluid rendering
+    private LerpedFloat fluidLevel;
+    private boolean forceFluidLevelUpdate;
+
     public CopperSinkBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
-        this.tank = new CopperSinkTank(CAPACITY, fs -> {
-            setChanged();
-            sendData();
-        });
+        this.tank = new CopperSinkTank(CAPACITY, fs -> onTankContentsChanged());
         this.fluidCapability = LazyOptional.of(() -> tank);
+        this.fluidLevel = LerpedFloat.linear().startWithValue(0);
+        this.forceFluidLevelUpdate = true;
+    }
+
+    /**
+     * Called when tank contents change.
+     * Safe to call from contraptions (checks for null/virtual level).
+     */
+    private void onTankContentsChanged() {
+        // Only call setChanged/sendData if we have a real level (not on contraptions)
+        if (level != null && !level.isClientSide) {
+            // Check if this is a real level, not a VirtualRenderWorld
+            // VirtualRenderWorld doesn't have proper chunk access
+            try {
+                setChanged();
+                sendData();
+            } catch (Exception e) {
+                // Ignore errors on virtual worlds (contraptions)
+            }
+        }
+        onFluidChanged();
     }
 
     @Override
@@ -48,7 +71,7 @@ public class CopperSinkBlockEntity extends SmartBlockEntity implements IHaveGogg
     @Override
     public void onLoad() {
         super.onLoad();
-        if (!level.isClientSide && CFCommonConfig.isCopperSinkInfinite()) {
+        if (level != null && !level.isClientSide && CFCommonConfig.isCopperSinkInfinite()) {
             tank.fillInfiniteWater();
             setChanged();
             sendData();
@@ -58,10 +81,47 @@ public class CopperSinkBlockEntity extends SmartBlockEntity implements IHaveGogg
     @Override
     public void tick() {
         super.tick();
-        if (level == null || level.isClientSide) return;
+
+        if (level == null) return;
+
+        // Client-side: tick the lerp animation
+        if (level.isClientSide) {
+            if (fluidLevel != null) {
+                fluidLevel.tickChaser();
+            }
+            return;
+        }
+
+        // Server-side logic
         if (CFCommonConfig.isCopperSinkInfinite()) {
             tank.fillInfiniteWater();
         }
+    }
+
+    /**
+     * Called when fluid changes - updates the lerp target
+     */
+    private void onFluidChanged() {
+        float fillState = getFillState();
+        if (fluidLevel != null) {
+            fluidLevel.chase(fillState, 0.5f, LerpedFloat.Chaser.EXP);
+        }
+    }
+
+    /**
+     * Get fill ratio (0-1)
+     */
+    public float getFillState() {
+        int amount = CFCommonConfig.isCopperSinkInfinite() ? CAPACITY : tank.getFluidAmount();
+        return (float) amount / CAPACITY;
+    }
+
+    /**
+     * Get rendered fluid level with interpolation (for renderer)
+     */
+    public float getRenderedFluidLevel(float partialTicks) {
+        if (fluidLevel == null) return getFillState();
+        return fluidLevel.getValue(partialTicks);
     }
 
     @Nonnull
@@ -79,10 +139,22 @@ public class CopperSinkBlockEntity extends SmartBlockEntity implements IHaveGogg
         fluidCapability.invalidate();
     }
 
+    /**
+     * Get the fluid level LerpedFloat (for movement behaviour)
+     */
+    public LerpedFloat getFluidLevel() {
+        return fluidLevel;
+    }
+
     @Override
     protected void write(CompoundTag tag, boolean clientPacket) {
         super.write(tag, clientPacket);
         tag.put("Tank", tank.writeToNBT(new CompoundTag()));
+
+        if (clientPacket && forceFluidLevelUpdate) {
+            tag.putBoolean("ForceFluidLevel", true);
+            forceFluidLevelUpdate = false;
+        }
     }
 
     @Override
@@ -91,7 +163,14 @@ public class CopperSinkBlockEntity extends SmartBlockEntity implements IHaveGogg
         if (tag.contains("Tank")) {
             tank.readFromNBT(tag.getCompound("Tank"));
         }
-        if (clientPacket) sendData();
+
+        if (clientPacket) {
+            float fillState = getFillState();
+            if (tag.contains("ForceFluidLevel") || fluidLevel == null) {
+                fluidLevel = LerpedFloat.linear().startWithValue(fillState);
+            }
+            fluidLevel.chase(fillState, 0.5f, LerpedFloat.Chaser.EXP);
+        }
     }
 
     public SmartFluidTank getTank() {
@@ -115,8 +194,9 @@ public class CopperSinkBlockEntity extends SmartBlockEntity implements IHaveGogg
 
         @Override
         public int fill(FluidStack resource, FluidAction action) {
-            if (action.execute()) onContentsChanged();
-            return super.fill(resource, action);
+            int result = super.fill(resource, action);
+            // Note: onContentsChanged is called by parent when action.execute()
+            return result;
         }
 
         @Override

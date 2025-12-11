@@ -1,11 +1,15 @@
 package com.adonis.fluid.registry;
 
 import static com.adonis.fluid.CreateFluid.REGISTRATE;
+import static com.simibubi.create.api.behaviour.movement.MovementBehaviour.movementBehaviour;
+import static com.simibubi.create.api.contraption.storage.fluid.MountedFluidStorageType.mountedFluidStorage;
 import static com.simibubi.create.foundation.data.TagGen.axeOrPickaxe;
 import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.block.CopperSink.CopperSinkBlock;
+import com.adonis.fluid.block.CopperSink.CopperSinkMovementBehaviour;
 import com.adonis.fluid.block.CopperTap.CopperTapBlock;
 import com.adonis.fluid.block.GutterOutlet.GutterOutletBlock;
+import com.adonis.fluid.block.GutterOutlet.GutterOutletMovementBehaviour;
 import com.adonis.fluid.block.GutterOutlet.SmartGutterOutletBlock;
 
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlock;
@@ -75,6 +79,32 @@ public class CFBlock {
             .simpleItem()
             .register();
 
+    public static final BlockEntry<GutterOutletBlock> GUTTER_OUTLET = REGISTRATE
+            .block("gutter_outlet", GutterOutletBlock::new)
+            .initialProperties(SharedProperties::copperMetal)
+            .properties(prop -> prop
+                    .mapColor(MapColor.COLOR_ORANGE)
+                    .sound(SoundType.COPPER)
+                    .noOcclusion())
+            .transform(axeOrPickaxe())
+            .transform(mountedFluidStorage(CFMountedStorageTypes.GUTTER_OUTLET))
+            .onRegister(movementBehaviour(new GutterOutletMovementBehaviour()))
+            .blockstate((ctx, prov) -> {
+                prov.getVariantBuilder(ctx.get())
+                        .forAllStates(state -> {
+                            Direction facing = state.getValue(GutterOutletBlock.FACING);
+                            int yRot = (int) facing.toYRot();
+                            return ConfiguredModel.builder()
+                                    .modelFile(prov.models().getExistingFile(prov.modLoc("block/gutter_outlet")))
+                                    .rotationY(yRot)
+                                    .build();
+                        });
+            })
+            .item()
+            .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), prov.modLoc("block/gutter_outlet")))
+            .build()
+            .register();
+
     public static final BlockEntry<SmartGutterOutletBlock> SMART_GUTTER_OUTLET = REGISTRATE
             .block("smart_gutter_outlet", SmartGutterOutletBlock::new)
             .initialProperties(SharedProperties::copperMetal)
@@ -83,6 +113,8 @@ public class CFBlock {
                     .sound(SoundType.COPPER)
                     .noOcclusion())
             .transform(axeOrPickaxe())
+            .transform(mountedFluidStorage(CFMountedStorageTypes.GUTTER_OUTLET))  // Reuse same storage type
+            .onRegister(movementBehaviour(new GutterOutletMovementBehaviour()))   // Reuse same movement behaviour
             .blockstate((ctx, prov) -> {
                 prov.getVariantBuilder(ctx.get())
                         .forAllStates(state -> {
@@ -231,32 +263,6 @@ public class CFBlock {
             .build()
             .register();
 
-    // 集水器注册
-    public static final BlockEntry<GutterOutletBlock> GUTTER_OUTLET = REGISTRATE
-            .block("gutter_outlet", GutterOutletBlock::new)
-            .initialProperties(SharedProperties::copperMetal)
-            .properties(prop -> prop
-                    .mapColor(MapColor.COLOR_ORANGE)
-                    .sound(SoundType.COPPER)
-                    .noOcclusion())
-            .transform(axeOrPickaxe())
-            .blockstate((ctx, prov) -> {
-                prov.getVariantBuilder(ctx.get())
-                        .forAllStates(state -> {
-                            Direction facing = state.getValue(GutterOutletBlock.FACING);
-                            // waterlogged 不影响模型，只需要处理 facing
-                            int yRot = (int) facing.toYRot();
-                            return ConfiguredModel.builder()
-                                    .modelFile(prov.models().getExistingFile(prov.modLoc("block/gutter_outlet")))
-                                    .rotationY(yRot)
-                                    .build();
-                        });
-            })
-            .item()
-            .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), prov.modLoc("block/gutter_outlet")))
-            .build()
-            .register();
-
     public static final BlockEntry<CopperSinkBlock> COPPER_SINK = REGISTRATE
             .block("copper_sink", CopperSinkBlock::new)
             .initialProperties(SharedProperties::copperMetal)
@@ -266,7 +272,8 @@ public class CFBlock {
                     .strength(3.5f)
                     .noOcclusion())
             .transform(axeOrPickaxe())
-            // 重点：modLoc 必须是 "fluid:block/xxx"
+            .transform(mountedFluidStorage(CFMountedStorageTypes.COPPER_SINK))
+            .onRegister(movementBehaviour(new CopperSinkMovementBehaviour()))  // <-- ADD THIS
             .blockstate((c, p) -> p.horizontalBlock(c.get(),
                     p.models().getExistingFile(p.modLoc("block/copper_sink"))))
             .item()

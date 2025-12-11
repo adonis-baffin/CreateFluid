@@ -1,0 +1,124 @@
+package com.adonis.fluid.block.GutterOutlet;
+
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.simibubi.create.api.contraption.storage.SyncedMountedStorage;
+import com.simibubi.create.api.contraption.storage.fluid.MountedFluidStorageType;
+import com.simibubi.create.api.contraption.storage.fluid.WrapperMountedFluidStorage;
+import com.simibubi.create.content.contraptions.Contraption;
+import com.simibubi.create.foundation.utility.CreateCodecs;
+import com.adonis.fluid.registry.CFMountedStorageTypes;
+
+import net.createmod.catnip.animation.LerpedFloat;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.util.ExtraCodecs;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.templates.FluidTank;
+
+import org.jetbrains.annotations.Nullable;
+
+public class GutterOutletMountedStorage extends WrapperMountedFluidStorage<GutterOutletMountedStorage.Handler> implements SyncedMountedStorage {
+
+    public static final Codec<GutterOutletMountedStorage> CODEC = RecordCodecBuilder.create(i -> i.group(
+            ExtraCodecs.NON_NEGATIVE_INT.fieldOf("capacity").forGetter(GutterOutletMountedStorage::getCapacity),
+            CreateCodecs.FLUID_STACK_CODEC.fieldOf("fluid").forGetter(GutterOutletMountedStorage::getFluid)
+    ).apply(i, GutterOutletMountedStorage::new));
+
+    private boolean dirty;
+
+    protected GutterOutletMountedStorage(MountedFluidStorageType<?> type, int capacity, FluidStack stack) {
+        super(type, new Handler(capacity, stack));
+        this.wrapped.onChange = () -> this.dirty = true;
+    }
+
+    protected GutterOutletMountedStorage(int capacity, FluidStack stack) {
+        this(CFMountedStorageTypes.GUTTER_OUTLET.get(), capacity, stack);
+    }
+
+    @Override
+    public void unmount(Level level, BlockState state, BlockPos pos, @Nullable BlockEntity be) {
+        if (be instanceof GutterOutletBlockEntity gutter) {
+            // Restore fluid to the gutter when contraption is disassembled
+            IFluidHandler tank = gutter.tankBehaviour.getCapability().orElse(null);
+            if (tank != null) {
+                tank.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.EXECUTE);
+                tank.fill(this.wrapped.getFluid().copy(), IFluidHandler.FluidAction.EXECUTE);
+            }
+        }
+    }
+
+    public FluidStack getFluid() {
+        return this.wrapped.getFluid();
+    }
+
+    public int getCapacity() {
+        return this.wrapped.getCapacity();
+    }
+
+    @Override
+    public boolean isDirty() {
+        return this.dirty;
+    }
+
+    @Override
+    public void markClean() {
+        this.dirty = false;
+    }
+
+    @Override
+    public void afterSync(Contraption contraption, BlockPos localPos) {
+        BlockEntity be = contraption.getBlockEntityClientSide(localPos);
+        if (!(be instanceof GutterOutletBlockEntity gutter))
+            return;
+
+        // Sync fluid to client-side block entity for rendering
+        IFluidHandler tank = gutter.tankBehaviour.getCapability().orElse(null);
+        if (tank != null) {
+            tank.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.EXECUTE);
+            tank.fill(this.getFluid().copy(), IFluidHandler.FluidAction.EXECUTE);
+        }
+
+        // Manually update the fluid level for rendering
+        float fillLevel = (float) this.getFluid().getAmount() / this.getCapacity();
+        LerpedFloat fluidLevel = gutter.getFluidLevel();
+        if (fluidLevel == null) {
+            // Initialize if null - need to set it via reflection or add a setter
+            // For now, the movement behaviour should handle ticking
+        } else {
+            fluidLevel.chase(fillLevel, 0.5f, LerpedFloat.Chaser.EXP);
+        }
+    }
+
+    public static GutterOutletMountedStorage fromGutter(GutterOutletBlockEntity gutter) {
+        // Create an isolated copy of the tank contents
+        FluidStack fluid = gutter.getFluid().copy();
+        int capacity = GutterOutletBlockEntity.CAPACITY;
+        return new GutterOutletMountedStorage(capacity, fluid);
+    }
+
+    public static GutterOutletMountedStorage fromLegacy(CompoundTag nbt) {
+        int capacity = nbt.getInt("Capacity");
+        FluidStack fluid = FluidStack.loadFluidStackFromNBT(nbt);
+        return new GutterOutletMountedStorage(capacity, fluid);
+    }
+
+    public static final class Handler extends FluidTank {
+        private Runnable onChange = () -> {};
+
+        public Handler(int capacity, FluidStack stack) {
+            super(capacity);
+            this.setFluid(stack);
+        }
+
+        @Override
+        protected void onContentsChanged() {
+            this.onChange.run();
+        }
+    }
+}

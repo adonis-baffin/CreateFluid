@@ -18,10 +18,6 @@ import net.minecraftforge.fluids.FluidStack;
 
 import static org.joml.Math.lerp;
 
-/**
- * 集水器渲染器
- * 渲染梯形流体，参考 AqueductRenderer 实现
- */
 public class GutterOutletRenderer extends SmartBlockEntityRenderer<GutterOutletBlockEntity> {
 
     public GutterOutletRenderer(BlockEntityRendererProvider.Context context) {

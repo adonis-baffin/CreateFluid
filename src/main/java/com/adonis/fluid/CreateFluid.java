@@ -53,14 +53,13 @@ public class CreateFluid {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
         REGISTRATE.registerEventListeners(modEventBus);
 
-        // 注册模组内容
+        CFMountedStorageTypes.register();  // <-- Register mounted storage types
         CFBlock.register();
         CFBlockEntity.register(modEventBus);
         CFItem.register(modEventBus);
         CFTab.register(modEventBus);
         CFFluid.register();
 
-        // 注册配置
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, CFCommonConfig.CONFIG_SPEC);
 
         ForgeConfigSpec.Builder stressBuilder = new ForgeConfigSpec.Builder();
@@ -68,7 +67,6 @@ public class CreateFluid {
         stressConfigSpec = stressBuilder.build();
         ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, stressConfigSpec, STRESS_CONFIG.getName() + ".toml");
 
-        // 注册事件
         modEventBus.addListener(this::setup);
         modEventBus.addListener(this::enqueueIMC);
         modEventBus.addListener(this::processIMC);
@@ -88,9 +86,8 @@ public class CreateFluid {
 
             CFNetworking.register();
 
-            // ↓↓↓ 添加这一行 ↓↓↓
             FluidInteractionPointCompat.init();
-            // ↑↑↑ 添加这一行 ↑↑↑
+            // No need for associateBlocks() - it's done via .associate() in the registrate builder
         });
     }
 
