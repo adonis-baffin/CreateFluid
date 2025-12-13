@@ -41,7 +41,7 @@ public class ArmPlacementPacketMixin {
                     if (blockEntity instanceof ArmBlockEntity arm) {
                         ArmBlockEntityAccessor accessor = (ArmBlockEntityAccessor) arm;
 
-                        // 更新服务端
+                        // 更新服务端数据
                         accessor.getInputs().clear();
                         accessor.getOutputs().clear();
                         accessor.setInteractionPointTag(this.receivedTag);
@@ -52,7 +52,7 @@ public class ArmPlacementPacketMixin {
 
                         arm.setChanged();
 
-                        // 立即初始化
+                        // 立即初始化交互点（反射调用）
                         try {
                             java.lang.reflect.Method initMethod = ArmBlockEntity.class.getDeclaredMethod("initInteractionPoints");
                             initMethod.setAccessible(true);
@@ -61,15 +61,11 @@ public class ArmPlacementPacketMixin {
                             e.printStackTrace();
                         }
 
-                        // 关键：发送同步包给所有附近的客户端
-                        if (world instanceof ServerLevel) {
-                            AllPackets.getChannel().send(
-                                    PacketDistributor.TRACKING_CHUNK.with(
-                                            () -> world.getChunkAt(pos)
-                                    ),
-                                    new ArmInteractionPointSyncPacket(pos, this.receivedTag)
-                            );
-                        }
+                        // 【关键修改】只发送给操作玩家本人
+                        AllPackets.getChannel().send(
+                                PacketDistributor.PLAYER.with(() -> player),
+                                new ArmInteractionPointSyncPacket(pos, this.receivedTag)
+                        );
                     }
                 }
             }
