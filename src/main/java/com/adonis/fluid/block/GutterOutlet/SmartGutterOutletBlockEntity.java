@@ -11,20 +11,27 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.PointedDripstoneBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.DripstoneThickness;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import org.apache.commons.lang3.tuple.Pair;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 
 
 public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
+
+    private static final int MAX_DRIP_DISTANCE = 10; // 可配置，建议 10 模仿原版坩埚
 
     protected FilteringBehaviour filtering;
 
@@ -139,6 +146,136 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
         return false;
     }
 
+    @Override
+    protected void handleDrainToBelow() {
+        if (level == null || level.isClientSide) return;
+
+        // 添加智能集水器专属的红石关闭逻辑
+        BlockState state = getBlockState();
+        if (state.hasProperty(SmartGutterOutletBlock.POWERED)
+                && state.getValue(SmartGutterOutletBlock.POWERED)) {
+            return; // 有红石信号 = 关闭状态，不向下排水
+        }
+
+        // 原有排水逻辑（保持不变）
+        FluidStack currentFluid = getFluid();
+        if (currentFluid.isEmpty()) return;
+
+        BlockPos belowPos = worldPosition.below();
+        BlockEntity belowBE = level.getBlockEntity(belowPos);
+        if (belowBE == null) return;
+
+        LazyOptional<IFluidHandler> belowCapability = belowBE.getCapability(
+                ForgeCapabilities.FLUID_HANDLER, Direction.UP);
+
+        if (!belowCapability.isPresent()) {
+            belowCapability = belowBE.getCapability(ForgeCapabilities.FLUID_HANDLER);
+        }
+
+        belowCapability.ifPresent(targetTank -> {
+            IFluidHandler myTank = getFluidHandler();
+            if (myTank == null) return;
+
+            int drainAmount = Math.min(DRAIN_RATE_PER_TICK, currentFluid.getAmount());
+            FluidStack toDrain = new FluidStack(currentFluid.getFluid(), drainAmount);
+
+            int accepted = targetTank.fill(toDrain.copy(), IFluidHandler.FluidAction.SIMULATE);
+            if (accepted > 0) {
+                FluidStack drained = myTank.drain(accepted, IFluidHandler.FluidAction.EXECUTE);
+                if (!drained.isEmpty()) {
+                    targetTank.fill(drained, IFluidHandler.FluidAction.EXECUTE);
+                }
+            }
+        });
+    }
+
+    @Override
+    @Nonnull
+    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
+        if (cap == ForgeCapabilities.FLUID_HANDLER) {
+            BlockState state = getBlockState();
+            boolean isPowered = state.hasProperty(SmartGutterOutletBlock.POWERED)
+                    && state.getValue(SmartGutterOutletBlock.POWERED);
+
+            if (isPowered) {
+                // 有红石信号 = 关闭状态 → 完全不暴露 fluid capability
+                return LazyOptional.empty();
+            }
+
+            // 无红石信号 = 开启状态 → 正常行为
+            if (side == null) {
+                return fluidCapability.cast();
+            }
+
+            if (side == Direction.UP) {
+                return fluidCapability.cast();
+            }
+
+            if (side == Direction.DOWN) {
+                // 这里不能直接用基类的 OutputOnlyFluidHandler 和 getFluidHandler()
+                // 所以我们自己创建一个
+                IFluidHandler tank = tankBehaviour.getCapability().orElse(null);
+                if (tank == null) {
+                    return LazyOptional.empty();
+                }
+                return LazyOptional.of(() -> new OutputOnlyFluidHandler(tank)).cast();
+            }
+
+            if (GutterOutletBlock.isNarrowSide(state, side)) {
+                return fluidCapability.cast();
+            }
+
+            return LazyOptional.empty();
+        }
+
+        return super.getCapability(cap, side);
+    }
+
+    // 在 SmartGutterOutletBlockEntity 类内部新增这个私有静态内部类
+// （直接复制基类的实现即可）
+    private static class OutputOnlyFluidHandler implements IFluidHandler {
+        private final IFluidHandler wrapped;
+
+        public OutputOnlyFluidHandler(IFluidHandler wrapped) {
+            this.wrapped = wrapped;
+        }
+
+        @Override
+        public int getTanks() {
+            return wrapped.getTanks();
+        }
+
+        @Override
+        public @Nonnull FluidStack getFluidInTank(int tank) {
+            return wrapped.getFluidInTank(tank);
+        }
+
+        @Override
+        public int getTankCapacity(int tank) {
+            return wrapped.getTankCapacity(tank);
+        }
+
+        @Override
+        public boolean isFluidValid(int tank, @Nonnull FluidStack stack) {
+            return false;
+        }
+
+        @Override
+        public int fill(@Nonnull FluidStack resource, FluidAction action) {
+            return 0; // 只允许输出，不允许输入
+        }
+
+        @Override
+        public @Nonnull FluidStack drain(FluidStack resource, FluidAction action) {
+            return wrapped.drain(resource, action);
+        }
+
+        @Override
+        public @Nonnull FluidStack drain(int maxDrain, FluidAction action) {
+            return wrapped.drain(maxDrain, action);
+        }
+    }
+
     private void handlePrecipitationCollectionFiltered() {
         if (level == null || level.isClientSide) return;
         if (!level.canSeeSky(worldPosition.above())) return;
@@ -214,18 +351,59 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
 
     @Nullable
     private BlockPos findStalactiteTipAboveInternal() {
-        if (level == null) return null;
+        if (level == null || level.isClientSide) return null;
 
-        BlockPos abovePos = worldPosition.above();
-        BlockState aboveState = level.getBlockState(abovePos);
+        BlockPos.MutableBlockPos searchPos = new BlockPos.MutableBlockPos();
+        searchPos.set(worldPosition.above()); // 从正上方一格开始向上搜索
 
-        if (!aboveState.is(Blocks.POINTED_DRIPSTONE)) return null;
+        for (int i = 0; i <= MAX_DRIP_DISTANCE; i++) {
+            if (searchPos.getY() > level.getMaxBuildHeight()) break;
 
-        if (aboveState.getValue(PointedDripstoneBlock.TIP_DIRECTION) != Direction.DOWN) return null;
+            BlockState state = level.getBlockState(searchPos);
 
-        DripstoneThickness thickness = aboveState.getValue(PointedDripstoneBlock.THICKNESS);
-        if (thickness != DripstoneThickness.TIP && thickness != DripstoneThickness.TIP_MERGE) return null;
+            if (state.is(Blocks.POINTED_DRIPSTONE)) {
+                if (state.getValue(PointedDripstoneBlock.TIP_DIRECTION) == Direction.DOWN) {
+                    DripstoneThickness thickness = state.getValue(PointedDripstoneBlock.THICKNESS);
+                    if (thickness == DripstoneThickness.TIP || thickness == DripstoneThickness.TIP_MERGE) {
+                        // 找到尖端了，检查从尖端正下方到集水器是否路径通畅（全是空气）
+                        if (isDripPathClear(searchPos, worldPosition)) {
+                            return searchPos.immutable(); // 返回找到的尖端位置
+                        } else {
+                            return null; // 路径被阻挡，不行
+                        }
+                    }
+                }
+                // 不是尖端，继续向上搜索（滴石更长）
+            } else if (!state.isAir() && !state.getFluidState().isEmpty()) {
+                // 遇到非空气、非流体（如固体方块）的阻挡，直接停止
+                return null;
+            }
+            // 否则是空气或流体，继续向上
+            searchPos.move(Direction.UP);
+        }
 
-        return abovePos;
+        return null; // 没找到符合条件的尖端
+    }
+
+    private boolean isDripPathClear(BlockPos tipPos, BlockPos gutterPos) {
+        BlockPos.MutableBlockPos checkPos = new BlockPos.MutableBlockPos();
+        checkPos.set(tipPos.below()); // 从尖端正下方开始向下检查
+
+        int distance = 0;
+        while (distance <= MAX_DRIP_DISTANCE) {
+            if (checkPos.equals(gutterPos)) {
+                return true; // 成功到达集水器位置
+            }
+
+            BlockState state = level.getBlockState(checkPos);
+            if (!state.isAir() && state.getFluidState().isEmpty()) {
+                return false; // 被固体方块阻挡（流体不算阻挡，原版也允许穿过水）
+            }
+
+            checkPos.move(Direction.DOWN);
+            distance++;
+        }
+
+        return false; // 超过最大距离还没到达
     }
 }

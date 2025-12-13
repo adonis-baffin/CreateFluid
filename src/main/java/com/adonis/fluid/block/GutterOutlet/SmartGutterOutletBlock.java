@@ -105,7 +105,7 @@ public class SmartGutterOutletBlock extends Block implements IBE<SmartGutterOutl
     public BlockState getStateForPlacement(BlockPlaceContext ctx) {
         FluidState fluidState = ctx.getLevel().getFluidState(ctx.getClickedPos());
         Direction facing = ctx.getHorizontalDirection();
-        Direction rotated = facing.getClockWise();
+        Direction rotated = facing.getOpposite();
         return this.defaultBlockState()
                 .setValue(FACING, rotated)
                 .setValue(WATERLOGGED, fluidState.getType() == Fluids.WATER)

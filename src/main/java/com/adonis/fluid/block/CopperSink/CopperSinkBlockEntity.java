@@ -33,7 +33,6 @@ public class CopperSinkBlockEntity extends SmartBlockEntity implements IHaveGogg
     private final CopperSinkTank tank;
     private final LazyOptional<IFluidHandler> fluidCapability;
 
-    // Add LerpedFloat for smooth fluid rendering
     private LerpedFloat fluidLevel;
     private boolean forceFluidLevelUpdate;
 
@@ -45,28 +44,18 @@ public class CopperSinkBlockEntity extends SmartBlockEntity implements IHaveGogg
         this.forceFluidLevelUpdate = true;
     }
 
-    /**
-     * Called when tank contents change.
-     * Safe to call from contraptions (checks for null/virtual level).
-     */
     private void onTankContentsChanged() {
-        // Only call setChanged/sendData if we have a real level (not on contraptions)
         if (level != null && !level.isClientSide) {
-            // Check if this is a real level, not a VirtualRenderWorld
-            // VirtualRenderWorld doesn't have proper chunk access
             try {
                 setChanged();
                 sendData();
-            } catch (Exception e) {
-                // Ignore errors on virtual worlds (contraptions)
-            }
+            } catch (Exception ignored) {}
         }
         onFluidChanged();
     }
 
     @Override
-    public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
-    }
+    public void addBehaviours(List<BlockEntityBehaviour> behaviours) {}
 
     @Override
     public void onLoad() {
@@ -84,7 +73,6 @@ public class CopperSinkBlockEntity extends SmartBlockEntity implements IHaveGogg
 
         if (level == null) return;
 
-        // Client-side: tick the lerp animation
         if (level.isClientSide) {
             if (fluidLevel != null) {
                 fluidLevel.tickChaser();
@@ -92,15 +80,13 @@ public class CopperSinkBlockEntity extends SmartBlockEntity implements IHaveGogg
             return;
         }
 
-        // Server-side logic
-        if (CFCommonConfig.isCopperSinkInfinite()) {
-            tank.fillInfiniteWater();
-        }
+        // 在无限模式下不再每 tick 强制填充，由 fill() 处理恢复满水状态
+        // 如果需要确保空载时也显示满水，可保留，但不影响输入
+        // if (CFCommonConfig.isCopperSinkInfinite()) {
+        //     tank.fillInfiniteWater();
+        // }
     }
 
-    /**
-     * Called when fluid changes - updates the lerp target
-     */
     private void onFluidChanged() {
         float fillState = getFillState();
         if (fluidLevel != null) {
@@ -108,17 +94,11 @@ public class CopperSinkBlockEntity extends SmartBlockEntity implements IHaveGogg
         }
     }
 
-    /**
-     * Get fill ratio (0-1)
-     */
     public float getFillState() {
         int amount = CFCommonConfig.isCopperSinkInfinite() ? CAPACITY : tank.getFluidAmount();
         return (float) amount / CAPACITY;
     }
 
-    /**
-     * Get rendered fluid level with interpolation (for renderer)
-     */
     public float getRenderedFluidLevel(float partialTicks) {
         if (fluidLevel == null) return getFillState();
         return fluidLevel.getValue(partialTicks);
@@ -139,9 +119,6 @@ public class CopperSinkBlockEntity extends SmartBlockEntity implements IHaveGogg
         fluidCapability.invalidate();
     }
 
-    /**
-     * Get the fluid level LerpedFloat (for movement behaviour)
-     */
     public LerpedFloat getFluidLevel() {
         return fluidLevel;
     }
@@ -183,7 +160,10 @@ public class CopperSinkBlockEntity extends SmartBlockEntity implements IHaveGogg
             super(capacity, onChange);
         }
 
+        /** 在无限模式下强制显示为满水，用于初始加载或防止意外清空 */
         public void fillInfiniteWater() {
+            if (!CFCommonConfig.isCopperSinkInfinite()) return;
+
             if (fluid.isEmpty() || fluid.getFluid() != Fluids.WATER) {
                 setFluid(new FluidStack(Fluids.WATER, capacity));
             } else if (fluid.getAmount() < capacity) {
@@ -194,9 +174,23 @@ public class CopperSinkBlockEntity extends SmartBlockEntity implements IHaveGogg
 
         @Override
         public int fill(FluidStack resource, FluidAction action) {
-            int result = super.fill(resource, action);
-            // Note: onContentsChanged is called by parent when action.execute()
-            return result;
+            if (resource.isEmpty()) return 0;
+
+            if (!CFCommonConfig.isCopperSinkInfinite()) {
+                // 非无限模式：正常只能装水
+                return super.fill(resource, action);
+            }
+
+            // 无限模式：接受任意流体并全部销毁
+            int accepted = resource.getAmount();
+
+            if (action.execute()) {
+                // 输入后立即恢复无限水状态（保持显示满水）
+                fillInfiniteWater();
+                onContentsChanged();
+            }
+
+            return accepted;
         }
 
         @Override
@@ -207,7 +201,10 @@ public class CopperSinkBlockEntity extends SmartBlockEntity implements IHaveGogg
                 return super.drain(resource, action);
             }
 
-            if (action.execute()) onContentsChanged();
+            // 无限模式：无限抽水
+            if (action.execute()) {
+                onContentsChanged();
+            }
             return new FluidStack(Fluids.WATER, resource.getAmount());
         }
 
@@ -219,13 +216,24 @@ public class CopperSinkBlockEntity extends SmartBlockEntity implements IHaveGogg
                 return super.drain(maxDrain, action);
             }
 
-            if (action.execute()) onContentsChanged();
+            // 无限模式：无限抽水
+            if (action.execute()) {
+                onContentsChanged();
+            }
             return new FluidStack(Fluids.WATER, maxDrain);
         }
 
         @Override
         public int getFluidAmount() {
             return CFCommonConfig.isCopperSinkInfinite() ? capacity : super.getFluidAmount();
+        }
+
+        @Override
+        public FluidStack getFluid() {
+            if (CFCommonConfig.isCopperSinkInfinite()) {
+                return new FluidStack(Fluids.WATER, getFluidAmount());
+            }
+            return super.getFluid();
         }
     }
 

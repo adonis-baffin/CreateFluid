@@ -61,6 +61,8 @@
 
   "block.fluid.copper_sink.tooltip.summary": "A beautiful copper sink that always stays full. Any fluid input is destroyed；Infinite water output",
   "create.block.fluid.copper_sink.infinite_source": "Infinite Water Source",
+  "create.gui.goggles.gutter_outlet.dripping": "Dripping",
+  "create.gui.goggles.gutter_outlet.dripstone_active": "Collecting Dripping lava",
 
   "create_fluid.centrifugal_pump.pump_mode": "Pump Mode",
   "create_fluid.centrifugal_pump.mode.pump_in": "Pump in",

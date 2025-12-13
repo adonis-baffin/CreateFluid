@@ -47,9 +47,11 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
 
     private static final int PRECIPITATION_COLLECT_RATE_PER_SECOND = 50;
 
-    private static final int DRIPSTONE_COLLECT_RATE_PER_SECOND = 10;
+    private static final int DRIPSTONE_COLLECT_RATE_PER_SECOND = 5;
 
-    private static final int DRAIN_RATE_PER_TICK = 50;
+    protected static final int DRAIN_RATE_PER_TICK = 50;
+
+    private static final int MAX_DRIP_DISTANCE = 10; // 可配置，模仿原版最多10格
 
     protected SmartFluidTankBehaviour tankBehaviour;
     protected LazyOptional<IFluidHandler> fluidCapability;
@@ -83,7 +85,7 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
         fluidCapability = LazyOptional.of(this::getFluidHandler);
     }
 
-    private IFluidHandler getFluidHandler() {
+    protected IFluidHandler getFluidHandler() {
         return tankBehaviour.getCapability()
                 .resolve()
                 .map(handler -> (IFluidHandler) handler)
@@ -241,17 +243,51 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
 
     @Nullable
     private BlockPos findStalactiteTipAbove() {
-        BlockPos abovePos = worldPosition.above();
-        BlockState aboveState = level.getBlockState(abovePos);
+        BlockPos current = worldPosition.above(); // 从正上方一格开始向上搜
 
-        if (!aboveState.is(Blocks.POINTED_DRIPSTONE)) return null;
+        for (int i = 0; i <= MAX_DRIP_DISTANCE; i++) { // 向上最多搜10格（可调整）
+            if (current.getY() > level.getMaxBuildHeight()) break;
 
-        if (aboveState.getValue(PointedDripstoneBlock.TIP_DIRECTION) != Direction.DOWN) return null;
+            BlockState state = level.getBlockState(current);
 
-        DripstoneThickness thickness = aboveState.getValue(PointedDripstoneBlock.THICKNESS);
-        if (thickness != DripstoneThickness.TIP && thickness != DripstoneThickness.TIP_MERGE) return null;
+            if (state.is(Blocks.POINTED_DRIPSTONE)) {
+                if (state.getValue(PointedDripstoneBlock.TIP_DIRECTION) == Direction.DOWN) {
+                    DripstoneThickness thickness = state.getValue(PointedDripstoneBlock.THICKNESS);
+                    if (thickness == DripstoneThickness.TIP || thickness == DripstoneThickness.TIP_MERGE) {
+                        // 找到尖端了，现在检查从这个 tip 向下到集水器的路径是否通畅（全是空气）
+                        if (isPathClear(current, worldPosition)) {
+                            return current; // 返回尖端位置
+                        } else {
+                            return null; // 中间有阻挡，不行
+                        }
+                    }
+                }
+                // 如果不是 tip，继续向上搜（因为尖端在更上面）
+            } else if (!state.isAir()) {
+                // 遇到非空气、非滴石的方块，直接停止搜索
+                return null;
+            }
 
-        return abovePos;
+            current = current.above();
+        }
+
+        return null;
+    }
+
+    private boolean isPathClear(BlockPos tipPos, BlockPos gutterPos) {
+        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
+        mutable.set(tipPos.below()); // 从 tip 正下方开始
+
+        int distance = 0;
+        while (!mutable.equals(gutterPos) && distance <= MAX_DRIP_DISTANCE) {
+            if (!level.getBlockState(mutable).isAir()) {
+                return false; // 中间有非空气方块阻挡
+            }
+            mutable.move(Direction.DOWN);
+            distance++;
+        }
+
+        return mutable.equals(gutterPos); // 必须正好到达集水器位置
     }
 
     private Fluid getDripFluid(ServerLevel level, BlockPos tipPos) {
@@ -293,6 +329,11 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
 
     protected void handleDrainToBelow() {
         if (level == null || level.isClientSide) return;
+
+//        BlockState state = getBlockState();
+//        if (state.getValue(SmartGutterOutletBlock.POWERED)) {
+//            return;
+//        }
 
         FluidStack currentFluid = getFluid();
         if (currentFluid.isEmpty()) return;
@@ -350,8 +391,6 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
     public GutterFluidDrainingBehaviour getDrainer() {
         return drainer;
     }
-
-    // ============== Capability ==============
 
     @Nonnull
     @Override
@@ -489,14 +528,14 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
             if (tipPos != null) {
                 FluidStack currentFluid = getFluid();
                 if (!currentFluid.isEmpty()) {
-                    String fluidName = currentFluid.getFluid().isSame(Fluids.LAVA) ? "Lava" : "Water";
-                    CreateLang.text("Dripping ")
+                    boolean isLava = currentFluid.getFluid().isSame(Fluids.LAVA);
+                    CreateLang.translate("gui.goggles.gutter_outlet.dripping")
                             .style(ChatFormatting.GRAY)
-                            .add(CreateLang.text(fluidName)
-                                    .style(currentFluid.getFluid().isSame(Fluids.LAVA) ? ChatFormatting.GOLD : ChatFormatting.AQUA))
+                            .add(CreateLang.fluidName(currentFluid)  // 自动使用流体的本地化名称，并带正确颜色
+                                    .style(isLava ? ChatFormatting.GOLD : ChatFormatting.AQUA))
                             .forGoggles(tooltip, 1);
                 } else {
-                    CreateLang.text("Dripstone Active")
+                    CreateLang.translate("gui.goggles.gutter_outlet.dripstone_active")
                             .style(ChatFormatting.GREEN)
                             .forGoggles(tooltip, 1);
                 }
