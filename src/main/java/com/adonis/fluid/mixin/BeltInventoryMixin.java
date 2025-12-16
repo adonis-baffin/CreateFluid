@@ -88,25 +88,25 @@ public class BeltInventoryMixin {
     }
 
     /**
-     * 手动处理铜龙头的传送带加工
-     * 因为铜龙头在传送带上方1格，会被 isBlocked 检查阻止
-     * 所以我们需要绕过这个检查，手动调用处理逻辑
+     * 修复版：手动处理铜龙头的传送带加工
+     * 支持超高转速（255/256 RPM+），物品不会掠过
      */
     @Inject(method = "handleBeltProcessingAndCheckIfRemoved",
             at = @At("HEAD"),
             cancellable = true)
     private void handleTapProcessing(TransportedItemStack currentItem, float nextOffset, boolean noMovement,
                                      CallbackInfoReturnable<Boolean> cir) {
+        // 计算当前 segment
         int currentSegment = (int) currentItem.beltPosition;
-        boolean beltMovementPositive = belt.getDirectionAwareBeltMovementSpeed() > 0;
+        float currentPos = currentItem.beltPosition;
+        float segmentCenter = currentSegment + 0.5f;
 
-        // 检查当前 segment 是否有 tap relay
         BlockPos beltPos = BeltHelper.getPositionForOffset(belt, currentSegment);
         BlockPos checkPos = beltPos.above(2);
-        TapVirtualRelayManager.TapVirtualRelay tapRelay = TapVirtualRelayManager.getRelayAt(checkPos);
 
+        TapVirtualRelayManager.TapVirtualRelay tapRelay = TapVirtualRelayManager.getRelayAt(checkPos);
         if (tapRelay == null) {
-            return; // 没有铜龙头，让原方法处理
+            return; // 没有铜龙头，交给原方法处理
         }
 
         BeltProcessingBehaviour behaviour = tapRelay.getProcessingBehaviour();
@@ -117,9 +117,37 @@ public class BeltInventoryMixin {
             return;
         }
 
-        // 如果物品已经被锁定，调用 handleHeldItem
+        boolean beltMovementPositive = belt.getDirectionAwareBeltMovementSpeed() > 0;
+
+        // 已锁定物品 → 处理 held 状态
         if (currentItem.locked) {
             BeltProcessingBehaviour.ProcessingResult result = behaviour.handleHeldItem(currentItem, handler);
+
+            if (result == BeltProcessingBehaviour.ProcessingResult.REMOVE) {
+                cir.setReturnValue(true);
+            } else if (result == BeltProcessingBehaviour.ProcessingResult.HOLD) {
+                cir.setReturnValue(false);
+            } else { // PASS
+                currentItem.locked = false;
+                belt.notifyUpdate();
+                cir.setReturnValue(false);
+            }
+            return;
+        }
+
+        // 未锁定物品 → 判断是否应该触发处理
+        // 宽容条件：
+        // 1. 当前位置已经在中心或之后（高速跳过时可能直接进入）
+        // 2. 或这个 tick 会跨越中心
+        // 3. 或当前小数部分在合理处理范围内（防止极端浮点误差）
+        float fractional = currentPos - currentSegment;
+        boolean inProcessingRange = fractional >= 0.0f && fractional < 1.0f; // 本 segment 内
+        boolean alreadyPastCenter = fractional >= 0.5f;
+        boolean willCrossCenter = currentPos < segmentCenter && nextOffset >= segmentCenter;
+
+        if (!noMovement && inProcessingRange && (willCrossCenter || alreadyPastCenter)) {
+            // 触发接收处理
+            BeltProcessingBehaviour.ProcessingResult result = behaviour.handleReceivedItem(currentItem, handler);
 
             if (result == BeltProcessingBehaviour.ProcessingResult.REMOVE) {
                 cir.setReturnValue(true);
@@ -127,41 +155,15 @@ public class BeltInventoryMixin {
             }
 
             if (result == BeltProcessingBehaviour.ProcessingResult.HOLD) {
+                // 强制锁定并微调位置到中心附近，防止继续高速前进
+                currentItem.beltPosition = segmentCenter + (beltMovementPositive ? 0.03125f : -0.03125f); // 1/32 格偏移
+                currentItem.locked = true;
+                belt.notifyUpdate();
                 cir.setReturnValue(false);
                 return;
             }
 
-            // PASS - 解锁物品
-            currentItem.locked = false;
-            belt.notifyUpdate();
-            cir.setReturnValue(false);
-            return;
-        }
-
-        // 物品没有被锁定，检查是否跨越中心点
-        float segmentCenter = currentSegment + 0.5f;
-        boolean willCross = currentItem.beltPosition < segmentCenter && nextOffset >= segmentCenter;
-
-        if (!willCross || noMovement) {
-            return;
-        }
-
-        // 物品正在跨越铜龙头下方的 segment 中心点
-        // 调用 handleReceivedItem
-        BeltProcessingBehaviour.ProcessingResult result = behaviour.handleReceivedItem(currentItem, handler);
-
-        if (result == BeltProcessingBehaviour.ProcessingResult.REMOVE) {
-            cir.setReturnValue(true);
-            return;
-        }
-
-        if (result == BeltProcessingBehaviour.ProcessingResult.HOLD) {
-            // 锁定物品
-            currentItem.beltPosition = segmentCenter + (beltMovementPositive ? 1/512f : -1/512f);
-            currentItem.locked = true;
-            belt.notifyUpdate();
-            cir.setReturnValue(false);
-            return;
+            // PASS → 继续正常移动
         }
     }
 }
