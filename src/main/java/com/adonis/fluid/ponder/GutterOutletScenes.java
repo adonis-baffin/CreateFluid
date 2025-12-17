@@ -68,7 +68,7 @@ public class GutterOutletScenes {
 
         // 第一步：单独展示集水器（模仿官方 Item Drain 的独立展示 + 平移）
         ElementLink<WorldSectionElement> gutterLink = scene.world().showIndependentSection(gutterSel, Direction.DOWN);
-        scene.idle(30);
+        scene.idle(10);
 
         scene.overlay().showText(80)
                 .attachKeyFrame()
@@ -161,11 +161,33 @@ public class GutterOutletScenes {
                 .text("Pipe Networks can now pull the fluid from their internal buffer")
                 .pointAt(util.vector().blockSurface(gutterPos, Direction.EAST))
                 .placeNearTarget();
-        scene.idle(40);
+        scene.idle(20);
 
         scene.world().propagatePipeChange(pumpPos);
 
-        scene.idle(20);
+        // 清除集水器内部的岩浆（2000 mB），并强制更新液面渲染
+        scene.world().modifyBlockEntity(gutterPos, GutterOutletBlockEntity.class, be -> {
+            SmartFluidTankBehaviour tankBehaviour = be.tankBehaviour;
+            if (tankBehaviour != null) {
+                tankBehaviour.allowExtraction();
+
+                be.getCapability(ForgeCapabilities.FLUID_HANDLER, null).ifPresent(handler -> {
+                    handler.drain(2000, IFluidHandler.FluidAction.EXECUTE);
+                });
+
+                SmartFluidTankBehaviour.TankSegment primary = tankBehaviour.getPrimaryTank();
+                primary.getFluidLevel().chase(0.0f, 0.5f, LerpedFloat.Chaser.EXP);
+                primary.onFluidStackChanged();
+
+                be.setChanged();
+                be.sendData();
+            }
+        });
+
+        // 在储罐底部方块实体中添加等量岩浆
+        scene.world().modifyBlockEntity(tankBottomPos, FluidTankBlockEntity.class, be -> {
+            be.getTankInventory().fill(new FluidStack(Fluids.LAVA, 2000), IFluidHandler.FluidAction.EXECUTE);
+        });
 
         scene.idle(80);
 
