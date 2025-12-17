@@ -46,7 +46,7 @@ public class CFPonderPlugin implements PonderPlugin {
         helper.forComponents(new ResourceLocation("minecraft", "powder_snow_bucket"))
                 .addStoryBoard("powder_snow", PowderSnowScenes::snow);
 
-        HELPER.forComponents(CFBlock.GUTTER_OUTLET)
+        HELPER.forComponents(CFBlock.GUTTER_OUTLET, CFBlock.SMART_GUTTER_OUTLET)
                 .addStoryBoard("gutter_outlet", GutterOutletScenes::gutteroutlet)
                 .addStoryBoard("gutter_outlet_interact", GutterOutletScenes::gutteroutletinteract);
     }
