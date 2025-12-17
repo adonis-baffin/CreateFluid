@@ -5,9 +5,6 @@
   "block.fluid.centrifugal_pump": "离心泵",
   "item.fluid.honeycomb_mold": "蜜脾模具",
   "block.fluid.copper_tap": "铜龙头",
-  "block.fluid.gutter_outlet": "集水器",
-  "block.fluid.smart_gutter_outlet": "智能集水器",
-  "block.fluid.copper_sink": "铜水槽",
   "item.fluid.honeycomb_mold.tooltip.summary": "用于蜜脾的压块塑形配方",
   "item.fluid.baton": "指挥棒",
   "item.fluid.baton.tooltip.summary": "用于配置_动力臂_，_动力移液器_和_弹射置物台_的交互点",
@@ -58,11 +55,6 @@
   "create.fluid.baton.ejector.invalid_target": "无效的目标位置",
   "create.fluid.baton.ejector.target_cleared": "目标位置已清除",
   "create.fluid.baton.interaction_point_removed": "交互点已移除",
-
-  "block.fluid.copper_sink.tooltip.summary": "一个漂亮的铜制水槽，会自动保持满水状态。任意方向的流体输入将被销毁；可无限输出水",
-  "create.block.fluid.copper_sink.infinite_source": "无限水源",
-  "create.gui.goggles.gutter_outlet.dripping": "收集中",
-  "create.gui.goggles.gutter_outlet.dripstone_active": "收集滴落的岩浆",
 
   "create_fluid.centrifugal_pump.pump_mode": "泵送模式",
   "create_fluid.centrifugal_pump.mode.pump_in": "泵入",
@@ -130,6 +122,15 @@
   "fluid.ponder.copper_tap.text_2": "铜龙头可以依附在树叶上，并且可以从含水树叶中无限输出水",
   "fluid.ponder.copper_tap.text_3": "铜龙头可以对下方的置物台进行注液加工",
   "fluid.ponder.copper_tap.text_4": "可以用红石信号来控制铜龙头的开关",
+
+  "block.fluid.gutter_outlet": "集水器",
+  "block.fluid.smart_gutter_outlet": "智能集水器",
+  "block.fluid.copper_sink": "铜水槽",
+
+  "block.fluid.copper_sink.tooltip.summary": "一个漂亮的铜制水槽，会自动保持满水状态。任意方向的流体输入将被销毁；可无限输出水",
+  "create.block.fluid.copper_sink.infinite_source": "无限水源",
+  "create.gui.goggles.gutter_outlet.dripping": "收集中",
+  "create.gui.goggles.gutter_outlet.dripstone_active": "收集滴落的岩浆",
 
   "fluid.ponder.gutter_outlet.header": "使用集水器收集流体",
   "fluid.ponder.gutter_outlet.text_1": "集水器可以用于方便地对一个较大区域进行抽取流体的操作，类似于软管滑轮",

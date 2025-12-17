@@ -121,5 +121,27 @@
   "fluid.ponder.copper_tap.text_1": "Kupferhähne ziehen Flüssigkeit aus Behältern hinter ihnen und können Kessel oder Becken darunter füllen",
   "fluid.ponder.copper_tap.text_2": "Kupferhähne können an Laub angebracht werden und unendlich Wasser aus wasserdurchtränktem Laub ausgeben",
   "fluid.ponder.copper_tap.text_3": "Kupferhähne können Ausgießerverarbeitung an Depots darunter durchführen",
-  "fluid.ponder.copper_tap.text_4": "Redstone-Signale können verwendet werden, um den Ein/Aus-Zustand des Hahns zu steuern"
+  "fluid.ponder.copper_tap.text_4": "Redstone-Signale können verwendet werden, um den Ein/Aus-Zustand des Hahns zu steuern",
+
+  "block.fluid.gutter_outlet": "Rinnenauslass",
+  "block.fluid.smart_gutter_outlet": "Intelligenter Rinnenauslass",
+  "block.fluid.copper_sink": "Kupferspüle",
+
+  "block.fluid.copper_sink.tooltip.summary": "Eine schöne Kupferspüle, die immer voll bleibt. Jede eingeführte Flüssigkeit wird zerstört; Unendliche Wasserausgabe",
+  "create.block.fluid.copper_sink.infinite_source": "Unendliche Wasserquelle",
+  "create.gui.goggles.gutter_outlet.dripping": "Tropft",
+  "create.gui.goggles.gutter_outlet.dripstone_active": "Sammelt tropfende Lava",
+
+  "fluid.ponder.gutter_outlet.header": "Flüssigkeit mit Rinnenauslässen sammeln",
+  "fluid.ponder.gutter_outlet.text_1": "Rinnenauslässe können verwendet werden, um große Flüssigkeitsmengen oberhalb von ihnen abzuleiten, genau wie _Item-Abflüsse_",
+  "fluid.ponder.gutter_outlet.text_2": "Rinnenauslässe können auch Lava wie ein _Kessel_ sammeln oder bei Regen- oder Schneewetter Flüssigkeit aufsammeln",
+  "fluid.ponder.gutter_outlet.text_3": "_Rechtsklicke_ darauf, um Flüssigkeit aus dem gehaltenen Gegenstand einzugießen oder Flüssigkeit zu entnehmen",
+  "fluid.ponder.gutter_outlet.text_4": "_Rohrnetzwerke_ können nun die Flüssigkeit aus ihrem internen Puffer ziehen",
+
+  "fluid.ponder.gutter_outlet_interact.header": "Interaktionen mit Rinnenauslass",
+  "fluid.ponder.gutter_outlet_interact.text_1": "_Kupferhähne_ können Rinnenauslässe füllen",
+  "fluid.ponder.gutter_outlet_interact.text_2": "Intelligente Rinnenauslässe bieten dieselbe Funktionalität, können aber mit einem _Filter_ konfiguriert oder durch ein _Redstone_-Signal deaktiviert werden",
+  "fluid.ponder.gutter_outlet_interact.text_3": "Rinnenauslässe füllen automatisch Flüssigkeitsbehälter, die direkt darunter platziert sind",
+  "fluid.ponder.gutter_outlet_interact.text_4": "Rinnenauslässe können die Ausgabe eines _Beckens_ akzeptieren",
+  "fluid.ponder.gutter_outlet_interact.text_5": "_Mechanische Pipetten_ können Flüssigkeit in Rinnenauslässe einlagern oder daraus entnehmen"
 }

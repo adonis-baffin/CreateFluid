@@ -121,5 +121,27 @@
   "fluid.ponder.copper_tap.text_1": "Los grifos de cobre extraen fluido de los contenedores detrás de ellos y pueden llenar calderos o cuencos debajo",
   "fluid.ponder.copper_tap.text_2": "Los grifos de cobre se pueden unir a hojas y producir agua infinitamente desde hojas anegadas",
   "fluid.ponder.copper_tap.text_3": "Los grifos de cobre pueden realizar procesamiento de vertido en depósitos debajo",
-  "fluid.ponder.copper_tap.text_4": "Las señales de redstone se pueden usar para controlar el estado de encendido/apagado del grifo"
+  "fluid.ponder.copper_tap.text_4": "Las señales de redstone se pueden usar para controlar el estado de encendido/apagado del grifo",
+
+  "block.fluid.gutter_outlet": "Salida de canaleta",
+  "block.fluid.smart_gutter_outlet": "Salida de canaleta inteligente",
+  "block.fluid.copper_sink": "Fregadero de cobre",
+
+  "block.fluid.copper_sink.tooltip.summary": "Un hermoso fregadero de cobre que siempre permanece lleno. Cualquier fluido introducido se destruye; Salida infinita de agua",
+  "create.block.fluid.copper_sink.infinite_source": "Fuente infinita de agua",
+  "create.gui.goggles.gutter_outlet.dripping": "Goteando",
+  "create.gui.goggles.gutter_outlet.dripstone_active": "Recolectando lava goteante",
+
+  "fluid.ponder.gutter_outlet.header": "Recolectar fluidos con salidas de canaleta",
+  "fluid.ponder.gutter_outlet.text_1": "Las salidas de canaleta se pueden usar para drenar grandes masas de fluido encima de ellas, igual que los _Desagües de ítems_",
+  "fluid.ponder.gutter_outlet.text_2": "Las salidas de canaleta también pueden recolectar lava como un _caldero_, o recolectar fluido en tiempo lluvioso o nevado",
+  "fluid.ponder.gutter_outlet.text_3": "Haz _clic derecho_ en ella para verter fluido del ítem que sostienes en ella, o para extraer fluido",
+  "fluid.ponder.gutter_outlet.text_4": "Las _redes de tuberías_ ahora pueden extraer el fluido de su búfer interno",
+
+  "fluid.ponder.gutter_outlet_interact.header": "Interacciones de la salida de canaleta",
+  "fluid.ponder.gutter_outlet_interact.text_1": "Los _Grifos de cobre_ pueden llenar salidas de canaleta",
+  "fluid.ponder.gutter_outlet_interact.text_2": "Las salidas de canaleta inteligentes tienen la misma funcionalidad, pero pueden configurarse con un _filtro_, o desactivarse con una señal de _redstone_",
+  "fluid.ponder.gutter_outlet_interact.text_3": "Las salidas de canaleta llenarán automáticamente contenedores de fluidos colocados directamente debajo de ellas",
+  "fluid.ponder.gutter_outlet_interact.text_4": "Las salidas de canaleta pueden aceptar la salida de un _Cuenco_",
+  "fluid.ponder.gutter_outlet_interact.text_5": "Las _Pipetas mecánicas_ pueden depositar fluido en o extraer fluido de las salidas de canaleta"
 }

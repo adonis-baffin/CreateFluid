@@ -121,5 +121,27 @@
   "fluid.ponder.copper_tap.text_1": "Torneiras de Cobre puxam fluidos de recipientes adjacentes e são capazes de encher caldeirões ou bacias",
   "fluid.ponder.copper_tap.text_2": "Torneiras de Cobre podem ser colocadas em folhas inundadas e infinitamente puxar água das mesmas",
   "fluid.ponder.copper_tap.text_3": "Torneiras de Cobre podem produzir processos de bica se estiverem sobre um depósito",
-  "fluid.ponder.copper_tap.text_4": "Sinais de redstone podem ser usados para controlar se a torneira está ligada ou desligada"
+  "fluid.ponder.copper_tap.text_4": "Sinais de redstone podem ser usados para controlar se a torneira está ligada ou desligada",
+
+  "block.fluid.gutter_outlet": "Saída de Caleira",
+  "block.fluid.smart_gutter_outlet": "Saída de Caleira Inteligente",
+  "block.fluid.copper_sink": "Lavatório de Cobre",
+
+  "block.fluid.copper_sink.tooltip.summary": "Um belo lavatório de cobre que permanece sempre cheio. Qualquer fluido introduzido é destruído; Saída infinita de água",
+  "create.block.fluid.copper_sink.infinite_source": "Fonte Infinita de Água",
+  "create.gui.goggles.gutter_outlet.dripping": "A pingar",
+  "create.gui.goggles.gutter_outlet.dripstone_active": "A recolher lava pingante",
+
+  "fluid.ponder.gutter_outlet.header": "Recolher Fluidos com Saídas de Caleira",
+  "fluid.ponder.gutter_outlet.text_1": "As Saídas de Caleira podem ser usadas para drenar grandes quantidades de fluido acima delas, tal como os _Drenos de Itens_",
+  "fluid.ponder.gutter_outlet.text_2": "As Saídas de Caleira também podem recolher lava como um _Caldeirão_, ou recolher fluido durante tempo chuvoso ou de neve",
+  "fluid.ponder.gutter_outlet.text_3": "_Clica com o botão direito_ nela para despejar fluido do item que seguras ou para extrair fluido",
+  "fluid.ponder.gutter_outlet.text_4": "As _Redes de Tubos_ agora podem extrair o fluido do seu buffer interno",
+
+  "fluid.ponder.gutter_outlet_interact.header": "Interações com Saída de Caleira",
+  "fluid.ponder.gutter_outlet_interact.text_1": "As _Torneiras de Cobre_ podem encher Saídas de Caleira",
+  "fluid.ponder.gutter_outlet_interact.text_2": "As Saídas de Caleira Inteligentes têm a mesma funcionalidade, mas podem ser configuradas com um _filtro_, ou desativadas com um sinal de _redstone_",
+  "fluid.ponder.gutter_outlet_interact.text_3": "As Saídas de Caleira encherão automaticamente recipientes de fluido colocados diretamente por baixo delas",
+  "fluid.ponder.gutter_outlet_interact.text_4": "As Saídas de Caleira podem aceitar a saída de uma _Bacia_",
+  "fluid.ponder.gutter_outlet_interact.text_5": "As _Pipetas Mecânicas_ podem depositar fluido em ou extrair fluido das Saídas de Caleira"
 }

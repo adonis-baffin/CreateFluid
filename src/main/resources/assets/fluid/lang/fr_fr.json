@@ -121,5 +121,28 @@
   "fluid.ponder.copper_tap.text_1": "Les robinets en cuivre tirent le fluide depuis les conteneurs derrière eux et peuvent remplir les chaudrons ou bassins en dessous",
   "fluid.ponder.copper_tap.text_2": "Les robinets en cuivre peuvent être attachés aux feuilles et produire de l'eau à l'infini depuis les feuilles gorgées d'eau",
   "fluid.ponder.copper_tap.text_3": "Les robinets en cuivre peuvent effectuer un traitement de verseur sur les dépôts en dessous",
-  "fluid.ponder.copper_tap.text_4": "Les signaux de redstone peuvent être utilisés pour contrôler l'état ouvert/fermé du robinet"
+  "fluid.ponder.copper_tap.text_4": "Les signaux de redstone peuvent être utilisés pour contrôler l'état ouvert/fermé du robinet",
+
+  "block.fluid.gutter_outlet": "Sortie de gouttière",
+  "block.fluid.smart_gutter_outlet": "Sortie de gouttière intelligente",
+  "block.fluid.copper_sink": "Évier en cuivre",
+
+  "block.fluid.copper_sink.tooltip.summary": "Un bel évier en cuivre qui reste toujours plein. Tout fluide introduit est détruit ; Sortie infinie d'eau",
+  "create.block.fluid.copper_sink.infinite_source": "Source infinie d'eau",
+  "create.gui.goggles.gutter_outlet.dripping": "Gouttant",
+  "create.gui.goggles.gutter_outlet.dripstone_active": "Collecte de lave gouttante",
+
+  "fluid.ponder.gutter_outlet.header": "Collecter des fluides avec les sorties de gouttière",
+  "fluid.ponder.gutter_outlet.text_1": "Les sorties de gouttière peuvent être utilisées pour drainer de grandes masses de fluide au-dessus d'elles, tout comme les _Drains d'objets_",
+  "fluid.ponder.gutter_outlet.text_2": "Les sorties de gouttière peuvent aussi collecter la lave comme un _chaudron_, ou collecter du fluide par temps pluvieux ou neigeux",
+  "fluid.ponder.gutter_outlet.text_3": "Faites _clic droit_ dessus pour verser du fluide depuis l'objet tenu dedans, ou pour extraire du fluide",
+  "fluid.ponder.gutter_outlet.text_4": "Les _réseaux de tuyaux_ peuvent maintenant extraire le fluide de leur tampon interne",
+
+  "fluid.ponder.gutter_outlet_interact.header": "Interactions avec la sortie de gouttière",
+  "fluid.ponder.gutter_outlet_interact.text_1": "Les _Robinets en cuivre_ peuvent remplir les sorties de gouttière",
+  "fluid.ponder.gutter_outlet_interact.text_2": "Les sorties de gouttière intelligentes ont la même fonctionnalité, mais peuvent être configurées avec un _filtre_, ou désactivées avec un signal de _redstone_",
+  "fluid.ponder.gutter_outlet_interact.text_3": "Les sorties de gouttière rempliront automatiquement les conteneurs de fluide placés directement en dessous d'elles",
+  "fluid.ponder.gutter_outlet_interact.text_4": "Les sorties de gouttière peuvent accepter la sortie d'un _Bassin_",
+  "fluid.ponder.gutter_outlet_interact.text_5": "Les _Pipettes mécaniques_ peuvent déposer du fluide dans ou extraire du fluide des sorties de gouttière"
+}
 }

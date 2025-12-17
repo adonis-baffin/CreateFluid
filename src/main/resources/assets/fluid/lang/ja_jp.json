@@ -121,5 +121,27 @@
   "fluid.ponder.copper_tap.text_1": "銅の蛇口は背後の容器から液体を引き出し、下の大釜や鉢に充填できます",
   "fluid.ponder.copper_tap.text_2": "銅の蛇口は葉に取り付けることができ、水を含む葉から無限に水を出力します",
   "fluid.ponder.copper_tap.text_3": "銅の蛇口は下のデポに注液加工を行えます",
-  "fluid.ponder.copper_tap.text_4": "レッドストーン信号を使って蛇口のオン/オフ状態を制御できます"
+  "fluid.ponder.copper_tap.text_4": "レッドストーン信号を使って蛇口のオン/オフ状態を制御できます",
+
+  "block.fluid.gutter_outlet": "雨樋出口",
+  "block.fluid.smart_gutter_outlet": "スマート雨樋出口",
+  "block.fluid.copper_sink": "銅のシンク",
+
+  "block.fluid.copper_sink.tooltip.summary": "常に満杯の美しい銅のシンク。入力された液体はすべて破壊されます；無限の水出力",
+  "create.block.fluid.copper_sink.infinite_source": "無限水源",
+  "create.gui.goggles.gutter_outlet.dripping": "滴下中",
+  "create.gui.goggles.gutter_outlet.dripstone_active": "滴下ラバを収集中",
+
+  "fluid.ponder.gutter_outlet.header": "雨樋出口を使った液体の収集",
+  "fluid.ponder.gutter_outlet.text_1": "雨樋出口は上にある大規模な液体を排水するために使用でき、_アイテムドレイン_と同じです",
+  "fluid.ponder.gutter_outlet.text_2": "雨樋出口は大釜のようにラバを収集したり、雨や雪の天候で液体を収集したりできます",
+  "fluid.ponder.gutter_outlet.text_3": "持っているアイテムから液体を注ぎ込むか、液体を抽出するために_右クリック_します",
+  "fluid.ponder.gutter_outlet.text_4": "_パイプネットワーク_は今や内部バッファから液体を引き出せます",
+
+  "fluid.ponder.gutter_outlet_interact.header": "雨樋出口の相互作用",
+  "fluid.ponder.gutter_outlet_interact.text_1": "_銅の蛇口_で雨樋出口を充填できます",
+  "fluid.ponder.gutter_outlet_interact.text_2": "スマート雨樋出口は同じ機能を持ちますが、_フィルター_を設定したり、_レッドストーン_信号で無効化したりできます",
+  "fluid.ponder.gutter_outlet_interact.text_3": "雨樋出口は真下に置かれた液体容器を自動的に充填します",
+  "fluid.ponder.gutter_outlet_interact.text_4": "雨樋出口は_鉢_の出力を受け入れられます",
+  "fluid.ponder.gutter_outlet_interact.text_5": "_メカニカルピペット_は雨樋出口に液体を搬入したり、搬出したりできます"
 }
