@@ -213,9 +213,9 @@ public class GutterOutletScenes {
         // 其他位置不变
         BlockPos tank2Pos = util.grid().at(2, 3, 3);
         BlockPos tapPos = util.grid().at(2, 3, 2);
-        BlockPos basinPos = util.grid().at(2, 2, 0);
-        BlockPos casing2Pos = util.grid().at(2, 1, 0);
-        BlockPos gutterSidePos = util.grid().at(1, 1, 0);
+        BlockPos basinPos = util.grid().at(3, 2, 0);
+        BlockPos casing2Pos = util.grid().at(3, 1, 0);
+        BlockPos gutterSidePos = util.grid().at(2, 1, 0);
         BlockPos pipettePos = util.grid().at(0, 1, 3);
         BlockPos leverPos = util.grid().at(1, 2, 3);
 
