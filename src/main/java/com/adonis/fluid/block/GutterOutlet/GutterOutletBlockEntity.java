@@ -53,7 +53,7 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
 
     private static final int MAX_DRIP_DISTANCE = 10; // 可配置，模仿原版最多10格
 
-    protected SmartFluidTankBehaviour tankBehaviour;
+    public SmartFluidTankBehaviour tankBehaviour;
     protected LazyOptional<IFluidHandler> fluidCapability;
 
     protected GutterFluidDrainingBehaviour drainer;
@@ -63,7 +63,7 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
     private int dripstoneAccumulator = 0;
 
     private LerpedFloat fluidLevel;
-    private boolean forceFluidLevelUpdate;
+    public boolean forceFluidLevelUpdate;
 
     public GutterOutletBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -92,16 +92,16 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
                 .orElseGet(() -> new FluidTank(0));
     }
 
-    private void onFluidChanged() {
+    public void onFluidChanged() {
         if (level != null && !level.isClientSide) {
             setChanged();
             sendData();
         }
 
-        float fillState = getFillState();
-        if (fluidLevel != null) {
-            fluidLevel.chase(fillState, 0.5f, LerpedFloat.Chaser.EXP);
-        }
+//        float fillState = getFillState();
+//        if (fluidLevel != null) {
+//            fluidLevel.chase(fillState, 0.5f, LerpedFloat.Chaser.EXP);
+//        }
     }
 
     @Override

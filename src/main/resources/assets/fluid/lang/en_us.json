@@ -135,5 +135,12 @@
   "fluid.ponder.gutter_outlet.text_1": "Gutter Outlets can be used to drain large bodies of fluid above them, just like Item Drains",
   "fluid.ponder.gutter_outlet.text_2": "Gutter Outlets can also collect lava like a cauldron, or to collect fluid in rainy or snowy weather",
   "fluid.ponder.gutter_outlet.text_3": "Right-click it to pour fluid from your held item into it, or to extract fluid",
-  "fluid.ponder.gutter_outlet.text_4": "Pipe Networks can now pull the fluid from their internal buffer"
+  "fluid.ponder.gutter_outlet.text_4": "Pipe Networks can now pull the fluid from their internal buffer",
+
+  "fluid.ponder.gutter_outlet_interact.header": "Gutter Outlet Interactions",
+  "fluid.ponder.gutter_outlet_interact.text_1": "Copper Taps can fill Gutter Outlets",
+  "fluid.ponder.gutter_outlet_interact.text_2": "Smart Gutter Outlets have the same functionality, but can be set filter, or disabled with a redstone signal",
+  "fluid.ponder.gutter_outlet_interact.text_3": "Gutter Outlets will automatically fill fluid containers placed directly below them",
+  "fluid.ponder.gutter_outlet_interact.text_4": "Gutter Outlets can accept a Basin’s output",
+  "fluid.ponder.gutter_outlet_interact.text_5": "Mechanical Pipettes can deposit fluid into or extract fluid from Gutter Outlets"
 }

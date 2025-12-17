@@ -47,7 +47,8 @@ public class CFPonderPlugin implements PonderPlugin {
                 .addStoryBoard("powder_snow", PowderSnowScenes::snow);
 
         HELPER.forComponents(CFBlock.GUTTER_OUTLET)
-                .addStoryBoard("gutter_outlet", GutterOutletScenes::gutteroutlet);
+                .addStoryBoard("gutter_outlet", GutterOutletScenes::gutteroutlet)
+                .addStoryBoard("gutter_outlet_interact", GutterOutletScenes::gutteroutletinteract);
     }
 
     @Override
@@ -65,7 +66,9 @@ public class CFPonderPlugin implements PonderPlugin {
         HELPER.addToTag(AllCreatePonderTags.FLUIDS)
                 .add(CFBlock.PIPETTE)
                 .add(CFBlock.CENTRIFUGAL_PUMP)
-                .add(CFBlock.COPPER_TAP);
+                .add(CFBlock.COPPER_TAP)
+                .add(CFBlock.SMART_GUTTER_OUTLET)
+                .add(CFBlock.GUTTER_OUTLET);
 
         // 将指挥棒添加到工具标签
         HELPER.addToTag(AllCreatePonderTags.ARM_TARGETS)

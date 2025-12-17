@@ -135,5 +135,12 @@
   "fluid.ponder.gutter_outlet.text_1": "集水器可以用于方便地对一个较大区域进行抽取流体的操作，类似于软管滑轮",
   "fluid.ponder.gutter_outlet.text_2": "集水器可以像炼药锅一样收集岩浆，也可以在雨雪天气收集雨雪",
   "fluid.ponder.gutter_outlet.text_3": "右击可以将手持物品中的流体倒入集水器中，或从中提取流体",
-  "fluid.ponder.gutter_outlet.text_4": "流体管道可以从集水器内部缓冲区中抽取流体"
+  "fluid.ponder.gutter_outlet.text_4": "流体管道可以从集水器中抽取流体",
+
+  "fluid.ponder.gutter_outlet_interact.header": "集水器交互",
+  "fluid.ponder.gutter_outlet_interact.text_1": "铜龙头可以填充集水器",
+  "fluid.ponder.gutter_outlet_interact.text_2": "智能集水器具有与集水器一致的功能，但它可以被设置过滤，也能在受到红石信号时关闭",
+  "fluid.ponder.gutter_outlet_interact.text_3": "集水器会自发填充下方的流体容器",
+  "fluid.ponder.gutter_outlet_interact.text_4": "集水器可以接受工作盆的侧向输出",
+  "fluid.ponder.gutter_outlet_interact.text_5": "动力移液器可以向集水器存入或取出流体"
 }

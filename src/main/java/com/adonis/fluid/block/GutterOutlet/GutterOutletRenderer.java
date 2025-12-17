@@ -2,6 +2,7 @@ package com.adonis.fluid.block.GutterOutlet;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.simibubi.create.foundation.blockEntity.behaviour.fluid.SmartFluidTankBehaviour;
 import com.simibubi.create.foundation.blockEntity.renderer.SmartBlockEntityRenderer;
 import net.createmod.catnip.render.FluidRenderHelper;
 import net.minecraft.client.Minecraft;
@@ -29,16 +30,19 @@ public class GutterOutletRenderer extends SmartBlockEntityRenderer<GutterOutletB
                               MultiBufferSource buffer, int light, int overlay) {
         super.renderSafe(be, partialTicks, ms, buffer, light, overlay);
 
-        FluidStack fluidStack = be.getFluid();
-        if (fluidStack.isEmpty()) return;
+        // ====== 关键修改：直接从 behaviour 拿渲染用的流体和液面 ======
+        SmartFluidTankBehaviour tank = be.tankBehaviour;
+        if (tank == null) return;
 
-        float fluidLevel = be.getRenderedFluidLevel(partialTicks);
-        if (fluidLevel <= 0) return;
+        SmartFluidTankBehaviour.TankSegment primaryTank = tank.getPrimaryTank();
+        var renderedFluid = primaryTank.getRenderedFluid();
+        float level = primaryTank.getFluidLevel().getValue(partialTicks);
 
-        BlockState state = be.getBlockState();
-        Direction facing = state.getValue(GutterOutletBlock.FACING);
+        if (renderedFluid.isEmpty() || level <= 0) return;
 
-        renderTrapezoidalFluid(be, fluidStack, fluidLevel, facing, partialTicks, ms, buffer, light);
+        Direction facing = be.getBlockState().getValue(GutterOutletBlock.FACING);
+
+        renderTrapezoidalFluid(be, renderedFluid, level, facing, partialTicks, ms, buffer, light);
     }
 
     private void renderTrapezoidalFluid(GutterOutletBlockEntity be, FluidStack fluidStack,

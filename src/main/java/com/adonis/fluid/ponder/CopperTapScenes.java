@@ -2,7 +2,6 @@ package com.adonis.fluid.ponder;
 
 import com.adonis.fluid.block.CopperTap.CopperTapBlock;
 import com.adonis.fluid.registry.CFFluid;
-import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.fluids.FluidFX;
 import com.simibubi.create.content.fluids.tank.FluidTankBlockEntity;
 import com.simibubi.create.content.processing.basin.BasinBlockEntity;
@@ -20,9 +19,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.LayeredCauldronBlock;
 import net.minecraft.world.level.block.LeverBlock;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.Vec3;
