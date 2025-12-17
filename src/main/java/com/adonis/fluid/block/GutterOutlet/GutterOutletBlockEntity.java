@@ -330,11 +330,6 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
     protected void handleDrainToBelow() {
         if (level == null || level.isClientSide) return;
 
-//        BlockState state = getBlockState();
-//        if (state.getValue(SmartGutterOutletBlock.POWERED)) {
-//            return;
-//        }
-
         FluidStack currentFluid = getFluid();
         if (currentFluid.isEmpty()) return;
 
@@ -371,6 +366,11 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
         IFluidHandler tank = tankBehaviour.getCapability().orElse(null);
         if (tank == null) return FluidStack.EMPTY;
         return tank.getFluidInTank(0);
+    }
+
+    public FluidTank getTankInventory() {
+        if (tankBehaviour == null) return new FluidTank(0);
+        return tankBehaviour.getPrimaryHandler();
     }
 
     public float getFillState() {

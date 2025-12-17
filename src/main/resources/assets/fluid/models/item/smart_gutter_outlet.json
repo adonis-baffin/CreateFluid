@@ -1,3 +1,86 @@
 {
-  "parent": "fluid:block/smart_gutter_outlet"
+	"format_version": "1.9.0",
+	"credit": "Made with Blockbench",
+	"parent": "block/block",
+	"render_type": "minecraft:cutout",
+	"texture_size": [32, 32],
+	"textures": {
+		"1": "fluid:block/smart_gutter_outlet",
+		"2": "fluid:block/smart_gutter_outlet_2",
+		"particle": "fluid:block/smart_gutter_outlet"
+	},
+	"elements": [
+		{
+			"name": "outside",
+			"from": [0, 0, 0],
+			"to": [16, 16, 16],
+			"rotation": {"angle": 0, "axis": "y", "origin": [8, 11.30813, 8]},
+			"faces": {
+				"north": {"uv": [8, 8, 16, 16], "texture": "#1"},
+				"east": {"uv": [0, 0, 8, 8], "texture": "#1"},
+				"south": {"uv": [8, 8, 16, 16], "texture": "#1"},
+				"west": {"uv": [0, 0, 8, 8], "texture": "#1"},
+				"up": {"uv": [8, 0, 0, 8], "rotation": 270, "texture": "#2"},
+				"down": {"uv": [8, 0, 16, 8], "rotation": 270, "texture": "#2"}
+			}
+		},
+		{
+			"name": "inside",
+			"from": [13, 16, 15],
+			"to": [3, 5, 1],
+			"rotation": {"angle": 0, "axis": "y", "origin": [8, 11.30813, 8]},
+			"faces": {
+				"north": {"uv": [1.5, 8, 6.5, 13.5], "rotation": 180, "texture": "#2"},
+				"east": {"uv": [8.5, 0, 15.5, 5.5], "rotation": 180, "texture": "#1"},
+				"south": {"uv": [1.5, 8, 6.5, 13.5], "rotation": 180, "texture": "#2"},
+				"west": {"uv": [8.5, 0, 15.5, 5.5], "rotation": 180, "texture": "#1"},
+				"up": {"uv": [8.5, 9.5, 15.5, 14.5], "rotation": 270, "texture": "#2"}
+			}
+		},
+		{
+			"name": "gate",
+			"from": [3, 15, 1],
+			"to": [13, 15, 15],
+			"rotation": {"angle": 0, "axis": "y", "origin": [8, 11.30813, 8]},
+			"faces": {
+				"up": {"uv": [1.5, 8.5, 6.5, 15.5], "texture": "#1"}
+			}
+		},
+		{
+			"name": "slope_south",
+			"from": [13.4161, 6.46972, 0.016],
+			"to": [15.4161, 13.46972, 15.984],
+			"rotation": {"angle": 0, "axis": "y", "origin": [8, 11.30813, 8]},
+			"faces": {
+				"west": {"uv": [8, 3, 16, 6.5], "texture": "#1"}
+			}
+		},
+		{
+			"name": "slope_north",
+			"from": [0.5839, 6.46972, 0.016],
+			"to": [2.5839, 13.46972, 15.984],
+			"rotation": {"angle": 0, "axis": "y", "origin": [8, 11.30813, 8]},
+			"faces": {
+				"east": {"uv": [16, 3, 8, 6.5], "texture": "#1"}
+			}
+		}
+	],
+	"groups": [
+		{
+			"name": "smart_gutter_outlet",
+			"origin": [8, 18.19445, 14.00877],
+			"color": 0,
+			"children": [
+				0,
+				1,
+				2,
+				{
+					"name": "slope",
+					"origin": [8, 10, 8],
+					"color": 0,
+					"children": [3, 4]
+				}
+			]
+		}
+	]
 }

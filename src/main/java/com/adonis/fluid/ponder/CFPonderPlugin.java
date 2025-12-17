@@ -45,6 +45,9 @@ public class CFPonderPlugin implements PonderPlugin {
         // 注册细雪桶的场景（绑定到原版物品）
         helper.forComponents(new ResourceLocation("minecraft", "powder_snow_bucket"))
                 .addStoryBoard("powder_snow", PowderSnowScenes::snow);
+
+        HELPER.forComponents(CFBlock.GUTTER_OUTLET)
+                .addStoryBoard("gutter_outlet", GutterOutletScenes::gutteroutlet);
     }
 
     @Override

@@ -129,5 +129,11 @@
   "fluid.ponder.copper_tap.text_1": "铜龙头从它身后的流体容器中获取流体，可以填充下方的炼药锅、工作盆",
   "fluid.ponder.copper_tap.text_2": "铜龙头可以依附在树叶上，并且可以从含水树叶中无限输出水",
   "fluid.ponder.copper_tap.text_3": "铜龙头可以对下方的置物台进行注液加工",
-  "fluid.ponder.copper_tap.text_4": "可以用红石信号来控制铜龙头的开关"
+  "fluid.ponder.copper_tap.text_4": "可以用红石信号来控制铜龙头的开关",
+
+  "fluid.ponder.gutter_outlet.header": "使用集水器收集流体",
+  "fluid.ponder.gutter_outlet.text_1": "集水器可以用于方便地对一个较大区域进行抽取流体的操作，类似于软管滑轮",
+  "fluid.ponder.gutter_outlet.text_2": "集水器可以像炼药锅一样收集岩浆，也可以在雨雪天气收集雨雪",
+  "fluid.ponder.gutter_outlet.text_3": "右击可以将手持物品中的流体倒入集水器中，或从中提取流体",
+  "fluid.ponder.gutter_outlet.text_4": "流体管道可以从集水器内部缓冲区中抽取流体"
 }

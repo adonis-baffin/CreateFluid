@@ -129,5 +129,11 @@
   "fluid.ponder.copper_tap.text_1": "Copper Taps draw fluid from containers behind them and can fill Cauldrons or Basins below",
   "fluid.ponder.copper_tap.text_2": "Copper Taps can be attached to leaves and infinitely output water from waterlogged leaves",
   "fluid.ponder.copper_tap.text_3": "Copper Taps can perform spout processing on Depots below",
-  "fluid.ponder.copper_tap.text_4": "Redstone signals can be used to control the tap's on/off state"
+  "fluid.ponder.copper_tap.text_4": "Redstone signals can be used to control the tap's on/off state",
+
+  "fluid.ponder.gutter_outlet.header": "Collecting Fluid with Gutter Outlets",
+  "fluid.ponder.gutter_outlet.text_1": "Gutter Outlets can be used to drain large bodies of fluid above them, just like Item Drains",
+  "fluid.ponder.gutter_outlet.text_2": "Gutter Outlets can also collect lava like a cauldron, or to collect fluid in rainy or snowy weather",
+  "fluid.ponder.gutter_outlet.text_3": "Right-click it to pour fluid from your held item into it, or to extract fluid",
+  "fluid.ponder.gutter_outlet.text_4": "Pipe Networks can now pull the fluid from their internal buffer"
 }
