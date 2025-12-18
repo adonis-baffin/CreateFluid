@@ -356,43 +356,42 @@ public class FluidInterfaceBlock extends HorizontalDirectionalBlock implements I
 
         BlockEntity targetBlockEntity = level.getBlockEntity(targetPos);
 
-        // 遍历所有储罐
         for (int i = 0; i < capability.getTanks(); i++) {
             FluidStack fluidStack = capability.getFluidInTank(i);
             if (fluidStack.isEmpty())
                 continue;
 
-            // 检查物品需要多少流体
             int requiredAmount = GenericItemFilling.getRequiredAmountForItem(level, stack, fluidStack.copy());
             if (requiredAmount == -1 || requiredAmount > fluidStack.getAmount())
                 continue;
 
-            // 如果是客户端，返回
             if (level.isClientSide)
                 return fluidStack;
 
-            // 准备要填充的物品
-            ItemStack fillStack = stack;
-            if (player.isCreative() || targetBlockEntity instanceof CreativeFluidTankBlockEntity)
-                fillStack = stack.copy();
+            // 总是用 count=1 的副本进行填充操作
+            ItemStack singleEmpty = stack.copy();
+            singleEmpty.setCount(1);
+            ItemStack filledBucket = GenericItemFilling.fillItem(level, requiredAmount, singleEmpty, fluidStack.copy());
 
-            // 填充物品
-            ItemStack result = GenericItemFilling.fillItem(level, requiredAmount, fillStack, fluidStack.copy());
+            // 如果填充失败（filledBucket 仍是空桶或无效）
+            if (filledBucket.isEmpty() || filledBucket == singleEmpty)
+                return FluidStack.EMPTY;
 
-            // 从容器中抽取流体
+            // 从容器抽取流体
             FluidStack drainFluid = fluidStack.copy();
             drainFluid.setAmount(requiredAmount);
             capability.drain(drainFluid, FluidAction.EXECUTE);
 
-            // 更新玩家物品
+            // 更新玩家物品：消耗 1 个空桶，添加 1 个满桶
             if (!player.isCreative()) {
-                if (stack.getCount() == 1 && result.getCount() == 1) {
-                    player.setItemInHand(hand, result);
-                } else {
-                    stack.shrink(1);
-                    player.getInventory().placeItemBackInInventory(result);
+                stack.shrink(1);  // 消耗手持的 1 个空桶
+                if (!player.getInventory().add(filledBucket)) {  // 尝试放背包
+                    player.drop(filledBucket, false);  // 放不进就掉落
                 }
             }
+
+            // 如果是创造模式或创意罐，可额外复制以不消耗（可选，保持原逻辑）
+            // 但非必要，因为 !player.isCreative() 已处理
 
             if (targetBlockEntity != null) {
                 targetBlockEntity.setChanged();

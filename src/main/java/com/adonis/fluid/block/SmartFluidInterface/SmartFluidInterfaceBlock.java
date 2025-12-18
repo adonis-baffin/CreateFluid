@@ -365,47 +365,44 @@ public class SmartFluidInterfaceBlock extends HorizontalDirectionalBlock impleme
 
         BlockEntity targetBlockEntity = level.getBlockEntity(targetPos);
 
-        // 遍历所有储罐
         for (int i = 0; i < capability.getTanks(); i++) {
             FluidStack fluidStack = capability.getFluidInTank(i);
             if (fluidStack.isEmpty())
                 continue;
 
-            // 检查过滤器
+            // 检查过滤器是否允许该流体
             if (!filter.test(fluidStack))
                 continue;
 
-            // 检查物品需要多少流体
             int requiredAmount = GenericItemFilling.getRequiredAmountForItem(level, stack, fluidStack.copy());
             if (requiredAmount == -1 || requiredAmount > fluidStack.getAmount())
                 continue;
 
-            // 如果是客户端，返回
             if (level.isClientSide)
                 return fluidStack;
 
-            // 准备要填充的物品
-            ItemStack fillStack = stack;
-            if (player.isCreative() || targetBlockEntity instanceof CreativeFluidTankBlockEntity)
-                fillStack = stack.copy();
+            // 关键修复：始终使用 count=1 的副本进行填充
+            ItemStack singleEmpty = stack.copy();
+            singleEmpty.setCount(1);
+            ItemStack filledItem = GenericItemFilling.fillItem(level, requiredAmount, singleEmpty, fluidStack.copy());
 
-            // 填充物品
-            ItemStack result = GenericItemFilling.fillItem(level, requiredAmount, fillStack, fluidStack.copy());
+            // 如果填充失败（理论上不应发生，但防御性检查）
+            if (filledItem.isEmpty())
+                return FluidStack.EMPTY;
 
-            // 从容器中抽取流体
+            // 从容器抽取流体
             FluidStack drainFluid = fluidStack.copy();
             drainFluid.setAmount(requiredAmount);
             capability.drain(drainFluid, FluidAction.EXECUTE);
 
-            // 更新玩家物品
+            // 更新玩家物品：消耗 1 个空容器，添加 1 个满容器
             if (!player.isCreative()) {
-                if (stack.getCount() == 1 && result.getCount() == 1) {
-                    player.setItemInHand(hand, result);
-                } else {
-                    stack.shrink(1);
-                    player.getInventory().placeItemBackInInventory(result);
+                stack.shrink(1); // 消耗手持栈中的 1 个
+                if (!player.getInventory().add(filledItem)) {
+                    player.drop(filledItem, false); // 背包满则掉落
                 }
             }
+            // 注意：创造模式或创意罐时不消耗原物品，已由 shrink 条件控制
 
             if (targetBlockEntity != null) {
                 targetBlockEntity.setChanged();
