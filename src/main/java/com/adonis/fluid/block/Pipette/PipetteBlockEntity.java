@@ -606,14 +606,14 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
             return;
         }
 
-        if (!level.isClientSide && !heldFluid.isEmpty()) {
-            net.minecraft.world.Containers.dropItemStack(
-                    level,
-                    worldPosition.getX() + 0.5, worldPosition.getY() + 1, worldPosition.getZ() + 0.5,
-                    net.minecraftforge.fluids.FluidUtil.getFilledBucket(heldFluid)
-            );
-            this.heldFluid = FluidStack.EMPTY;
-        }
+//        if (!level.isClientSide && !heldFluid.isEmpty()) {
+//            net.minecraft.world.Containers.dropItemStack(
+//                    level,
+//                    worldPosition.getX() + 0.5, worldPosition.getY() + 1, worldPosition.getZ() + 0.5,
+//                    net.minecraftforge.fluids.FluidUtil.getFilledBucket(heldFluid)
+//            );
+//            this.heldFluid = FluidStack.EMPTY;
+//        }
 
         this.phase = Phase.SEARCH_INPUTS;
         this.chasedPointProgress = 1.0F;

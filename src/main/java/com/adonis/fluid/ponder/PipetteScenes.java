@@ -161,11 +161,6 @@ public class PipetteScenes {
         scene.world().showSection(fluidInterfaceSel, Direction.DOWN);
         scene.idle(10);
 
-//        scene.world().modifyBlockEntity(tankPos, FluidTankBlockEntity.class, (be) -> {
-//            be.getTankInventory().fill(new FluidStack(Fluids.LAVA, 2000), IFluidHandler.FluidAction.EXECUTE);
-//        });
-//        scene.idle(10);
-
         scene.overlay().showOutlineWithText(fluidInterfaceSel, 80)
                 .attachKeyFrame()
                 .colored(PonderPalette.OUTPUT)
@@ -603,32 +598,32 @@ public class PipetteScenes {
         scene.world().setKineticSpeed(funnelSel, 16);
         scene.idle(10);
 
-// 模拟注液加工过程
-// 1. 移液器移动到牛奶储罐
+        // 模拟注液加工过程（取1000mb，消耗250mb后剩750mb，直接硬操作归还到牛奶接口）
+        // 1. 移液器移动到牛奶储罐
         instructPipette(scene, pipettePos, PipetteBlockEntity.Phase.MOVE_TO_INPUT, FluidStack.EMPTY, 0);
         scene.idle(24);
 
-// 2. 从牛奶储罐抽取
+        // 2. 从牛奶储罐抽取1000mb
         ResourceLocation milkId = new ResourceLocation("minecraft", "milk");
         Fluid milk = ForgeRegistries.FLUIDS.getValue(milkId);
-        FluidStack milkStack = milk != null && milk != Fluids.EMPTY ?
-                new FluidStack(milk, 250) : new FluidStack(Fluids.WATER, 250);
+        FluidStack milkStackFull = milk != null && milk != Fluids.EMPTY ?
+                new FluidStack(milk, 1000) : new FluidStack(Fluids.WATER, 1000);
 
         scene.world().modifyBlockEntity(milkTankPos, FluidTankBlockEntity.class, be -> {
-            be.getTankInventory().drain(250, IFluidHandler.FluidAction.EXECUTE);
+            be.getTankInventory().drain(1000, IFluidHandler.FluidAction.EXECUTE);
         });
         scene.idle(10);
 
-        instructPipette(scene, pipettePos, PipetteBlockEntity.Phase.SEARCH_OUTPUTS, milkStack, -1);
+        instructPipette(scene, pipettePos, PipetteBlockEntity.Phase.SEARCH_OUTPUTS, milkStackFull, -1);
         scene.idle(20);
 
-// 3. 移液器移动到置物台
-        instructPipette(scene, pipettePos, PipetteBlockEntity.Phase.MOVE_TO_OUTPUT, milkStack, 0);
+        // 3. 移液器移动到置物台
+        instructPipette(scene, pipettePos, PipetteBlockEntity.Phase.MOVE_TO_OUTPUT, milkStackFull, 0);
         scene.idle(24);
 
-// 4. 执行注液加工 - 产生粒子效果（修正版）
+        // 4. 执行注液加工 - 只消耗250mb，产生粒子效果
         Vec3 depotTop = util.vector().topOf(depotPos);
-        ParticleOptions fluidParticle = FluidFX.getFluidParticle(milkStack);
+        ParticleOptions fluidParticle = FluidFX.getFluidParticle(milkStackFull);
         RandomSource random = RandomSource.create();
 
         for (int i = 0; i < 10; i++) {
@@ -640,13 +635,26 @@ public class PipetteScenes {
             );
         }
 
-// 5. 把面包变成甜甜卷
+        // 5. 把面包变成甜甜卷
         ItemStack sweetRoll = AllItems.SWEET_ROLL.asStack();
         scene.world().removeItemsFromBelt(depotPos);
         scene.world().createItemOnBeltLike(depotPos, Direction.DOWN, sweetRoll);
         scene.idle(10);
 
-// 6. 移液器收回
+        // 6. 剩余750mb牛奶，直接硬让移液器伸向牛奶接口（inputs索引0）
+        FluidStack remainingMilk = milkStackFull.copy();
+        remainingMilk.setAmount(750);
+
+        instructPipette(scene, pipettePos, PipetteBlockEntity.Phase.MOVE_TO_INPUT, remainingMilk, 0);
+        scene.idle(24);
+
+        // 7. 归还剩余750mb到牛奶储罐并清空移液器
+        scene.world().modifyBlockEntity(milkTankPos, FluidTankBlockEntity.class, be -> {
+            be.getTankInventory().fill(remainingMilk, IFluidHandler.FluidAction.EXECUTE);
+        });
+        scene.idle(10);
+
+        // 8. 移液器收回，回到搜索输入状态
         instructPipette(scene, pipettePos, PipetteBlockEntity.Phase.SEARCH_INPUTS, FluidStack.EMPTY, -1);
         scene.idle(30);
 
