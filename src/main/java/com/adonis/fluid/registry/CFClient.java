@@ -41,6 +41,7 @@ public class CFClient {
             ItemBlockRenderTypes.setRenderLayer(CFBlock.GUTTER_OUTLET.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(CFBlock.SMART_GUTTER_OUTLET.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(CFBlock.COPPER_SINK.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(CFBlock.REDSTONE_VALVE.get(), RenderType.cutoutMipped());
 
             // 注册方块实体渲染器
             BlockEntityRenderers.register(CFBlockEntity.PIPETTE.get(), PipetteRenderer::new);

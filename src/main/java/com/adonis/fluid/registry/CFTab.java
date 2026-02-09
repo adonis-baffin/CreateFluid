@@ -30,6 +30,7 @@ public class CFTab {
                         output.accept(CFBlock.GUTTER_OUTLET.get());
                         output.accept(CFBlock.SMART_GUTTER_OUTLET.get());
                         output.accept(CFBlock.COPPER_SINK.get());
+                        output.accept(CFBlock.REDSTONE_VALVE.get());
 
                         // 流体接口
                         output.accept(CFBlock.FLUID_INTERFACE.get());

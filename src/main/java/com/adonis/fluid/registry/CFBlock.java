@@ -4,6 +4,8 @@ import static com.adonis.fluid.CreateFluid.REGISTRATE;
 import static com.simibubi.create.api.behaviour.movement.MovementBehaviour.movementBehaviour;
 import static com.simibubi.create.api.contraption.storage.fluid.MountedFluidStorageType.mountedFluidStorage;
 import static com.simibubi.create.foundation.data.TagGen.axeOrPickaxe;
+import static com.simibubi.create.foundation.data.TagGen.pickaxeOnly;
+
 import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.block.CopperSink.CopperSinkBlock;
 import com.adonis.fluid.block.CopperSink.CopperSinkMovementBehaviour;
@@ -11,15 +13,14 @@ import com.adonis.fluid.block.CopperTap.CopperTapBlock;
 import com.adonis.fluid.block.GutterOutlet.GutterOutletBlock;
 import com.adonis.fluid.block.GutterOutlet.GutterOutletMovementBehaviour;
 import com.adonis.fluid.block.GutterOutlet.SmartGutterOutletBlock;
-
+import com.adonis.fluid.block.RedstoneValve.RedstoneValveBlock;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlock;
 import com.adonis.fluid.block.Pipette.PipetteBlock;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlock;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlock;
 import com.adonis.fluid.item.PipetteItem;
-import com.simibubi.create.foundation.data.ModelGen;
-import com.simibubi.create.foundation.data.SharedProperties;
-import com.simibubi.create.foundation.data.TagGen;
+import com.simibubi.create.content.fluids.PipeAttachmentModel;
+import com.simibubi.create.foundation.data.*;
 import com.tterrag.registrate.util.entry.BlockEntry;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.DyeColor;
@@ -159,7 +160,7 @@ public class CFBlock {
                     .mapColor(MapColor.STONE)
                     .sound(SoundType.COPPER)
                     .noOcclusion())
-            .transform(TagGen.pickaxeOnly())
+            .transform(pickaxeOnly())
             .blockstate((ctx, prov) -> {
                 prov.getVariantBuilder(ctx.get())
                         .forAllStates(state -> {
@@ -278,6 +279,64 @@ public class CFBlock {
                     p.models().getExistingFile(p.modLoc("block/copper_sink"))))
             .item()
             .transform(ModelGen.customItemModel("copper_sink"))
+            .register();
+
+    public static final BlockEntry<RedstoneValveBlock> REDSTONE_VALVE = REGISTRATE
+            .block("redstone_valve", RedstoneValveBlock::new)
+            .initialProperties(SharedProperties::copperMetal)
+            .properties(prop -> prop
+                    .mapColor(MapColor.COLOR_ORANGE)
+                    .sound(SoundType.COPPER)
+                    .noOcclusion())
+            .transform(pickaxeOnly())
+            .blockstate((c, p) -> {
+                p.getVariantBuilder(c.get()).forAllStates(state -> {
+                    Direction facing = state.getValue(RedstoneValveBlock.FACING);
+                    boolean axisAlongFirst = state.getValue(RedstoneValveBlock.AXIS_ALONG_FIRST_COORDINATE);
+                    boolean enabled = state.getValue(RedstoneValveBlock.ENABLED);
+
+                    // 判断管道轴是否为竖直方向（Y轴）
+                    Direction.Axis pipeAxis = RedstoneValveBlock.getPipeAxis(state);
+                    boolean vertical = pipeAxis == Direction.Axis.Y;
+
+                    String modelPath = "block/redstone_valve/block_"
+                            + (vertical ? "vertical" : "horizontal") + "_"
+                            + (enabled ? "open" : "closed");
+
+                    // 旋转逻辑与原版流体阀门blockstate JSON一致
+                    int xRot = 0;
+                    int yRot = 0;
+
+                    if (!axisAlongFirst) {
+                        switch (facing) {
+                            case DOWN  -> { xRot = 270; yRot = 90; }
+                            case UP    -> { xRot = 90;  yRot = 90; }
+                            case NORTH -> { yRot = 180; }
+                            case SOUTH -> {}
+                            case WEST  -> { yRot = 90; }
+                            case EAST  -> { yRot = 270; }
+                        }
+                    } else {
+                        switch (facing) {
+                            case DOWN  -> { xRot = 270; }
+                            case UP    -> { xRot = 90; }
+                            case NORTH -> { yRot = 180; }
+                            case SOUTH -> {}
+                            case WEST  -> { yRot = 90; }
+                            case EAST  -> { yRot = 270; }
+                        }
+                    }
+
+                    return ConfiguredModel.builder()
+                            .modelFile(p.models().getExistingFile(p.modLoc(modelPath)))
+                            .rotationX(xRot)
+                            .rotationY(yRot)
+                            .build();
+                });
+            })
+            .onRegister(CreateRegistrate.blockModel(() -> PipeAttachmentModel::withAO))
+            .item()
+            .transform(ModelGen.customItemModel())
             .register();
 
     public static void register() {
