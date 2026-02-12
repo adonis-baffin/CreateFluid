@@ -13,6 +13,7 @@ import com.adonis.fluid.block.CopperTap.CopperTapBlock;
 import com.adonis.fluid.block.GutterOutlet.GutterOutletBlock;
 import com.adonis.fluid.block.GutterOutlet.GutterOutletMovementBehaviour;
 import com.adonis.fluid.block.GutterOutlet.SmartGutterOutletBlock;
+import com.adonis.fluid.block.RedstoneTripleValve.RedstoneTripleValveBlock;
 import com.adonis.fluid.block.RedstoneValve.RedstoneValveBlock;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlock;
 import com.adonis.fluid.block.Pipette.PipetteBlock;
@@ -337,6 +338,85 @@ public class CFBlock {
             .onRegister(CreateRegistrate.blockModel(() -> PipeAttachmentModel::withAO))
             .item()
             .transform(ModelGen.customItemModel())
+            .register();
+
+    public static final BlockEntry<RedstoneTripleValveBlock> REDSTONE_TRIPLE_VALVE = REGISTRATE
+            .block("redstone_triple_valve", RedstoneTripleValveBlock::new)
+            .initialProperties(SharedProperties::copperMetal)
+            .properties(prop -> prop
+                    .mapColor(MapColor.COLOR_ORANGE)
+                    .sound(SoundType.COPPER)
+                    .noOcclusion())
+            .transform(TagGen.pickaxeOnly())
+            .blockstate((c, p) -> {
+                p.getVariantBuilder(c.get()).forAllStates(state -> {
+                    Direction facing = state.getValue(RedstoneTripleValveBlock.FACING);
+                    boolean axisAlongFirst = state.getValue(RedstoneTripleValveBlock.AXIS_ALONG_FIRST_COORDINATE);
+                    boolean powered = state.getValue(RedstoneTripleValveBlock.POWERED);
+
+                    Direction.Axis crossAxis = RedstoneTripleValveBlock.getCrossAxis(state);
+                    boolean vertical = crossAxis == Direction.Axis.Y;
+
+                    // open = 无信号(powered=false), closed = 有信号(powered=true)
+                    String modelPath = "block/redstone_triple_valve/block_"
+                            + (vertical ? "vertical" : "horizontal") + "_"
+                            + (powered ? "closed" : "open");
+
+                    // 模型默认朝向:
+                    //   horizontal: 固定口朝 DOWN(Y-), 横杆沿 X
+                    //   vertical:   固定口朝 WEST(X-), 横杆沿 Y
+                    int xRot = 0;
+                    int yRot = 0;
+
+                    switch (facing) {
+                        case DOWN -> {
+                            // horizontal 默认就是固定口DOWN
+                            // AAF=false → crossX → horizontal, 无旋转
+                            // AAF=true  → crossZ → horizontal, yRot=90 (X→Z)
+                            if (crossAxis == Direction.Axis.Z) yRot = 90;
+                        }
+                        case UP -> {
+                            // 翻转 DOWN→UP
+                            xRot = 180;
+                            if (crossAxis == Direction.Axis.Z) yRot = 90;
+                        }
+                        case WEST -> {
+                            // AAF=false → crossY → vertical 默认就是固定口WEST
+                            // AAF=true  → crossZ → horizontal, xRot=90 yRot=90
+                            if (!vertical) { xRot = 90; yRot = 90; }
+                        }
+                        case EAST -> {
+                            // AAF=false → crossY → vertical, yRot=180 (WEST→EAST)
+                            // AAF=true  → crossZ → horizontal, xRot=270 yRot=270
+                            if (vertical) { yRot = 180; }
+                            else { xRot = 270; yRot = 270; }
+                        }
+                        case SOUTH -> {
+                            // AAF=false → crossX → horizontal, xRot=90 (DOWN→SOUTH)
+                            // AAF=true  → crossY → vertical, yRot=270 (WEST→SOUTH)
+                            if (!vertical) { xRot = 90; }
+                            else { yRot = 270; }
+                        }
+                        case NORTH -> {
+                            // AAF=false → crossX → horizontal, xRot=270 (DOWN→NORTH)
+                            // AAF=true  → crossY → vertical, yRot=90 (WEST→NORTH)
+                            if (!vertical) { xRot = 270; }
+                            else { yRot = 90; }
+                        }
+                    }
+
+                    return ConfiguredModel.builder()
+                            .modelFile(p.models().getExistingFile(p.modLoc(modelPath)))
+                            .rotationX(xRot)
+                            .rotationY(yRot)
+                            .build();
+                });
+            })
+            .onRegister(CreateRegistrate.blockModel(() -> PipeAttachmentModel::withAO))
+            .item()
+            .model((ctx, prov) -> prov.withExistingParent(ctx.getName(),
+                    prov.modLoc("block/redstone_triple_valve/item")))
+            .build()
             .register();
 
     public static void register() {

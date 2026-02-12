@@ -7,6 +7,7 @@ import com.adonis.fluid.block.GutterOutlet.GutterOutletBlockEntity;
 import com.adonis.fluid.block.GutterOutlet.SmartGutterOutletBlockEntity;
 import com.adonis.fluid.block.Pipette.PipetteBlockEntity;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlockEntity;
+import com.adonis.fluid.block.RedstoneTripleValve.RedstoneTripleValveBlockEntity;
 import com.adonis.fluid.block.RedstoneValve.RedstoneValveBlockEntity;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlockEntity;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlockEntity;
@@ -77,6 +78,12 @@ public class CFBlockEntity {
             BLOCK_ENTITIES.register("redstone_valve", () -> BlockEntityType.Builder.of(
                     (pos, state) -> new RedstoneValveBlockEntity(CFBlockEntity.REDSTONE_VALVE.get(), pos, state),
                     CFBlock.REDSTONE_VALVE.get()).build(null));
+
+    public static final RegistryObject<BlockEntityType<RedstoneTripleValveBlockEntity>> REDSTONE_TRIPLE_VALVE =
+            BLOCK_ENTITIES.register("redstone_triple_valve", () -> BlockEntityType.Builder.of(
+                    (pos, state) -> new RedstoneTripleValveBlockEntity(
+                            CFBlockEntity.REDSTONE_TRIPLE_VALVE.get(), pos, state),
+                    CFBlock.REDSTONE_TRIPLE_VALVE.get()).build(null));
 
     public static void register(IEventBus modEventBus) {
         BLOCK_ENTITIES.register(modEventBus);
