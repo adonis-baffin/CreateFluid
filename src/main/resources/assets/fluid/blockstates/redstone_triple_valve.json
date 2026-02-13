@@ -118,22 +118,22 @@
     "axis_along_first=true,powered=false,facing=east,waterlogged=false": {
       "model": "fluid:block/redstone_triple_valve/block_horizontal_open",
       "x": 270,
-      "y": 270
+      "y": 90
     },
     "axis_along_first=true,powered=false,facing=east,waterlogged=true": {
       "model": "fluid:block/redstone_triple_valve/block_horizontal_open",
       "x": 270,
-      "y": 270
+      "y": 90
     },
     "axis_along_first=true,powered=true,facing=east,waterlogged=false": {
       "model": "fluid:block/redstone_triple_valve/block_horizontal_closed",
       "x": 270,
-      "y": 270
+      "y": 90
     },
     "axis_along_first=true,powered=true,facing=east,waterlogged=true": {
       "model": "fluid:block/redstone_triple_valve/block_horizontal_closed",
       "x": 270,
-      "y": 270
+      "y": 90
     },
 
     "axis_along_first=false,powered=false,facing=south,waterlogged=false": {
