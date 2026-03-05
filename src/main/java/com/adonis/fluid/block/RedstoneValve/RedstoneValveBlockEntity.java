@@ -52,11 +52,9 @@ public class RedstoneValveBlockEntity extends SmartBlockEntity {
         @Override
         public AttachmentTypes getRenderedRimAttachment(BlockAndTintGetter world, BlockPos pos,
                                                         BlockState state, Direction direction) {
+            // 获取默认逻辑判断的附件类型
             AttachmentTypes attachment = super.getRenderedRimAttachment(world, pos, state, direction);
-            // 阀门本体不渲染 rim
-            if (attachment == AttachmentTypes.RIM)
-                return AttachmentTypes.NONE;
-            return attachment.withoutConnector();
+            return AttachmentTypes.NONE;
         }
     }
 }

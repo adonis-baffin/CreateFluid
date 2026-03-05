@@ -1,160 +1,126 @@
 package com.adonis.fluid.block.RedstoneTripleValve;
-
 import java.util.List;
-
 import com.simibubi.create.content.fluids.FluidPropagator;
-import com.simibubi.create.content.fluids.FluidReactions;
 import com.simibubi.create.content.fluids.FluidTransportBehaviour;
-import com.simibubi.create.content.fluids.PipeConnection;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.BlockAndTintGetter;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
-
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 public class RedstoneTripleValveBlockEntity extends SmartBlockEntity {
-
+    // 自定义一个空的 FluidHandler，用于堵住关闭的端口
+    // 这样管道会认为这里连接了一个不可填充的容器，从而不会视为敞开端
+    private static final IFluidHandler BLOCKED_HANDLER = new IFluidHandler() {
+        @Override
+        public int getTanks() {
+            return 0;
+        }
+        @Override
+        @Nonnull
+        public FluidStack getFluidInTank(int tank) {
+            return FluidStack.EMPTY;
+        }
+        @Override
+        public int getTankCapacity(int tank) {
+            return 0;
+        }
+        @Override
+        public boolean isFluidValid(int tank, @Nonnull FluidStack stack) {
+            return false;
+        }
+        @Override
+        public int fill(FluidStack resource, FluidAction action) {
+            return 0; // 返回0，表示拒绝任何流体注入
+        }
+        @Override
+        @Nonnull
+        public FluidStack drain(FluidStack resource, FluidAction action) {
+            return FluidStack.EMPTY;
+        }
+        @Override
+        @Nonnull
+        public FluidStack drain(int maxDrain, FluidAction action) {
+            return FluidStack.EMPTY;
+        }
+    };
+    // 封装为 LazyOptional
+    private static final LazyOptional<IFluidHandler> BLOCKED_CAPABILITY = LazyOptional.of(() -> BLOCKED_HANDLER);
     public RedstoneTripleValveBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
     }
-
     @Override
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
         behaviours.add(new TripleValvePipeBehaviour(this));
         registerAwardables(behaviours, FluidPropagator.getSharedTriggers());
     }
-
     /**
-     * 三通阀门的流体传输行为。
+     * 核心修复：Capabilities 控制。
      *
-     * 始终只有两个口通流：固定口 + 当前活跃的侧口。
-     * 红石信号切换哪个侧口活跃。
-     * 效果等同于一个可切换转弯方向的管道。
-     *
-     * canHaveFlowToward 对三个口都返回 true（防止关闭侧口被判定为开口放水）。
-     * canPullFluidFrom 控制 inbound 方向的拉取。
-     * tick 中重写 internalFluid 分配逻辑，阻止向关闭侧口推送 outbound 流体。
+     * 当端口关闭时，我们返回一个空的 IFluidHandler。
+     * 这样做的效果是：
+     * 1. FluidPropagator.isOpenEnd 会检测到 Capability，认为这不是敞开的口，从而阻止流体喷出。
+     * 2. 相邻管道会尝试向这个 Handler 注入流体，但因为它是空的，注入失败，表现为“堵住”了。
      */
+    @Override
+    @Nonnull
+    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
+        // 仅处理流体能力
+        if (cap == ForgeCapabilities.FLUID_HANDLER) {
+            // 关键修复：必须检查 side 是否为 null。
+            // 管道类方块通常没有“内部”储罐，side 为 null 时不应该返回任何特殊能力。
+            if (side != null) {
+                BlockState state = getBlockState();
+                // 如果请求的一侧是物理端口之一
+                if (RedstoneTripleValveBlock.isAnyPort(state, side)) {
+                    // 但当前逻辑是关闭的
+                    if (!RedstoneTripleValveBlock.isOpenAt(state, side)) {
+                        // 返回阻塞 Handler，假装这里是一个满的/不通的容器
+                        return BLOCKED_CAPABILITY.cast();
+                    }
+                }
+            }
+        }
+        return super.getCapability(cap, side);
+    }
     class TripleValvePipeBehaviour extends FluidTransportBehaviour {
-
         public TripleValvePipeBehaviour(SmartBlockEntity be) {
             super(be);
         }
-
-        @Override
-        public boolean canHaveFlowToward(BlockState state, Direction direction) {
-            return RedstoneTripleValveBlock.isAnyPort(state, direction);
-        }
-
-        @Override
-        public boolean canPullFluidFrom(FluidStack fluid, BlockState state, Direction direction) {
-            if (RedstoneTripleValveBlock.isOpenAt(state, direction))
-                return super.canPullFluidFrom(fluid, state, direction);
-            return false;
-        }
-
         /**
-         * 重写 tick 以控制 internalFluid 的分配。
+         * 核心修复：控制流体网络的拓扑结构。
          *
-         * 原版逻辑中，internalFluid（从其他连接流入的流体）会被无条件推送到所有连接。
-         * 我们需要对关闭的侧口不传递 internalFluid，否则流体会从关闭的口流出。
+         * 仅对当前红石状态下“开启”的两个端口返回 true。
+         * 这会导致 FluidTransportBehaviour 在 wipePressure() 时移除关闭端口的 PipeConnection。
+         * 结果是，流体网络逻辑（压力传播、寻路）将完全忽略关闭的端口，
+         * 从而彻底解决压力抵消的问题。
          */
         @Override
-        public void tick() {
-            // 调用 BlockEntityBehaviour.tick() 而不是 FluidTransportBehaviour.tick()
-            // 因为我们需要完全接管流体分配逻辑
-            Level world = getWorld();
-            BlockPos pos = getPos();
-            boolean onServer = !world.isClientSide || blockEntity.isVirtual();
-
-            if (interfaces == null)
-                return;
-            java.util.Collection<PipeConnection> connections = interfaces.values();
-
-            PipeConnection singleSource = null;
-
-            if (phase == UpdatePhase.WAIT_FOR_PUMPS) {
-                phase = UpdatePhase.FLIP_FLOWS;
-                return;
-            }
-
-            if (onServer) {
-                boolean sendUpdate = false;
-                for (PipeConnection connection : connections) {
-                    sendUpdate |= connection.flipFlowsIfPressureReversed();
-                    connection.manageSource(world, pos);
-                }
-                if (sendUpdate)
-                    blockEntity.notifyUpdate();
-            }
-
-            if (phase == UpdatePhase.FLIP_FLOWS) {
-                phase = UpdatePhase.IDLE;
-                return;
-            }
-
-            if (onServer) {
-                FluidStack availableFlow = FluidStack.EMPTY;
-                FluidStack collidingFlow = FluidStack.EMPTY;
-
-                for (PipeConnection connection : connections) {
-                    FluidStack fluidInFlow = connection.getProvidedFluid();
-                    if (fluidInFlow.isEmpty())
-                        continue;
-                    if (availableFlow.isEmpty()) {
-                        singleSource = connection;
-                        availableFlow = fluidInFlow;
-                        continue;
-                    }
-                    if (availableFlow.isFluidEqual(fluidInFlow)) {
-                        singleSource = null;
-                        availableFlow = fluidInFlow;
-                        continue;
-                    }
-                    collidingFlow = fluidInFlow;
-                    break;
-                }
-
-                if (!collidingFlow.isEmpty()) {
-                    FluidReactions.handlePipeFlowCollision(world, pos, availableFlow, collidingFlow);
-                    return;
-                }
-
-                BlockState currentState = blockEntity.getBlockState();
-                boolean sendUpdate = false;
-                for (PipeConnection connection : connections) {
-                    // ===== 关键修改：对关闭的侧口不传递 internalFluid =====
-                    FluidStack internalFluid;
-                    if (singleSource != connection && RedstoneTripleValveBlock.isOpenAt(currentState, connection.side)) {
-                        internalFluid = availableFlow;
-                    } else {
-                        internalFluid = FluidStack.EMPTY;
-                    }
-
-                    java.util.function.Predicate<FluidStack> extractionPredicate =
-                            extracted -> canPullFluidFrom(extracted, currentState, connection.side);
-                    sendUpdate |= connection.manageFlows(world, pos, internalFluid, extractionPredicate);
-                }
-
-                if (sendUpdate)
-                    blockEntity.notifyUpdate();
-            }
-
-            for (PipeConnection connection : connections)
-                connection.tickFlowProgress(world, pos);
+        public boolean canHaveFlowToward(BlockState state, Direction direction) {
+            return RedstoneTripleValveBlock.isOpenAt(state, direction);
         }
-
+        /**
+         * 视觉渲染逻辑：
+         * 保留了你原有的渲染风格（移除默认的RIM连接器，避免与方块模型冲突），
+         * 同时适配了新的拓扑逻辑。
+         */
         @Override
         public AttachmentTypes getRenderedRimAttachment(BlockAndTintGetter world, BlockPos pos,
                                                         BlockState state, Direction direction) {
+            // 调用父类方法获取默认判定
             AttachmentTypes attachment = super.getRenderedRimAttachment(world, pos, state, direction);
+            // 如果是 RIM（普通管道连接），返回 NONE，因为我们使用自定义方块模型。
             if (attachment == AttachmentTypes.RIM)
                 return AttachmentTypes.NONE;
+            // 其他情况（如连接容器时的 DRAIN）保留，但移除连接器部件
             return attachment.withoutConnector();
         }
     }
