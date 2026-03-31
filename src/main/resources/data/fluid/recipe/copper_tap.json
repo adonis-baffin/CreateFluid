@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": {
+      "tag": "c:ingots/copper"
+    },
+    "B": {
+      "item": "minecraft:dried_kelp"
+    },
+    "A": {
+      "tag": "c:plates/copper"
+    }
+  },
+  "pattern": [
+    "ABC"
+  ],
+  "result": {
+    "count": 1,
+    "id": "fluid:copper_tap"
+  }
+}

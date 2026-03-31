@@ -1,0 +1,21 @@
+{
+  "type": "create:compacting",
+  "ingredients": [
+    {
+      "item": "fluid:honeycomb_mold"
+    },
+    {
+      "type": "fluid_stack",
+      "amount": 100,
+      "fluid": "create:honey"
+    }
+  ],
+  "results": [
+    {
+      "id": "minecraft:honeycomb"
+    },
+    {
+      "id": "fluid:honeycomb_mold"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "parent": "create_things_and_misc:custom/tube",
+  "textures": {
+    "0": "create_things_and_misc:block/neon_tube",
+    "particle": "create_things_and_misc:item/particules_invisible"
+  }
+}

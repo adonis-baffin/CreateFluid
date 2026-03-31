@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "fluid:block/fluid_interface"
+    },
+    "facing=south": {
+      "model": "fluid:block/fluid_interface",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "fluid:block/fluid_interface",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "fluid:block/fluid_interface",
+      "y": 90
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "required": true,
+  "priority": 1000,
+  "package": "com.adonis.fluid.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "fluid.refmap.json",
+  "mixins": [
+    "BeltInventoryMixin",
+    "LightningBoltMixin",
+    "ArmPlacementPacketMixin",
+    "accessor.ArmBlockEntityAccessor"
+  ],
+  "client": [
+    "ArmBlockEntityWrenchUpdateMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "minVersion": "0.8"
+}

@@ -1,0 +1,141 @@
+{
+  "block.fluid.pipette": "动力移液器",
+  "block.fluid.fluid_interface": "流体接口",
+  "block.fluid.smart_fluid_interface": "智能流体接口",
+  "block.fluid.centrifugal_pump": "离心泵",
+  "item.fluid.honeycomb_mold": "蜜脾模具",
+  "block.fluid.copper_tap": "铜龙头",
+  "item.fluid.honeycomb_mold.tooltip.summary": "用于蜜脾的压块塑形配方",
+  "item.fluid.baton": "指挥棒",
+  "item.fluid.baton.tooltip.summary": "用于配置_动力臂_，_动力移液器_和_弹射置物台_的交互点",
+  "fluid_type.fluid.powder_snow": "细雪",
+
+  "item.fluid.pipette": "动力移液器",
+
+  "itemGroup.createfluid.main": "机械动力：流体",
+
+  "block.fluid.fluid_interface.tooltip": "流体接口",
+  "block.fluid.fluid_interface.tooltip.summary": "一个用于与相邻流体容器交互的_代理_方块",
+  "block.fluid.fluid_interface.tooltip.condition1": "当玩家使用时",
+  "block.fluid.fluid_interface.tooltip.behaviour1": "允许使用桶或流体容器与连接的容器进行_直接流体交互_",
+
+  "block.fluid.smart_fluid_interface.tooltip": "智能流体接口",
+  "block.fluid.smart_fluid_interface.tooltip.summary": "一个可以设置_过滤功能_的流体容器_高级代理_方块,限制哪些流体可以通过",
+  "block.fluid.smart_fluid_interface.tooltip.condition1": "当配置过滤器时",
+  "block.fluid.smart_fluid_interface.tooltip.behaviour1": "只允许_指定的流体_被插入或提取",
+  "block.fluid.smart_fluid_interface.tooltip.condition2": "当连接到容器时",
+  "block.fluid.smart_fluid_interface.tooltip.behaviour2": "作为连接容器的_过滤网关_，防止不需要的流体类型通过",
+
+  "block.fluid.centrifugal_pump.tooltip.summary": "比_动力泵_运输距离更远，传输速率更高，可以用_铜机壳_来封装",
+  "block.fluid.copper_tap.tooltip.summary": "右键开关。可以填充下方的_工作盆_，_炼药锅_，或对下方的_置物台_进行注液加工",
+
+  "create.fluid.mechanical_pipette.extract": "从%1$s吸取流体",
+  "create.fluid.mechanical_pipette.deposit": "将流体注入%1$s",
+  "create.fluid.mechanical_pipette.points_outside_range": "由于距离限制，%1$s 个已选定的交互点已被移除。",
+  "create.fluid.mechanical_pipette.summary": "已配置的流体交互点：%1$s 个输入，%2$s 个输出",
+  "create.fluid.mechanical_pipette.no_targets.title": "没有目标",
+  "create.fluid.mechanical_pipette.no_targets": "看起来这个_动力移液器_没有被分配任何_目标_。_手持动力移液器_，_右击_选取工作盆、分液池、流体接口或其他元件来设置目标。",
+
+
+  "create.create.mechanical_arm.extract_from": "从 %1$s 中拿取物品",
+  "create.create.mechanical_arm.deposit_to": "将物品存储至 %1$s",
+
+  "create.hint.mechanical_arm_no_targets": "看起来这个_动力臂_没有被分配任何_目标_。_手持动力臂_，_右击_选取传送带、置物台、漏斗或其他元件来设置目标。",
+  "create.hint.mechanical_arm_no_targets.title": "没有目标",
+  "create.create.mechanical_arm.points_outside_range": "由于距离限制，%1$s 个已选定的交互点已被移除。",
+
+  "create.fluid.baton.arm.dance_started": "动力臂开始跳舞",
+  "create.fluid.baton.arm.dance_stopped": "动力臂停止跳舞",
+  "create.fluid.baton.ejector.click_to_set": "点击设置目标位置",
+  "create.fluid.baton.ejector.target_set": "目标位置已设置",
+  "create.fluid.baton.ejector.no_target": "未设置目标位置",
+  "create.fluid.baton.ejector.invalid_target": "无效的目标位置",
+  "create.fluid.baton.ejector.target_cleared": "目标位置已清除",
+  "create.fluid.baton.interaction_point_removed": "交互点已移除",
+
+  "create_fluid.centrifugal_pump.pump_mode": "泵送模式",
+  "create_fluid.centrifugal_pump.mode.pump_in": "泵入",
+  "create_fluid.centrifugal_pump.mode.pump_out": "泵出",
+
+  "create.create_fluid.centrifugal_pump.pump_mode": "泵送模式",
+  "create.create_fluid.centrifugal_pump.mode.pump_in": "泵入",
+  "create.create_fluid.centrifugal_pump.mode.pump_out": "泵出",
+
+  "create.mechanical_arm.selection_mode.forced_round_robin": "强制轮询调度",
+  "create.mechanical_arm.selection_mode.prefer_first": "第一目标优先",
+  "create.mechanical_arm.selection_mode.round_robin": "轮询调度",
+
+  "create.mechanical_pipette.selection_mode.forced_round_robin": "强制轮询调度",
+  "create.mechanical_pipette.selection_mode.prefer_first": "第一目标优先",
+  "create.mechanical_pipette.selection_mode.round_robin": "轮询调度",
+
+  "fluid.ponder.mechanical_pipette.header": "配置动力移液器",
+  "fluid.ponder.mechanical_pipette.text_1": "输入",
+  "fluid.ponder.mechanical_pipette.text_2": "输出",
+  "fluid.ponder.mechanical_pipette.text_3": "动力移液器与动力臂的工作方式别无二致，但是正如其名，它专注于与流体容器交互",
+  "fluid.ponder.mechanical_pipette.text_4": "对于某些无法直接交互的流体容器，流体接口可以解决此问题",
+  "fluid.ponder.mechanical_pipette.text_5": "除了常规的流体容器，动力移液器还支持与更多有趣的方块交互，也许它能更好地帮助你施展创意",
+  "fluid.ponder.mechanical_pipette.text_6": "这里是动力移液器的存量指示器，通过它可以了解当前动力移液器所持有的流体量",
+
+  "fluid.ponder.mechanical_pipette_filter.header": "动力移液器的过滤",
+  "fluid.ponder.mechanical_pipette_filter.text_1": "有时，你会想着利用某种过滤限制动力移液器的目标",
+  "fluid.ponder.mechanical_pipette_filter.text_2": "智能流体接口因为这种需求而存在",
+  "fluid.ponder.mechanical_pipette_filter.text_3": "智能流体接口的过滤槽可以应用至动力移液器上",
+
+  "fluid.ponder.mechanical_pipette_fill.header": "动力移液器的注液加工",
+  "fluid.ponder.mechanical_pipette_fill.text_1": "输入",
+  "fluid.ponder.mechanical_pipette_fill.text_2": "输出",
+  "fluid.ponder.mechanical_pipette_fill.text_3": "除了处理物流，动力移液器也可以应用于加工场景",
+  "fluid.ponder.mechanical_pipette_fill.text_4": "当选定置物台或传送带作为输出端时，动力移液器会时刻留意上方是否有可以执行注液加工的原料",
+  "fluid.ponder.mechanical_pipette_fill.text_5": "动力移液器会从所有的输入端中寻找所需的流体原料，然后执行注液加工",
+
+  "fluid.ponder.baton.header": "使用指挥棒",
+  "fluid.ponder.baton.text_1": "输入",
+  "fluid.ponder.baton.text_2": "输出",
+  "fluid.ponder.baton.text_3": "有时你会想，在动力臂已经放置的情况下，为它添加或修改交互点",
+  "fluid.ponder.baton.text_4": "用指挥棒对其右键，进入指挥模式。指挥模式下，动力臂所有的交互点会持续高亮显示",
+  "fluid.ponder.baton.text_5": "现在，你可以像手持动力臂一样，自由地在之前的基础上，调整动力臂的交互点",
+  "fluid.ponder.baton.text_6": "修改完成后，再次右键动力臂，即可为其更新交互点信息",
+  "fluid.ponder.baton.text_7": "动力移液器和弹射置物台的交互点同样可以用指挥棒修改",
+
+  "fluid.ponder.powder_snow.header": "细雪流体",
+  "fluid.ponder.powder_snow.text_1": "细雪现在是一种流体，它可以被流体管道或动力移液器从炼药锅中收集",
+  "fluid.ponder.powder_snow.text_2": "可以用细雪桶来设置对细雪流体的过滤",
+  "fluid.ponder.powder_snow.text_3": "也可以通过动力搅拌器来制作细雪流体",
+  "fluid.ponder.powder_snow.text_4": "右键工作盆即可获得细雪桶",
+
+  "fluid.ponder.centrifugal_pump.header": "使用离心泵",
+  "fluid.ponder.centrifugal_pump.text_1": "离心泵具有比动力泵更强大的传输速率，更远的传输距离，当然它消耗的应力也更大",
+  "fluid.ponder.centrifugal_pump.text_2": "离心泵的压力最多沿管线传递20格，与输入动力无关",
+  "fluid.ponder.centrifugal_pump.text_3": "相同的转速下，离心泵的传输速度是动力泵的两倍",
+  "fluid.ponder.centrifugal_pump.text_4": "离心泵的传输方向不受旋转方向影响",
+  "fluid.ponder.centrifugal_pump.text_5": "取而代之的是，可以通过侧面的面板来控制离心泵的传输方向",
+  "fluid.ponder.centrifugal_pump.text_6": "如果觉得使用面板太麻烦，使用指挥棒对其右键可以实现便捷切换",
+  "fluid.ponder.centrifugal_pump.text_7": "铜机壳可用于封装离心泵",
+  "fluid.ponder.centrifugal_pump.text_8": "封装后的离心泵不再具有面板，其传输方向由旋转方向控制",
+
+  "fluid.ponder.copper_tap.header": "使用铜龙头",
+  "fluid.ponder.copper_tap.text_1": "铜龙头从它身后的流体容器中获取流体，可以填充下方的炼药锅、工作盆",
+  "fluid.ponder.copper_tap.text_2": "铜龙头可以依附在树叶上，并且可以从含水树叶中无限输出水",
+  "fluid.ponder.copper_tap.text_3": "铜龙头可以对下方的置物台进行注液加工",
+  "fluid.ponder.copper_tap.text_4": "可以用红石信号来控制铜龙头的开关",
+
+  "block.fluid.gutter_outlet": "集水器",
+  "block.fluid.smart_gutter_outlet": "智能集水器",
+
+  "create.gui.goggles.gutter_outlet.dripping": "收集中",
+  "create.gui.goggles.gutter_outlet.dripstone_active": "收集滴落的岩浆",
+
+  "fluid.ponder.gutter_outlet.header": "使用集水器收集流体",
+  "fluid.ponder.gutter_outlet.text_1": "集水器可以用于方便地对一个较大区域进行抽取流体的操作，类似于软管滑轮",
+  "fluid.ponder.gutter_outlet.text_2": "集水器可以像炼药锅一样收集岩浆，也可以在雨雪天气收集雨雪",
+  "fluid.ponder.gutter_outlet.text_3": "右击可以将手持物品中的流体倒入集水器中，或从中提取流体",
+  "fluid.ponder.gutter_outlet.text_4": "流体管道可以从集水器中抽取流体",
+
+  "fluid.ponder.gutter_outlet_interact.header": "集水器交互",
+  "fluid.ponder.gutter_outlet_interact.text_1": "铜龙头可以填充集水器",
+  "fluid.ponder.gutter_outlet_interact.text_2": "智能集水器具有与集水器一致的功能，但它可以被设置过滤，也能在受到红石信号时关闭",
+  "fluid.ponder.gutter_outlet_interact.text_3": "集水器会自发填充下方的流体容器",
+  "fluid.ponder.gutter_outlet_interact.text_4": "集水器可以接受工作盆的侧向输出",
+  "fluid.ponder.gutter_outlet_interact.text_5": "动力移液器可以向集水器存入或取出流体"
+}

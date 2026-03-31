@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": {
+      "tag": "c:ingots/copper"
+    },
+    "C": {
+      "tag": "c:nuggets/copper"
+    }
+  },
+  "pattern": [
+    "AC"
+  ],
+  "result": {
+    "id": "fluid:fluid_interface"
+  },
+  "show_notification": true
+}

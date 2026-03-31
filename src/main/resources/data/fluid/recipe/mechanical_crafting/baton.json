@@ -1,0 +1,30 @@
+{
+  "type": "create:mechanical_crafting",
+  "accept_mirrored": true,
+  "category": "misc",
+  "key": {
+    "B": {
+      "tag": "c:ingots/brass"
+    },
+    "E": {
+      "item": "create:electron_tube"
+    },
+    "G": {
+      "tag": "c:glass_blocks"
+    },
+    "O": {
+      "tag": "c:obsidians"
+    }
+  },
+  "pattern": [
+    " G ",
+    " E ",
+    " G ",
+    " B ",
+    " O "
+  ],
+  "result": {
+    "count": 1,
+    "id": "fluid:baton"
+  }
+}

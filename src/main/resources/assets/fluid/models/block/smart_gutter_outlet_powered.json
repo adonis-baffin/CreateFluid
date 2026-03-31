@@ -1,0 +1,9 @@
+{
+	"format_version": "1.9.0",
+	"credit": "Made with Blockbench",
+	"parent": "fluid:block/smart_gutter_outlet",
+	"textures": {
+		"1": "fluid:block/smart_gutter_outlet_powered",
+		"particle": "fluid:block/smart_gutter_outlet_powered"
+	}
+}

@@ -1,0 +1,200 @@
+{
+  "variants": {
+    "encased=false,face=floor,facing=north,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/block"
+    },
+    "encased=false,face=floor,facing=north,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/block"
+    },
+    "encased=false,face=floor,facing=south,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "y": 180
+    },
+    "encased=false,face=floor,facing=south,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "y": 180
+    },
+    "encased=false,face=floor,facing=west,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "y": 270
+    },
+    "encased=false,face=floor,facing=west,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "y": 270
+    },
+    "encased=false,face=floor,facing=east,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "y": 90
+    },
+    "encased=false,face=floor,facing=east,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "y": 90
+    },
+    "encased=false,face=ceiling,facing=north,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "x": 180,
+      "y": 180
+    },
+    "encased=false,face=ceiling,facing=north,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "x": 180,
+      "y": 180
+    },
+    "encased=false,face=ceiling,facing=south,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "x": 180
+    },
+    "encased=false,face=ceiling,facing=south,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "x": 180
+    },
+    "encased=false,face=ceiling,facing=west,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "x": 180,
+      "y": 90
+    },
+    "encased=false,face=ceiling,facing=west,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "x": 180,
+      "y": 90
+    },
+    "encased=false,face=ceiling,facing=east,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "x": 180,
+      "y": 270
+    },
+    "encased=false,face=ceiling,facing=east,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/block",
+      "x": 180,
+      "y": 270
+    },
+    "encased=false,face=wall,facing=north,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/block_vertical"
+    },
+    "encased=false,face=wall,facing=north,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/block_vertical"
+    },
+    "encased=false,face=wall,facing=south,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/block_vertical",
+      "y": 180
+    },
+    "encased=false,face=wall,facing=south,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/block_vertical",
+      "y": 180
+    },
+    "encased=false,face=wall,facing=west,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/block_vertical",
+      "y": 270
+    },
+    "encased=false,face=wall,facing=west,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/block_vertical",
+      "y": 270
+    },
+    "encased=false,face=wall,facing=east,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/block_vertical",
+      "y": 90
+    },
+    "encased=false,face=wall,facing=east,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/block_vertical",
+      "y": 90
+    },
+    "encased=true,face=floor,facing=north,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/encased_pump"
+    },
+    "encased=true,face=floor,facing=north,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/encased_pump"
+    },
+    "encased=true,face=floor,facing=south,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/encased_pump",
+      "y": 180
+    },
+    "encased=true,face=floor,facing=south,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/encased_pump",
+      "y": 180
+    },
+    "encased=true,face=floor,facing=west,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/encased_pump",
+      "y": 270
+    },
+    "encased=true,face=floor,facing=west,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/encased_pump",
+      "y": 270
+    },
+    "encased=true,face=floor,facing=east,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/encased_pump",
+      "y": 90
+    },
+    "encased=true,face=floor,facing=east,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/encased_pump",
+      "y": 90
+    },
+    "encased=true,face=ceiling,facing=north,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/encased_pump",
+      "x": 180,
+      "y": 180
+    },
+    "encased=true,face=ceiling,facing=north,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/encased_pump",
+      "x": 180,
+      "y": 180
+    },
+    "encased=true,face=ceiling,facing=south,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/encased_pump",
+      "x": 180
+    },
+    "encased=true,face=ceiling,facing=south,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/encased_pump",
+      "x": 180
+    },
+    "encased=true,face=ceiling,facing=west,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/encased_pump",
+      "x": 180,
+      "y": 90
+    },
+    "encased=true,face=ceiling,facing=west,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/encased_pump",
+      "x": 180,
+      "y": 90
+    },
+    "encased=true,face=ceiling,facing=east,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/encased_pump",
+      "x": 180,
+      "y": 270
+    },
+    "encased=true,face=ceiling,facing=east,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/encased_pump",
+      "x": 180,
+      "y": 270
+    },
+    "encased=true,face=wall,facing=north,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/encased_pump_vertical"
+    },
+    "encased=true,face=wall,facing=north,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/encased_pump_vertical"
+    },
+    "encased=true,face=wall,facing=south,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/encased_pump_vertical",
+      "y": 180
+    },
+    "encased=true,face=wall,facing=south,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/encased_pump_vertical",
+      "y": 180
+    },
+    "encased=true,face=wall,facing=west,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/encased_pump_vertical",
+      "y": 270
+    },
+    "encased=true,face=wall,facing=west,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/encased_pump_vertical",
+      "y": 270
+    },
+    "encased=true,face=wall,facing=east,waterlogged=false": {
+      "model": "fluid:block/centrifugal_pump/encased_pump_vertical",
+      "y": 90
+    },
+    "encased=true,face=wall,facing=east,waterlogged=true": {
+      "model": "fluid:block/centrifugal_pump/encased_pump_vertical",
+      "y": 90
+    }
+  }
+}

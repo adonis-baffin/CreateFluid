@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": {
+      "tag": "c:ingots/copper"
+    },
+    "C": {
+      "item": "create:brass_casing"
+    },
+    "I": {
+      "item": "create:precision_mechanism"
+    },
+    "L": {
+      "tag": "c:plates/brass"
+    }
+  },
+  "pattern": [
+    "LLA",
+    "L  ",
+    "IC "
+  ],
+  "result": {
+    "id": "fluid:pipette"
+  },
+  "show_notification": true
+}

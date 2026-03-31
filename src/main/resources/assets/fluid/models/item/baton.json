@@ -1,0 +1,11 @@
+{
+  "parent": "fluid:item/baton_base",
+  "overrides": [
+    {
+      "predicate": {
+        "fluid:selection_mode": 1
+      },
+      "model": "fluid:item/baton_highlight"
+    }
+  ]
+}

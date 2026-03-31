@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=north,locked=false": {
+      "model": "fluid:block/aqueduct"
+    },
+    "facing=north,locked=true": {
+      "model": "fluid:block/aqueduct_locked"
+    },
+    "facing=south,locked=false": {
+      "model": "fluid:block/aqueduct",
+      "y": 180
+    },
+    "facing=south,locked=true": {
+      "model": "fluid:block/aqueduct_locked",
+      "y": 180
+    },
+    "facing=east,locked=false": {
+      "model": "fluid:block/aqueduct",
+      "y": 90
+    },
+    "facing=east,locked=true": {
+      "model": "fluid:block/aqueduct_locked",
+      "y": 90
+    },
+    "facing=west,locked=false": {
+      "model": "fluid:block/aqueduct",
+      "y": 270
+    },
+    "facing=west,locked=true": {
+      "model": "fluid:block/aqueduct_locked",
+      "y": 270
+    }
+  }
+}

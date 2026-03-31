@@ -1,0 +1,17 @@
+{
+  "type": "create:deploying",
+  "ingredients": [
+    {
+      "tag": "c:plates/iron"
+    },
+    {
+      "item": "minecraft:shears"
+    }
+  ],
+  "keep_held_item": true,
+  "results": [
+    {
+      "id": "fluid:honeycomb_mold"
+    }
+  ]
+}

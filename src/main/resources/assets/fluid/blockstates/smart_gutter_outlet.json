@@ -1,0 +1,23 @@
+{
+  "variants": {
+    "facing=north,powered=false,waterlogged=false": { "model": "fluid:block/smart_gutter_outlet", "y": 0 },
+    "facing=north,powered=false,waterlogged=true":  { "model": "fluid:block/smart_gutter_outlet", "y": 0 },
+    "facing=north,powered=true,waterlogged=false":  { "model": "fluid:block/smart_gutter_outlet_powered", "y": 0 },
+    "facing=north,powered=true,waterlogged=true":   { "model": "fluid:block/smart_gutter_outlet_powered", "y": 0 },
+
+    "facing=south,powered=false,waterlogged=false": { "model": "fluid:block/smart_gutter_outlet", "y": 180 },
+    "facing=south,powered=false,waterlogged=true":  { "model": "fluid:block/smart_gutter_outlet", "y": 180 },
+    "facing=south,powered=true,waterlogged=false":  { "model": "fluid:block/smart_gutter_outlet_powered", "y": 180 },
+    "facing=south,powered=true,waterlogged=true":   { "model": "fluid:block/smart_gutter_outlet_powered", "y": 180 },
+
+    "facing=west,powered=false,waterlogged=false":  { "model": "fluid:block/smart_gutter_outlet", "y": 270 },
+    "facing=west,powered=false,waterlogged=true":   { "model": "fluid:block/smart_gutter_outlet", "y": 270 },
+    "facing=west,powered=true,waterlogged=false":   { "model": "fluid:block/smart_gutter_outlet_powered", "y": 270 },
+    "facing=west,powered=true,waterlogged=true":    { "model": "fluid:block/smart_gutter_outlet_powered", "y": 270 },
+
+    "facing=east,powered=false,waterlogged=false":  { "model": "fluid:block/smart_gutter_outlet", "y": 90 },
+    "facing=east,powered=false,waterlogged=true":   { "model": "fluid:block/smart_gutter_outlet", "y": 90 },
+    "facing=east,powered=true,waterlogged=false":   { "model": "fluid:block/smart_gutter_outlet_powered", "y": 90 },
+    "facing=east,powered=true,waterlogged=true":    { "model": "fluid:block/smart_gutter_outlet_powered", "y": 90 }
+  }
+}
