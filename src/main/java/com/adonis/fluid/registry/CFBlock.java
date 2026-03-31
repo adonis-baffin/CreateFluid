@@ -7,6 +7,7 @@ import static com.simibubi.create.foundation.data.TagGen.axeOrPickaxe;
 import static com.simibubi.create.foundation.data.TagGen.pickaxeOnly;
 
 import com.adonis.fluid.CreateFluid;
+import com.adonis.fluid.config.CFStress;
 import com.adonis.fluid.block.CopperSink.CopperSinkBlock;
 import com.adonis.fluid.block.CopperSink.CopperSinkMovementBehaviour;
 import com.adonis.fluid.block.CopperTap.CopperTapBlock;
@@ -149,7 +150,7 @@ public class CFBlock {
                                     .build();
                         });
             })
-            .transform(CreateFluid.STRESS_CONFIG.setImpact(2.0))
+            .transform(CFStress.setImpact(2.0))
             .item(PipetteItem::new)
             .transform(ModelGen.customItemModel())
             .register();
@@ -220,7 +221,7 @@ public class CFBlock {
                             return builder.build();
                         });
             })
-            .transform(CreateFluid.STRESS_CONFIG.setImpact(8.0))
+            .transform(CFStress.setImpact(8.0))
             // 连接纹理功能已禁用 - 如需重新启用，取消下面的注释
             // .onRegister(CreateRegistrate.connectedTextures(() -> new CentrifugalPumpCTBehaviour()))
             // .onRegister(CreateRegistrate.casingConnectivity((block, cc) ->

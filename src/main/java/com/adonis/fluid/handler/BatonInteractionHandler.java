@@ -76,7 +76,7 @@ public class BatonInteractionHandler {
     private static EntityLauncher launcher = null;
 
     // 选择模式类型
-    private enum SelectionType {
+    public enum SelectionType {
         NONE, ARM, PIPETTE, EJECTOR
     }
     private static SelectionType selectionType = SelectionType.NONE;
@@ -901,7 +901,18 @@ public class BatonInteractionHandler {
     private static ArmInteractionPoint removeArm(BlockPos pos) {
         ArmInteractionPoint result = getSelectedArm(pos);
         if (result != null) {
-            currentArmSelection.remove(result);
+            // 使用迭代器移除，确保能正确找到并移除对象
+            Iterator<ArmInteractionPoint> iterator = currentArmSelection.iterator();
+            while (iterator.hasNext()) {
+                ArmInteractionPoint point = iterator.next();
+                BlockPos pointPos = point.getPos();
+                if (pointPos.getX() == pos.getX() && 
+                    pointPos.getY() == pos.getY() && 
+                    pointPos.getZ() == pos.getZ()) {
+                    iterator.remove();
+                    return point;
+                }
+            }
         }
         return result;
     }
@@ -909,14 +920,29 @@ public class BatonInteractionHandler {
     private static FluidInteractionPoint removePipette(BlockPos pos) {
         FluidInteractionPoint result = getSelectedPipette(pos);
         if (result != null) {
-            currentPipetteSelection.remove(result);
+            // 使用迭代器移除，确保能正确找到并移除对象
+            Iterator<FluidInteractionPoint> iterator = currentPipetteSelection.iterator();
+            while (iterator.hasNext()) {
+                FluidInteractionPoint point = iterator.next();
+                BlockPos pointPos = point.getPos();
+                if (pointPos.getX() == pos.getX() && 
+                    pointPos.getY() == pos.getY() && 
+                    pointPos.getZ() == pos.getZ()) {
+                    iterator.remove();
+                    return point;
+                }
+            }
         }
         return result;
     }
 
     private static ArmInteractionPoint getSelectedArm(BlockPos pos) {
         for (ArmInteractionPoint point : currentArmSelection) {
-            if (point.getPos().equals(pos)) {
+            // 使用坐标值比较，避免 BlockPos 对象引用或子类问题
+            BlockPos pointPos = point.getPos();
+            if (pointPos.getX() == pos.getX() && 
+                pointPos.getY() == pos.getY() && 
+                pointPos.getZ() == pos.getZ()) {
                 return point;
             }
         }
@@ -925,11 +951,51 @@ public class BatonInteractionHandler {
 
     private static FluidInteractionPoint getSelectedPipette(BlockPos pos) {
         for (FluidInteractionPoint point : currentPipetteSelection) {
-            if (point.getPos().equals(pos)) {
+            // 使用坐标值比较，避免 BlockPos 对象引用或子类问题
+            BlockPos pointPos = point.getPos();
+            if (pointPos.getX() == pos.getX() && 
+                pointPos.getY() == pos.getY() && 
+                pointPos.getZ() == pos.getZ()) {
                 return point;
             }
         }
         return null;
+    }
+
+    /**
+     * 获取当前选择模式类型
+     * @return 当前选择类型 (NONE, ARM, PIPETTE, EJECTOR)
+     */
+    public static SelectionType getSelectionType() {
+        return selectionType;
+    }
+
+    /**
+     * 移除指定位置的ARM交互点
+     * @param pos 方块位置
+     * @return 是否成功移除
+     */
+    public static boolean removeArmPointAt(BlockPos pos) {
+        Iterator<ArmInteractionPoint> iterator = currentArmSelection.iterator();
+        while (iterator.hasNext()) {
+            ArmInteractionPoint point = iterator.next();
+            BlockPos pointPos = point.getPos();
+            if (pointPos.getX() == pos.getX() && 
+                pointPos.getY() == pos.getY() && 
+                pointPos.getZ() == pos.getZ()) {
+                iterator.remove();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 获取当前ARM选择列表（用于外部处理器遍历）
+     * @return 当前ARM交互点列表
+     */
+    public static java.util.List<ArmInteractionPoint> getCurrentArmSelection() {
+        return java.util.Collections.unmodifiableList(currentArmSelection);
     }
 
     public static void cancelSelection() {

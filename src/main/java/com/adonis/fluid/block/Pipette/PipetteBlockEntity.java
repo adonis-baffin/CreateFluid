@@ -1208,6 +1208,11 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                     if (!result.isEmpty()) {
                         FluidStack fluidForParticles = this.heldFluid.copy();
 
+                        // 与原版注液器逻辑一致：
+                        // - 如果原物品数量为1（处理后会消失），结果直接设为 heldItem
+                        // - 如果原物品数量>1，减少原物品数量，结果放入 processingOutputBuffer
+                        boolean isSingleItem = itemOnDepot.getCount() == 1;
+
                         itemOnDepot.shrink(1);
 
                         if (itemOnDepot.isEmpty()) {
@@ -1220,35 +1225,45 @@ public class PipetteBlockEntity extends KineticBlockEntity implements Transforma
                             behaviour.setHeldItem(updatedStack);
                         }
 
-                        try {
-                            java.lang.reflect.Field bufferField = DepotBehaviour.class.getDeclaredField("processingOutputBuffer");
-                            bufferField.setAccessible(true);
-                            net.minecraftforge.items.ItemStackHandler outputBuffer =
-                                    (net.minecraftforge.items.ItemStackHandler) bufferField.get(behaviour);
-
-                            ItemStack remainder = result.copy();
-                            for (int slot = 0; slot < outputBuffer.getSlots() && !remainder.isEmpty(); slot++) {
-                                remainder = outputBuffer.insertItem(slot, remainder, false);
-                            }
-
-                            if (!remainder.isEmpty()) {
-                                net.minecraft.world.phys.Vec3 dropPos =
-                                        net.createmod.catnip.math.VecHelper.getCenterOf(point.getPos());
-                                net.minecraft.world.Containers.dropItemStack(
-                                        this.level,
-                                        dropPos.x,
-                                        dropPos.y + 0.5,
-                                        dropPos.z,
-                                        remainder
-                                );
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack newTIS =
+                        if (isSingleItem) {
+                            // 单个物品：结果直接设为 heldItem（不经过缓冲区）
+                            com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack resultTIS =
                                     new com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack(result);
-                            newTIS.beltPosition = 0.5f;
-                            newTIS.prevBeltPosition = 0.5f;
-                            behaviour.setHeldItem(newTIS);
+                            resultTIS.beltPosition = 0.5f;
+                            resultTIS.prevBeltPosition = 0.5f;
+                            behaviour.setHeldItem(resultTIS);
+                        } else {
+                            // 多个物品：结果放入 processingOutputBuffer
+                            try {
+                                java.lang.reflect.Field bufferField = DepotBehaviour.class.getDeclaredField("processingOutputBuffer");
+                                bufferField.setAccessible(true);
+                                net.minecraftforge.items.ItemStackHandler outputBuffer =
+                                        (net.minecraftforge.items.ItemStackHandler) bufferField.get(behaviour);
+
+                                ItemStack remainder = result.copy();
+                                for (int slot = 0; slot < outputBuffer.getSlots() && !remainder.isEmpty(); slot++) {
+                                    remainder = outputBuffer.insertItem(slot, remainder, false);
+                                }
+
+                                if (!remainder.isEmpty()) {
+                                    net.minecraft.world.phys.Vec3 dropPos =
+                                            net.createmod.catnip.math.VecHelper.getCenterOf(point.getPos());
+                                    net.minecraft.world.Containers.dropItemStack(
+                                            this.level,
+                                            dropPos.x,
+                                            dropPos.y + 0.5,
+                                            dropPos.z,
+                                            remainder
+                                    );
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack newTIS =
+                                        new com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack(result);
+                                newTIS.beltPosition = 0.5f;
+                                newTIS.prevBeltPosition = 0.5f;
+                                behaviour.setHeldItem(newTIS);
+                            }
                         }
 
                         behaviour.blockEntity.notifyUpdate();

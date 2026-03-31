@@ -165,19 +165,18 @@ public class TapVirtualRelayManager {
                 return BeltProcessingBehaviour.ProcessingResult.HOLD;
             }
 
-            // 处理完成，执行实际填充并获取剩余物品
-            TransportedItemStack leftover = performFillingAndGetLeftover(transported, handler, tap);
+            // 处理完成，执行实际填充并获取剩余物品（held 是剩余的原物品）
+            TransportedItemStack held = performFillingAndGetLeftover(transported, handler, tap);
 
             // 如果有剩余物品且可以继续处理，立即开始下一个
-            if (leftover != null && leftover.stack.getCount() > 0) {
+            if (held != null && !held.stack.isEmpty()) {
                 FluidStack availableFluid = getAvailableFluid(tap);
-                if (!availableFluid.isEmpty() && FillingBySpout.canItemBeFilled(level, leftover.stack)) {
-                    ItemStack singleItem = ItemHandlerHelper.copyStackWithSize(leftover.stack, 1);
-                    int required = FillingBySpout.getRequiredAmountForItem(level, singleItem, availableFluid);
+                if (!availableFluid.isEmpty() && FillingBySpout.canItemBeFilled(level, held.stack)) {
+                    int required = FillingBySpout.getRequiredAmountForItem(level, held.stack, availableFluid);
 
                     if (required > 0 && required <= availableFluid.getAmount()) {
                         // 继续处理剩余物品
-                        currentlyProcessing = leftover;
+                        currentlyProcessing = held;
                         processingTicks = FILLING_TIME;
                         particlesSent = false;
                         tap.updateBeltProcessingTicks(processingTicks);
@@ -203,8 +202,8 @@ public class TapVirtualRelayManager {
             FluidStack availableFluid = getAvailableFluid(tap);
             if (availableFluid.isEmpty()) return null;
 
-            ItemStack toProcess = ItemHandlerHelper.copyStackWithSize(transported.stack, 1);
-            int required = FillingBySpout.getRequiredAmountForItem(level, toProcess, availableFluid);
+            // 与原版注液器逻辑一致：直接传入 transported.stack，让 fillItem 处理数量减少
+            int required = FillingBySpout.getRequiredAmountForItem(level, transported.stack, availableFluid);
 
             if (required <= 0 || required > availableFluid.getAmount()) return null;
 
@@ -212,9 +211,9 @@ public class TapVirtualRelayManager {
             FluidStack consumed = consumeFluid(tap, required);
             if (consumed.isEmpty()) return null;
 
-            // 执行填充
+            // 执行填充：直接传入 transported.stack，fillItem 会自动 shrink(1)
             FluidStack fluidForFilling = consumed.copy();
-            ItemStack filledResult = FillingBySpout.fillItem(level, required, toProcess, fluidForFilling);
+            ItemStack filledResult = FillingBySpout.fillItem(level, required, transported.stack, fluidForFilling);
 
             if (filledResult.isEmpty()) return null;
 
@@ -225,17 +224,15 @@ public class TapVirtualRelayManager {
             resultTransported.stack = filledResult;
             outList.add(resultTransported);
 
-            TransportedItemStack leftover = null;
-            if (transported.stack.getCount() > 1) {
-                leftover = transported.copy();
-                leftover.stack = transported.stack.copy();
-                leftover.stack.shrink(1);
-                leftover.locked = true; // 保持锁定状态
+            // 与原版注液器逻辑一致：检查 transported.stack 是否还有剩余
+            TransportedItemStack held = null;
+            if (!transported.stack.isEmpty()) {
+                held = transported.copy();
             }
 
             TransportedItemStackHandlerBehaviour.TransportedResult result =
                     TransportedItemStackHandlerBehaviour.TransportedResult
-                            .convertToAndLeaveHeld(outList, leftover);
+                            .convertToAndLeaveHeld(outList, held);
             handler.handleProcessingOnItem(transported, result);
 
             // 播放完成音效
@@ -244,7 +241,7 @@ public class TapVirtualRelayManager {
                     net.minecraft.sounds.SoundSource.BLOCKS,
                     0.5f, 1.0f + level.random.nextFloat() * 0.2f);
 
-            return leftover;
+            return held;
         }
 
         private boolean isTapOpen(CopperTapBlockEntity tap) {

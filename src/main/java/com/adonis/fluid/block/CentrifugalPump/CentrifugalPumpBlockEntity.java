@@ -1,5 +1,6 @@
 package com.adonis.fluid.block.CentrifugalPump;
 
+import com.adonis.fluid.config.CFConfig;
 import com.adonis.fluid.mixin.accessor.PipeConnectionAccessor;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.content.fluids.*;
@@ -50,7 +51,6 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
     // 封装状态
     private boolean isEncased = false;
 
-    private static final int BASE_PUMP_RANGE = 20;
     private static final float SPEED_MULTIPLIER = 2.0f;
 
     private int networkCheckTimer = 0;
@@ -395,7 +395,7 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
             FluidPropagator.resetAffectedFluidNetworks(level, worldPosition, side.getOpposite());
         }
 
-        int maxDistance = BASE_PUMP_RANGE;
+        int maxDistance = CFConfig.server().kinetics.getCentrifugalPumpRange();
 
         if (!hasReachedValidEndpoint(level, start, pull)) {
             pipeGraph.computeIfAbsent(worldPosition, $ -> Pair.of(0, new IdentityHashMap<>()))

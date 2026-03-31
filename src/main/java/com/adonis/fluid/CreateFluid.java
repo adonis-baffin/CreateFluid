@@ -1,7 +1,7 @@
 package com.adonis.fluid;
 
 import com.adonis.fluid.config.CFCommonConfig;
-import com.adonis.fluid.config.CFStress;
+import com.adonis.fluid.config.CFConfig;
 import com.adonis.fluid.content.pipette.FluidInteractionPointCompat;
 import com.adonis.fluid.networking.CFNetworking;
 import com.adonis.fluid.registry.*;
@@ -25,7 +25,6 @@ import net.minecraftforge.fml.event.lifecycle.InterModProcessEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.common.ForgeConfigSpec;
 import org.slf4j.Logger;
 
 import java.util.Random;
@@ -41,10 +40,6 @@ public class CreateFluid {
                     new ItemDescription.Modifier(item, FontHelper.Palette.STANDARD_CREATE)
                             .andThen(TooltipModifier.mapNull(KineticStats.create(item))));
 
-    public static final CFStress STRESS_CONFIG = new CFStress(MODID);
-
-    private static ForgeConfigSpec stressConfigSpec;
-
     public static ResourceLocation asResource(String path) {
         return new ResourceLocation(MODID, path);
     }
@@ -53,19 +48,19 @@ public class CreateFluid {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
         REGISTRATE.registerEventListeners(modEventBus);
 
-        CFMountedStorageTypes.register();  // <-- Register mounted storage types
+        CFMountedStorageTypes.register();
         CFBlock.register();
         CFBlockEntity.register(modEventBus);
         CFItem.register(modEventBus);
         CFTab.register(modEventBus);
         CFFluid.register();
 
+        // 注册Common配置（GutterOutlet等）
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, CFCommonConfig.CONFIG_SPEC);
 
-        ForgeConfigSpec.Builder stressBuilder = new ForgeConfigSpec.Builder();
-        STRESS_CONFIG.registerAll(stressBuilder);
-        stressConfigSpec = stressBuilder.build();
-        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, stressConfigSpec, STRESS_CONFIG.getName() + ".toml");
+        // 注册Server配置（包含kinetics、centrifugalPumpRange、stressValues）
+        // 注意：这是唯一的SERVER配置，包含所有服务端可配置项
+        CFConfig.register();
 
         modEventBus.addListener(this::setup);
         modEventBus.addListener(this::enqueueIMC);
@@ -81,13 +76,13 @@ public class CreateFluid {
             CFCommonConfig.onLoad();
             CFPartialModels.init();
 
-            BlockStressValues.IMPACTS.registerProvider(STRESS_CONFIG::getImpact);
-            BlockStressValues.CAPACITIES.registerProvider(STRESS_CONFIG::getCapacity);
+            // 注册应力值提供者 - 使用嵌套在CFKinetics中的stressValues
+            BlockStressValues.IMPACTS.registerProvider(CFConfig.server().kinetics.stressValues::getImpact);
+            BlockStressValues.CAPACITIES.registerProvider(CFConfig.server().kinetics.stressValues::getCapacity);
 
             CFNetworking.register();
 
             FluidInteractionPointCompat.init();
-            // No need for associateBlocks() - it's done via .associate() in the registrate builder
         });
     }
 
@@ -105,6 +100,7 @@ public class CreateFluid {
                 CFCommonConfig.onReload();
             }
         }
+        // CFConfig的事件在CFConfig类中处理
     }
 
     @SubscribeEvent

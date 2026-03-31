@@ -25,7 +25,18 @@ public class BatonItem extends Item {
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
-        // 不需要特殊处理，让事件监听器处理
+        // 检查右键点击的位置是否是交互点
+        // 如果是交互点，返回 SUCCESS 阻止物品被放置
+        Level world = context.getLevel();
+        BlockPos pos = context.getClickedPos();
+        BlockState state = world.getBlockState(pos);
+        
+        // 检查是否是动力臂交互点或移液器交互点
+        if (com.simibubi.create.content.kinetics.mechanicalArm.ArmInteractionPoint.isInteractable(world, pos, state)
+                || com.adonis.fluid.content.pipette.FluidInteractionPoint.create(world, pos, state) != null) {
+            return InteractionResult.SUCCESS;
+        }
+        
         return InteractionResult.PASS;
     }
 
