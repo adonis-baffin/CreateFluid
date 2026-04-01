@@ -1,0 +1,24 @@
+{
+	"format_version": "1.21.6",
+	"credit": "Made with Blockbench",
+	"textures": {
+		"2": "fluid:block/redstone_fluid_valve_open",
+		"particle": "create:block/copper_underside"
+	},
+	"elements": [
+		{
+			"name": "ValveCenter",
+			"from": [2, 2, 2],
+			"to": [14, 14, 14],
+			"rotation": {"angle": 0, "axis": "y", "origin": [24, 11, 11]},
+			"faces": {
+				"north": {"uv": [1, 1, 7, 7], "texture": "#2"},
+				"east": {"uv": [1, 9, 7, 15], "rotation": 90, "texture": "#2"},
+				"south": {"uv": [1, 1, 7, 7], "texture": "#2"},
+				"west": {"uv": [1, 9, 7, 15], "rotation": 90, "texture": "#2"},
+				"up": {"uv": [9, 1, 15, 7], "texture": "#2"},
+				"down": {"uv": [9, 1, 15, 7], "texture": "#2"}
+			}
+		}
+	]
+}

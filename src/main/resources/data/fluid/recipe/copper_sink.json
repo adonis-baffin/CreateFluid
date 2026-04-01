@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": {
+      "tag": "c:plates/copper"
+    },
+    "B": {
+      "item": "minecraft:water_bucket"
+    }
+  },
+  "pattern": [
+    " A ",
+    " B ",
+    " A "
+  ],
+  "result": {
+    "id": "fluid:copper_sink"
+  },
+  "show_notification": true
+}

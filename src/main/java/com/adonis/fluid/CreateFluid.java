@@ -2,6 +2,7 @@ package com.adonis.fluid;
 
 import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.config.CFStressConfig;
+import com.adonis.fluid.fluid.powdersnow.PowderSnowBucketHandler;
 import com.adonis.fluid.registry.*;
 import com.simibubi.create.foundation.item.ItemDescription;
 import com.simibubi.create.foundation.item.KineticStats;
@@ -40,11 +41,17 @@ public class CreateFluid {
         REGISTRATE.registerEventListeners(modEventBus);
 
         // 注册所有内容
+        CFFluids.FLUID_TYPES.register(modEventBus);
+        CFFluids.FLUIDS.register(modEventBus);
+        CFFluids.register();
         CFBlocks.register();
         CFBlockEntities.register();
         CFBlockEntities.registerToEventBus(modEventBus);
         CFItems.register();
         CFCreativeTab.register(modEventBus);
+
+        // 注册细雪桶能力
+        modEventBus.addListener(PowderSnowBucketHandler::register);
 
         // 注册应力配置
         ModConfigSpec.Builder stressBuilder = new ModConfigSpec.Builder();
@@ -64,6 +71,8 @@ public class CreateFluid {
     private void onCommonSetup(FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
             CFPartialModels.init();
+            // 细雪流体相关初始化
+            CFFluids.register();
         });
     }
 

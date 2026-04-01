@@ -5,6 +5,7 @@ import com.adonis.fluid.block.Pipette.PipetteBlockEntity;
 import com.adonis.fluid.content.pipette.FluidInteractionPoint;
 import com.adonis.fluid.item.BatonItem;
 import com.adonis.fluid.mixin.accessor.ArmBlockEntityAccessor;
+import com.adonis.fluid.packet.CentrifugalPumpModeTogglePacket;
 import com.adonis.fluid.packet.QuartzLampTogglePacket;
 import com.simibubi.create.content.kinetics.mechanicalArm.ArmBlockEntity;
 import com.simibubi.create.content.kinetics.mechanicalArm.ArmInteractionPoint;
@@ -66,7 +67,7 @@ public class BatonInteractionHandler {
     private static BlockPos ejectorTargetPos = null;
     private static EntityLauncher launcher = null;
 
-    private enum SelectionType {
+    public enum SelectionType {
         NONE, ARM, PIPETTE, EJECTOR
     }
     private static SelectionType selectionType = SelectionType.NONE;
@@ -133,7 +134,8 @@ public class BatonInteractionHandler {
             if (be instanceof ArmBlockEntity ||
                     be instanceof PipetteBlockEntity ||
                     be instanceof EjectorBlockEntity ||
-                    state.getBlock() instanceof RoseQuartzLampBlock) {
+                    state.getBlock() instanceof RoseQuartzLampBlock ||
+                    be instanceof com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlockEntity) {
                 event.setCanceled(true);
                 event.setCancellationResult(InteractionResult.SUCCESS);
             }
@@ -176,6 +178,18 @@ public class BatonInteractionHandler {
                     SoundEvents.LEVER_CLICK, SoundSource.BLOCKS, 0.3f, 1.0f, false);
             event.setCanceled(true);
             event.setCancellationResult(InteractionResult.SUCCESS);
+            return;
+        }
+
+        // 处理离心泵（切换模式）
+        if (be instanceof com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlockEntity pump) {
+            if (!sneaking && pump.pumpMode != null) {
+                PacketDistributor.sendToServer(new CentrifugalPumpModeTogglePacket(pos));
+                level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                        SoundEvents.LEVER_CLICK, SoundSource.BLOCKS, 0.3f, 1.0f, false);
+                event.setCanceled(true);
+                event.setCancellationResult(InteractionResult.SUCCESS);
+            }
             return;
         }
 
@@ -855,6 +869,42 @@ public class BatonInteractionHandler {
         selectionType = SelectionType.NONE;
         currentArmSelection.clear();
         currentPipetteSelection.clear();
+    }
+
+    /**
+     * 获取当前选择模式类型
+     * @return 当前选择类型 (NONE, ARM, PIPETTE, EJECTOR)
+     */
+    public static SelectionType getSelectionType() {
+        return selectionType;
+    }
+
+    /**
+     * 移除指定位置的ARM交互点
+     * @param pos 方块位置
+     * @return 是否成功移除
+     */
+    public static boolean removeArmPointAt(BlockPos pos) {
+        Iterator<ArmInteractionPoint> iterator = currentArmSelection.iterator();
+        while (iterator.hasNext()) {
+            ArmInteractionPoint point = iterator.next();
+            BlockPos pointPos = point.getPos();
+            if (pointPos.getX() == pos.getX() && 
+                pointPos.getY() == pos.getY() && 
+                pointPos.getZ() == pos.getZ()) {
+                iterator.remove();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 获取当前ARM选择列表（用于外部处理器遍历）
+     * @return 当前ARM交互点列表
+     */
+    public static java.util.List<ArmInteractionPoint> getCurrentArmSelection() {
+        return java.util.Collections.unmodifiableList(currentArmSelection);
     }
 
     private static void drawArmOutlines(List<ArmInteractionPoint> selection) {

@@ -7,7 +7,9 @@ import com.simibubi.create.Create;
 import net.createmod.ponder.api.registration.PonderPlugin;
 import net.createmod.ponder.api.registration.PonderSceneRegistrationHelper;
 import net.createmod.ponder.api.registration.PonderTagRegistrationHelper;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Items;
 
 public class CFPonderPlugin implements PonderPlugin {
 
@@ -50,6 +52,10 @@ public class CFPonderPlugin implements PonderPlugin {
         // 注册智能集水器的场景
         helper.forComponents(CFBlocks.SMART_GUTTER_OUTLET.getId())
                 .addStoryBoard("gutter_outlet_interact", GutterOutletScenes::gutteroutletinteract);
+
+        // 注册细雪流体的场景（使用原版细雪桶）
+        helper.forComponents(BuiltInRegistries.ITEM.getKey(Items.POWDER_SNOW_BUCKET))
+                .addStoryBoard("powder_snow", PowderSnowScenes::snow);
     }
 
     @Override
@@ -72,5 +78,9 @@ public class CFPonderPlugin implements PonderPlugin {
         // ARM_TARGETS: 指挥棒
         helper.addToTag(ARM_TARGETS)
                 .add(CFItems.BATON.getId());
+
+        // FLUIDS: 细雪桶
+        helper.addToTag(FLUIDS)
+                .add(BuiltInRegistries.ITEM.getKey(Items.POWDER_SNOW_BUCKET));
     }
 }

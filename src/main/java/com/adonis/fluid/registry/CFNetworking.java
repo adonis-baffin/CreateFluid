@@ -2,13 +2,32 @@ package com.adonis.fluid.registry;
 
 import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.packet.*;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.ChunkPos;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 @EventBusSubscriber(modid = CreateFluid.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public class CFNetworking {
+
+    /**
+     * 发送数据包给追踪指定区块的所有玩家
+     */
+    public static <T extends CustomPacketPayload> void sendToPlayersTrackingChunk(ServerLevel level, ChunkPos chunkPos, T packet) {
+        PacketDistributor.sendToPlayersTrackingChunk(level, chunkPos, packet);
+    }
+
+    /**
+     * 发送数据包给指定玩家
+     */
+    public static <T extends CustomPacketPayload> void sendToPlayer(ServerPlayer player, T packet) {
+        PacketDistributor.sendToPlayer(player, packet);
+    }
 
     @SubscribeEvent
     public static void register(RegisterPayloadHandlersEvent event) {
@@ -65,6 +84,13 @@ public class CFNetworking {
                 QuartzLampTogglePacket.TYPE,
                 QuartzLampTogglePacket.STREAM_CODEC,
                 QuartzLampTogglePacket::handle
+        );
+
+        // 离心泵模式切换包（客户端请求切换离心泵模式）
+        registrar.playToServer(
+                CentrifugalPumpModeTogglePacket.TYPE,
+                CentrifugalPumpModeTogglePacket.STREAM_CODEC,
+                CentrifugalPumpModeTogglePacket::handle
         );
     }
 }

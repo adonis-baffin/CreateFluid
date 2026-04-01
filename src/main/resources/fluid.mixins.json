@@ -6,9 +6,12 @@
   "refmap": "fluid.refmap.json",
   "mixins": [
     "BeltInventoryMixin",
-    "LightningBoltMixin",
     "ArmPlacementPacketMixin",
-    "accessor.ArmBlockEntityAccessor"
+    "FluidPropagatorMixin",
+    "ArmBlockEntityWrenchUpdateMixin",
+    "FluidUtilMixin",
+    "accessor.ArmBlockEntityAccessor",
+    "accessor.ItemDrainBlockEntityAccessor"
   ],
   "client": [
     "ArmBlockEntityWrenchUpdateMixin"

@@ -10,6 +10,9 @@ public class CFCommonConfig {
     public static final ModConfigSpec.BooleanValue GUTTER_COLLECT_SNOW;
     public static final ModConfigSpec.BooleanValue GUTTER_COLLECT_DRIPSTONE;
     public static final ModConfigSpec.BooleanValue GUTTER_COLLECT_WORLD_FLUID;
+    
+    // CopperSink 配置
+    public static final ModConfigSpec.BooleanValue COPPER_SINK_INFINITE;
 
     private static boolean isConfigLoaded = false;
 
@@ -34,6 +37,15 @@ public class CFCommonConfig {
         GUTTER_COLLECT_WORLD_FLUID = builder
                 .comment("Whether gutter outlet can collect world fluid sources from above")
                 .define("collectWorldFluid", true);
+
+        builder.pop();
+        
+        builder.comment("Copper Sink settings")
+                .push("copper_sink");
+
+        COPPER_SINK_INFINITE = builder
+                .comment("Whether the Copper Sink provides infinite water (if false, it's just a normal 2000mB tank)")
+                .define("infiniteWater", true);
 
         builder.pop();
 
@@ -88,6 +100,18 @@ public class CFCommonConfig {
         }
         try {
             return GUTTER_COLLECT_WORLD_FLUID.get();
+        } catch (IllegalStateException e) {
+            return true;
+        }
+    }
+
+    // CopperSink 配置获取方法
+    public static boolean isCopperSinkInfinite() {
+        if (!isConfigLoaded) {
+            return true;
+        }
+        try {
+            return COPPER_SINK_INFINITE.get();
         } catch (IllegalStateException e) {
             return true;
         }

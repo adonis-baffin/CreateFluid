@@ -2,7 +2,10 @@ package com.adonis.fluid.registry;
 
 import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlock;
+import com.adonis.fluid.block.CopperSink.CopperSinkBlock;
 import com.adonis.fluid.block.CopperTap.CopperTapBlock;
+import com.adonis.fluid.block.RedstoneValve.RedstoneValveBlock;
+import com.adonis.fluid.block.RedstoneTripleValve.RedstoneTripleValveBlock;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlock;
 import com.adonis.fluid.block.GutterOutlet.GutterOutletBlock;
 import com.adonis.fluid.block.GutterOutlet.SmartGutterOutletBlock;
@@ -240,6 +243,65 @@ public class CFBlocks {
             })
             .item()
             .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), prov.modLoc("block/smart_gutter_outlet")))
+            .build()
+            .register();
+
+    // 铜水槽注册
+    public static final BlockEntry<CopperSinkBlock> COPPER_SINK = REGISTRATE
+            .block("copper_sink", CopperSinkBlock::new)
+            .initialProperties(SharedProperties::copperMetal)
+            .properties(prop -> prop
+                    .mapColor(MapColor.COLOR_ORANGE)
+                    .sound(SoundType.COPPER)
+                    .noOcclusion())
+            .transform(TagGen.pickaxeOnly())
+            .blockstate((ctx, prov) -> {
+                prov.getVariantBuilder(ctx.get())
+                        .forAllStates(state -> {
+                            Direction facing = state.getValue(CopperSinkBlock.FACING);
+                            int yRot = (int) facing.toYRot();
+                            return ConfiguredModel.builder()
+                                    .modelFile(prov.models().getExistingFile(prov.modLoc("block/copper_sink")))
+                                    .rotationY(yRot)
+                                    .build();
+                        });
+            })
+            .item()
+            .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), prov.modLoc("block/copper_sink")))
+            .build()
+            .register();
+
+    // 红石阀门注册
+    public static final BlockEntry<RedstoneValveBlock> REDSTONE_VALVE = REGISTRATE
+            .block("redstone_valve", RedstoneValveBlock::new)
+            .initialProperties(SharedProperties::copperMetal)
+            .properties(prop -> prop
+                    .mapColor(MapColor.COLOR_ORANGE)
+                    .sound(SoundType.COPPER)
+                    .noOcclusion())
+            .transform(TagGen.pickaxeOnly())
+            .blockstate((ctx, prov) -> {
+                // 使用已有的 blockstate 文件
+            })
+            .item()
+            .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), prov.modLoc("item/redstone_valve")))
+            .build()
+            .register();
+
+    // 红石三通阀门注册
+    public static final BlockEntry<RedstoneTripleValveBlock> REDSTONE_TRIPLE_VALVE = REGISTRATE
+            .block("redstone_triple_valve", RedstoneTripleValveBlock::new)
+            .initialProperties(SharedProperties::copperMetal)
+            .properties(prop -> prop
+                    .mapColor(MapColor.COLOR_ORANGE)
+                    .sound(SoundType.COPPER)
+                    .noOcclusion())
+            .transform(TagGen.pickaxeOnly())
+            .blockstate((ctx, prov) -> {
+                // 使用已有的 blockstate 文件
+            })
+            .item()
+            .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), prov.modLoc("item/redstone_triple_valve")))
             .build()
             .register();
 

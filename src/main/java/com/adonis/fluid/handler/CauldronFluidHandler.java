@@ -5,6 +5,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LayeredCauldronBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import com.adonis.fluid.registry.CFFluids;
 import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
@@ -53,16 +54,14 @@ public class CauldronFluidHandler implements IFluidHandler {
             return new FluidStack(Fluids.LAVA, FULL_AMOUNT);
         }
 
-        // TODO: 细雪炼药锅支持 - 待细雪流体迁移后添加
-        /*
+        // 细雪炼药锅
         if (state.is(Blocks.POWDER_SNOW_CAULDRON)) {
             int level = state.getValue(LayeredCauldronBlock.LEVEL);
             if (level == 3) {
-                return new FluidStack(PowderSnowFluid, FULL_AMOUNT);
+                return new FluidStack(CFFluids.POWDER_SNOW.get(), FULL_AMOUNT);
             }
             return FluidStack.EMPTY;
         }
-        */
 
         return FluidStack.EMPTY;
     }
@@ -78,8 +77,8 @@ public class CauldronFluidHandler implements IFluidHandler {
 
         // 检查流体类型是否被支持
         return stack.getFluid() == Fluids.WATER ||
-                stack.getFluid() == Fluids.LAVA;
-        // TODO: 添加细雪流体检查
+                stack.getFluid() == Fluids.LAVA ||
+                stack.getFluid() == CFFluids.POWDER_SNOW.get();
     }
 
     @Override
@@ -110,8 +109,14 @@ public class CauldronFluidHandler implements IFluidHandler {
                     newState = Blocks.LAVA_CAULDRON.defaultBlockState();
                     fillAmount = FULL_AMOUNT;
                 }
+            } else if (resource.getFluid() == CFFluids.POWDER_SNOW.get()) {
+                // 细雪：必须一次性填满1000mB（满炼药锅）
+                if (resource.getAmount() >= FULL_AMOUNT) {
+                    newState = Blocks.POWDER_SNOW_CAULDRON.defaultBlockState()
+                            .setValue(LayeredCauldronBlock.LEVEL, 3);
+                    fillAmount = FULL_AMOUNT;
+                }
             }
-            // TODO: 添加细雪流体填充逻辑
 
             if (newState != null && fillAmount > 0) {
                 if (action.execute()) {
@@ -202,12 +207,11 @@ public class CauldronFluidHandler implements IFluidHandler {
                 }
             }
         }
-        // TODO: 细雪炼药锅抽取逻辑
-        /*
+        // 细雪炼药锅抽取
         else if (state.is(Blocks.POWDER_SNOW_CAULDRON)) {
             int currentLevel = state.getValue(LayeredCauldronBlock.LEVEL);
             if (currentLevel == 3 && maxDrain >= FULL_AMOUNT) {
-                result = new FluidStack(PowderSnowFluid, FULL_AMOUNT);
+                result = new FluidStack(CFFluids.POWDER_SNOW.get(), FULL_AMOUNT);
 
                 if (action.execute()) {
                     level.setBlockAndUpdate(pos, Blocks.CAULDRON.defaultBlockState());
@@ -215,7 +219,6 @@ public class CauldronFluidHandler implements IFluidHandler {
                 }
             }
         }
-        */
 
         return result;
     }

@@ -1,6 +1,7 @@
 package com.adonis.fluid.content.pipette;
 
 import com.adonis.fluid.registry.CFBlocks;
+import com.adonis.fluid.registry.CFFluids;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.contraptions.StructureTransform;
 import net.minecraft.core.BlockPos;
@@ -268,10 +269,10 @@ public class FluidInteractionPoint {
         // 炼药锅特殊处理
         if (isCauldron(state)) {
             if (state.is(Blocks.CAULDRON)) {
-                // 空炼药锅只接受水和岩浆
+                // 空炼药锅接受水、岩浆和细雪
                 return stack.getFluid() == Fluids.WATER ||
-                        stack.getFluid() == Fluids.LAVA;
-                // TODO: 添加细雪流体支持
+                        stack.getFluid() == Fluids.LAVA ||
+                        stack.getFluid() == CFFluids.POWDER_SNOW.get();
             }
 
             if (state.is(Blocks.WATER_CAULDRON)) {
@@ -283,9 +284,9 @@ public class FluidInteractionPoint {
                 return false; // 满的岩浆炼药锅不能再填充
             }
 
-            // 细雪炼药锅暂时返回false
+            // 细雪炼药锅已满，不能再填充
             if (state.is(Blocks.POWDER_SNOW_CAULDRON)) {
-                return false; // TODO: 待细雪流体迁移后更新
+                return false;
             }
         }
 
@@ -596,6 +597,9 @@ public class FluidInteractionPoint {
                 return new FluidStack(Fluids.WATER, level * 333);
             } else if (state.is(Blocks.LAVA_CAULDRON)) {
                 return new FluidStack(Fluids.LAVA, 1000);
+            } else if (state.is(Blocks.POWDER_SNOW_CAULDRON)) {
+                int level = state.getValue(LayeredCauldronBlock.LEVEL);
+                return new FluidStack(CFFluids.POWDER_SNOW.get(), level * 333);
             }
             return FluidStack.EMPTY;
         }
@@ -607,7 +611,9 @@ public class FluidInteractionPoint {
 
         @Override
         public boolean isFluidValid(int tank, @Nonnull FluidStack stack) {
-            return stack.getFluid() == Fluids.WATER || stack.getFluid() == Fluids.LAVA;
+            return stack.getFluid() == Fluids.WATER ||
+                    stack.getFluid() == Fluids.LAVA ||
+                    stack.getFluid() == CFFluids.POWDER_SNOW.get();
         }
 
         @Override
@@ -622,6 +628,13 @@ public class FluidInteractionPoint {
                 } else if (resource.getFluid() == Fluids.LAVA && resource.getAmount() >= 1000) {
                     if (action.execute()) {
                         level.setBlock(pos, Blocks.LAVA_CAULDRON.defaultBlockState(), 3);
+                    }
+                    return 1000;
+                } else if (resource.getFluid() == CFFluids.POWDER_SNOW.get() && resource.getAmount() >= 1000) {
+                    // 细雪：必须一次性填满1000mB
+                    if (action.execute()) {
+                        level.setBlock(pos, Blocks.POWDER_SNOW_CAULDRON.defaultBlockState()
+                                .setValue(LayeredCauldronBlock.LEVEL, 3), 3);
                     }
                     return 1000;
                 }
@@ -664,6 +677,14 @@ public class FluidInteractionPoint {
                         level.setBlock(pos, Blocks.CAULDRON.defaultBlockState(), 3);
                     }
                     return new FluidStack(Fluids.LAVA, 1000);
+                }
+            } else if (state.is(Blocks.POWDER_SNOW_CAULDRON)) {
+                int cauldronLevel = state.getValue(LayeredCauldronBlock.LEVEL);
+                if (cauldronLevel == 3 && maxDrain >= 1000) {
+                    if (action.execute()) {
+                        this.level.setBlock(pos, Blocks.CAULDRON.defaultBlockState(), 3);
+                    }
+                    return new FluidStack(CFFluids.POWDER_SNOW.get(), 1000);
                 }
             }
             return FluidStack.EMPTY;

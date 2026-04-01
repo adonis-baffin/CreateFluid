@@ -12,6 +12,8 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 
 @EventBusSubscriber(modid = CreateFluid.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class CFClient {
@@ -37,5 +39,21 @@ public class CFClient {
                         new BatonItemPropertyFunction());
             }
         });
+    }
+
+    @SubscribeEvent
+    public static void onRegisterClientExtensions(RegisterClientExtensionsEvent event) {
+        // 注册细雪流体的客户端扩展（纹理）
+        event.registerFluidType(new IClientFluidTypeExtensions() {
+            @Override
+            public ResourceLocation getStillTexture() {
+                return ResourceLocation.fromNamespaceAndPath("minecraft", "block/powder_snow");
+            }
+
+            @Override
+            public ResourceLocation getFlowingTexture() {
+                return ResourceLocation.fromNamespaceAndPath("minecraft", "block/powder_snow");
+            }
+        }, CFFluids.POWDER_SNOW_TYPE.get());
     }
 }

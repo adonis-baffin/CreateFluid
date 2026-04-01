@@ -60,6 +60,26 @@ public class DepotFluidInteractionPoint extends FluidInteractionPoint {
         return com.simibubi.create.content.fluids.spout.FillingBySpout
                 .canItemBeFilled(level, heldItem);
     }
+    
+    public ItemStack getItemForFilling() {
+        DepotBehaviour behaviour = getDepotBehaviour();
+        if (behaviour == null) {
+            return ItemStack.EMPTY;
+        }
+        
+        ItemStack heldItem = behaviour.getHeldItemStack();
+        if (heldItem.isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+        
+        // 检查该物品是否可以被填充
+        if (com.simibubi.create.content.fluids.spout.FillingBySpout
+                .canItemBeFilled(level, heldItem)) {
+            return heldItem.copy();
+        }
+        
+        return ItemStack.EMPTY;
+    }
 
     @Nullable
     public ItemStack getHeldItem() {

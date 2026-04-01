@@ -4,8 +4,13 @@ import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlockEntity;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpRenderer;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpVisual;
+import com.adonis.fluid.block.CopperSink.CopperSinkBlockEntity;
+import com.adonis.fluid.block.CopperSink.CopperSinkRenderer;
 import com.adonis.fluid.block.CopperTap.CopperTapBlockEntity;
 import com.adonis.fluid.block.CopperTap.CopperTapRenderer;
+import com.adonis.fluid.block.RedstoneValve.RedstoneValveBlockEntity;
+import com.adonis.fluid.block.RedstoneTripleValve.RedstoneTripleValveBlockEntity;
+import com.adonis.fluid.block.RedstoneTripleValve.RedstoneTripleValveBlockEntity;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlockEntity;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceRenderer;
 import com.adonis.fluid.block.GutterOutlet.GutterOutletBlockEntity;
@@ -80,6 +85,25 @@ public class CFBlockEntities {
             .renderer(() -> GutterOutletRenderer::new)
             .register();
 
+    // 铜水槽方块实体
+    public static final BlockEntityEntry<CopperSinkBlockEntity> COPPER_SINK = REGISTRATE
+            .blockEntity("copper_sink", CopperSinkBlockEntity::new)
+            .validBlocks(CFBlocks.COPPER_SINK)
+            .renderer(() -> CopperSinkRenderer::new)
+            .register();
+
+    // 红石阀门方块实体
+    public static final BlockEntityEntry<RedstoneValveBlockEntity> REDSTONE_VALVE = REGISTRATE
+            .blockEntity("redstone_valve", RedstoneValveBlockEntity::new)
+            .validBlocks(CFBlocks.REDSTONE_VALVE)
+            .register();
+
+    // 红石三通阀门方块实体
+    public static final BlockEntityEntry<RedstoneTripleValveBlockEntity> REDSTONE_TRIPLE_VALVE = REGISTRATE
+            .blockEntity("redstone_triple_valve", RedstoneTripleValveBlockEntity::new)
+            .validBlocks(CFBlocks.REDSTONE_TRIPLE_VALVE)
+            .register();
+
     public static void register() {
     }
 
@@ -103,5 +127,15 @@ public class CFBlockEntities {
 
         // 注册智能集水器的流体能力
         SmartGutterOutletBlockEntity.registerCapabilities(event);
+
+        // 注册铜水槽的流体能力
+        @SuppressWarnings("unchecked")
+        BlockEntityType<CopperSinkBlockEntity> copperSinkType = (BlockEntityType<CopperSinkBlockEntity>) COPPER_SINK.get();
+        CopperSinkBlockEntity.registerCapabilities(event, copperSinkType);
+
+        // 注册红石三通阀门的流体能力
+        @SuppressWarnings("unchecked")
+        BlockEntityType<RedstoneTripleValveBlockEntity> tripleValveType = (BlockEntityType<RedstoneTripleValveBlockEntity>) REDSTONE_TRIPLE_VALVE.get();
+        RedstoneTripleValveBlockEntity.registerCapabilities(event, tripleValveType);
     }
 }

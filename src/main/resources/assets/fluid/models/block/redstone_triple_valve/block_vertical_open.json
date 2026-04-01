@@ -1,0 +1,72 @@
+{
+	"format_version": "1.21.6",
+	"credit": "Made with Blockbench",
+	"textures": {
+		"2": "fluid:block/redstone_triple_valve",
+		"particle": "create:block/copper_underside"
+	},
+	"elements": [
+		{
+			"name": "powered",
+			"from": [14.01, 5, 5],
+			"to": [14.01, 11, 11],
+			"rotation": {"angle": 0, "axis": "y", "origin": [11, -8, 11]},
+			"faces": {
+				"east": {"uv": [10.5, 10.5, 13.5, 13.5], "rotation": 180, "texture": "#2"}
+			}
+		},
+		{
+			"from": [3, 14, 3],
+			"to": [13, 16, 13],
+			"rotation": {"angle": 0, "axis": "y", "origin": [8, 8, 8]},
+			"faces": {
+				"north": {"uv": [8.5, 1.5, 7.5, 6.5], "rotation": 270, "texture": "#2"},
+				"east": {"uv": [8.5, 1.5, 7.5, 6.5], "rotation": 270, "texture": "#2"},
+				"south": {"uv": [8.5, 1.5, 7.5, 6.5], "rotation": 270, "texture": "#2"},
+				"west": {"uv": [8.5, 1.5, 7.5, 6.5], "rotation": 270, "texture": "#2"},
+				"up": {"uv": [6.5, 9.5, 1.5, 14.5], "rotation": 270, "texture": "#2"},
+				"down": {"uv": [0, 0, 0, 0], "rotation": 270, "texture": "#2"}
+			}
+		},
+		{
+			"from": [0, 3, 3],
+			"to": [2, 13, 13],
+			"rotation": {"angle": 0, "axis": "y", "origin": [8, 8, 8]},
+			"faces": {
+				"north": {"uv": [8.5, 1.5, 7.5, 6.5], "texture": "#2"},
+				"east": {"uv": [0, 0, 0, 0], "rotation": 180, "texture": "#2"},
+				"south": {"uv": [8.5, 1.5, 7.5, 6.5], "rotation": 180, "texture": "#2"},
+				"west": {"uv": [7, 9, 1, 15], "rotation": 180, "texture": "#2"},
+				"up": {"uv": [8.5, 1.5, 7.5, 6.5], "rotation": 180, "texture": "#2"},
+				"down": {"uv": [8.5, 1.5, 7.5, 6.5], "rotation": 180, "texture": "#2"}
+			}
+		},
+		{
+			"from": [3, 0, 3],
+			"to": [13, 2, 13],
+			"rotation": {"angle": 0, "axis": "y", "origin": [8, 8, 8]},
+			"faces": {
+				"north": {"uv": [7.5, 1.5, 8.5, 6.5], "rotation": 270, "texture": "#2"},
+				"east": {"uv": [7.5, 1.5, 8.5, 6.5], "rotation": 270, "texture": "#2"},
+				"south": {"uv": [7.5, 1.5, 8.5, 6.5], "rotation": 270, "texture": "#2"},
+				"west": {"uv": [7.5, 1.5, 8.5, 6.5], "rotation": 270, "texture": "#2"},
+				"up": {"uv": [0, 0, 0, 0], "rotation": 270, "texture": "#2"},
+				"down": {"uv": [1.5, 9.5, 6.5, 14.5], "rotation": 270, "texture": "#2"}
+			}
+		},
+		{
+			"name": "ValveCenter",
+			"from": [2, 2, 2],
+			"to": [14, 14, 14],
+			"rotation": {"angle": 0, "axis": "y", "origin": [11, -8, 11]},
+			"faces": {
+				"north": {"uv": [1, 1, 7, 7], "rotation": 270, "texture": "#2"},
+				"east": {"uv": [9, 1, 15, 7], "rotation": 180, "texture": "#2"},
+				"south": {"uv": [7, 1, 1, 7], "rotation": 90, "texture": "#2"},
+				"west": {"uv": [1, 9, 7, 15], "rotation": 180, "texture": "#2"},
+				"up": {"uv": [1, 9, 7, 15], "rotation": 180, "texture": "#2"},
+				"down": {"uv": [1, 9, 7, 15], "rotation": 180, "texture": "#2"}
+			}
+		}
+	]
+}

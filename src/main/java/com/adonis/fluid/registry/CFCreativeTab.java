@@ -5,6 +5,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.Items;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -28,9 +29,15 @@ public class CFCreativeTab {
                         output.accept(CFBlocks.CENTRIFUGAL_PUMP);
                         output.accept(CFBlocks.GUTTER_OUTLET);
                         output.accept(CFBlocks.SMART_GUTTER_OUTLET);
+                        output.accept(CFBlocks.COPPER_SINK);
+                        output.accept(CFBlocks.REDSTONE_VALVE);
+                        output.accept(CFBlocks.REDSTONE_TRIPLE_VALVE);
 
                         // 手动添加物品
                         output.accept(CFItems.HONEYCOMB_MOLD);
+
+                        // 细雪相关
+                        output.accept(Items.POWDER_SNOW_BUCKET);
                     })
                     .build());
 

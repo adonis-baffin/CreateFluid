@@ -28,11 +28,8 @@ public class CopperTapRenderer extends SafeBlockEntityRenderer<CopperTapBlockEnt
     protected void renderSafe(CopperTapBlockEntity be, float partialTicks, PoseStack ms,
                               MultiBufferSource buffer, int light, int overlay) {
 
+        // 检查是否需要渲染
         if (!be.hasFluidToRender())
-            return;
-
-        FluidStack fluidStack = be.getRenderingFluid();
-        if (fluidStack.isEmpty())
             return;
 
         BlockState state = be.getBlockState();
@@ -41,6 +38,7 @@ public class CopperTapRenderer extends SafeBlockEntityRenderer<CopperTapBlockEnt
         if (!isOpen)
             return;
 
+        // 根据方向调整渲染位置
         Direction facing = state.getValue(CopperTapBlock.FACING);
 
         ms.pushPose();
@@ -64,8 +62,28 @@ public class CopperTapRenderer extends SafeBlockEntityRenderer<CopperTapBlockEnt
             }
         }
 
-        // 渲染流体流
-        renderFluidStream(be, fluidStack, ms, buffer, light, partialTicks);
+        // 判断渲染类型
+        if (be.isBeltProcessing()) {
+            // 传送带加工时也用和置物台完全一样的渲染
+            FluidStack beltFluid = be.getBeltProcessingFluid();
+            if (!beltFluid.isEmpty()) {
+                renderFluidStream(be, beltFluid, ms, buffer, light, partialTicks);
+                renderSplashEffect(be, beltFluid, ms, buffer, light, partialTicks);  // 加上这行就有收尾水洼了
+            }
+        } else if (be.isProcessing()) {
+            // 原来的置物台逻辑保持不变
+            FluidStack fluid = be.getRenderingFluid();
+            if (!fluid.isEmpty()) {
+                renderFluidStream(be, fluid, ms, buffer, light, partialTicks);
+                renderSplashEffect(be, fluid, ms, buffer, light, partialTicks);
+            }
+        } else {
+            // 普通流出一律保持短水柱
+            FluidStack fluid = be.getRenderingFluid();
+            if (!fluid.isEmpty()) {
+                renderFluidStream(be, fluid, ms, buffer, light, partialTicks);
+            }
+        }
 
         ms.popPose();
     }
@@ -95,9 +113,38 @@ public class CopperTapRenderer extends SafeBlockEntityRenderer<CopperTapBlockEnt
         renderFluidBox(fluidStack, xMin, yBottom, zMin, xMax, yTop, zMax, buffer, ms, light, false);
     }
 
+    /**
+     * 渲染飞溅效果（普通加工用）
+     */
+    private void renderSplashEffect(CopperTapBlockEntity be, FluidStack fluid, PoseStack ms,
+                                    MultiBufferSource buffer, int light, float partialTicks) {
+        int processingTicks = be.getProcessingTicks();
+        if (processingTicks <= 0) return;
+
+        float processingProgress = ((float) processingTicks - partialTicks) / 20f;
+
+        // 只渲染飞溅效果
+        float splash = 1f - processingProgress;
+        if (splash < 0.3f) {
+            float splashRadius = splash * 0.5f;
+
+            // 在底部渲染扩散的流体池
+            renderFluidBox(fluid,
+                    0.5f - splashRadius, -15.5f / 16f, 0.5f - splashRadius,
+                    0.5f + splashRadius, -15f / 16f, 0.5f + splashRadius,
+                    buffer, ms, light, false, true);
+        }
+    }
+
     private void renderFluidBox(FluidStack fluidStack, float xMin, float yMin, float zMin,
                                 float xMax, float yMax, float zMax,
                                 MultiBufferSource buffer, PoseStack ms, int light, boolean renderBottom) {
+        renderFluidBox(fluidStack, xMin, yMin, zMin, xMax, yMax, zMax, buffer, ms, light, renderBottom, false);
+    }
+
+    private void renderFluidBox(FluidStack fluidStack, float xMin, float yMin, float zMin,
+                                float xMax, float yMax, float zMax,
+                                MultiBufferSource buffer, PoseStack ms, int light, boolean renderBottom, boolean invertGasses) {
         if (fluidStack.isEmpty())
             return;
 
