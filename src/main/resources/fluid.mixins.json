@@ -10,6 +10,7 @@
     "FluidPropagatorMixin",
     "ArmBlockEntityWrenchUpdateMixin",
     "FluidUtilMixin",
+    "VanillaFluidTargetsMixin",
     "accessor.ArmBlockEntityAccessor",
     "accessor.ItemDrainBlockEntityAccessor"
   ],

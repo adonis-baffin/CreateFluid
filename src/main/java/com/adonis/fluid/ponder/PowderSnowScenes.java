@@ -104,6 +104,9 @@ public class PowderSnowScenes {
         // 启动泵，抽取细雪
         scene.world().setKineticSpeed(pumpSel, 32);
         scene.world().setKineticSpeed(shaftSel, 32);
+        // 在 Create 6.0 中需要对管道连接进行更新
+        scene.world().propagatePipeChange(pipe1Pos);
+        scene.world().propagatePipeChange(pipe2Pos);
         scene.world().propagatePipeChange(pumpPos);
         scene.idle(40);
 
@@ -243,11 +246,15 @@ public class PowderSnowScenes {
     private static void instructPipette(CreateSceneBuilder scene, BlockPos pipettePos,
                                         PipetteBlockEntity.Phase phase, FluidStack heldFluid, int targetedPoint) {
         scene.world().modifyBlockEntityNBT(scene.getScene().getSceneBuildingUtil().select().position(pipettePos),
-                PipetteBlockEntity.class, (compound) -> {
+                PipetteBlockEntity.class, compound -> {
                     NBTHelper.writeEnum(compound, "Phase", phase);
-                    compound.put("HeldFluid", heldFluid.saveOptional(scene.getScene().getWorld().registryAccess()));
+                    if (!heldFluid.isEmpty()) {
+                        compound.put("HeldFluid", heldFluid.saveOptional(scene.getScene().getWorld().registryAccess()));
+                    } else {
+                        compound.putBoolean("EmptyFluid", true);
+                    }
                     compound.putInt("TargetPointIndex", targetedPoint);
-                    compound.putFloat("MovementProgress", 0.0F);
+                    compound.putFloat("MovementProgress", 0);
                 });
     }
 

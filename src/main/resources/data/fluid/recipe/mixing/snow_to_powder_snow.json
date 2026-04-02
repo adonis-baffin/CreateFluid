@@ -2,13 +2,13 @@
   "type": "create:mixing",
   "ingredients": [
     {
-      "item": "minecraft:snowball"
+      "item": "minecraft:snow_block"
     }
   ],
   "results": [
     {
-      "amount": 250,
-      "fluid": "fluid:powder_snow"
+      "amount": 1000,
+      "id": "fluid:powder_snow"
     }
   ]
 }

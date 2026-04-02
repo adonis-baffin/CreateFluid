@@ -42,10 +42,9 @@ public class PowderSnowBucketHandler {
 
         @Override
         public @NotNull ItemStack getContainer() {
-            // 返回空桶作为容器结果
-            if (container.is(Items.POWDER_SNOW_BUCKET)) {
-                return new ItemStack(Items.BUCKET);
-            }
+            // 返回原始容器（细雪桶），而不是空桶
+            // 这样 Create 的 GenericItemFilling 就不会为细雪桶生成注液配方
+            // 因为填充后的结果与原始物品相同，表示已经满了
             return container.copy();
         }
 

@@ -16,7 +16,7 @@ public class CFCreativeTab {
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> MAIN_TAB = REGISTER.register("main",
             () -> CreativeModeTab.builder()
-                    .title(Component.translatable("itemGroup.createfluid.main"))
+                    .title(Component.translatable("itemGroup.fluid.main"))
                     .withTabsBefore(CreativeModeTabs.SPAWN_EGGS)
                     .icon(() -> CFItems.BATON.asStack())
                     .displayItems((parameters, output) -> {

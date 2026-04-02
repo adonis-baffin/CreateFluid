@@ -578,7 +578,7 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
                     boolean isLava = currentFluid.getFluid().isSame(Fluids.LAVA);
                     CreateLang.translate("gui.goggles.gutter_outlet.dripping")
                             .style(ChatFormatting.GRAY)
-                            .add(CreateLang.fluidName(currentFluid)
+                            .add(CreateLang.fluidName(currentFluid)  // 自动使用流体的本地化名称，并带正确颜色
                                     .style(isLava ? ChatFormatting.GOLD : ChatFormatting.AQUA))
                             .forGoggles(tooltip, 1);
                 } else {

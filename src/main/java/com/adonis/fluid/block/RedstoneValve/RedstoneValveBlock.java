@@ -2,6 +2,8 @@ package com.adonis.fluid.block.RedstoneValve;
 
 import com.adonis.fluid.registry.CFBlockEntities;
 import com.simibubi.create.AllShapes;
+import com.simibubi.create.AllSoundEvents;
+import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.content.fluids.FluidPropagator;
 import com.simibubi.create.content.fluids.pipes.FluidPipeBlock;
 import com.simibubi.create.content.fluids.pipes.IAxisPipe;
@@ -13,7 +15,11 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
@@ -31,10 +37,12 @@ import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.ticks.TickPriority;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.level.BlockEvent;
 import org.jetbrains.annotations.NotNull;
 
 public class RedstoneValveBlock extends Block
-        implements IAxisPipe, IBE<RedstoneValveBlockEntity> {
+        implements IAxisPipe, IBE<RedstoneValveBlockEntity>, IWrenchable {
 
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
     public static final BooleanProperty AXIS_ALONG_FIRST_COORDINATE =
@@ -190,6 +198,52 @@ public class RedstoneValveBlock extends Block
         if (blockTypeChanged && !world.isClientSide)
             FluidPropagator.propagateChangedPipe(world, pos, state);
         super.onRemove(state, world, pos, newState, isMoving);
+    }
+
+    // ========== 扳手交互 ==========
+
+    @Override
+    public InteractionResult onWrenched(BlockState state, UseOnContext context) {
+        Level level = context.getLevel();
+        BlockPos pos = context.getClickedPos();
+        
+        // 使用 IWrenchable 默认的旋转逻辑
+        BlockState rotated = IWrenchable.super.getRotatedBlockState(state, context.getClickedFace());
+        if (!rotated.canSurvive(level, pos))
+            return InteractionResult.PASS;
+
+        level.setBlockAndUpdate(pos, rotated);
+        if (level.getBlockState(pos) != state)
+            IWrenchable.playRotateSound(level, pos);
+
+        return InteractionResult.SUCCESS;
+    }
+
+    @Override
+    public InteractionResult onSneakWrenched(BlockState state, UseOnContext context) {
+        Level world = context.getLevel();
+        BlockPos pos = context.getClickedPos();
+        Player player = context.getPlayer();
+
+        if (!(world instanceof ServerLevel serverLevel))
+            return InteractionResult.SUCCESS;
+
+        // 触发方块破坏事件，允许其他模组取消
+        BlockEvent.BreakEvent event = new BlockEvent.BreakEvent(world, pos, world.getBlockState(pos), player);
+        NeoForge.EVENT_BUS.post(event);
+        if (event.isCanceled())
+            return InteractionResult.SUCCESS;
+
+        // 掉落物品
+        if (player != null && !player.isCreative()) {
+            Block.getDrops(state, serverLevel, pos, world.getBlockEntity(pos), player, context.getItemInHand())
+                .forEach(itemStack -> player.getInventory().placeItemBackInInventory(itemStack));
+        }
+
+        state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, true);
+        world.destroyBlock(pos, false);
+        IWrenchable.playRemoveSound(world, pos);
+        return InteractionResult.SUCCESS;
     }
 
     @Override

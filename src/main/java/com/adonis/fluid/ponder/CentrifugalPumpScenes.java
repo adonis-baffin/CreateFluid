@@ -90,6 +90,10 @@ public class CentrifugalPumpScenes {
         scene.world().showSection(tank2Sel, Direction.DOWN);
         scene.idle(10);
 
+        scene.world().modifyBlockEntity(tank1BottomPos, FluidTankBlockEntity.class, be -> {
+            be.getTankInventory().fill(new FluidStack(Fluids.WATER, 2000), IFluidHandler.FluidAction.EXECUTE);
+        });
+
         // 第二句话
         scene.overlay().showText(80)
                 .attachKeyFrame()

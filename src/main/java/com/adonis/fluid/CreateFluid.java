@@ -3,7 +3,13 @@ package com.adonis.fluid;
 import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.config.CFStressConfig;
 import com.adonis.fluid.fluid.powdersnow.PowderSnowBucketHandler;
+import com.adonis.fluid.handler.CauldronFluidHandler;
 import com.adonis.fluid.registry.*;
+import com.simibubi.create.api.behaviour.spouting.CauldronSpoutingBehavior;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import com.simibubi.create.foundation.item.ItemDescription;
 import com.simibubi.create.foundation.item.KineticStats;
 import com.simibubi.create.foundation.item.TooltipModifier;
@@ -73,6 +79,14 @@ public class CreateFluid {
             CFPartialModels.init();
             // 细雪流体相关初始化
             CFFluids.register();
+            
+            // 注册粉末雪流体到炼药锅注液行为（使注液器可以向炼药锅注入粉末雪，直接注满）
+            CauldronSpoutingBehavior.CAULDRON_INFO.register(
+                CFFluids.POWDER_SNOW.get(),
+                new CauldronSpoutingBehavior.CauldronInfo(1000, 
+                    Blocks.POWDER_SNOW_CAULDRON.defaultBlockState()
+                        .setValue(BlockStateProperties.LEVEL_CAULDRON, 3))
+            );
         });
     }
 

@@ -1,0 +1,148 @@
+{
+  "block.fluid.pipette": "Pipette mécanique",
+  "block.fluid.fluid_interface": "Interface à fluide",
+  "block.fluid.smart_fluid_interface": "Interface à fluide intelligente",
+  "block.fluid.centrifugal_pump": "Pompe centrifuge",
+  "block.fluid.copper_tap": "Robinet en cuivre",
+  "item.fluid.honeycomb_mold": "Moule à rayon de miel",
+  "item.fluid.honeycomb_mold.tooltip.summary": "Utilisé pour la recette de compactage de rayon de miel",
+  "item.fluid.baton": "Baguette de chef d'orchestre",
+  "item.fluid.baton.tooltip.summary": "Utilisé pour configurer les points d'interaction pour le _Bras mécanique_, la _Pipette mécanique_ et le _Dépôt éjecteur_",
+  "fluid_type.fluid.powder_snow": "Neige poudreuse",
+
+  "item.fluid.pipette": "Pipette mécanique",
+
+  "itemGroup.fluid.main": "Create: Fluid",
+
+  "block.fluid.fluid_interface.tooltip": "INTERFACE À FLUIDE",
+  "block.fluid.fluid_interface.tooltip.summary": "Un bloc _proxy_ pour interfacer avec les conteneurs de fluide adjacents",
+  "block.fluid.fluid_interface.tooltip.condition1": "Quand utilisé par le joueur",
+  "block.fluid.fluid_interface.tooltip.behaviour1": "Permet l'_interaction directe avec les fluides_ du conteneur attaché en utilisant des seaux ou conteneurs de fluide",
+
+  "block.fluid.smart_fluid_interface.tooltip": "INTERFACE À FLUIDE INTELLIGENTE",
+  "block.fluid.smart_fluid_interface.tooltip.summary": "Un bloc _proxy avancé_ pour conteneurs de fluide avec des _capacités de filtrage_ qui restreint quels fluides peuvent passer à travers",
+  "block.fluid.smart_fluid_interface.tooltip.condition1": "Quand configuré avec un filtre",
+  "block.fluid.smart_fluid_interface.tooltip.behaviour1": "Permet seulement aux _fluides spécifiés_ d'être insérés ou extraits",
+  "block.fluid.smart_fluid_interface.tooltip.condition2": "Quand attaché à un conteneur",
+  "block.fluid.smart_fluid_interface.tooltip.behaviour2": "Fonctionne comme une _passerelle filtrée_ vers le conteneur attaché, empêchant les types de fluides indésirables de passer",
+
+  "block.fluid.centrifugal_pump.tooltip.summary": "Transporte plus loin et plus vite que les _Pompes mécaniques_, peut être mise dans un boîtier avec un _Boîtier de cuivre_",
+  "block.fluid.copper_tap.tooltip.summary": "Clic droit pour basculer. Peut remplir les _Bassins_, _Chaudrons_ en dessous, ou effectuer un traitement de verseur sur les _Dépôts_ en dessous",
+
+  "create.fluid.mechanical_pipette.extract": "Drainer le fluide de %1$s",
+  "create.fluid.mechanical_pipette.deposit": "Injecter le fluide à %1$s",
+  "create.fluid.mechanical_pipette.points_outside_range": "%1$s Points d'interaction de fluide ont été retirés car ils sont maintenant hors de portée",
+  "create.fluid.mechanical_pipette.summary": "Points de fluide configurés: %1$s Entrées, %2$s Sorties",
+  "create.fluid.mechanical_pipette.no_targets.title": "Pas de cibles",
+  "create.fluid.mechanical_pipette.no_targets": "Il semblerait qu'aucune _cible_ n'a été assignée à cette _Pipette_ _mécanique_. Sélectionnez des bassins, drains, interfaces à fluide et d'autres blocs en faisant _clic droit_ sur eux en _tenant_ la _Pipette_ _mécanique_ dans votre _main_",
+
+  "create.create.mechanical_arm.extract_from": "Prendre des objets de %1$s",
+  "create.create.mechanical_arm.deposit_to": "Déposer des objets à %1$s",
+
+  "create.hint.mechanical_arm_no_targets": "Il semblerait qu'aucune _cible_ n'a été assignée à ce _Bras_ _mécanique_. Sélectionnez des tapis roulants, des dépôts, des entonnoirs et d'autres blocs en faisant _clic droit_ sur eux en _tenant_ le _Bras_ _mécanique_ dans votre _main_",
+  "create.hint.mechanical_arm_no_targets.title": "Pas de cibles",
+  "create.create.mechanical_arm.points_outside_range": "%1$s point(s) d'interaction sélectionné(s) retiré(s) en raison des limitations de portée",
+  "create.create.mechanical_arm.selection_mode.forced_round_robin": "Chacun un par un forcé",
+  "create.create.mechanical_arm.selection_mode.prefer_first": "Préférer la première cible",
+  "create.create.mechanical_arm.selection_mode.round_robin": "Chacun un par un",
+  "create.create.mechanical_arm.summary": "Le bras mécanique a %1$s entrée(s) et %2$s sortie(s)",
+
+  "create.fluid.baton.arm.dance_started": "Le bras a commencé à danser",
+  "create.fluid.baton.arm.dance_stopped": "Le bras a arrêté de danser",
+  "create.fluid.baton.ejector.click_to_set": "Cliquez pour définir la position cible",
+  "create.fluid.baton.ejector.target_set": "Position cible définie",
+  "create.fluid.baton.ejector.no_target": "Aucune position cible définie",
+  "create.fluid.baton.ejector.invalid_target": "Position cible invalide",
+  "create.fluid.baton.ejector.target_cleared": "Position cible effacée",
+  "create.fluid.baton.interaction_point_removed": "Point d'interaction retiré",
+
+  "create_fluid.centrifugal_pump.pump_mode": "Mode de pompe",
+  "create_fluid.centrifugal_pump.mode.pump_in": "Pomper vers l'intérieur",
+  "create_fluid.centrifugal_pump.mode.pump_out": "Pomper vers l'extérieur",
+
+  "create.create_fluid.centrifugal_pump.pump_mode": "Mode de pompe",
+  "create.create_fluid.centrifugal_pump.mode.pump_in": "Pomper vers l'intérieur",
+  "create.create_fluid.centrifugal_pump.mode.pump_out": "Pomper vers l'extérieur",
+
+  "create.mechanical_arm.selection_mode.forced_round_robin": "Chacun un par un forcé",
+  "create.mechanical_arm.selection_mode.prefer_first": "Préférer la première cible",
+  "create.mechanical_arm.selection_mode.round_robin": "Chacun un par un",
+
+  "create.mechanical_pipette.selection_mode.forced_round_robin": "Chacun un par un forcé",
+  "create.mechanical_pipette.selection_mode.prefer_first": "Préférer la première cible",
+  "create.mechanical_pipette.selection_mode.round_robin": "Chacun un par un",
+
+  "fluid.ponder.mechanical_pipette.header": "Mettre en place la pipette mécanique",
+  "fluid.ponder.mechanical_pipette.text_1": "Entrées",
+  "fluid.ponder.mechanical_pipette.text_2": "Sorties",
+  "fluid.ponder.mechanical_pipette.text_3": "Les pipettes mécaniques fonctionnent comme les bras mécaniques, mais comme leur nom le suggère, elles se spécialisent dans l'interaction avec les conteneurs de fluide",
+  "fluid.ponder.mechanical_pipette.text_4": "Pour les conteneurs qui ne peuvent pas être interagis directement, les interfaces à fluide peuvent aider à combler ce fossé",
+  "fluid.ponder.mechanical_pipette.text_5": "En plus des conteneurs de fluide réguliers, les pipettes mécaniques supportent aussi des blocs plus intéressants, vous aidant peut-être à exprimer votre créativité",
+  "fluid.ponder.mechanical_pipette.text_6": "Ceci est la jauge de contenu de la pipette. Elle affiche la quantité actuelle de fluide contenue",
+
+  "fluid.ponder.mechanical_pipette_filter.header": "Filtrer les cibles de la pipette mécanique",
+  "fluid.ponder.mechanical_pipette_filter.text_1": "Il est parfois désirable de restreindre les cibles de la pipette en ajoutant un filtre",
+  "fluid.ponder.mechanical_pipette_filter.text_2": "Les interfaces à fluide intelligentes existent pour ce but précis",
+  "fluid.ponder.mechanical_pipette_filter.text_3": "L'emplacement de filtre des interfaces à fluide intelligentes peut être appliqué à la pipette mécanique",
+
+  "fluid.ponder.mechanical_pipette_fill.header": "Remplissage de fluide avec la pipette mécanique",
+  "fluid.ponder.mechanical_pipette_fill.text_1": "Entrées",
+  "fluid.ponder.mechanical_pipette_fill.text_2": "Sorties",
+  "fluid.ponder.mechanical_pipette_fill.text_3": "En plus de gérer la logistique, la pipette mécanique peut aussi être appliquée dans des scénarios de traitement",
+  "fluid.ponder.mechanical_pipette_fill.text_4": "Quand un dépôt ou un tapis est sélectionné comme sortie, la pipette surveillera les ingrédients au-dessus qui peuvent subir un remplissage de fluide",
+  "fluid.ponder.mechanical_pipette_fill.text_5": "La pipette cherchera dans toutes les entrées le fluide requis, puis effectuera le processus de remplissage",
+
+  "fluid.ponder.baton.header": "Utiliser la baguette de chef d'orchestre",
+  "fluid.ponder.baton.text_1": "Entrées",
+  "fluid.ponder.baton.text_2": "Sorties",
+  "fluid.ponder.baton.text_3": "Parfois vous voudrez ajouter ou modifier des points d'interaction après qu'un bras mécanique ait été placé",
+  "fluid.ponder.baton.text_4": "Faites clic droit dessus avec la baguette de chef d'orchestre pour entrer en mode de direction. Tous les points d'interaction seront continuellement mis en surbrillance",
+  "fluid.ponder.baton.text_5": "Maintenant vous pouvez ajuster les points d'interaction du bras comme si vous teniez le bras lui-même",
+  "fluid.ponder.baton.text_6": "Une fois terminé, faites clic droit sur le bras à nouveau pour mettre à jour sa configuration de points d'interaction",
+  "fluid.ponder.baton.text_7": "Les points d'interaction de la pipette mécanique et du dépôt éjecteur peuvent aussi être modifiés avec la baguette de chef d'orchestre",
+
+  "fluid.ponder.powder_snow.header": "Neige poudreuse comme fluide",
+  "fluid.ponder.powder_snow.text_1": "La neige poudreuse est maintenant un fluide qui peut être collecté depuis les chaudrons en utilisant des tuyaux ou des pipettes mécaniques",
+  "fluid.ponder.powder_snow.text_2": "Les seaux de neige poudreuse peuvent être utilisés pour définir des filtres pour le fluide de neige poudreuse",
+  "fluid.ponder.powder_snow.text_3": "Le fluide de neige poudreuse peut aussi être créé en utilisant un mélangeur mécanique",
+  "fluid.ponder.powder_snow.text_4": "Faites clic droit sur le bassin pour obtenir des seaux de neige poudreuse",
+
+  "fluid.ponder.centrifugal_pump.header": "Utiliser les pompes centrifuges",
+  "fluid.ponder.centrifugal_pump.text_1": "Les pompes centrifuges ont des taux de transfert plus puissants et des distances de transfert plus longues que les pompes mécaniques, mais consomment plus de stress",
+  "fluid.ponder.centrifugal_pump.text_2": "La pression de la pompe voyage jusqu'à 20 blocs le long des tuyaux, indépendamment de la puissance d'entrée",
+  "fluid.ponder.centrifugal_pump.text_3": "À la même vitesse, les pompes centrifuges transfèrent les fluides deux fois plus vite que les pompes mécaniques",
+  "fluid.ponder.centrifugal_pump.text_4": "La direction de transfert de la pompe n'est pas affectée par la direction de rotation",
+  "fluid.ponder.centrifugal_pump.text_5": "À la place, le panneau latéral peut être utilisé pour contrôler la direction de transfert de la pompe",
+  "fluid.ponder.centrifugal_pump.text_6": "Si utiliser le panneau est peu pratique, faites clic droit avec la baguette de chef d'orchestre pour basculer rapidement",
+  "fluid.ponder.centrifugal_pump.text_7": "Le boîtier de cuivre peut être utilisé pour mettre la pompe centrifuge dans un boîtier",
+  "fluid.ponder.centrifugal_pump.text_8": "Les pompes dans un boîtier n'ont plus de panneau ; leur direction de transfert est contrôlée par la direction de rotation",
+
+  "fluid.ponder.copper_tap.header": "Utiliser les robinets en cuivre",
+  "fluid.ponder.copper_tap.text_1": "Les robinets en cuivre tirent le fluide depuis les conteneurs derrière eux et peuvent remplir les chaudrons ou bassins en dessous",
+  "fluid.ponder.copper_tap.text_2": "Les robinets en cuivre peuvent être attachés aux feuilles et produire de l'eau à l'infini depuis les feuilles gorgées d'eau",
+  "fluid.ponder.copper_tap.text_3": "Les robinets en cuivre peuvent effectuer un traitement de verseur sur les dépôts en dessous",
+  "fluid.ponder.copper_tap.text_4": "Les signaux de redstone peuvent être utilisés pour contrôler l'état ouvert/fermé du robinet",
+
+  "block.fluid.gutter_outlet": "Sortie de gouttière",
+  "block.fluid.smart_gutter_outlet": "Sortie de gouttière intelligente",
+  "block.fluid.copper_sink": "Évier en cuivre",
+
+  "block.fluid.copper_sink.tooltip.summary": "Un bel évier en cuivre qui reste toujours plein. Tout fluide introduit est détruit ; Sortie infinie d'eau",
+  "create.block.fluid.copper_sink.infinite_source": "Source infinie d'eau",
+  "create.gui.goggles.gutter_outlet.dripping": "Gouttant",
+  "create.gui.goggles.gutter_outlet.dripstone_active": "Collecte de lave gouttante",
+
+  "fluid.ponder.gutter_outlet.header": "Collecter des fluides avec les sorties de gouttière",
+  "fluid.ponder.gutter_outlet.text_1": "Les sorties de gouttière peuvent être utilisées pour drainer de grandes masses de fluide au-dessus d'elles, tout comme les _Drains d'objets_",
+  "fluid.ponder.gutter_outlet.text_2": "Les sorties de gouttière peuvent aussi collecter la lave comme un _chaudron_, ou collecter du fluide par temps pluvieux ou neigeux",
+  "fluid.ponder.gutter_outlet.text_3": "Faites _clic droit_ dessus pour verser du fluide depuis l'objet tenu dedans, ou pour extraire du fluide",
+  "fluid.ponder.gutter_outlet.text_4": "Les _réseaux de tuyaux_ peuvent maintenant extraire le fluide de leur tampon interne",
+
+  "fluid.ponder.gutter_outlet_interact.header": "Interactions avec la sortie de gouttière",
+  "fluid.ponder.gutter_outlet_interact.text_1": "Les _Robinets en cuivre_ peuvent remplir les sorties de gouttière",
+  "fluid.ponder.gutter_outlet_interact.text_2": "Les sorties de gouttière intelligentes ont la même fonctionnalité, mais peuvent être configurées avec un _filtre_, ou désactivées avec un signal de _redstone_",
+  "fluid.ponder.gutter_outlet_interact.text_3": "Les sorties de gouttière rempliront automatiquement les conteneurs de fluide placés directement en dessous d'elles",
+  "fluid.ponder.gutter_outlet_interact.text_4": "Les sorties de gouttière peuvent accepter la sortie d'un _Bassin_",
+  "fluid.ponder.gutter_outlet_interact.text_5": "Les _Pipettes mécaniques_ peuvent déposer du fluide dans ou extraire du fluide des sorties de gouttière"
+}
+}

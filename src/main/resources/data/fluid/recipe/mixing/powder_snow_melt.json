@@ -1,7 +1,9 @@
 {
   "type": "create:mixing",
+  "heat_requirement": "heated",
   "ingredients": [
     {
+      "type": "fluid_stack",
       "amount": 1000,
       "fluid": "fluid:powder_snow"
     }
@@ -9,8 +11,7 @@
   "results": [
     {
       "amount": 1000,
-      "fluid": "minecraft:water"
+      "id": "minecraft:water"
     }
-  ],
-  "heatRequirement": "heated"
+  ]
 }
