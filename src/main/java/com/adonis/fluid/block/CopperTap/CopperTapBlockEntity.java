@@ -457,48 +457,18 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
      * 生成滴水粒子效果 - 模仿滴水石锥的效果
      */
     private void spawnDripParticle() {
-        if (level == null || !(level instanceof ServerLevel serverLevel))
+        if (level == null || level.isClientSide)
             return;
 
         if (dripFluid.isEmpty())
             return;
 
-        // 使用 Create 的 FluidFX 获取流体粒子
-        ParticleOptions fluidParticle = com.simibubi.create.content.fluids.FluidFX.getFluidParticle(dripFluid);
-
-        // 龙头出口位置
         Vec3 spoutPos = Vec3.atCenterOf(worldPosition).add(0, -0.3, 0);
 
-        // 阶段1：悬挂在出水口的水滴，缓慢向下生长
-        // 在出水口附近生成多个粒子，模拟水滴逐渐变大
-        for (int i = 0; i < 2; i++) {
-            double yOffset = -0.05 * i; // 水滴向下延伸
-            serverLevel.sendParticles(
-                    fluidParticle,
-                    spoutPos.x, spoutPos.y + yOffset, spoutPos.z,
-                    1,
-                    0.005, 0.0, 0.005, // 几乎不扩散
-                    0.005 // 非常缓慢向下
-            );
-        }
-
-        // 阶段2：脱离出水口的水滴，自由落体
-        // 在稍微下方的位置生成，给予较大的向下速度
-        serverLevel.sendParticles(
-                fluidParticle,
-                spoutPos.x, spoutPos.y - 0.15, spoutPos.z,
-                1,
-                0.01, 0.0, 0.01,
-                0.15 // 较大的向下速度，模拟自由落体
-        );
-
-        // 阶段3：落下途中的水滴
-        serverLevel.sendParticles(
-                fluidParticle,
-                spoutPos.x, spoutPos.y - 0.3, spoutPos.z,
-                1,
-                0.015, 0.0, 0.015,
-                0.25 // 更大的向下速度
+        PacketDistributor.sendToPlayersTrackingChunk(
+                (ServerLevel) level,
+                level.getChunkAt(worldPosition).getPos(),
+                new CopperTapParticlePacket(CopperTapParticlePacket.ParticleType.DRIP, spoutPos, spoutPos, dripFluid)
         );
 
         // 偶尔播放滴水声音
