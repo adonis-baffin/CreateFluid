@@ -79,6 +79,10 @@ public class GutterFluidDrainingBehaviour extends BlockEntityBehaviour {
     protected PriorityQueue<BlockPosEntry> queue;
     protected boolean isValid;
 
+    // 音效冷却（防止无限水源时高频触发）
+    protected static final int SOUND_COOLDOWN_TICKS = 20; // 1秒间隔
+    protected int soundCooldown = 0;
+
     // 验证相关
     protected List<BlockPosEntry> validationFrontier;
     protected Set<BlockPos> validationVisited;
@@ -224,7 +228,11 @@ public class GutterFluidDrainingBehaviour extends BlockEntityBehaviour {
             revalidate(root);
 
         if (infinite) {
-            playEffect(world, root, fluid, true);
+            // 只在音效冷却结束时播放音效，防止高频触发
+            if (soundCooldown <= 0) {
+                playEffect(world, root, fluid, true);
+                soundCooldown = SOUND_COOLDOWN_TICKS;
+            }
             return true;
         }
 
@@ -312,6 +320,11 @@ public class GutterFluidDrainingBehaviour extends BlockEntityBehaviour {
     @Override
     public void tick() {
         super.tick();
+
+        // 更新音效冷却
+        if (soundCooldown > 0) {
+            soundCooldown--;
+        }
 
         Level world = getWorld();
         if (world == null || world.isClientSide)
