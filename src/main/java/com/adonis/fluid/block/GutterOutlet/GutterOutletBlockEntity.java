@@ -125,6 +125,11 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
             return;
         }
 
+        tickCollection();
+        handleDrainToBelow();
+    }
+
+    protected void tickCollection() {
         boolean collectedWorldFluid = false;
 
         if (CFCommonConfig.canGutterCollectWorldFluid()) {
@@ -138,8 +143,6 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
         if (CFCommonConfig.canGutterCollectDripstone()) {
             handleDripstoneCollection();
         }
-
-        handleDrainToBelow();
     }
 
     private boolean handleWorldFluidCollection() {

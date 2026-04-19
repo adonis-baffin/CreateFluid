@@ -22,6 +22,7 @@ import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -31,9 +32,6 @@ import java.util.List;
 public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
 
     private static final int MAX_DRIP_DISTANCE = 10; // 可配置，建议 10 模仿原版坩埚
-    private static final int SYNC_RATE = 8;
-    protected int syncCooldown;
-    protected boolean queuedSync;
 
     protected FilteringBehaviour filtering;
 
@@ -56,17 +54,6 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
         sendData();
     }
 
-    @Override
-    public void sendData() {
-        if (syncCooldown > 0) {
-            queuedSync = true;
-            return;
-        }
-        super.sendData();
-        queuedSync = false;
-        syncCooldown = SYNC_RATE;
-    }
-
     protected boolean canActivate() {
         BlockState blockState = getBlockState();
         return blockState.hasProperty(SmartGutterOutletBlock.POWERED)
@@ -86,43 +73,40 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
     @Override
     public void tick() {
         super.tick();
-        if (syncCooldown > 0) {
-            syncCooldown--;
-            if (syncCooldown == 0 && queuedSync)
-                sendData();
-        }
-        if (level == null) return;
+    }
 
-        if (level.isClientSide) {
-            if (getFluidLevel() != null) {
-                getFluidLevel().tickChaser();
-            }
-            forEachBehaviour(BlockEntityBehaviour::tick);
-            return;
-        }
-
-        forEachBehaviour(BlockEntityBehaviour::tick);
-
+    @Override
+    protected void tickCollection() {
         if (!canActivate()) {
-            handleDrainToBelow();
             return;
         }
 
         boolean collectedWorldFluid = false;
+        boolean worldFluidBlockedByFilter = false;
 
         if (CFCommonConfig.canGutterCollectWorldFluid()) {
+            if (getDrainer().hasFluidToDrain()) {
+                FluidStack drainable = getDrainer().getDrainableFluid(getDrainer().getRootPos());
+                worldFluidBlockedByFilter = !drainable.isEmpty() && !testFluidFilter(drainable);
+            }
             collectedWorldFluid = handleWorldFluidCollectionFiltered();
         }
 
-        if (!collectedWorldFluid && !getDrainer().hasFluidToDrain()) {
+        if (!collectedWorldFluid && (!getDrainer().hasFluidToDrain() || worldFluidBlockedByFilter)) {
             handlePrecipitationCollectionFiltered();
         }
 
         if (CFCommonConfig.canGutterCollectDripstone()) {
             handleDripstoneCollectionFiltered();
         }
+    }
 
-        handleDrainToBelow();
+    @Override
+    protected void accumulateAndFill(FluidStack template, boolean isPrecipitation) {
+        if (!testFluidFilter(template)) {
+            return;
+        }
+        super.accumulateAndFill(template, isPrecipitation);
     }
 
     private boolean handleWorldFluidCollectionFiltered() {
@@ -223,14 +207,6 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
         }
 
         // 无红石信号 = 开启状态 → 正常行为
-        if (side == null) {
-            return getFluidHandler();
-        }
-
-        if (side == Direction.UP) {
-            return getFluidHandler();
-        }
-
         if (side == Direction.DOWN) {
             // 返回只输出不输入的处理器
             IFluidHandler tank = tankBehaviour.getCapability();
@@ -240,11 +216,13 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
             return new OutputOnlyFluidHandler(tank);
         }
 
-        if (GutterOutletBlock.isNarrowSide(state, side)) {
-            return getFluidHandler();
+        IFluidHandler tank = getFluidHandler();
+        if (tank == null || (tank instanceof FluidTank && ((FluidTank) tank).getCapacity() == 0)) {
+            return new EmptyFluidHandler();
         }
 
-        return new EmptyFluidHandler();
+        // UP、narrow sides 和 null（无特定面）都走过滤输入
+        return new FilteredInputFluidHandler(tank);
     }
 
     // 空流体处理器（用于红石关闭状态）
@@ -296,6 +274,54 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
         @Override
         public int fill(@Nonnull FluidStack resource, FluidAction action) {
             return 0; // 只允许输出，不允许输入
+        }
+
+        @Override
+        public @Nonnull FluidStack drain(FluidStack resource, FluidAction action) {
+            return wrapped.drain(resource, action);
+        }
+
+        @Override
+        public @Nonnull FluidStack drain(int maxDrain, FluidAction action) {
+            return wrapped.drain(maxDrain, action);
+        }
+    }
+
+    /**
+     * 带过滤的输入流体处理器。
+     * 在 fill() 时检查过滤条件，不符合的流体拒绝输入。
+     */
+    private class FilteredInputFluidHandler implements IFluidHandler {
+        private final IFluidHandler wrapped;
+
+        public FilteredInputFluidHandler(IFluidHandler wrapped) {
+            this.wrapped = wrapped;
+        }
+
+        @Override
+        public int getTanks() {
+            return wrapped.getTanks();
+        }
+
+        @Override
+        public @Nonnull FluidStack getFluidInTank(int tank) {
+            return wrapped.getFluidInTank(tank);
+        }
+
+        @Override
+        public int getTankCapacity(int tank) {
+            return wrapped.getTankCapacity(tank);
+        }
+
+        @Override
+        public boolean isFluidValid(int tank, @Nonnull FluidStack stack) {
+            return wrapped.isFluidValid(tank, stack);
+        }
+
+        @Override
+        public int fill(@Nonnull FluidStack resource, FluidAction action) {
+            if (!testFluidFilter(resource)) return 0;
+            return wrapped.fill(resource, action);
         }
 
         @Override

@@ -21,22 +21,8 @@ public class SmartGutterOutletFilterSlot extends Sided {
     }
 
     @Override
-    public Vec3 getLocalOffset(LevelAccessor level, BlockPos pos, BlockState state) {
-        // 过滤器显示在宽面中间偏上的位置
-        Direction facing = state.getValue(SmartGutterOutletBlock.FACING);
-        Direction side = getSide();
-        
-        if (side == null) {
-            side = facing;
-        }
-
-        // 在侧面中央位置
-        return VecHelper.voxelSpace(8, 12, 15.5f);
-    }
-
-    @Override
     protected Vec3 getSouthLocation() {
-        return VecHelper.voxelSpace(8, 12, 15.5f);
+        return VecHelper.voxelSpace(8, 11, 15.5f);
     }
 
     @Override

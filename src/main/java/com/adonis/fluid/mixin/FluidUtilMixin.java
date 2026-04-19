@@ -10,6 +10,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.Optional;
+
 /**
  * Mixin to make FluidUtil recognize powder snow buckets
  */
@@ -17,9 +19,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class FluidUtilMixin {
 
     @Inject(method = "getFluidContained", at = @At("HEAD"), cancellable = true, remap = false)
-    private static void handlePowderSnowBucket(ItemStack container, CallbackInfoReturnable<FluidStack> cir) {
+    private static void handlePowderSnowBucket(ItemStack container, CallbackInfoReturnable<Optional<FluidStack>> cir) {
         if (container.is(Items.POWDER_SNOW_BUCKET)) {
-            cir.setReturnValue(new FluidStack(CFFluids.POWDER_SNOW.get(), 1000));
+            cir.setReturnValue(Optional.of(new FluidStack(CFFluids.POWDER_SNOW.get(), 1000)));
         }
     }
 }

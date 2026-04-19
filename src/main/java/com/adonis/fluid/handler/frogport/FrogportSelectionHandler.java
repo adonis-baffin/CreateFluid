@@ -79,7 +79,7 @@ public class FrogportSelectionHandler {
                 clearChainSelection();
             } else {
                 double range = mc.player.getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE) + 1.0;
-                Vec3 from = RaycastHelper.getTraceOrigin(mc.player);
+                Vec3 from = mc.player.getEyePosition();
                 Vec3 to = RaycastHelper.getTraceTarget(mc.player, range, from);
                 HitResult hitResult = mc.hitResult;
                 double bestDiff = Float.MAX_VALUE;

@@ -17,6 +17,11 @@ public class CFCommonConfig {
     // Centrifugal Pump 配置
     public static final ModConfigSpec.IntValue CENTRIFUGAL_PUMP_RANGE;
 
+    // Copper Tap Experience Release 配置
+    public static final ModConfigSpec.BooleanValue COPPER_TAP_EXPERIENCE_ENABLED;
+    public static final ModConfigSpec.IntValue COPPER_TAP_EXPERIENCE_RATE;
+    public static final ModConfigSpec.IntValue COPPER_TAP_EXPERIENCE_INTERVAL;
+
     private static boolean isConfigLoaded = false;
 
     static {
@@ -58,6 +63,23 @@ public class CFCommonConfig {
         CENTRIFUGAL_PUMP_RANGE = builder
                 .comment("Maximum transport distance in blocks for the Centrifugal Pump.")
                 .defineInRange("centrifugalPumpRange", 20, 1, Integer.MAX_VALUE);
+
+        builder.pop();
+
+        builder.comment("Copper Tap Experience Release settings")
+                .push("copper_tap_experience");
+
+        COPPER_TAP_EXPERIENCE_ENABLED = builder
+                .comment("Whether the Copper Tap can release experience orbs when open and no valid target is present.")
+                .define("enabled", true);
+
+        COPPER_TAP_EXPERIENCE_RATE = builder
+                .comment("How many mB of experience fluid are consumed per release.")
+                .defineInRange("rate", 10, 1, 1000);
+
+        COPPER_TAP_EXPERIENCE_INTERVAL = builder
+                .comment("Tick interval between each experience orb release.")
+                .defineInRange("interval", 1, 1, 100);
 
         builder.pop();
 
@@ -138,6 +160,34 @@ public class CFCommonConfig {
             return CENTRIFUGAL_PUMP_RANGE.get();
         } catch (IllegalStateException e) {
             return 20;
+        }
+    }
+
+    // Copper Tap Experience Release 配置获取方法
+    public static boolean isCopperTapExperienceEnabled() {
+        if (!isConfigLoaded) return true;
+        try {
+            return COPPER_TAP_EXPERIENCE_ENABLED.get();
+        } catch (IllegalStateException e) {
+            return true;
+        }
+    }
+
+    public static int getCopperTapExperienceRate() {
+        if (!isConfigLoaded) return 10;
+        try {
+            return COPPER_TAP_EXPERIENCE_RATE.get();
+        } catch (IllegalStateException e) {
+            return 10;
+        }
+    }
+
+    public static int getCopperTapExperienceInterval() {
+        if (!isConfigLoaded) return 5;
+        try {
+            return COPPER_TAP_EXPERIENCE_INTERVAL.get();
+        } catch (IllegalStateException e) {
+            return 5;
         }
     }
 }
