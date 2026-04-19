@@ -9,36 +9,28 @@
   "item.fluid.baton": "Batuta del director",
   "item.fluid.baton.tooltip.summary": "Se usa para configurar puntos de interacción para _Brazo mecánico_, _Pipeta mecánica_ y _Depósito eyector_",
   "fluid_type.fluid.powder_snow": "Nieve polvo",
-
   "item.fluid.pipette": "Pipeta mecánica",
-
   "itemGroup.fluid.main": "Create: Fluid",
-
   "block.fluid.fluid_interface.tooltip": "INTERFAZ DE FLUIDOS",
   "block.fluid.fluid_interface.tooltip.summary": "Un bloque _intermediario_ para interactuar con contenedores de fluidos adyacentes",
   "block.fluid.fluid_interface.tooltip.condition1": "Cuando es usado por el jugador",
   "block.fluid.fluid_interface.tooltip.behaviour1": "Permite la _interacción directa de fluidos_ con el contenedor adjunto usando cubetas o contenedores de fluidos",
-
   "block.fluid.smart_fluid_interface.tooltip": "INTERFAZ DE FLUIDOS INTELIGENTE",
   "block.fluid.smart_fluid_interface.tooltip.summary": "Un bloque _intermediario avanzado_ para contenedores de fluidos con _capacidades de filtrado_ que restringe qué fluidos pueden pasar a través",
   "block.fluid.smart_fluid_interface.tooltip.condition1": "Cuando se configura con un filtro",
   "block.fluid.smart_fluid_interface.tooltip.behaviour1": "Solo permite que los _fluidos especificados_ sean insertados o extraídos",
   "block.fluid.smart_fluid_interface.tooltip.condition2": "Cuando se adjunta a un contenedor",
   "block.fluid.smart_fluid_interface.tooltip.behaviour2": "Funciona como una _puerta filtrada_ al contenedor adjunto, evitando que pasen tipos de fluidos no deseados",
-
   "block.fluid.centrifugal_pump.tooltip.summary": "Transporta más lejos y más rápido que las _Bombas mecánicas_, puede ser revestida con _Revestimiento de cobre_",
   "block.fluid.copper_tap.tooltip.summary": "Clic derecho para cambiar. Puede llenar _Cuencos_, _Calderos_ debajo, o realizar procesamiento de vertido en _Depósitos_ debajo",
-
   "create.fluid.mechanical_pipette.extract": "Drenar fluido de %1$s",
   "create.fluid.mechanical_pipette.deposit": "Inyectar fluido a %1$s",
   "create.fluid.mechanical_pipette.points_outside_range": "%1$s puntos de interacción de fluidos fueron eliminados porque ahora están fuera de rango",
   "create.fluid.mechanical_pipette.summary": "Puntos de fluidos configurados: %1$s entradas, %2$s salidas",
   "create.fluid.mechanical_pipette.no_targets.title": "Sin objetivos",
   "create.fluid.mechanical_pipette.no_targets": "Parece que a esta _Pipeta_ _Mecánica_ no se le ha asignado ningún _objetivo_. Selecciona cuencos, drenajes, interfaces de fluidos y otros bloques haciendo _clic derecho_ sobre ellos mientras _sostienes_ la _Pipeta_ _Mecánica_ en tu _mano_",
-
   "create.create.mechanical_arm.extract_from": "Tomar objetos de %1$s",
   "create.create.mechanical_arm.deposit_to": "Depositar objetos en %1$s",
-
   "create.hint.mechanical_arm_no_targets": "Parece que a este _Brazo_ _Mecánico_ no se le ha asignado ningún _objetivo_. Selecciona cintas, depósitos, embudos y otros bloques haciendo _clic derecho_ sobre ellos mientras _sostienes_ el _Brazo_ _Mecánico_ en tu _mano_",
   "create.hint.mechanical_arm_no_targets.title": "Sin objetivos",
   "create.create.mechanical_arm.points_outside_range": "%1$s punto(s) de interacción seleccionado(s) eliminado(s) debido a limitaciones de rango",
@@ -46,7 +38,6 @@
   "create.create.mechanical_arm.selection_mode.prefer_first": "Preferir el primer objetivo",
   "create.create.mechanical_arm.selection_mode.round_robin": "Round Robin",
   "create.create.mechanical_arm.summary": "El brazo mecánico tiene %1$s entrada(s) y %2$s salida(s)",
-
   "create.fluid.baton.arm.dance_started": "El brazo comenzó a bailar",
   "create.fluid.baton.arm.dance_stopped": "El brazo dejó de bailar",
   "create.fluid.baton.ejector.click_to_set": "Clic para establecer posición objetivo",
@@ -55,23 +46,15 @@
   "create.fluid.baton.ejector.invalid_target": "Posición objetivo inválida",
   "create.fluid.baton.ejector.target_cleared": "Posición objetivo eliminada",
   "create.fluid.baton.interaction_point_removed": "Punto de interacción eliminado",
-
   "create_fluid.centrifugal_pump.pump_mode": "Modo de bombeo",
   "create_fluid.centrifugal_pump.mode.pump_in": "Bombear hacia adentro",
   "create_fluid.centrifugal_pump.mode.pump_out": "Bombear hacia afuera",
-
-  "create.create_fluid.centrifugal_pump.pump_mode": "Modo de bombeo",
-  "create.create_fluid.centrifugal_pump.mode.pump_in": "Bombear hacia adentro",
-  "create.create_fluid.centrifugal_pump.mode.pump_out": "Bombear hacia afuera",
-
   "create.mechanical_arm.selection_mode.forced_round_robin": "Round Robin forzado",
   "create.mechanical_arm.selection_mode.prefer_first": "Preferir el primer objetivo",
   "create.mechanical_arm.selection_mode.round_robin": "Round Robin",
-
   "create.mechanical_pipette.selection_mode.forced_round_robin": "Round Robin forzado",
   "create.mechanical_pipette.selection_mode.prefer_first": "Preferir el primer objetivo",
   "create.mechanical_pipette.selection_mode.round_robin": "Round Robin",
-
   "fluid.ponder.mechanical_pipette.header": "Configurar la pipeta mecánica",
   "fluid.ponder.mechanical_pipette.text_1": "Entradas",
   "fluid.ponder.mechanical_pipette.text_2": "Salidas",
@@ -79,19 +62,16 @@
   "fluid.ponder.mechanical_pipette.text_4": "Para contenedores con los que no se puede interactuar directamente, las interfaces de fluidos pueden ayudar a salvar esa distancia",
   "fluid.ponder.mechanical_pipette.text_5": "Además de los contenedores de fluidos regulares, las pipetas mecánicas también soportan bloques más interesantes, tal vez ayudándote a expresar tu creatividad",
   "fluid.ponder.mechanical_pipette.text_6": "Este es el medidor de contenido de la pipeta. Muestra la cantidad actual de fluido contenido",
-
   "fluid.ponder.mechanical_pipette_filter.header": "Filtrar objetivos de la pipeta mecánica",
   "fluid.ponder.mechanical_pipette_filter.text_1": "A veces es conveniente restringir los objetivos de la pipeta haciendo coincidir un filtro",
   "fluid.ponder.mechanical_pipette_filter.text_2": "Las interfaces de fluidos inteligentes existen para este mismo propósito",
   "fluid.ponder.mechanical_pipette_filter.text_3": "La ranura de filtro de las interfaces de fluidos inteligentes puede aplicarse a la pipeta mecánica",
-
   "fluid.ponder.mechanical_pipette_fill.header": "Llenado de fluidos con pipeta mecánica",
   "fluid.ponder.mechanical_pipette_fill.text_1": "Entradas",
   "fluid.ponder.mechanical_pipette_fill.text_2": "Salidas",
   "fluid.ponder.mechanical_pipette_fill.text_3": "Además de manejar logística, la pipeta mecánica también puede aplicarse en escenarios de procesamiento",
   "fluid.ponder.mechanical_pipette_fill.text_4": "Cuando se selecciona un depósito o cinta como salida, la pipeta observará los ingredientes arriba que puedan someterse a llenado de fluidos",
   "fluid.ponder.mechanical_pipette_fill.text_5": "La pipeta buscará en todas las entradas el fluido requerido, luego realizará el proceso de llenado",
-
   "fluid.ponder.baton.header": "Usando la batuta del director",
   "fluid.ponder.baton.text_1": "Entradas",
   "fluid.ponder.baton.text_2": "Salidas",
@@ -100,13 +80,11 @@
   "fluid.ponder.baton.text_5": "Ahora puedes ajustar los puntos de interacción del brazo como si estuvieras sosteniendo el brazo mismo",
   "fluid.ponder.baton.text_6": "Una vez terminado, haz clic derecho en el brazo nuevamente para actualizar su configuración de puntos de interacción",
   "fluid.ponder.baton.text_7": "Los puntos de interacción de la pipeta mecánica y el depósito eyector también se pueden modificar con la batuta del director",
-
   "fluid.ponder.powder_snow.header": "Nieve polvo como fluido",
   "fluid.ponder.powder_snow.text_1": "La nieve polvo ahora es un fluido que se puede recolectar de calderos usando tuberías o pipetas mecánicas",
   "fluid.ponder.powder_snow.text_2": "Los cubos de nieve polvo se pueden usar para establecer filtros para el fluido de nieve polvo",
   "fluid.ponder.powder_snow.text_3": "El fluido de nieve polvo también se puede crear usando un mezclador mecánico",
   "fluid.ponder.powder_snow.text_4": "Haz clic derecho en el cuenco para obtener cubos de nieve polvo",
-
   "fluid.ponder.centrifugal_pump.header": "Usando bombas centrífugas",
   "fluid.ponder.centrifugal_pump.text_1": "Las bombas centrífugas tienen tasas de transferencia más potentes y distancias de transferencia más largas que las bombas mecánicas, pero consumen más estrés",
   "fluid.ponder.centrifugal_pump.text_2": "La presión de la bomba viaja hasta 20 bloques a lo largo de las tuberías, independientemente de la potencia de entrada",
@@ -116,32 +94,29 @@
   "fluid.ponder.centrifugal_pump.text_6": "Si usar el panel es inconveniente, haz clic derecho con la batuta del director para un cambio rápido",
   "fluid.ponder.centrifugal_pump.text_7": "El revestimiento de cobre se puede usar para revestir la bomba centrífuga",
   "fluid.ponder.centrifugal_pump.text_8": "Las bombas revestidas ya no tienen panel; su dirección de transferencia es controlada por la dirección de rotación",
-
   "fluid.ponder.copper_tap.header": "Usando grifos de cobre",
   "fluid.ponder.copper_tap.text_1": "Los grifos de cobre extraen fluido de los contenedores detrás de ellos y pueden llenar calderos o cuencos debajo",
   "fluid.ponder.copper_tap.text_2": "Los grifos de cobre se pueden unir a hojas y producir agua infinitamente desde hojas anegadas",
   "fluid.ponder.copper_tap.text_3": "Los grifos de cobre pueden realizar procesamiento de vertido en depósitos debajo",
   "fluid.ponder.copper_tap.text_4": "Las señales de redstone se pueden usar para controlar el estado de encendido/apagado del grifo",
-
   "block.fluid.gutter_outlet": "Salida de canaleta",
   "block.fluid.smart_gutter_outlet": "Salida de canaleta inteligente",
   "block.fluid.copper_sink": "Fregadero de cobre",
-
   "block.fluid.copper_sink.tooltip.summary": "Un hermoso fregadero de cobre que siempre permanece lleno. Cualquier fluido introducido se destruye; Salida infinita de agua",
   "create.block.fluid.copper_sink.infinite_source": "Fuente infinita de agua",
   "create.gui.goggles.gutter_outlet.dripping": "Goteando",
   "create.gui.goggles.gutter_outlet.dripstone_active": "Recolectando lava goteante",
-
   "fluid.ponder.gutter_outlet.header": "Recolectar fluidos con salidas de canaleta",
   "fluid.ponder.gutter_outlet.text_1": "Las salidas de canaleta se pueden usar para drenar grandes masas de fluido encima de ellas, igual que los _Desagües de ítems_",
   "fluid.ponder.gutter_outlet.text_2": "Las salidas de canaleta también pueden recolectar lava como un _caldero_, o recolectar fluido en tiempo lluvioso o nevado",
   "fluid.ponder.gutter_outlet.text_3": "Haz _clic derecho_ en ella para verter fluido del ítem que sostienes en ella, o para extraer fluido",
   "fluid.ponder.gutter_outlet.text_4": "Las _redes de tuberías_ ahora pueden extraer el fluido de su búfer interno",
-
   "fluid.ponder.gutter_outlet_interact.header": "Interacciones de la salida de canaleta",
   "fluid.ponder.gutter_outlet_interact.text_1": "Los _Grifos de cobre_ pueden llenar salidas de canaleta",
   "fluid.ponder.gutter_outlet_interact.text_2": "Las salidas de canaleta inteligentes tienen la misma funcionalidad, pero pueden configurarse con un _filtro_, o desactivarse con una señal de _redstone_",
   "fluid.ponder.gutter_outlet_interact.text_3": "Las salidas de canaleta llenarán automáticamente contenedores de fluidos colocados directamente debajo de ellas",
   "fluid.ponder.gutter_outlet_interact.text_4": "Las salidas de canaleta pueden aceptar la salida de un _Cuenco_",
-  "fluid.ponder.gutter_outlet_interact.text_5": "Las _Pipetas mecánicas_ pueden depositar fluido en o extraer fluido de las salidas de canaleta"
+  "fluid.ponder.gutter_outlet_interact.text_5": "Las _Pipetas mecánicas_ pueden depositar fluido en o extraer fluido de las salidas de canaleta",
+  "block.fluid.redstone_valve": "Válvula de Redstone",
+  "block.fluid.redstone_triple_valve": "Válvula Triple de Redstone"
 }

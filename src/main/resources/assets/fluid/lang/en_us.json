@@ -62,10 +62,6 @@
   "create_fluid.centrifugal_pump.mode.pump_in": "Pump in",
   "create_fluid.centrifugal_pump.mode.pump_out": "Pump out",
 
-  "create.create_fluid.centrifugal_pump.pump_mode": "Pump Mode",
-  "create.create_fluid.centrifugal_pump.mode.pump_in": "Pump in",
-  "create.create_fluid.centrifugal_pump.mode.pump_out": "Pump out",
-
   "create.mechanical_arm.selection_mode.forced_round_robin": "Forced Round Robin",
   "create.mechanical_arm.selection_mode.prefer_first": "Prefer First Target",
   "create.mechanical_arm.selection_mode.round_robin": "Round Robin",

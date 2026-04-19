@@ -58,7 +58,7 @@ public class CreateFluid {
         // 注册Common配置（GutterOutlet等）
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, CFCommonConfig.CONFIG_SPEC);
 
-        // 注册Server配置（包含kinetics、centrifugalPumpRange、stressValues）
+        // 注册Server配置（包含kinetics、stressValues）
         // 注意：这是唯一的SERVER配置，包含所有服务端可配置项
         CFConfig.register();
 
