@@ -11,8 +11,12 @@
     "ArmBlockEntityWrenchUpdateMixin",
     "FluidUtilMixin",
     "VanillaFluidTargetsMixin",
+    "PackagerBlockEntityMixin",
+    "ClipboardBlockItemMixin",
     "accessor.ArmBlockEntityAccessor",
-    "accessor.ItemDrainBlockEntityAccessor"
+    "accessor.ItemDrainBlockEntityAccessor",
+    "accessor.ChainConveyorShapeAccessor",
+    "accessor.ChainConveyorOBBAccessor"
   ],
   "client": [
     "ArmBlockEntityWrenchUpdateMixin"

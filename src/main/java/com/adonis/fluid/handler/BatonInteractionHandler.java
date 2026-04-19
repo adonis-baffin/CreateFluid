@@ -3,10 +3,13 @@ package com.adonis.fluid.handler;
 import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.block.Pipette.PipetteBlockEntity;
 import com.adonis.fluid.content.pipette.FluidInteractionPoint;
+import com.adonis.fluid.handler.frogport.FrogportInteractionHandler;
 import com.adonis.fluid.item.BatonItem;
 import com.adonis.fluid.mixin.accessor.ArmBlockEntityAccessor;
 import com.adonis.fluid.packet.CentrifugalPumpModeTogglePacket;
 import com.adonis.fluid.packet.QuartzLampTogglePacket;
+import com.simibubi.create.content.logistics.packager.PackagerBlock;
+import com.simibubi.create.content.logistics.packager.repackager.RepackagerBlock;
 import com.simibubi.create.content.kinetics.mechanicalArm.ArmBlockEntity;
 import com.simibubi.create.content.kinetics.mechanicalArm.ArmInteractionPoint;
 import com.simibubi.create.content.kinetics.mechanicalArm.ArmPlacementPacket;
@@ -15,6 +18,7 @@ import com.simibubi.create.content.logistics.depot.EjectorPlacementPacket;
 import com.simibubi.create.content.logistics.depot.EntityLauncher;
 import com.simibubi.create.content.redstone.RoseQuartzLampBlock;
 import com.simibubi.create.foundation.utility.CreateLang;
+import com.adonis.fluid.handler.EditModeManager;
 import com.simibubi.create.infrastructure.config.AllConfigs;
 import net.createmod.catnip.animation.AnimationTickHolder;
 import net.createmod.catnip.math.VecHelper;
@@ -75,7 +79,7 @@ public class BatonInteractionHandler {
     private static int particleCounter = 0;
 
     public static boolean isInSelectionMode() {
-        return selectionType != SelectionType.NONE;
+        return selectionType != SelectionType.NONE || EditModeManager.isInEditMode();
     }
 
     @SubscribeEvent
@@ -109,6 +113,11 @@ public class BatonInteractionHandler {
                 drawEjectorOutlines();
                 drawEjectorArc();
             }
+
+            // 新模式的 tick / 渲染
+            EditModeManager.tick(player, player.level());
+        } else {
+            FrogportInteractionHandler.render(Minecraft.getInstance());
         }
     }
 
@@ -135,6 +144,8 @@ public class BatonInteractionHandler {
                     be instanceof PipetteBlockEntity ||
                     be instanceof EjectorBlockEntity ||
                     state.getBlock() instanceof RoseQuartzLampBlock ||
+                    state.getBlock() instanceof PackagerBlock ||
+                    state.getBlock() instanceof RepackagerBlock ||
                     be instanceof com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlockEntity) {
                 event.setCanceled(true);
                 event.setCancellationResult(InteractionResult.SUCCESS);
@@ -185,8 +196,24 @@ public class BatonInteractionHandler {
         if (be instanceof com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlockEntity pump) {
             if (!sneaking && pump.pumpMode != null) {
                 PacketDistributor.sendToServer(new CentrifugalPumpModeTogglePacket(pos));
+
+                // 客户端预览效果
+                int currentMode = pump.pumpMode.getValue();
+                int nextMode = (currentMode + 1) % com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlockEntity.PumpMode.values().length;
+                com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlockEntity.PumpMode newMode =
+                        com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlockEntity.PumpMode.values()[nextMode];
+
+                // 发送反馈消息
+                CreateLang.builder()
+                        .translate(newMode.getTranslationKey())
+                        .style(ChatFormatting.AQUA)
+                        .sendStatus(player);
+
+                // 播放音效和粒子效果
                 level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                        SoundEvents.LEVER_CLICK, SoundSource.BLOCKS, 0.3f, 1.0f, false);
+                        SoundEvents.LEVER_CLICK, SoundSource.BLOCKS, 0.3f, 1.5f, false);
+                createPumpModeToggleParticles(level, pos);
+
                 event.setCanceled(true);
                 event.setCancellationResult(InteractionResult.SUCCESS);
             }
@@ -422,7 +449,7 @@ public class BatonInteractionHandler {
             return;
         }
 
-        if (isInSelectionMode()) {
+        if (selectionType != SelectionType.NONE) {
             event.setCanceled(true);
             event.setUseBlock(net.neoforged.neoforge.common.util.TriState.FALSE);
             event.setUseItem(net.neoforged.neoforge.common.util.TriState.FALSE);
@@ -799,6 +826,19 @@ public class BatonInteractionHandler {
         }
     }
 
+    private static void createPumpModeToggleParticles(Level level, BlockPos pos) {
+        Random random = new Random();
+        for (int i = 0; i < 12; i++) {
+            double angle = (Math.PI * 2) * i / 12;
+            double radius = 0.5;
+            double x = pos.getX() + 0.5 + Math.cos(angle) * radius;
+            double y = pos.getY() + 0.5 + (i * 0.05);
+            double z = pos.getZ() + 0.5 + Math.sin(angle) * radius;
+            level.addParticle(new DustParticleOptions(new Vector3f(0.0F, 1.0F, 1.0F), 1.0F),
+                    x, y, z, 0, 0.02, 0);
+        }
+    }
+
     private static void createContinuousParticles(Level level, BlockPos pos) {
         if (level == null) return;
 
@@ -860,6 +900,19 @@ public class BatonInteractionHandler {
         return null;
     }
 
+    public static void animateConnection(Minecraft mc, Vec3 source, Vec3 target, int color) {
+        DustParticleOptions data = new DustParticleOptions(new Color(color).asVectorF(), 1.0F);
+        double totalFlyingTicks = 10.0;
+        int segments = (int) totalFlyingTicks / 3 + 1;
+        double tickOffset = totalFlyingTicks / (double) segments;
+
+        for (int i = 0; i < segments; i++) {
+            double ticks = (double) (AnimationTickHolder.getRenderTime() / 3.0F) % tickOffset + (double) i * tickOffset;
+            Vec3 vec = source.lerp(target, ticks / totalFlyingTicks);
+            mc.level.addParticle(data, vec.x, vec.y, vec.z, 0.0, 0.0, 0.0);
+        }
+    }
+
     public static void cancelSelection() {
         selectedTarget = null;
         selectedTargetPos = null;
@@ -869,6 +922,11 @@ public class BatonInteractionHandler {
         selectionType = SelectionType.NONE;
         currentArmSelection.clear();
         currentPipetteSelection.clear();
+        // 同时退出 EditModeManager 的新模式
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null && mc.level != null) {
+            EditModeManager.exitMode(mc.player, mc.level);
+        }
     }
 
     /**

@@ -14,6 +14,9 @@ public class CFCommonConfig {
     // CopperSink 配置
     public static final ModConfigSpec.BooleanValue COPPER_SINK_INFINITE;
 
+    // Centrifugal Pump 配置
+    public static final ModConfigSpec.IntValue CENTRIFUGAL_PUMP_RANGE;
+
     private static boolean isConfigLoaded = false;
 
     static {
@@ -46,6 +49,15 @@ public class CFCommonConfig {
         COPPER_SINK_INFINITE = builder
                 .comment("Whether the Copper Sink provides infinite water (if false, it's just a normal 2000mB tank)")
                 .define("infiniteWater", true);
+
+        builder.pop();
+
+        builder.comment("Centrifugal Pump settings")
+                .push("centrifugal_pump");
+
+        CENTRIFUGAL_PUMP_RANGE = builder
+                .comment("Maximum transport distance in blocks for the Centrifugal Pump.")
+                .defineInRange("centrifugalPumpRange", 20, 1, Integer.MAX_VALUE);
 
         builder.pop();
 
@@ -114,6 +126,18 @@ public class CFCommonConfig {
             return COPPER_SINK_INFINITE.get();
         } catch (IllegalStateException e) {
             return true;
+        }
+    }
+
+    // Centrifugal Pump 配置获取方法
+    public static int getCentrifugalPumpRange() {
+        if (!isConfigLoaded) {
+            return 20;
+        }
+        try {
+            return CENTRIFUGAL_PUMP_RANGE.get();
+        } catch (IllegalStateException e) {
+            return 20;
         }
     }
 }

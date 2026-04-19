@@ -1,5 +1,6 @@
 package com.adonis.fluid.block.CentrifugalPump;
 
+import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.config.CFStressConfig;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.AllSoundEvents;
@@ -130,7 +131,7 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
         if (!isCurrentlyEncased) {
             pumpMode = new ScrollOptionBehaviour<>(
                     PumpMode.class,
-                    Component.translatable("create_fluid.centrifugal_pump.pump_mode"),
+                    Component.translatable("create.create_fluid.centrifugal_pump.pump_mode"),
                     this,
                     new CentrifugalPumpValueBox()
             );
@@ -387,8 +388,8 @@ public class CentrifugalPumpBlockEntity extends KineticBlockEntity {
             FluidPropagator.resetAffectedFluidNetworks(level, worldPosition, side.getOpposite());
         }
 
-        // 从 CFStressConfig 获取范围配置（如果有的话）
-        int maxDistance = 64; // 默认64格
+        // 从 CFCommonConfig 获取范围配置
+        int maxDistance = CFCommonConfig.getCentrifugalPumpRange();
 
         if (!hasReachedValidEndpoint(level, start, pull)) {
             pipeGraph.computeIfAbsent(worldPosition, $ -> Pair.of(0, new IdentityHashMap<>()))

@@ -1,6 +1,7 @@
 package com.adonis.fluid.item;
 
 import com.adonis.fluid.handler.BatonInteractionHandler;
+import com.adonis.fluid.handler.EditModeManager;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.item.ClampedItemPropertyFunction;
 import net.minecraft.world.entity.LivingEntity;
@@ -13,6 +14,6 @@ import org.jetbrains.annotations.Nullable;
 public class BatonItemPropertyFunction implements ClampedItemPropertyFunction {
     @Override
     public float unclampedCall(ItemStack stack, @Nullable ClientLevel level, @Nullable LivingEntity entity, int seed) {
-        return BatonInteractionHandler.isInSelectionMode() ? 1.0F : 0.0F;
+        return BatonInteractionHandler.isInSelectionMode() || EditModeManager.isInEditMode() ? 1.0F : 0.0F;
     }
 }

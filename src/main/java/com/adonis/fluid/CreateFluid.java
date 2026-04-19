@@ -30,6 +30,7 @@ public class CreateFluid {
     public static final String MOD_ID = "fluid";
     public static final String NAME = "Create Fluid";
     public static final Random RANDOM = new Random();
+    public static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(NAME);
 
     public static final CFRegistrate REGISTRATE = CFRegistrate.create(MOD_ID)
             .setTooltipModifierFactory(item ->

@@ -2,6 +2,8 @@ package com.adonis.fluid.registry;
 
 import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.packet.*;
+import com.adonis.fluid.packet.ClipboardAddressParticlePacket;
+import com.adonis.fluid.packet.ClipboardSetAddressPacket;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -91,6 +93,62 @@ public class CFNetworking {
                 CentrifugalPumpModeTogglePacket.TYPE,
                 CentrifugalPumpModeTogglePacket.STREAM_CODEC,
                 CentrifugalPumpModeTogglePacket::handle
+        );
+
+        // Packager 状态切换包
+        registrar.playToServer(
+                PackagerTogglePacket.TYPE,
+                PackagerTogglePacket.STREAM_CODEC,
+                PackagerTogglePacket::handle
+        );
+
+        // Packager 地址清除包
+        registrar.playToServer(
+                PackagerClearAddressPacket.TYPE,
+                PackagerClearAddressPacket.STREAM_CODEC,
+                PackagerClearAddressPacket::handle
+        );
+
+        // Clipboard 设置地址包（C→S）
+        registrar.playToServer(
+                ClipboardSetAddressPacket.TYPE,
+                ClipboardSetAddressPacket.STREAM_CODEC,
+                ClipboardSetAddressPacket::handle
+        );
+
+        // Clipboard 地址粒子效果包（S→C）
+        registrar.playToClient(
+                ClipboardAddressParticlePacket.TYPE,
+                ClipboardAddressParticlePacket.STREAM_CODEC,
+                ClipboardAddressParticlePacket::handle
+        );
+
+        // Frogport 连接包（C→S）
+        registrar.playToServer(
+                FrogportConnectionPacket.TYPE,
+                FrogportConnectionPacket.STREAM_CODEC,
+                FrogportConnectionPacket::handle
+        );
+
+        // Frogport 连接反馈包（S→C）
+        registrar.playToClient(
+                FrogportConnectionFeedbackPacket.TYPE,
+                FrogportConnectionFeedbackPacket.STREAM_CODEC,
+                FrogportConnectionFeedbackPacket::handle
+        );
+
+        // Mailbox-Station 连接包（C→S）
+        registrar.playToServer(
+                MailboxStationConnectionPacket.TYPE,
+                MailboxStationConnectionPacket.STREAM_CODEC,
+                MailboxStationConnectionPacket::handle
+        );
+
+        // Mailbox-Station 断开连接包（C→S）
+        registrar.playToServer(
+                MailboxStationDisconnectPacket.TYPE,
+                MailboxStationDisconnectPacket.STREAM_CODEC,
+                MailboxStationDisconnectPacket::handle
         );
     }
 }
