@@ -149,5 +149,10 @@
   "create.create_fluid.baton.mailbox.already_connected": "此邮箱已连接至该车站",
   "create.create_fluid.baton.mailbox.too_far": "距离太远，无法连接",
   "create.create_fluid.baton.mailbox.connected": "邮箱已连接至车站",
-  "create.create_fluid.baton.mailbox.disconnected": "邮箱已与列车站点断开连接"
+  "create.create_fluid.baton.mailbox.disconnected": "邮箱已与列车站点断开连接",
+
+  "fluid.gui.stockpile_switch.input_title": "手动阈值输入",
+  "fluid.gui.stockpile_switch.lower_input": "下限",
+  "fluid.gui.stockpile_switch.upper_input": "上限",
+  "fluid.gui.stockpile_switch.unit.bucket": "桶"
 }
