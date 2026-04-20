@@ -7,7 +7,7 @@ import net.minecraft.core.BlockPos;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
-@Mixin(ChainConveyorShape.class)
+@Mixin(value = ChainConveyorShape.class, remap = false)
 public interface ChainConveyorShapeAccessor {
     @Invoker("drawOutline")
     void createfluid$invokeDrawOutline(BlockPos anchor, PoseStack ms, VertexConsumer vb);

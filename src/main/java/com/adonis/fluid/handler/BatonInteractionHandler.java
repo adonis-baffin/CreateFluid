@@ -8,6 +8,7 @@ import com.adonis.fluid.item.BatonItem;
 import com.adonis.fluid.mixin.accessor.ArmBlockEntityAccessor;
 import com.adonis.fluid.packet.CentrifugalPumpModeTogglePacket;
 import com.adonis.fluid.packet.PipetteFluidPlacementPacket;
+import com.adonis.fluid.handler.frogport.FrogportInteractionHandler;
 import com.adonis.fluid.packet.QuartzLampTogglePacket;
 import com.simibubi.create.AllPackets;
 import com.simibubi.create.content.kinetics.mechanicalArm.ArmBlockEntity;
@@ -536,6 +537,8 @@ public class BatonInteractionHandler {
                 drawEjectorOutlines();
                 drawEjectorArc();
             }
+        } else if (!EditModeManager.isInEditMode()) {
+            FrogportInteractionHandler.render(Minecraft.getInstance());
         }
     }
 
