@@ -122,6 +122,7 @@
   "fluid.ponder.gutter_outlet_interact.text_3": "Gutter Outlets will automatically fill fluid containers placed directly below them",
   "fluid.ponder.gutter_outlet_interact.text_4": "Gutter Outlets can accept a Basin’s output",
   "fluid.ponder.gutter_outlet_interact.text_5": "Mechanical Pipettes can deposit fluid into or extract fluid from Gutter Outlets",
+
   "create.goggles.packager_title": "Packager",
   "create.goggles.repackager_title": "Repackager",
   "create.goggles.address_label": "Address:",
