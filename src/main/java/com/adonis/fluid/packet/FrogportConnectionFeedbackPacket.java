@@ -8,6 +8,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -46,28 +47,31 @@ public class FrogportConnectionFeedbackPacket extends SimplePacketBase {
     @Override
     public boolean handle(NetworkEvent.Context context) {
         context.enqueueWork(() -> {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-                Minecraft mc = Minecraft.getInstance();
-                if (mc.player != null && mc.level != null) {
-                    LangBuilder builder = com.simibubi.create.foundation.utility.CreateLang.builder().translate(this.messageKey);
-                    if (this.success) {
-                        builder.color(10416499).sendStatus(mc.player);
-                        mc.level.playLocalSound(
-                                (double) this.frogportPos.getX() + 0.5,
-                                (double) this.frogportPos.getY() + 0.5,
-                                (double) this.frogportPos.getZ() + 0.5,
-                                SoundEvents.NOTE_BLOCK_CHIME.get(),
-                                SoundSource.BLOCKS,
-                                0.8F,
-                                1.0F,
-                                false
-                        );
-                    } else {
-                        builder.color(16736625).sendStatus(mc.player);
-                    }
-                }
-            });
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> handleClient());
         });
         return true;
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private void handleClient() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null && mc.level != null) {
+            LangBuilder builder = com.simibubi.create.foundation.utility.CreateLang.builder().translate(this.messageKey);
+            if (this.success) {
+                builder.color(10416499).sendStatus(mc.player);
+                mc.level.playLocalSound(
+                        (double) this.frogportPos.getX() + 0.5,
+                        (double) this.frogportPos.getY() + 0.5,
+                        (double) this.frogportPos.getZ() + 0.5,
+                        SoundEvents.NOTE_BLOCK_CHIME.get(),
+                        SoundSource.BLOCKS,
+                        0.8F,
+                        1.0F,
+                        false
+                );
+            } else {
+                builder.color(16736625).sendStatus(mc.player);
+            }
+        }
     }
 }

@@ -8,6 +8,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 import org.joml.Vector3f;
@@ -41,6 +42,7 @@ public class ClipboardAddressParticlePacket extends SimplePacketBase {
         return true;
     }
 
+    @OnlyIn(Dist.CLIENT)
     public static void spawnParticles(BlockPos pos) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level != null) {
@@ -55,6 +57,7 @@ public class ClipboardAddressParticlePacket extends SimplePacketBase {
         }
     }
 
+    @OnlyIn(Dist.CLIENT)
     public static void playSound(BlockPos pos) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level != null) {
