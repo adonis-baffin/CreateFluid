@@ -195,7 +195,7 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
         }
     }
 
-    @Nonnull
+    @Nullable
     public IFluidHandler getFluidHandlerForSide(@Nullable Direction side) {
         BlockState state = getBlockState();
         boolean isPowered = state.hasProperty(SmartGutterOutletBlock.POWERED)
@@ -203,7 +203,7 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
 
         if (isPowered) {
             // 有红石信号 = 关闭状态 → 完全不暴露 fluid capability
-            return new EmptyFluidHandler();
+            return null;
         }
 
         // 无红石信号 = 开启状态 → 正常行为
@@ -211,36 +211,25 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
             // 返回只输出不输入的处理器
             IFluidHandler tank = tankBehaviour.getCapability();
             if (tank == null) {
-                return new EmptyFluidHandler();
+                return null;
             }
             return new OutputOnlyFluidHandler(tank);
         }
 
+        // 宽面（过滤器显示面）不暴露流体能力
+        if (side != null && side.getAxis() != Direction.Axis.Y) {
+            if (SmartGutterOutletBlock.isWideSide(state, side)) {
+                return null;
+            }
+        }
+
         IFluidHandler tank = getFluidHandler();
         if (tank == null || (tank instanceof FluidTank && ((FluidTank) tank).getCapacity() == 0)) {
-            return new EmptyFluidHandler();
+            return null;
         }
 
         // UP、narrow sides 和 null（无特定面）都走过滤输入
         return new FilteredInputFluidHandler(tank);
-    }
-
-    // 空流体处理器（用于红石关闭状态）
-    private static class EmptyFluidHandler implements IFluidHandler {
-        @Override
-        public int getTanks() { return 0; }
-        @Override
-        public FluidStack getFluidInTank(int tank) { return FluidStack.EMPTY; }
-        @Override
-        public int getTankCapacity(int tank) { return 0; }
-        @Override
-        public boolean isFluidValid(int tank, FluidStack stack) { return false; }
-        @Override
-        public int fill(FluidStack resource, FluidAction action) { return 0; }
-        @Override
-        public FluidStack drain(FluidStack resource, FluidAction action) { return FluidStack.EMPTY; }
-        @Override
-        public FluidStack drain(int maxDrain, FluidAction action) { return FluidStack.EMPTY; }
     }
 
     // 在 SmartGutterOutletBlockEntity 类内部新增这个私有静态内部类
@@ -356,10 +345,9 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
 
         } else if (precipitation == Biome.Precipitation.SNOW) {
             if (!CFCommonConfig.canGutterCollectSnow()) return;
-            // 简化的粉雪处理 - 使用水代替
-            FluidStack snowStack = new FluidStack(Fluids.WATER, 1);
+            FluidStack snowStack = getPowderSnowFluidStack(1);
             if (!testFluidFilter(snowStack)) return;
-            if (!currentFluid.isEmpty() && !currentFluid.getFluid().isSame(Fluids.WATER)) return;
+            if (!currentFluid.isEmpty() && !isPowderSnowFluid(currentFluid.getFluid())) return;
 
             accumulateAndFill(snowStack, true);
         }

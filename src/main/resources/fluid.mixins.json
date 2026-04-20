@@ -11,6 +11,7 @@
     "ArmBlockEntityWrenchUpdateMixin",
     "FluidUtilMixin",
     "VanillaFluidTargetsMixin",
+    "FluidPipeBlockMixin",
     "PackagerBlockEntityMixin",
     "ClipboardBlockItemMixin",
     "accessor.ArmBlockEntityAccessor",

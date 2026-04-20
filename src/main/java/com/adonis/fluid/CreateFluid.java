@@ -53,6 +53,7 @@ public class CreateFluid {
         CFFluids.register();
         CFBlocks.register();
         CFBlockEntities.register();
+        CFMountedStorageTypes.register();
         CFBlockEntities.registerToEventBus(modEventBus);
         CFItems.register();
         CFCreativeTab.register(modEventBus);

@@ -2,6 +2,7 @@ package com.adonis.fluid.block.GutterOutlet;
 
 import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.registry.CFBlockEntities;
+import com.adonis.fluid.registry.CFFluids;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.content.kinetics.belt.behaviour.DirectBeltInputBehaviour;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
@@ -213,15 +214,12 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
         }
     }
 
-    private boolean isPowderSnowFluid(Fluid fluid) {
-        // 1.21.1 版本简化处理 - 粉雪流体检测
-        // 在实际项目中可能需要根据模组添加的流体来判断
-        return false;
+    protected boolean isPowderSnowFluid(Fluid fluid) {
+        return fluid.isSame(CFFluids.POWDER_SNOW.get());
     }
 
-    private FluidStack getPowderSnowFluidStack(int amount) {
-        // 1.21.1 版本简化处理 - 返回水作为替代
-        return new FluidStack(Fluids.WATER, amount);
+    protected FluidStack getPowderSnowFluidStack(int amount) {
+        return new FluidStack(CFFluids.POWDER_SNOW.get(), amount);
     }
 
     private void handleDripstoneCollection() {

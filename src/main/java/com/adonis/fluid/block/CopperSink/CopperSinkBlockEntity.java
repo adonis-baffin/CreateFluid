@@ -103,6 +103,14 @@ public class CopperSinkBlockEntity extends SmartBlockEntity implements IHaveGogg
         return fluidLevel.getValue(partialTicks);
     }
 
+    public LerpedFloat getFluidLevel() {
+        return fluidLevel;
+    }
+
+    public void setFluidLevel(LerpedFloat fluidLevel) {
+        this.fluidLevel = fluidLevel;
+    }
+
     @Override
     protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
         super.write(tag, registries, clientPacket);

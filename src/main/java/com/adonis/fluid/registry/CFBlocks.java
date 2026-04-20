@@ -3,11 +3,13 @@ package com.adonis.fluid.registry;
 import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlock;
 import com.adonis.fluid.block.CopperSink.CopperSinkBlock;
+import com.adonis.fluid.block.CopperSink.CopperSinkMovementBehaviour;
 import com.adonis.fluid.block.CopperTap.CopperTapBlock;
 import com.adonis.fluid.block.RedstoneValve.RedstoneValveBlock;
 import com.adonis.fluid.block.RedstoneTripleValve.RedstoneTripleValveBlock;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlock;
 import com.adonis.fluid.block.GutterOutlet.GutterOutletBlock;
+import com.adonis.fluid.block.GutterOutlet.GutterOutletMovementBehaviour;
 import com.adonis.fluid.block.GutterOutlet.SmartGutterOutletBlock;
 import com.adonis.fluid.block.Pipette.PipetteBlock;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlock;
@@ -24,6 +26,8 @@ import net.minecraft.world.level.material.MapColor;
 import net.neoforged.neoforge.client.model.generators.ConfiguredModel;
 
 import static com.adonis.fluid.CreateFluid.REGISTRATE;
+import static com.simibubi.create.api.behaviour.movement.MovementBehaviour.movementBehaviour;
+import static com.simibubi.create.api.contraption.storage.fluid.MountedFluidStorageType.mountedFluidStorage;
 
 public class CFBlocks {
 
@@ -205,6 +209,8 @@ public class CFBlocks {
                     .sound(SoundType.COPPER)
                     .noOcclusion())
             .transform(TagGen.axeOrPickaxe())
+            .transform(mountedFluidStorage(CFMountedStorageTypes.GUTTER_OUTLET))
+            .onRegister(movementBehaviour(new GutterOutletMovementBehaviour()))
             .blockstate((ctx, prov) -> {
                 prov.getVariantBuilder(ctx.get())
                         .forAllStates(state -> {
@@ -230,6 +236,8 @@ public class CFBlocks {
                     .sound(SoundType.COPPER)
                     .noOcclusion())
             .transform(TagGen.axeOrPickaxe())
+            .transform(mountedFluidStorage(CFMountedStorageTypes.GUTTER_OUTLET))
+            .onRegister(movementBehaviour(new GutterOutletMovementBehaviour()))
             .blockstate((ctx, prov) -> {
                 prov.getVariantBuilder(ctx.get())
                         .forAllStates(state -> {
@@ -255,6 +263,8 @@ public class CFBlocks {
                     .sound(SoundType.COPPER)
                     .noOcclusion())
             .transform(TagGen.pickaxeOnly())
+            .transform(mountedFluidStorage(CFMountedStorageTypes.COPPER_SINK))
+            .onRegister(movementBehaviour(new CopperSinkMovementBehaviour()))
             .blockstate((ctx, prov) -> {
                 prov.getVariantBuilder(ctx.get())
                         .forAllStates(state -> {

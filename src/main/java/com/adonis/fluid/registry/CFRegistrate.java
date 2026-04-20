@@ -1,5 +1,8 @@
 package com.adonis.fluid.registry;
 
+import com.simibubi.create.api.contraption.storage.fluid.MountedFluidStorageType;
+import com.simibubi.create.api.registry.CreateRegistries;
+import com.simibubi.create.api.registry.registrate.SimpleBuilder;
 import com.simibubi.create.foundation.data.CreateBlockEntityBuilder;
 import com.simibubi.create.foundation.item.TooltipModifier;
 import com.tterrag.registrate.AbstractRegistrate;
@@ -19,6 +22,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 
 import javax.annotation.Nullable;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class CFRegistrate extends AbstractRegistrate<CFRegistrate> {
     
@@ -70,5 +74,11 @@ public class CFRegistrate extends AbstractRegistrate<CFRegistrate> {
                                                                                  BlockEntityBuilder.BlockEntityFactory<T> factory) {
         return (CreateBlockEntityBuilder<T, P>) entry(name,
                 callback -> CreateBlockEntityBuilder.create(this, parent, name, callback, factory));
+    }
+
+    public <T extends MountedFluidStorageType<?>> SimpleBuilder<MountedFluidStorageType<?>, T, CFRegistrate> mountedFluidStorage(String name, Supplier<T> supplier) {
+        return this.entry(name, callback -> new SimpleBuilder<>(
+                this, this, name, callback, CreateRegistries.MOUNTED_FLUID_STORAGE_TYPE, supplier
+        ).byBlock(MountedFluidStorageType.REGISTRY));
     }
 }
