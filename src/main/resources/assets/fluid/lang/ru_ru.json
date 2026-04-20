@@ -7,38 +7,30 @@
   "item.fluid.honeycomb_mold": "Сотовая форма",
   "item.fluid.honeycomb_mold.tooltip.summary": "Используется для рецепта прессования сот",
   "item.fluid.baton": "Дирижёрская палочка",
-  "item.fluid.baton.tooltip.summary": "Используется для настройки точек взаимодействия для _Механической руки_, _Механической пипетки_ и _Депо-выбрасывателя_",
+  "item.fluid.baton.tooltip.summary": "Используется для настройки точек взаимодействия для _Механической руки_, _Механической пипетки_, _Депо-выбрасывателя_, _Упаковщика_, _Переупаковщика_, _Квакопорта_ и _почтового ящика_",
   "fluid_type.fluid.powder_snow": "Рыхлый снег",
-
   "item.fluid.pipette": "Механическая пипетка",
-
   "itemGroup.fluid.main": "Create: Fluid",
-
   "block.fluid.fluid_interface.tooltip": "ЖИДКОСТНЫЙ ИНТЕРФЕЙС",
   "block.fluid.fluid_interface.tooltip.summary": "_Прокси_-блок для взаимодействия с соседними жидкостными контейнерами",
   "block.fluid.fluid_interface.tooltip.condition1": "При использовании игроком",
   "block.fluid.fluid_interface.tooltip.behaviour1": "Позволяет _напрямую взаимодействовать с жидкостями_ в прикреплённом контейнере, используя вёдра или жидкостные контейнеры",
-
   "block.fluid.smart_fluid_interface.tooltip": "УМНЫЙ ЖИДКОСТНЫЙ ИНТЕРФЕЙС",
   "block.fluid.smart_fluid_interface.tooltip.summary": "_Продвинутый прокси_-блок для жидкостных контейнеров с _возможностью фильтрации_, который ограничивает, какие жидкости могут проходить через него",
   "block.fluid.smart_fluid_interface.tooltip.condition1": "При настройке с фильтром",
   "block.fluid.smart_fluid_interface.tooltip.behaviour1": "Разрешает только _указанным жидкостям_ быть вставленными или извлечёнными",
   "block.fluid.smart_fluid_interface.tooltip.condition2": "При подключении к контейнеру",
   "block.fluid.smart_fluid_interface.tooltip.behaviour2": "Функционирует как _фильтрованный шлюз_ к прикреплённому контейнеру, предотвращая прохождение нежелательных типов жидкостей",
-
   "block.fluid.centrifugal_pump.tooltip.summary": "Транспортирует дальше и быстрее, чем _Механические помпы_, может быть обрамлена _Медным корпусом_",
   "block.fluid.copper_tap.tooltip.summary": "Кликните ПКМ для переключения. Может заполнять _Чаши_, _Котлы_ снизу или выполнять обработку распылением на _Депо_ снизу",
-
   "create.fluid.mechanical_pipette.extract": "Откачивает жидкость из %1$s",
   "create.fluid.mechanical_pipette.deposit": "Впрыскивает жидкость в %1$s",
   "create.fluid.mechanical_pipette.points_outside_range": "%1$s точек взаимодействия с жидкостью были удалены, так как теперь они вне зоны досягаемости",
   "create.fluid.mechanical_pipette.summary": "Настроенные жидкостные точки: входов: %1$s; выходов: %2$s",
   "create.fluid.mechanical_pipette.no_targets.title": "Нет целей",
   "create.fluid.mechanical_pipette.no_targets": "Похоже, что эта _механическая пипетка_ не имеет никаких _целей_. Выберите чаши, сливы, жидкостные интерфейсы и другие блоки с помощью _ПКМ_, держа _механическую пипетку_ в _руке_",
-
   "create.create.mechanical_arm.extract_from": "Берёт предметы из %1$s",
   "create.create.mechanical_arm.deposit_to": "Складывает предметы в %1$s",
-
   "create.hint.mechanical_arm_no_targets": "Похоже, что эта _механическая рука_ не имеет никаких _целей_. Выберите ремни, депо, шлюзы и другие блоки с помощью _ПКМ_, держа _механическую руку_ в _руке_",
   "create.hint.mechanical_arm_no_targets.title": "Нет целей",
   "create.create.mechanical_arm.points_outside_range": "%1$s выбранных точек взаимодействия удалены из-за ограничений диапазона",
@@ -46,7 +38,6 @@
   "create.create.mechanical_arm.selection_mode.prefer_first": "Предпочитать первичную цель",
   "create.create.mechanical_arm.selection_mode.round_robin": "По кругу",
   "create.create.mechanical_arm.summary": "Механическая рука имеет: входов: %1$s; выходов: %2$s",
-
   "create.fluid.baton.arm.dance_started": "Рука начала танцевать",
   "create.fluid.baton.arm.dance_stopped": "Рука прекратила танцевать",
   "create.fluid.baton.ejector.click_to_set": "Нажмите, чтобы установить целевую позицию",
@@ -55,23 +46,18 @@
   "create.fluid.baton.ejector.invalid_target": "Недопустимая целевая позиция",
   "create.fluid.baton.ejector.target_cleared": "Целевая позиция очищена",
   "create.fluid.baton.interaction_point_removed": "Точка взаимодействия удалена",
-
   "create_fluid.centrifugal_pump.pump_mode": "Режим помпы",
   "create_fluid.centrifugal_pump.mode.pump_in": "Закачивание",
   "create_fluid.centrifugal_pump.mode.pump_out": "Откачивание",
-
   "create.create_fluid.centrifugal_pump.pump_mode": "Режим помпы",
   "create.create_fluid.centrifugal_pump.mode.pump_in": "Закачивание",
   "create.create_fluid.centrifugal_pump.mode.pump_out": "Откачивание",
-
   "create.mechanical_arm.selection_mode.forced_round_robin": "Строго по кругу",
   "create.mechanical_arm.selection_mode.prefer_first": "Предпочитать первичную цель",
   "create.mechanical_arm.selection_mode.round_robin": "По кругу",
-
   "create.mechanical_pipette.selection_mode.forced_round_robin": "Строго по кругу",
   "create.mechanical_pipette.selection_mode.prefer_first": "Предпочитать первичную цель",
   "create.mechanical_pipette.selection_mode.round_robin": "По кругу",
-
   "fluid.ponder.mechanical_pipette.header": "Настройкой механической пипетки",
   "fluid.ponder.mechanical_pipette.text_1": "Входы",
   "fluid.ponder.mechanical_pipette.text_2": "Выходы",
@@ -79,19 +65,16 @@
   "fluid.ponder.mechanical_pipette.text_4": "Для контейнеров, с которыми нельзя взаимодействовать напрямую, жидкостные интерфейсы могут помочь заполнить этот пробел",
   "fluid.ponder.mechanical_pipette.text_5": "Помимо обычных жидкостных контейнеров, механические пипетки также поддерживают более интересные блоки, возможно, помогая вам выразить свою креативность",
   "fluid.ponder.mechanical_pipette.text_6": "Это индикатор содержимого пипетки. Он отображает текущее количество удерживаемой жидкости",
-
   "fluid.ponder.mechanical_pipette_filter.header": "Фильтрацией целей механической пипетки",
   "fluid.ponder.mechanical_pipette_filter.text_1": "Иногда желательно ограничить цели пипетки фильтром",
   "fluid.ponder.mechanical_pipette_filter.text_2": "Умные жидкостные интерфейсы существуют именно для этой цели",
   "fluid.ponder.mechanical_pipette_filter.text_3": "Слот фильтра умных жидкостных интерфейсов может быть применён к механической пипетке",
-
   "fluid.ponder.mechanical_pipette_fill.header": "Заполнением жидкостью с помощью механической пипетки",
   "fluid.ponder.mechanical_pipette_fill.text_1": "Входы",
   "fluid.ponder.mechanical_pipette_fill.text_2": "Выходы",
   "fluid.ponder.mechanical_pipette_fill.text_3": "Помимо логистики, механическая пипетка также может применяться в сценариях обработки",
   "fluid.ponder.mechanical_pipette_fill.text_4": "Когда депо или ремень выбраны как выход, пипетка будет следить за ингредиентами сверху, которые могут пройти заполнение жидкостью",
   "fluid.ponder.mechanical_pipette_fill.text_5": "Пипетка будет искать необходимую жидкость во всех входах, затем выполнит процесс заполнения",
-
   "fluid.ponder.baton.header": "Использованием дирижёрской палочки",
   "fluid.ponder.baton.text_1": "Входы",
   "fluid.ponder.baton.text_2": "Выходы",
@@ -100,13 +83,11 @@
   "fluid.ponder.baton.text_5": "Теперь вы можете настраивать точки взаимодействия руки так же, как если бы вы держали саму руку",
   "fluid.ponder.baton.text_6": "После завершения снова кликните ПКМ по руке, чтобы обновить её конфигурацию точек взаимодействия",
   "fluid.ponder.baton.text_7": "Точки взаимодействия механической пипетки и депо-выбрасывателя также могут быть изменены с помощью дирижёрской палочки",
-
   "fluid.ponder.powder_snow.header": "Рыхлый снег как жидкость",
   "fluid.ponder.powder_snow.text_1": "Рыхлый снег теперь является жидкостью, которую можно собирать из котлов с помощью труб или механических пипеток",
   "fluid.ponder.powder_snow.text_2": "Вёдра с рыхлым снегом можно использовать для установки фильтров для жидкости рыхлого снега",
   "fluid.ponder.powder_snow.text_3": "Жидкость рыхлого снега также можно создать с помощью механического миксера",
   "fluid.ponder.powder_snow.text_4": "Кликните ПКМ по чаше, чтобы получить вёдра с рыхлым снегом",
-
   "fluid.ponder.centrifugal_pump.header": "Использованием центробежных помп",
   "fluid.ponder.centrifugal_pump.text_1": "Центробежные помпы имеют более мощную скорость передачи и большую дальность передачи, чем механические помпы, но потребляют больше стресса",
   "fluid.ponder.centrifugal_pump.text_2": "Давление помпы распространяется до 20 блоков по трубам, независимо от входной мощности",
@@ -116,35 +97,29 @@
   "fluid.ponder.centrifugal_pump.text_6": "Если использовать панель неудобно, кликните ПКМ дирижёрской палочкой для быстрого переключения",
   "fluid.ponder.centrifugal_pump.text_7": "Медный корпус можно использовать для обрамления центробежной помпы",
   "fluid.ponder.centrifugal_pump.text_8": "У обрамлённых помп больше нет панели; их направление передачи управляется направлением вращения",
-
   "fluid.ponder.copper_tap.header": "Использованием медных кранов",
   "fluid.ponder.copper_tap.text_1": "Медные краны забирают жидкость из контейнеров позади них и могут заполнять котлы или чаши снизу",
   "fluid.ponder.copper_tap.text_2": "Медные краны могут быть прикреплены к листве и бесконечно выводить воду из заводнённой листвы",
   "fluid.ponder.copper_tap.text_3": "Медные краны могут выполнять обработку распылением на депо снизу",
   "fluid.ponder.copper_tap.text_4": "Редстоун-сигналы можно использовать для управления состоянием крана (вкл/выкл)",
-
   "block.fluid.gutter_outlet": "Водосточный выход",
   "block.fluid.smart_gutter_outlet": "Умный водосточный выход",
   "block.fluid.copper_sink": "Медная раковина",
-
   "block.fluid.copper_sink.tooltip.summary": "Красивая медная раковина, которая всегда остаётся полной. Любая введённая жидкость уничтожается; Бесконечный вывод воды",
   "create.block.fluid.copper_sink.infinite_source": "Бесконечный источник воды",
   "create.gui.goggles.gutter_outlet.dripping": "Капает",
   "create.gui.goggles.gutter_outlet.dripstone_active": "Сбор капающей лавы",
-
   "fluid.ponder.gutter_outlet.header": "Сбор жидкости с помощью водосточных выходов",
   "fluid.ponder.gutter_outlet.text_1": "Водосточные выходы можно использовать для осушения больших объёмов жидкости сверху, точно так же, как _Сливы для предметов_",
   "fluid.ponder.gutter_outlet.text_2": "Водосточные выходы также могут собирать лаву, как _котёл_, или собирать жидкость во время дождя или снегопада",
   "fluid.ponder.gutter_outlet.text_3": "Кликните _ПКМ_ по нему, чтобы вылить жидкость из удерживаемого предмета внутрь или извлечь жидкость",
   "fluid.ponder.gutter_outlet.text_4": "_Сети труб_ теперь могут вытягивать жидкость из внутреннего буфера",
-
   "fluid.ponder.gutter_outlet_interact.header": "Взаимодействие с водосточным выходом",
   "fluid.ponder.gutter_outlet_interact.text_1": "_Медные краны_ могут заполнять водосточные выходы",
   "fluid.ponder.gutter_outlet_interact.text_2": "Умные водосточные выходы обладают той же функциональностью, но могут быть настроены с _фильтром_ или отключены сигналом _редстоуна_",
   "fluid.ponder.gutter_outlet_interact.text_3": "Водосточные выходы будут автоматически заполнять жидкостные контейнеры, размещённые прямо под ними",
   "fluid.ponder.gutter_outlet_interact.text_4": "Водосточные выходы могут принимать вывод из _Чаши_",
   "fluid.ponder.gutter_outlet_interact.text_5": "_Механические пипетки_ могут помещать жидкость в водосточные выходы или извлекать из них",
-
   "create.goggles.packager_title": "Упаковщик",
   "create.goggles.repackager_title": "Переупаковщик",
   "create.goggles.address_label": "Адрес:",
@@ -159,14 +134,14 @@
   "create.create_fluid.clipboard.no_valid_address": "Нет действительного адреса в буфере обмена (начните с #)",
   "create.create_fluid.clipboard.address_set_by_sign": "Адрес %1$s установлен табличкой, нельзя переопределить",
   "create.create_fluid.clipboard.address_set": "Адрес %1$s установлен на %2$s",
-  "create.create_fluid.baton.frogport.selected": "Лягушачий порт выбран",
-  "create.create_fluid.baton.frogport.deselected": "Лягушачий порт снят с выбора",
+  "create.create_fluid.baton.frogport.selected": "Квакопорт выбран",
+  "create.create_fluid.baton.frogport.deselected": "Квакопорт снят с выбора",
   "create.create_fluid.baton.frogport.can_connect": "Можно подключить",
   "create.create_fluid.baton.frogport.too_far": "Слишком далеко для подключения",
   "create.create_fluid.baton.frogport.invalid_chain": "Неверная цепь",
-  "create.create_fluid.baton.frogport.finished": "Настройка лягушачьего порта завершена",
-  "create.create_fluid.baton.frogport.connection_set": "Лягушачий порт подключён к цепи",
-  "create.create_fluid.baton.frogport.connected": "Лягушачий порт подключён к цепи",
+  "create.create_fluid.baton.frogport.finished": "Настройка квакопорта завершена",
+  "create.create_fluid.baton.frogport.connection_set": "Квакопорт подключён к цепи",
+  "create.create_fluid.baton.frogport.connected": "Квакопорт подключён к цепи",
   "create.create_fluid.baton.mailbox.selected": "Почтовый ящик выбран",
   "create.create_fluid.baton.mailbox.already_connected": "Этот почтовый ящик уже подключён к этой станции",
   "create.create_fluid.baton.mailbox.too_far": "Слишком далеко для подключения",

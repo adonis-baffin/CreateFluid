@@ -1,9 +1,15 @@
 package com.adonis.fluid.packet;
 
+import com.adonis.fluid.mixin.accessor.ArmBlockEntityAccessor;
+import com.simibubi.create.content.kinetics.mechanicalArm.ArmBlockEntity;
+import net.createmod.catnip.lang.LangBuilder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
@@ -11,8 +17,9 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.fluids.FluidStack;
 import com.adonis.fluid.block.Pipette.PipetteBlockEntity;
-import com.adonis.fluid.mixin.accessor.ArmBlockEntityAccessor;
-import com.simibubi.create.content.kinetics.mechanicalArm.ArmBlockEntity;
+import org.joml.Vector3f;
+
+import java.util.Random;
 
 @OnlyIn(Dist.CLIENT)
 public class ClientPacketHandler {
@@ -84,5 +91,63 @@ public class ClientPacketHandler {
     // 处理移液器客户端请求
     public static void handlePipetteRequest(BlockPos pos) {
         com.adonis.fluid.handler.PipetteFluidInteractionPointHandler.flushSettings(pos);
+    }
+
+    // 处理 Frogport 连接反馈
+    public static void handleFrogportFeedback(boolean success, BlockPos frogportPos, String messageKey) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null && mc.level != null) {
+            LangBuilder builder = com.simibubi.create.foundation.utility.CreateLang.builder().translate(messageKey);
+            if (success) {
+                builder.color(10416499).sendStatus(mc.player);
+                mc.level.playLocalSound(
+                        (double) frogportPos.getX() + 0.5,
+                        (double) frogportPos.getY() + 0.5,
+                        (double) frogportPos.getZ() + 0.5,
+                        SoundEvents.NOTE_BLOCK_CHIME.value(),
+                        SoundSource.BLOCKS,
+                        0.8F,
+                        1.0F,
+                        false
+                );
+            } else {
+                builder.color(16736625).sendStatus(mc.player);
+            }
+        }
+    }
+
+    // 处理 Clipboard 地址粒子效果
+    public static void handleClipboardParticle(BlockPos pos) {
+        spawnClipboardParticles(pos);
+        playClipboardSound(pos);
+    }
+
+    private static void spawnClipboardParticles(BlockPos pos) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level != null) {
+            Random random = new Random();
+            for (int i = 0; i < 10; i++) {
+                double x = (double) pos.getX() + 0.5 + (random.nextDouble() - 0.5) * 0.6;
+                double y = (double) pos.getY() + 0.5 + (random.nextDouble() - 0.5) * 0.6;
+                double z = (double) pos.getZ() + 0.5 + (random.nextDouble() - 0.5) * 0.6;
+                mc.level.addParticle(new DustParticleOptions(new Vector3f(1.0F, 1.0F, 1.0F), 1.0F), x, y, z, 0.0, 0.0, 0.0);
+            }
+        }
+    }
+
+    private static void playClipboardSound(BlockPos pos) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level != null) {
+            mc.level.playLocalSound(
+                    (double) pos.getX() + 0.5,
+                    (double) pos.getY() + 0.5,
+                    (double) pos.getZ() + 0.5,
+                    SoundEvents.EXPERIENCE_ORB_PICKUP,
+                    SoundSource.BLOCKS,
+                    0.5F,
+                    1.0F,
+                    false
+            );
+        }
     }
 }
