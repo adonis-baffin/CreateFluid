@@ -6,6 +6,7 @@ import com.simibubi.create.api.contraption.storage.SyncedMountedStorage;
 import com.simibubi.create.api.contraption.storage.fluid.MountedFluidStorageType;
 import com.simibubi.create.api.contraption.storage.fluid.WrapperMountedFluidStorage;
 import com.simibubi.create.content.contraptions.Contraption;
+import com.simibubi.create.foundation.blockEntity.behaviour.fluid.SmartFluidTankBehaviour;
 import com.adonis.fluid.registry.CFMountedStorageTypes;
 
 import net.createmod.catnip.animation.LerpedFloat;
@@ -76,16 +77,28 @@ public class GutterOutletMountedStorage extends WrapperMountedFluidStorage<Gutte
         if (!(be instanceof GutterOutletBlockEntity gutter))
             return;
 
-        IFluidHandler tank = gutter.tankBehaviour.getCapability();
-        if (tank != null) {
-            tank.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.EXECUTE);
-            tank.fill(this.getFluid().copy(), IFluidHandler.FluidAction.EXECUTE);
+        // 直接更新底层 tank 的流体，避免通过 IFluidHandler 的 drain/fill 绕弯
+        // 在 contraption 中 TankSegment 的回调可能因 blockEntity.hasLevel() 为 false 而不触发，
+        // 因此需要手动同步 fluidLevel
+        FluidTank inv = gutter.getTankInventory();
+        if (inv != null) {
+            inv.setFluid(this.getFluid().copy());
         }
 
         float fillLevel = (float) this.getFluid().getAmount() / this.getCapacity();
+
+        // 更新 GutterOutletBlockEntity 自己的 fluidLevel（供 MovementBehaviour 使用）
         LerpedFloat fluidLevel = gutter.getFluidLevel();
         if (fluidLevel != null) {
             fluidLevel.chase(fillLevel, 0.5f, LerpedFloat.Chaser.EXP);
+        }
+
+        // 更新 SmartFluidTankBehaviour 的 TankSegment（供 Renderer 使用）
+        if (gutter.tankBehaviour != null) {
+            SmartFluidTankBehaviour.TankSegment primaryTank = gutter.tankBehaviour.getPrimaryTank();
+            if (primaryTank != null) {
+                primaryTank.getFluidLevel().chase(fillLevel, 0.5f, LerpedFloat.Chaser.EXP);
+            }
         }
     }
 
