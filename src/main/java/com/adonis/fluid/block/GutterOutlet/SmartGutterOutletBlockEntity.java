@@ -100,6 +100,14 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
         handleDrainToBelow();
     }
 
+    @Override
+    protected void accumulateAndFill(FluidStack template, boolean isPrecipitation) {
+        if (!testFluidFilter(template)) {
+            return;
+        }
+        super.accumulateAndFill(template, isPrecipitation);
+    }
+
     private boolean handleWorldFluidCollectionFiltered() {
         if (level == null || level.isClientSide) return false;
 
@@ -221,11 +229,13 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
                 return LazyOptional.of(() -> new OutputOnlyFluidHandler(tank)).cast();
             }
 
-            if (GutterOutletBlock.isNarrowSide(state, side)) {
-                return fluidCapability.cast();
+            IFluidHandler tank = getFluidHandler();
+            if (tank == null || (tank instanceof net.minecraftforge.fluids.capability.templates.FluidTank && ((net.minecraftforge.fluids.capability.templates.FluidTank) tank).getCapacity() == 0)) {
+                return LazyOptional.of(() -> new EmptyFluidHandler()).cast();
             }
 
-            return LazyOptional.empty();
+            // UP、narrow sides 和 null（无特定面）都走过滤输入
+            return LazyOptional.of(() -> new FilteredInputFluidHandler(tank)).cast();
         }
 
         return super.getCapability(cap, side);
@@ -405,5 +415,77 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
         }
 
         return false; // 超过最大距离还没到达
+    }
+
+    // 空流体处理器（用于红石关闭状态）
+    private static class EmptyFluidHandler implements IFluidHandler {
+        @Override
+        public int getTanks() { return 1; }
+
+        @Override
+        public @Nonnull FluidStack getFluidInTank(int tank) { return FluidStack.EMPTY; }
+
+        @Override
+        public int getTankCapacity(int tank) { return 0; }
+
+        @Override
+        public boolean isFluidValid(int tank, @Nonnull FluidStack stack) { return false; }
+
+        @Override
+        public int fill(@Nonnull FluidStack resource, FluidAction action) { return 0; }
+
+        @Override
+        public @Nonnull FluidStack drain(FluidStack resource, FluidAction action) { return FluidStack.EMPTY; }
+
+        @Override
+        public @Nonnull FluidStack drain(int maxDrain, FluidAction action) { return FluidStack.EMPTY; }
+    }
+
+    /**
+     * 带过滤的输入流体处理器。
+     * 在 fill() 时检查过滤条件，不符合的流体拒绝输入。
+     */
+    private class FilteredInputFluidHandler implements IFluidHandler {
+        private final IFluidHandler wrapped;
+
+        public FilteredInputFluidHandler(IFluidHandler wrapped) {
+            this.wrapped = wrapped;
+        }
+
+        @Override
+        public int getTanks() {
+            return wrapped.getTanks();
+        }
+
+        @Override
+        public @Nonnull FluidStack getFluidInTank(int tank) {
+            return wrapped.getFluidInTank(tank);
+        }
+
+        @Override
+        public int getTankCapacity(int tank) {
+            return wrapped.getTankCapacity(tank);
+        }
+
+        @Override
+        public boolean isFluidValid(int tank, @Nonnull FluidStack stack) {
+            return wrapped.isFluidValid(tank, stack);
+        }
+
+        @Override
+        public int fill(@Nonnull FluidStack resource, FluidAction action) {
+            if (!testFluidFilter(resource)) return 0;
+            return wrapped.fill(resource, action);
+        }
+
+        @Override
+        public @Nonnull FluidStack drain(FluidStack resource, FluidAction action) {
+            return wrapped.drain(resource, action);
+        }
+
+        @Override
+        public @Nonnull FluidStack drain(int maxDrain, FluidAction action) {
+            return wrapped.drain(maxDrain, action);
+        }
     }
 }

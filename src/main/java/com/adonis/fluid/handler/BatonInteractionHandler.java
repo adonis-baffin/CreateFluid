@@ -207,6 +207,11 @@ public class BatonInteractionHandler {
             return;
         }
 
+        // 在进入原有选择模式前，退出 Logistics 编辑模式
+        if (EditModeManager.isInEditMode()) {
+            EditModeManager.exitMode(player, level);
+        }
+
         // 处理动力臂
         if (be instanceof ArmBlockEntity arm) {
             if (sneaking) {
@@ -418,6 +423,18 @@ public class BatonInteractionHandler {
         cancelSelection();
     }
 
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public static void onRightClickEmpty(PlayerInteractEvent.RightClickEmpty event) {
+        Player player = event.getEntity();
+        ItemStack heldItem = player.getMainHandItem();
+        if (!(heldItem.getItem() instanceof BatonItem)) {
+            return;
+        }
+        if (EditModeManager.isInEditMode()) {
+            EditModeManager.exitMode(player, player.level());
+        }
+    }
+
     @SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
     public static void onLeftClick(PlayerInteractEvent.LeftClickBlock event) {
         Player player = event.getEntity();
@@ -491,7 +508,15 @@ public class BatonInteractionHandler {
             if (isInSelectionMode()) {
                 cancelSelection();
             }
+            if (EditModeManager.isInEditMode()) {
+                EditModeManager.exitMode(player, player.level(), false);
+            }
             return;
+        }
+
+        // 更新 Logistics 编辑模式
+        if (EditModeManager.isInEditMode()) {
+            EditModeManager.tick(player, player.level());
         }
 
         if (isInSelectionMode()) {
@@ -1007,6 +1032,11 @@ public class BatonInteractionHandler {
         selectionType = SelectionType.NONE;
         currentArmSelection.clear();
         currentPipetteSelection.clear();
+
+        // 同时退出 Logistics 编辑模式
+        if (EditModeManager.isInEditMode()) {
+            EditModeManager.exitMode(Minecraft.getInstance().player, Minecraft.getInstance().level, false);
+        }
     }
 
     private static void drawArmOutlines(List<ArmInteractionPoint> selection) {
@@ -1054,6 +1084,19 @@ public class BatonInteractionHandler {
                         .colored(color)
                         .lineWidth(0.0625F);
             }
+        }
+    }
+
+    public static void animateConnection(Minecraft mc, Vec3 source, Vec3 target, int color) {
+        net.minecraft.core.particles.DustParticleOptions data = new net.minecraft.core.particles.DustParticleOptions(new net.createmod.catnip.theme.Color(color).asVectorF(), 1.0F);
+        double totalFlyingTicks = 10.0;
+        int segments = (int) totalFlyingTicks / 3 + 1;
+        double tickOffset = totalFlyingTicks / (double) segments;
+
+        for (int i = 0; i < segments; i++) {
+            double ticks = (double) (net.createmod.catnip.animation.AnimationTickHolder.getRenderTime() / 3.0F) % tickOffset + (double) i * tickOffset;
+            Vec3 vec = source.lerp(target, ticks / totalFlyingTicks);
+            mc.level.addParticle(data, vec.x, vec.y, vec.z, 0.0, 0.0, 0.0);
         }
     }
 }

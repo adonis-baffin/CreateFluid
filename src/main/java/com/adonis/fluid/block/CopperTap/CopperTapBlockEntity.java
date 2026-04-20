@@ -1,6 +1,8 @@
 package com.adonis.fluid.block.CopperTap;
 
+import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.content.tap.TapVirtualRelayManager;
+import com.adonis.fluid.util.ExperienceFluidHelper;
 import com.simibubi.create.AllSoundEvents;
 import com.simibubi.create.content.fluids.spout.FillingBySpout;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
@@ -43,6 +45,9 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
     private Direction sourceDirection = null;
     private BlockPos sourceBlockPos = null;
     private int continuousProcessingDelay = 0;
+
+    // 经验释放相关
+    private int experienceReleaseCooldown = 0;
 
     private boolean beltProcessing = false;
     private BlockPos beltProcessingPos = null;
@@ -229,6 +234,7 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
             shouldDrip = false;
             dripTickCounter = 0;
             transferCooldown = 0;
+            experienceReleaseCooldown = 0;
 
             if (needsUpdate) {
                 notifyUpdate();
@@ -422,9 +428,16 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
                 notifyUpdate();
             }
         } else {
-            // 无法传输但有流体，开始滴水
+            // 无法传输但有流体
             transferCooldown = 10;
 
+            // 优先检查是否是经验流体
+            if (ExperienceFluidHelper.isExperienceFluid(availableFluid)) {
+                tryReleaseExperience(sourceHandler);
+                return;
+            }
+
+            // 非经验流体，开始滴水
             boolean wasNotDripping = !shouldDrip;
             boolean fluidChanged = false;
 
@@ -452,6 +465,41 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
                 notifyUpdate();
             }
         }
+    }
+
+    /**
+     * 尝试释放经验球。当铜龙头打开、有流体但无有效目标时调用。
+     */
+    private void tryReleaseExperience(IFluidHandler sourceHandler) {
+        if (!CFCommonConfig.isCopperTapExperienceEnabled()) return;
+
+        int interval = CFCommonConfig.getCopperTapExperienceInterval();
+        if (experienceReleaseCooldown > 0) {
+            experienceReleaseCooldown--;
+            return;
+        }
+
+        int rate = CFCommonConfig.getCopperTapExperienceRate();
+        FluidStack simulated = sourceHandler.drain(rate, IFluidHandler.FluidAction.SIMULATE);
+        if (simulated.isEmpty()) return;
+
+        int experience = ExperienceFluidHelper.getExperienceFromFluid(simulated);
+        if (experience <= 0) return;
+
+        FluidStack drained = sourceHandler.drain(rate, IFluidHandler.FluidAction.EXECUTE);
+        if (drained.isEmpty()) return;
+
+        Vec3 spawnPos = Vec3.atCenterOf(worldPosition).add(0, -0.5, 0);
+        net.minecraft.world.entity.ExperienceOrb orb =
+                new net.minecraft.world.entity.ExperienceOrb(level, spawnPos.x, spawnPos.y, spawnPos.z, experience);
+        level.addFreshEntity(orb);
+
+        experienceReleaseCooldown = interval - 1;
+
+        level.playSound(null, worldPosition,
+                net.minecraft.sounds.SoundEvents.EXPERIENCE_ORB_PICKUP,
+                net.minecraft.sounds.SoundSource.BLOCKS,
+                0.3f, 0.8f + level.random.nextFloat() * 0.4f);
     }
 
     private boolean tryProcess(IFluidHandler sourceHandler, BlockPos targetPos, Direction sourceDir, BlockPos sourcePos) {

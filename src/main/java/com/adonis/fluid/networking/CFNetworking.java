@@ -72,5 +72,77 @@ public class CFNetworking {
                     msg.handle(ctxSupplier.get());
                     ctxSupplier.get().setPacketHandled(true);
                 });
+
+        // Packager 状态切换包
+        channel.registerMessage(id++, com.adonis.fluid.packet.PackagerTogglePacket.class,
+                (msg, buf) -> msg.write(buf),
+                com.adonis.fluid.packet.PackagerTogglePacket::new,
+                (msg, ctxSupplier) -> {
+                    msg.handle(ctxSupplier.get());
+                    ctxSupplier.get().setPacketHandled(true);
+                });
+
+        // Packager 地址清除包
+        channel.registerMessage(id++, com.adonis.fluid.packet.PackagerClearAddressPacket.class,
+                (msg, buf) -> msg.write(buf),
+                com.adonis.fluid.packet.PackagerClearAddressPacket::new,
+                (msg, ctxSupplier) -> {
+                    msg.handle(ctxSupplier.get());
+                    ctxSupplier.get().setPacketHandled(true);
+                });
+
+        // Clipboard 设置地址包
+        channel.registerMessage(id++, com.adonis.fluid.packet.ClipboardSetAddressPacket.class,
+                (msg, buf) -> msg.write(buf),
+                com.adonis.fluid.packet.ClipboardSetAddressPacket::new,
+                (msg, ctxSupplier) -> {
+                    msg.handle(ctxSupplier.get());
+                    ctxSupplier.get().setPacketHandled(true);
+                });
+
+        // Clipboard 地址粒子效果包
+        channel.registerMessage(id++, com.adonis.fluid.packet.ClipboardAddressParticlePacket.class,
+                (msg, buf) -> msg.write(buf),
+                com.adonis.fluid.packet.ClipboardAddressParticlePacket::new,
+                (msg, ctxSupplier) -> {
+                    msg.handle(ctxSupplier.get());
+                    ctxSupplier.get().setPacketHandled(true);
+                });
+
+        // Frogport 连接包
+        channel.registerMessage(id++, com.adonis.fluid.packet.FrogportConnectionPacket.class,
+                (msg, buf) -> msg.write(buf),
+                com.adonis.fluid.packet.FrogportConnectionPacket::new,
+                (msg, ctxSupplier) -> {
+                    msg.handle(ctxSupplier.get());
+                    ctxSupplier.get().setPacketHandled(true);
+                });
+
+        // Frogport 连接反馈包
+        channel.registerMessage(id++, com.adonis.fluid.packet.FrogportConnectionFeedbackPacket.class,
+                (msg, buf) -> msg.write(buf),
+                com.adonis.fluid.packet.FrogportConnectionFeedbackPacket::new,
+                (msg, ctxSupplier) -> {
+                    msg.handle(ctxSupplier.get());
+                    ctxSupplier.get().setPacketHandled(true);
+                });
+
+        // Mailbox-Station 连接包
+        channel.registerMessage(id++, com.adonis.fluid.packet.MailboxStationConnectionPacket.class,
+                (msg, buf) -> msg.write(buf),
+                com.adonis.fluid.packet.MailboxStationConnectionPacket::new,
+                (msg, ctxSupplier) -> {
+                    msg.handle(ctxSupplier.get());
+                    ctxSupplier.get().setPacketHandled(true);
+                });
+
+        // Mailbox-Station 断开连接包
+        channel.registerMessage(id++, com.adonis.fluid.packet.MailboxStationDisconnectPacket.class,
+                (msg, buf) -> msg.write(buf),
+                com.adonis.fluid.packet.MailboxStationDisconnectPacket::new,
+                (msg, ctxSupplier) -> {
+                    msg.handle(ctxSupplier.get());
+                    ctxSupplier.get().setPacketHandled(true);
+                });
     }
 }

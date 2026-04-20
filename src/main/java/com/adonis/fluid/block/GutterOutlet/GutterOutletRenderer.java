@@ -38,6 +38,15 @@ public class GutterOutletRenderer extends SmartBlockEntityRenderer<GutterOutletB
         var renderedFluid = primaryTank.getRenderedFluid();
         float level = primaryTank.getFluidLevel().getValue(partialTicks);
 
+        // fallback: 在 contraption 中 TankSegment 的 renderedFluid 可能未被回调更新，
+        // 此时直接使用底层 tank 的流体进行渲染
+        if (renderedFluid.isEmpty()) {
+            var inv = be.getTankInventory();
+            if (inv != null) {
+                renderedFluid = inv.getFluid();
+            }
+        }
+
         if (renderedFluid.isEmpty() || level <= 0) return;
 
         Direction facing = be.getBlockState().getValue(GutterOutletBlock.FACING);
