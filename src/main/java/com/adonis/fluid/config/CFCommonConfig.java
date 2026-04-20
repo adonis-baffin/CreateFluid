@@ -75,7 +75,7 @@ public class CFCommonConfig {
 
         COPPER_TAP_EXPERIENCE_INTERVAL = builder
                 .comment("Tick interval between each experience orb release.")
-                .defineInRange("interval", 5, 1, 100);
+                .defineInRange("interval", 1, 1, 100);
 
         builder.pop();
 
@@ -176,11 +176,11 @@ public class CFCommonConfig {
     }
 
     public static int getCopperTapExperienceInterval() {
-        if (!isConfigLoaded) return 5;
+        if (!isConfigLoaded) return 1;
         try {
             return COPPER_TAP_EXPERIENCE_INTERVAL.get();
         } catch (IllegalStateException e) {
-            return 5;
+            return 1;
         }
     }
 }

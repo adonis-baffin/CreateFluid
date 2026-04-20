@@ -9,17 +9,27 @@ import com.adonis.fluid.block.Pipette.PipetteRenderer;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceRenderer;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceRenderer;
 import com.adonis.fluid.block.CopperTap.CopperTapRenderer;
+import com.adonis.fluid.client.gui.StockpileSwitchScreen;
 import com.adonis.fluid.handler.PipetteFluidInteractionPointHandler;
 import com.adonis.fluid.item.BatonItemPropertyFunction;
 import com.adonis.fluid.ponder.CFPonderPlugin;
+import com.simibubi.create.content.redstone.thresholdSwitch.ThresholdSwitchBlockEntity;
+import net.createmod.catnip.gui.ScreenOpener;
 import net.createmod.ponder.foundation.PonderIndex;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -74,6 +84,27 @@ public class CFClient {
             if (event.phase == TickEvent.Phase.END) {
                 PipetteFluidInteractionPointHandler.tick();
             }
+        }
+
+        @SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
+        public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player == null) return;
+            if (!event.getLevel().isClientSide()) return;
+            if (event.getHand() != InteractionHand.MAIN_HAND) return;
+
+            // Avoid duplicate openings
+            if (mc.screen instanceof StockpileSwitchScreen) return;
+
+            ItemStack held = event.getItemStack();
+            if (held.isEmpty() || !(held.getItem() instanceof com.adonis.fluid.item.BatonItem)) return;
+
+            BlockEntity be = event.getLevel().getBlockEntity(event.getPos());
+            if (!(be instanceof ThresholdSwitchBlockEntity tsBE)) return;
+
+            event.setCancellationResult(InteractionResult.SUCCESS);
+            event.setCanceled(true);
+            ScreenOpener.open(new StockpileSwitchScreen(tsBE));
         }
     }
 }

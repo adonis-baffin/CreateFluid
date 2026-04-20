@@ -169,5 +169,10 @@
   "create.create_fluid.baton.mailbox.already_connected": "This mailbox is already connected to this station",
   "create.create_fluid.baton.mailbox.too_far": "Too far to connect",
   "create.create_fluid.baton.mailbox.connected": "Mailbox connected to station",
-  "create.create_fluid.baton.mailbox.disconnected": "Mailbox disconnected from station"
+  "create.create_fluid.baton.mailbox.disconnected": "Mailbox disconnected from station",
+
+  "fluid.gui.stockpile_switch.input_title": "Manual Threshold Input",
+  "fluid.gui.stockpile_switch.lower_input": "Lower",
+  "fluid.gui.stockpile_switch.upper_input": "Upper",
+  "fluid.gui.stockpile_switch.unit.bucket": "buckets"
 }
