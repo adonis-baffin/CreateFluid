@@ -13,6 +13,7 @@
     "VanillaFluidTargetsMixin",
     "FluidPipeBlockMixin",
     "PackagerBlockEntityMixin",
+    "InventorySummaryMixin",
     "ClipboardBlockItemMixin",
     "accessor.ArmBlockEntityAccessor",
     "accessor.ItemDrainBlockEntityAccessor",

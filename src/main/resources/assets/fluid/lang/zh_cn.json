@@ -152,5 +152,10 @@
   "fluid.gui.stockpile_switch.input_title": "手动阈值输入",
   "fluid.gui.stockpile_switch.lower_input": "下限",
   "fluid.gui.stockpile_switch.upper_input": "上限",
-  "fluid.gui.stockpile_switch.unit.bucket": "桶"
+  "fluid.gui.stockpile_switch.unit.bucket": "桶",
+  "block.fluid.fluid_packager": "流体打包机",
+  "item.fluid.fluid_package": "流体包裹",
+  "item.fluid.fluid_manifest": "流体清单",
+  "item.fluid.fluid_manifest.named": "流体清单 (%s)",
+  "item.fluid.fluid_manifest.empty": "空 - 右键流体储罐以采样"
 }

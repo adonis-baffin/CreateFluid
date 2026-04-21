@@ -3,191 +3,213 @@ package com.adonis.fluid.config;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 public class CFCommonConfig {
-    public static final ModConfigSpec CONFIG_SPEC;
+	public static final ModConfigSpec CONFIG_SPEC;
 
-    // GutterOutlet 配置
-    public static final ModConfigSpec.BooleanValue GUTTER_COLLECT_RAIN;
-    public static final ModConfigSpec.BooleanValue GUTTER_COLLECT_SNOW;
-    public static final ModConfigSpec.BooleanValue GUTTER_COLLECT_DRIPSTONE;
-    public static final ModConfigSpec.BooleanValue GUTTER_COLLECT_WORLD_FLUID;
-    
-    // CopperSink 配置
-    public static final ModConfigSpec.BooleanValue COPPER_SINK_INFINITE;
+	// GutterOutlet 配置
+	public static final ModConfigSpec.BooleanValue GUTTER_COLLECT_RAIN;
+	public static final ModConfigSpec.BooleanValue GUTTER_COLLECT_SNOW;
+	public static final ModConfigSpec.BooleanValue GUTTER_COLLECT_DRIPSTONE;
+	public static final ModConfigSpec.BooleanValue GUTTER_COLLECT_WORLD_FLUID;
 
-    // Centrifugal Pump 配置
-    public static final ModConfigSpec.IntValue CENTRIFUGAL_PUMP_RANGE;
+	// CopperSink 配置
+	public static final ModConfigSpec.BooleanValue COPPER_SINK_INFINITE;
 
-    // Copper Tap Experience Release 配置
-    public static final ModConfigSpec.BooleanValue COPPER_TAP_EXPERIENCE_ENABLED;
-    public static final ModConfigSpec.IntValue COPPER_TAP_EXPERIENCE_RATE;
-    public static final ModConfigSpec.IntValue COPPER_TAP_EXPERIENCE_INTERVAL;
+	// Centrifugal Pump 配置
+	public static final ModConfigSpec.IntValue CENTRIFUGAL_PUMP_RANGE;
 
-    private static boolean isConfigLoaded = false;
+	// Copper Tap Experience Release 配置
+	public static final ModConfigSpec.BooleanValue COPPER_TAP_EXPERIENCE_ENABLED;
+	public static final ModConfigSpec.IntValue COPPER_TAP_EXPERIENCE_RATE;
+	public static final ModConfigSpec.IntValue COPPER_TAP_EXPERIENCE_INTERVAL;
 
-    static {
-        ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
+	// Fluid Packager 配置
+	public static final ModConfigSpec.IntValue FLUID_PER_PACKAGE;
 
-        builder.comment("Gutter Outlet settings")
-                .push("gutter_outlet");
+	private static boolean isConfigLoaded = false;
 
-        GUTTER_COLLECT_RAIN = builder
-                .comment("Whether gutter outlet can collect rain water")
-                .define("collectRain", true);
+	static {
+		ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 
-        GUTTER_COLLECT_SNOW = builder
-                .comment("Whether gutter outlet can collect snow as powder snow fluid")
-                .define("collectSnow", true);
+		builder.comment("Gutter Outlet settings")
+			.push("gutter_outlet");
 
-        GUTTER_COLLECT_DRIPSTONE = builder
-                .comment("Whether gutter outlet can collect fluid from dripstone (lava/water)")
-                .define("collectDripstone", true);
+		GUTTER_COLLECT_RAIN = builder
+			.comment("Whether gutter outlet can collect rain water")
+			.define("collectRain", true);
 
-        GUTTER_COLLECT_WORLD_FLUID = builder
-                .comment("Whether gutter outlet can collect world fluid sources from above")
-                .define("collectWorldFluid", true);
+		GUTTER_COLLECT_SNOW = builder
+			.comment("Whether gutter outlet can collect snow as powder snow fluid")
+			.define("collectSnow", true);
 
-        builder.pop();
-        
-        builder.comment("Copper Sink settings")
-                .push("copper_sink");
+		GUTTER_COLLECT_DRIPSTONE = builder
+			.comment("Whether gutter outlet can collect fluid from dripstone (lava/water)")
+			.define("collectDripstone", true);
 
-        COPPER_SINK_INFINITE = builder
-                .comment("Whether the Copper Sink provides infinite water (if false, it's just a normal 2000mB tank)")
-                .define("infiniteWater", true);
+		GUTTER_COLLECT_WORLD_FLUID = builder
+			.comment("Whether gutter outlet can collect world fluid sources from above")
+			.define("collectWorldFluid", true);
 
-        builder.pop();
+		builder.pop();
 
-        builder.comment("Centrifugal Pump settings")
-                .push("centrifugal_pump");
+		builder.comment("Copper Sink settings")
+			.push("copper_sink");
 
-        CENTRIFUGAL_PUMP_RANGE = builder
-                .comment("Maximum transport distance in blocks for the Centrifugal Pump.")
-                .defineInRange("centrifugalPumpRange", 20, 1, Integer.MAX_VALUE);
+		COPPER_SINK_INFINITE = builder
+			.comment("Whether the Copper Sink provides infinite water (if false, it's just a normal 2000mB tank)")
+			.define("infiniteWater", true);
 
-        builder.pop();
+		builder.pop();
 
-        builder.comment("Copper Tap Experience Release settings")
-                .push("copper_tap_experience");
+		builder.comment("Centrifugal Pump settings")
+			.push("centrifugal_pump");
 
-        COPPER_TAP_EXPERIENCE_ENABLED = builder
-                .comment("Whether the Copper Tap can release experience orbs when open and no valid target is present.")
-                .define("enabled", true);
+		CENTRIFUGAL_PUMP_RANGE = builder
+			.comment("Maximum transport distance in blocks for the Centrifugal Pump.")
+			.defineInRange("centrifugalPumpRange", 20, 1, Integer.MAX_VALUE);
 
-        COPPER_TAP_EXPERIENCE_RATE = builder
-                .comment("How many mB of experience fluid are consumed per release.")
-                .defineInRange("rate", 10, 1, 1000);
+		builder.pop();
 
-        COPPER_TAP_EXPERIENCE_INTERVAL = builder
-                .comment("Tick interval between each experience orb release.")
-                .defineInRange("interval", 1, 1, 100);
+		builder.comment("Copper Tap Experience Release settings")
+			.push("copper_tap_experience");
 
-        builder.pop();
+		COPPER_TAP_EXPERIENCE_ENABLED = builder
+			.comment("Whether the Copper Tap can release experience orbs when open and no valid target is present.")
+			.define("enabled", true);
 
-        CONFIG_SPEC = builder.build();
-    }
+		COPPER_TAP_EXPERIENCE_RATE = builder
+			.comment("How many mB of experience fluid are consumed per release.")
+			.defineInRange("rate", 10, 1, 1000);
 
-    public static void onLoad() {
-        isConfigLoaded = true;
-    }
+		COPPER_TAP_EXPERIENCE_INTERVAL = builder
+			.comment("Tick interval between each experience orb release.")
+			.defineInRange("interval", 1, 1, 100);
 
-    public static void onReload() {
-        isConfigLoaded = true;
-    }
+		builder.pop();
 
-    // GutterOutlet 配置获取方法
-    public static boolean canGutterCollectRain() {
-        if (!isConfigLoaded) {
-            return true;
-        }
-        try {
-            return GUTTER_COLLECT_RAIN.get();
-        } catch (IllegalStateException e) {
-            return true;
-        }
-    }
+		builder.comment("Fluid Packager settings")
+			.push("fluid_packager");
 
-    public static boolean canGutterCollectSnow() {
-        if (!isConfigLoaded) {
-            return true;
-        }
-        try {
-            return GUTTER_COLLECT_SNOW.get();
-        } catch (IllegalStateException e) {
-            return true;
-        }
-    }
+		FLUID_PER_PACKAGE = builder
+			.comment("Maximum mB of fluid one fluid package can hold. Packages can be created with less than this amount.")
+			.defineInRange("fluidPerPackage", 4000, 1000, 100000);
 
-    public static boolean canGutterCollectDripstone() {
-        if (!isConfigLoaded) {
-            return true;
-        }
-        try {
-            return GUTTER_COLLECT_DRIPSTONE.get();
-        } catch (IllegalStateException e) {
-            return true;
-        }
-    }
+		builder.pop();
 
-    public static boolean canGutterCollectWorldFluid() {
-        if (!isConfigLoaded) {
-            return true;
-        }
-        try {
-            return GUTTER_COLLECT_WORLD_FLUID.get();
-        } catch (IllegalStateException e) {
-            return true;
-        }
-    }
+		CONFIG_SPEC = builder.build();
+	}
 
-    // CopperSink 配置获取方法
-    public static boolean isCopperSinkInfinite() {
-        if (!isConfigLoaded) {
-            return true;
-        }
-        try {
-            return COPPER_SINK_INFINITE.get();
-        } catch (IllegalStateException e) {
-            return true;
-        }
-    }
+	public static void onLoad() {
+		isConfigLoaded = true;
+	}
 
-    // Centrifugal Pump 配置获取方法
-    public static int getCentrifugalPumpRange() {
-        if (!isConfigLoaded) {
-            return 20;
-        }
-        try {
-            return CENTRIFUGAL_PUMP_RANGE.get();
-        } catch (IllegalStateException e) {
-            return 20;
-        }
-    }
+	public static void onReload() {
+		isConfigLoaded = true;
+	}
 
-    // Copper Tap Experience Release 配置获取方法
-    public static boolean isCopperTapExperienceEnabled() {
-        if (!isConfigLoaded) return true;
-        try {
-            return COPPER_TAP_EXPERIENCE_ENABLED.get();
-        } catch (IllegalStateException e) {
-            return true;
-        }
-    }
+	// GutterOutlet 配置获取方法
+	public static boolean canGutterCollectRain() {
+		if (!isConfigLoaded) {
+			return true;
+		}
+		try {
+			return GUTTER_COLLECT_RAIN.get();
+		} catch (IllegalStateException e) {
+			return true;
+		}
+	}
 
-    public static int getCopperTapExperienceRate() {
-        if (!isConfigLoaded) return 10;
-        try {
-            return COPPER_TAP_EXPERIENCE_RATE.get();
-        } catch (IllegalStateException e) {
-            return 10;
-        }
-    }
+	public static boolean canGutterCollectSnow() {
+		if (!isConfigLoaded) {
+			return true;
+		}
+		try {
+			return GUTTER_COLLECT_SNOW.get();
+		} catch (IllegalStateException e) {
+			return true;
+		}
+	}
 
-    public static int getCopperTapExperienceInterval() {
-        if (!isConfigLoaded) return 5;
-        try {
-            return COPPER_TAP_EXPERIENCE_INTERVAL.get();
-        } catch (IllegalStateException e) {
-            return 5;
-        }
-    }
+	public static boolean canGutterCollectDripstone() {
+		if (!isConfigLoaded) {
+			return true;
+		}
+		try {
+			return GUTTER_COLLECT_DRIPSTONE.get();
+		} catch (IllegalStateException e) {
+			return true;
+		}
+	}
+
+	public static boolean canGutterCollectWorldFluid() {
+		if (!isConfigLoaded) {
+			return true;
+		}
+		try {
+			return GUTTER_COLLECT_WORLD_FLUID.get();
+		} catch (IllegalStateException e) {
+			return true;
+		}
+	}
+
+	// CopperSink 配置获取方法
+	public static boolean isCopperSinkInfinite() {
+		if (!isConfigLoaded) {
+			return true;
+		}
+		try {
+			return COPPER_SINK_INFINITE.get();
+		} catch (IllegalStateException e) {
+			return true;
+		}
+	}
+
+	// Centrifugal Pump 配置获取方法
+	public static int getCentrifugalPumpRange() {
+		if (!isConfigLoaded) {
+			return 20;
+		}
+		try {
+			return CENTRIFUGAL_PUMP_RANGE.get();
+		} catch (IllegalStateException e) {
+			return 20;
+		}
+	}
+
+	// Copper Tap Experience Release 配置获取方法
+	public static boolean isCopperTapExperienceEnabled() {
+		if (!isConfigLoaded) return true;
+		try {
+			return COPPER_TAP_EXPERIENCE_ENABLED.get();
+		} catch (IllegalStateException e) {
+			return true;
+		}
+	}
+
+	public static int getCopperTapExperienceRate() {
+		if (!isConfigLoaded) return 10;
+		try {
+			return COPPER_TAP_EXPERIENCE_RATE.get();
+		} catch (IllegalStateException e) {
+			return 10;
+		}
+	}
+
+	public static int getCopperTapExperienceInterval() {
+		if (!isConfigLoaded) return 5;
+		try {
+			return COPPER_TAP_EXPERIENCE_INTERVAL.get();
+		} catch (IllegalStateException e) {
+			return 5;
+		}
+	}
+
+	// Fluid Packager 配置获取方法
+	public static int getFluidPerPackage() {
+		if (!isConfigLoaded) return 4000;
+		try {
+			return FLUID_PER_PACKAGE.get();
+		} catch (IllegalStateException e) {
+			return 4000;
+		}
+	}
 }

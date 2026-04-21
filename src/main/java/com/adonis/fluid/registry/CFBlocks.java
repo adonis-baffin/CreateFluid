@@ -13,6 +13,7 @@ import com.adonis.fluid.block.GutterOutlet.GutterOutletMovementBehaviour;
 import com.adonis.fluid.block.GutterOutlet.SmartGutterOutletBlock;
 import com.adonis.fluid.block.Pipette.PipetteBlock;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlock;
+import com.adonis.fluid.block.fluidpackager.FluidPackagerBlock;
 import com.simibubi.create.foundation.data.ModelGen;
 import com.simibubi.create.foundation.data.SharedProperties;
 import com.simibubi.create.foundation.data.TagGen;
@@ -313,6 +314,21 @@ public class CFBlocks {
             .item()
             .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), prov.modLoc("item/redstone_triple_valve")))
             .build()
+            .register();
+
+    // 流体打包机
+    public static final BlockEntry<FluidPackagerBlock> FLUID_PACKAGER = REGISTRATE
+            .block("fluid_packager", FluidPackagerBlock::new)
+            .initialProperties(SharedProperties::softMetal)
+            .properties(prop -> prop
+                    .mapColor(MapColor.TERRACOTTA_BLUE)
+                    .sound(SoundType.NETHERITE_BLOCK)
+                    .noOcclusion()
+                    .isRedstoneConductor(($1, $2, $3) -> false))
+            .transform(TagGen.pickaxeOnly())
+            .addLayer(() -> net.minecraft.client.renderer.RenderType::cutoutMipped)
+            .item()
+            .transform(ModelGen.customItemModel())
             .register();
 
     public static void register() {

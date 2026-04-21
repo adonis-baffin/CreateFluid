@@ -32,9 +32,12 @@ public class CFCreativeTab {
                         output.accept(CFBlocks.COPPER_SINK);
                         output.accept(CFBlocks.REDSTONE_VALVE);
                         output.accept(CFBlocks.REDSTONE_TRIPLE_VALVE);
+                        output.accept(CFBlocks.FLUID_PACKAGER);
 
                         // 手动添加物品
                         output.accept(CFItems.HONEYCOMB_MOLD);
+                        output.accept(CFItems.FLUID_PACKAGE);
+                        output.accept(CFItems.FLUID_MANIFEST);
 
                         // 细雪相关
                         output.accept(Items.POWDER_SNOW_BUCKET);

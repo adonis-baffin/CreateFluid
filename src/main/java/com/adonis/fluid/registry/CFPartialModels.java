@@ -2,6 +2,7 @@ package com.adonis.fluid.registry;
 
 import com.adonis.fluid.CreateFluid;
 import com.simibubi.create.AllPartialModels;
+import com.simibubi.create.Create;
 import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 import net.minecraft.resources.ResourceLocation;
 
@@ -48,10 +49,33 @@ public class CFPartialModels {
                 initFallbackModels();
             }
 
+            // 注册流体包裹模型到Create的包裹模型映射中
+            // 这样 PackageEntity 渲染 FluidPackageItem 时能找到正确的模型
+            registerFluidPackageModels();
+
             initialized = true;
 
         } catch (Exception e) {
             initFallbackModels();
+        }
+    }
+
+    private static void registerFluidPackageModels() {
+        try {
+            ResourceLocation fluidPackageId = ResourceLocation.fromNamespaceAndPath(CreateFluid.MOD_ID, "fluid_package");
+            ResourceLocation creeperPackageId = Create.asResource("rare_creeper_package");
+
+            PartialModel creeperModel = AllPartialModels.PACKAGES.get(creeperPackageId);
+            PartialModel creeperRigging = AllPartialModels.PACKAGE_RIGGING.get(creeperPackageId);
+
+            if (creeperModel != null) {
+                AllPartialModels.PACKAGES.put(fluidPackageId, creeperModel);
+            }
+            if (creeperRigging != null) {
+                AllPartialModels.PACKAGE_RIGGING.put(fluidPackageId, creeperRigging);
+            }
+        } catch (Exception e) {
+            // 静默失败，包裹会显示为黑紫但功能正常
         }
     }
 

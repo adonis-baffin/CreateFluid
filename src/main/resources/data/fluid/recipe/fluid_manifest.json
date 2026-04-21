@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "minecraft:paper" },
+    { "item": "minecraft:redstone" }
+  ],
+  "result": {
+    "id": "fluid:fluid_manifest",
+    "count": 1
+  }
+}
