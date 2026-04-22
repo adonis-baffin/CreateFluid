@@ -41,16 +41,14 @@ public class FluidPackagerBlockEntity extends PackagerBlockEntity {
 
 		IFluidHandler fluidHandler = getFluidHandler();
 		if (fluidHandler != null) {
-			int fluidPerPackage = CFCommonConfig.getFluidPerPackage();
 			for (int i = 0; i < fluidHandler.getTanks(); i++) {
 				FluidStack fluid = fluidHandler.getFluidInTank(i);
 				if (!fluid.isEmpty()) {
-					// 上报流体桶数（1000mB = 1桶），至少显示 1
-					// 这样仓库管理员右下角直接显示流体量而不是包裹数
-					int bucketCount = fluid.getAmount() / 1000;
-					if (bucketCount < 1) bucketCount = 1;
-					ItemStack manifest = FluidManifestItem.of(fluid);
-					summary.add(manifest, bucketCount);
+					// count 单位就是 mB，直接上报实际 mB 数量
+					int mb = fluid.getAmount();
+					if (mb <= 0) mb = 1; // 至少显示 1mB，避免 0 导致条目消失
+					ItemStack manifest = FluidManifestItem.of(fluid, fluid.getAmount());
+					summary.add(manifest, mb);
 				}
 			}
 		}
@@ -140,15 +138,19 @@ public class FluidPackagerBlockEntity extends PackagerBlockEntity {
 		}
 
 		int fluidPerPackage = CFCommonConfig.getFluidPerPackage();
-		int maxExtract = Math.min(nextRequest.getCount() * fluidPerPackage, fluidPerPackage);
-		if (maxExtract <= 0)
+		// count 的单位就是 mB
+		int requestedMB = nextRequest.getCount();
+		int toExtract = Math.min(requestedMB, fluidPerPackage);
+		if (toExtract <= 0) {
+			queuedRequests.remove(0);
 			return;
+		}
 
 		// 检查实际可用量
 		int available = 0;
 		for (int i = 0; i < fluidHandler.getTanks(); i++) {
 			FluidStack fluid = fluidHandler.getFluidInTank(i);
-			if (FluidStack.isSameFluidSameComponents(fluid, requestedFluid)) {
+			if (fluid.getFluid() == requestedFluid.getFluid()) {
 				available += fluid.getAmount();
 			}
 		}
@@ -157,14 +159,18 @@ public class FluidPackagerBlockEntity extends PackagerBlockEntity {
 			return;
 		}
 
-		int toExtract = Math.min(maxExtract, available);
-		FluidStack extracted = fluidHandler.drain(requestedFluid.copyWithAmount(toExtract), IFluidHandler.FluidAction.SIMULATE);
+		toExtract = Math.min(toExtract, available);
+		FluidStack extracted = fluidHandler.drain(
+			new FluidStack(requestedFluid.getFluid(), toExtract),
+			IFluidHandler.FluidAction.SIMULATE);
 		if (extracted.isEmpty()) {
 			queuedRequests.remove(0);
 			return;
 		}
 
-		extracted = fluidHandler.drain(requestedFluid.copyWithAmount(toExtract), IFluidHandler.FluidAction.EXECUTE);
+		extracted = fluidHandler.drain(
+			new FluidStack(requestedFluid.getFluid(), toExtract),
+			IFluidHandler.FluidAction.EXECUTE);
 		if (extracted.isEmpty()) {
 			queuedRequests.remove(0);
 			return;
@@ -181,7 +187,10 @@ public class FluidPackagerBlockEntity extends PackagerBlockEntity {
 			nextRequest.finalLink().booleanValue(), nextRequest.packageCounter().getAndIncrement(),
 			nextRequest.isEmpty(), nextRequest.context());
 
-		nextRequest.subtract(1);
+		// 扣除实际发送的 mB 数量
+		int sentUnits = extracted.getAmount();
+		if (sentUnits == 0 && extracted.getAmount() > 0) sentUnits = 1;
+		nextRequest.subtract(sentUnits);
 		if (nextRequest.isEmpty()) {
 			queuedRequests.remove(0);
 		}

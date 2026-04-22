@@ -1,9 +1,9 @@
 ﻿{
 	"credit": "Made with Blockbench",
 	"textures": {
-		"1": "create:block/packager_details",
-		"3": "create:block/packager_iris_closed",
-		"particle": "create:block/vault/vault_front_small"
+		"1": "fluid:block/packager_details",
+		"3": "fluid:block/packager_iris_closed",
+		"particle": "fluid:block/vault/vault_front_small"
 	},
 	"elements": [
 		{

@@ -1,10 +1,10 @@
 ﻿{
 	"credit": "Made with Blockbench",
 	"textures": {
-		"0": "create:block/packager_frame",
-		"1": "create:block/packager_details",
-		"5": "create:block/packager_vertical_unpowered",
-		"particle": "create:block/packager_particle"
+		"0": "fluid:block/packager_frame",
+		"1": "fluid:block/packager_details",
+		"5": "fluid:block/packager_vertical_unpowered",
+		"particle": "fluid:block/packager_particle"
 	},
 	"elements": [
 		{

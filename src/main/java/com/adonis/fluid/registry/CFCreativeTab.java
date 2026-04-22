@@ -36,8 +36,6 @@ public class CFCreativeTab {
 
                         // 手动添加物品
                         output.accept(CFItems.HONEYCOMB_MOLD);
-                        output.accept(CFItems.FLUID_PACKAGE);
-                        output.accept(CFItems.FLUID_MANIFEST);
 
                         // 细雪相关
                         output.accept(Items.POWDER_SNOW_BUCKET);

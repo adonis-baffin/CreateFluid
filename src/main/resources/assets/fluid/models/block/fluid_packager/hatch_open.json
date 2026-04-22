@@ -1,6 +1,6 @@
 ﻿{
-	"parent": "create:block/packager/hatch_closed",
+	"parent": "fluid:block/packager/hatch_closed",
 	"textures": {
-		"3": "create:block/packager_iris_open"
+		"3": "fluid:block/packager_iris_open"
 	}
 }

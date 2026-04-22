@@ -7,6 +7,7 @@ import com.adonis.fluid.registry.CFItems;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -17,6 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
@@ -29,14 +31,22 @@ public class FluidManifestItem extends Item {
 	}
 
 	public static ItemStack of(FluidStack fluid) {
+		return of(fluid, fluid.getAmount());
+	}
+
+	public static ItemStack of(FluidStack fluid, int amount) {
 		ItemStack stack = new ItemStack(CFItems.FLUID_MANIFEST.get());
-		stack.set(CFDataComponents.FLUID_MANIFEST.get(), new FluidManifestContent(fluid.copyWithAmount(1)));
+		stack.set(CFDataComponents.FLUID_MANIFEST.get(),
+			new FluidManifestContent(BuiltInRegistries.FLUID.getKey(fluid.getFluid()), amount));
 		return stack;
 	}
 
 	public static FluidStack read(ItemStack stack) {
 		FluidManifestContent content = stack.get(CFDataComponents.FLUID_MANIFEST.get());
-		return content != null ? content.fluid() : FluidStack.EMPTY;
+		if (content == null || content.fluidId() == null)
+			return FluidStack.EMPTY;
+		Fluid fluid = BuiltInRegistries.FLUID.get(content.fluidId());
+		return fluid == null ? FluidStack.EMPTY : new FluidStack(fluid, 1);
 	}
 
 	public static boolean isEmpty(ItemStack stack) {
@@ -63,6 +73,11 @@ public class FluidManifestItem extends Item {
 	}
 
 	@Override
+	public int getMaxStackSize(ItemStack stack) {
+		return 64;
+	}
+
+	@Override
 	public InteractionResult useOn(UseOnContext context) {
 		Level level = context.getLevel();
 		BlockPos pos = context.getClickedPos();
@@ -86,7 +101,8 @@ public class FluidManifestItem extends Item {
 		for (int i = 0; i < fluidHandler.getTanks(); i++) {
 			FluidStack fluid = fluidHandler.getFluidInTank(i);
 			if (!fluid.isEmpty()) {
-				heldStack.set(CFDataComponents.FLUID_MANIFEST.get(), new FluidManifestContent(fluid.copyWithAmount(1)));
+				heldStack.set(CFDataComponents.FLUID_MANIFEST.get(),
+					new FluidManifestContent(BuiltInRegistries.FLUID.getKey(fluid.getFluid()), fluid.getAmount()));
 				level.playSound(null, pos, SoundEvents.BOTTLE_FILL, SoundSource.BLOCKS, 1.0f, 1.0f);
 				return InteractionResult.SUCCESS;
 			}

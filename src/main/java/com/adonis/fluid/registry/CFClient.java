@@ -21,6 +21,7 @@ import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
@@ -49,6 +50,22 @@ public class CFClient {
                         new BatonItemPropertyFunction());
             }
         });
+    }
+
+    @SubscribeEvent
+    public static void onItemColors(RegisterColorHandlersEvent.Item event) {
+        event.register((stack, tintIndex) -> {
+            if (stack.getItem() instanceof com.adonis.fluid.item.FluidManifestItem) {
+                com.adonis.fluid.datacomponent.FluidManifestContent content = stack.get(com.adonis.fluid.registry.CFDataComponents.FLUID_MANIFEST.get());
+                if (content != null && content.fluidId() != null) {
+                    net.minecraft.world.level.material.Fluid fluid = net.minecraft.core.registries.BuiltInRegistries.FLUID.get(content.fluidId());
+                    if (fluid != null) {
+                        return IClientFluidTypeExtensions.of(fluid).getTintColor();
+                    }
+                }
+            }
+            return 0xFFFFFF;
+        }, CFItems.FLUID_MANIFEST.get());
     }
 
     @SubscribeEvent

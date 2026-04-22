@@ -21,7 +21,9 @@
     "accessor.ChainConveyorOBBAccessor"
   ],
   "client": [
-    "ArmBlockEntityWrenchUpdateMixin"
+    "ArmBlockEntityWrenchUpdateMixin",
+    "StockKeeperRequestScreenMixin",
+    "accessor.StockKeeperRequestScreenAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
