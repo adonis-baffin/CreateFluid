@@ -153,6 +153,7 @@
   "fluid.gui.stockpile_switch.lower_input": "下限",
   "fluid.gui.stockpile_switch.upper_input": "上限",
   "fluid.gui.stockpile_switch.unit.bucket": "桶",
+  "block.fluid.communicating_vessel": "流体连通器",
   "block.fluid.can_filler": "装罐机",
   "item.fluid.copper_can": "铜罐",
   "item.fluid.fluid_manifest": "流体清单",

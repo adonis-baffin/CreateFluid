@@ -14,6 +14,7 @@ import com.adonis.fluid.block.GutterOutlet.SmartGutterOutletBlock;
 import com.adonis.fluid.block.Pipette.PipetteBlock;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlock;
 import com.adonis.fluid.block.canfiller.CanFillerBlock;
+import com.adonis.fluid.block.communicatingvessel.CommunicatingVesselBlock;
 import com.simibubi.create.foundation.data.ModelGen;
 import com.simibubi.create.foundation.data.SharedProperties;
 import com.simibubi.create.foundation.data.TagGen;
@@ -329,6 +330,40 @@ public class CFBlocks {
             .addLayer(() -> net.minecraft.client.renderer.RenderType::cutoutMipped)
             .item()
             .transform(ModelGen.customItemModel())
+            .register();
+
+    // 流体连通器
+    public static final BlockEntry<CommunicatingVesselBlock> COMMUNICATING_VESSEL = REGISTRATE
+            .block("communicating_vessel", CommunicatingVesselBlock::new)
+            .initialProperties(SharedProperties::softMetal)
+            .properties(prop -> prop
+                    .mapColor(MapColor.STONE)
+                    .sound(SoundType.METAL)
+                    .noOcclusion())
+            .transform(TagGen.pickaxeOnly())
+            .blockstate((ctx, prov) -> {
+                prov.getVariantBuilder(ctx.get())
+                        .forAllStates(state -> {
+                            Direction.Axis axis = state.getValue(CommunicatingVesselBlock.AXIS);
+                            int rotX = 0;
+                            int rotY = 0;
+                            if (axis == Direction.Axis.Y) {
+                                rotX = 90;
+                            } else if (axis == Direction.Axis.X) {
+                                rotY = 90;
+                            }
+                            return ConfiguredModel.builder()
+                                    .modelFile(prov.models().getExistingFile(
+                                            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("create", "block/smart_fluid_pipe/block")))
+                                    .rotationX(rotX)
+                                    .rotationY(rotY)
+                                    .build();
+                        });
+            })
+            .item()
+            .model((ctx, prov) -> prov.withExistingParent(ctx.getName(),
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("create", "block/smart_fluid_pipe/item")))
+            .build()
             .register();
 
     public static void register() {

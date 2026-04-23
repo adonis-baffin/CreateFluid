@@ -1,0 +1,15 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "fluid:block/communicating_vessel",
+      "y": 90
+    },
+    "axis=y": {
+      "model": "fluid:block/communicating_vessel",
+      "x": 90
+    },
+    "axis=z": {
+      "model": "fluid:block/communicating_vessel"
+    }
+  }
+}

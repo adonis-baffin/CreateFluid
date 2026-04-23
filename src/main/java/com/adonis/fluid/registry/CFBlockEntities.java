@@ -5,6 +5,7 @@ import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlockEntity;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpRenderer;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpVisual;
 import com.adonis.fluid.block.canfiller.CanFillerBlockEntity;
+import com.adonis.fluid.block.communicatingvessel.CommunicatingVesselBlockEntity;
 import com.adonis.fluid.block.CopperSink.CopperSinkBlockEntity;
 import com.adonis.fluid.block.CopperSink.CopperSinkRenderer;
 import com.adonis.fluid.block.CopperTap.CopperTapBlockEntity;
@@ -111,6 +112,12 @@ public class CFBlockEntities {
             .visual(() -> com.simibubi.create.content.logistics.packager.PackagerVisual::new, true)
             .validBlocks(CFBlocks.CAN_FILLER)
             .renderer(() -> com.simibubi.create.content.logistics.packager.PackagerRenderer::new)
+            .register();
+
+    // 流体连通器方块实体
+    public static final BlockEntityEntry<CommunicatingVesselBlockEntity> COMMUNICATING_VESSEL = REGISTRATE
+            .blockEntity("communicating_vessel", CommunicatingVesselBlockEntity::new)
+            .validBlocks(CFBlocks.COMMUNICATING_VESSEL)
             .register();
 
     public static void register() {

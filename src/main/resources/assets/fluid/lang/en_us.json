@@ -153,6 +153,7 @@
   "fluid.gui.stockpile_switch.lower_input": "Lower",
   "fluid.gui.stockpile_switch.upper_input": "Upper",
   "fluid.gui.stockpile_switch.unit.bucket": "buckets",
+  "block.fluid.communicating_vessel": "Communicating Vessel",
   "block.fluid.can_filler": "Can Filler",
   "item.fluid.copper_can": "Copper Can",
   "item.fluid.fluid_manifest": "Fluid Manifest",
