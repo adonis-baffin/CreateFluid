@@ -1,5 +1,5 @@
 ﻿{
-	"parent": "fluid:block/packager/hatch_closed",
+	"parent": "fluid:block/can_filler/hatch_closed",
 	"textures": {
 		"3": "fluid:block/packager_iris_open"
 	}

@@ -4,7 +4,7 @@ import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlockEntity;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpRenderer;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpVisual;
-import com.adonis.fluid.block.fluidpackager.FluidPackagerBlockEntity;
+import com.adonis.fluid.block.canfiller.CanFillerBlockEntity;
 import com.adonis.fluid.block.CopperSink.CopperSinkBlockEntity;
 import com.adonis.fluid.block.CopperSink.CopperSinkRenderer;
 import com.adonis.fluid.block.CopperTap.CopperTapBlockEntity;
@@ -105,11 +105,11 @@ public class CFBlockEntities {
             .validBlocks(CFBlocks.REDSTONE_TRIPLE_VALVE)
             .register();
 
-    // 流体打包机方块实体
-    public static final BlockEntityEntry<FluidPackagerBlockEntity> FLUID_PACKAGER = REGISTRATE
-            .blockEntity("fluid_packager", FluidPackagerBlockEntity::new)
+    // 装罐机方块实体
+    public static final BlockEntityEntry<CanFillerBlockEntity> CAN_FILLER = REGISTRATE
+            .blockEntity("can_filler", CanFillerBlockEntity::new)
             .visual(() -> com.simibubi.create.content.logistics.packager.PackagerVisual::new, true)
-            .validBlocks(CFBlocks.FLUID_PACKAGER)
+            .validBlocks(CFBlocks.CAN_FILLER)
             .renderer(() -> com.simibubi.create.content.logistics.packager.PackagerRenderer::new)
             .register();
 

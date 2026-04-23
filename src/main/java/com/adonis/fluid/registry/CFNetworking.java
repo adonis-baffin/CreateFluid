@@ -97,16 +97,16 @@ public class CFNetworking {
 
         // Packager 状态切换包
         registrar.playToServer(
-                PackagerTogglePacket.TYPE,
-                PackagerTogglePacket.STREAM_CODEC,
-                PackagerTogglePacket::handle
+                CanFillerTogglePacket.TYPE,
+                CanFillerTogglePacket.STREAM_CODEC,
+                CanFillerTogglePacket::handle
         );
 
         // Packager 地址清除包
         registrar.playToServer(
-                PackagerClearAddressPacket.TYPE,
-                PackagerClearAddressPacket.STREAM_CODEC,
-                PackagerClearAddressPacket::handle
+                CanFillerClearAddressPacket.TYPE,
+                CanFillerClearAddressPacket.STREAM_CODEC,
+                CanFillerClearAddressPacket::handle
         );
 
         // Clipboard 设置地址包（C→S）

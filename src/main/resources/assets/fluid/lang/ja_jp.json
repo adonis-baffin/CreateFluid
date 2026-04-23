@@ -124,13 +124,13 @@
   "create.goggles.repackager_title": "再梱包機",
   "create.goggles.address_label": "アドレス：",
   "create.goggles.no_address": "アドレスなし",
-  "create.create_fluid.baton.packager.powered_on": "梱包機が起動しました",
-  "create.create_fluid.baton.packager.powered_off": "梱包機が停止しました",
+  "create.create_fluid.baton.can_filler.powered_on": "梱包機が起動しました",
+  "create.create_fluid.baton.can_filler.powered_off": "梱包機が停止しました",
   "create.create_fluid.baton.repackager.powered_on": "仕分け機が起動しました",
   "create.create_fluid.baton.repackager.powered_off": "仕分け機が停止しました",
-  "create.create_fluid.baton.packager.address_cannot_clear_sign": "看板のアドレスは削除できません",
-  "create.create_fluid.baton.packager.address_already_empty": "アドレスは既に空です",
-  "create.create_fluid.baton.packager.address_cleared": "アドレスを削除しました",
+  "create.create_fluid.baton.can_filler.address_cannot_clear_sign": "看板のアドレスは削除できません",
+  "create.create_fluid.baton.can_filler.address_already_empty": "アドレスは既に空です",
+  "create.create_fluid.baton.can_filler.address_cleared": "アドレスを削除しました",
   "create.create_fluid.clipboard.no_valid_address": "クリップボードに有効なアドレスがありません（#で始めてください）",
   "create.create_fluid.clipboard.address_set_by_sign": "%1$sのアドレスは看板によって設定されているため、上書きできません",
   "create.create_fluid.clipboard.address_set": "%1$sのアドレスを%2$sに設定しました",
@@ -148,5 +148,6 @@
   "create.create_fluid.baton.mailbox.connected": "郵便箱を駅に接続しました",
   "create.create_fluid.baton.mailbox.disconnected": "郵便箱を駅から切断しました",
   "block.fluid.redstone_valve": "レッドストーンバルブ",
-  "block.fluid.redstone_triple_valve": "レッドストーン三方バルブ"
+  "block.fluid.redstone_triple_valve": "レッドストーン三方バルブ",
+  "create.create.goggles.can_filler_title": "梱包機"
 }

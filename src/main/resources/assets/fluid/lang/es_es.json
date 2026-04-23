@@ -124,13 +124,13 @@
   "create.goggles.repackager_title": "Reempaquetador",
   "create.goggles.address_label": "Dirección:",
   "create.goggles.no_address": "Sin dirección",
-  "create.create_fluid.baton.packager.powered_on": "Empaquetador encendido",
-  "create.create_fluid.baton.packager.powered_off": "Empaquetador apagado",
+  "create.create_fluid.baton.can_filler.powered_on": "Empaquetador encendido",
+  "create.create_fluid.baton.can_filler.powered_off": "Empaquetador apagado",
   "create.create_fluid.baton.repackager.powered_on": "Reempaquetador encendido",
   "create.create_fluid.baton.repackager.powered_off": "Reempaquetador apagado",
-  "create.create_fluid.baton.packager.address_cannot_clear_sign": "No se puede borrar la dirección del cartel",
-  "create.create_fluid.baton.packager.address_already_empty": "La dirección ya está vacía",
-  "create.create_fluid.baton.packager.address_cleared": "Dirección borrada",
+  "create.create_fluid.baton.can_filler.address_cannot_clear_sign": "No se puede borrar la dirección del cartel",
+  "create.create_fluid.baton.can_filler.address_already_empty": "La dirección ya está vacía",
+  "create.create_fluid.baton.can_filler.address_cleared": "Dirección borrada",
   "create.create_fluid.clipboard.no_valid_address": "No hay una dirección válida en el portapapeles (empieza con #)",
   "create.create_fluid.clipboard.address_set_by_sign": "La dirección de %1$s está establecida por un cartel, no se puede sobrescribir",
   "create.create_fluid.clipboard.address_set": "Dirección de %1$s establecida en %2$s",
@@ -148,5 +148,6 @@
   "create.create_fluid.baton.mailbox.connected": "Buzón conectado a la estación",
   "create.create_fluid.baton.mailbox.disconnected": "Buzón desconectado de la estación",
   "block.fluid.redstone_valve": "Válvula de Redstone",
-  "block.fluid.redstone_triple_valve": "Válvula Triple de Redstone"
+  "block.fluid.redstone_triple_valve": "Válvula Triple de Redstone",
+  "create.create.goggles.can_filler_title": "Empaquetador"
 }

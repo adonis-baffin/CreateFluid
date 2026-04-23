@@ -1,8 +1,8 @@
 package com.adonis.fluid.handler;
 
 import com.adonis.fluid.item.BatonItem;
-import com.adonis.fluid.packet.PackagerClearAddressPacket;
-import com.adonis.fluid.packet.PackagerTogglePacket;
+import com.adonis.fluid.packet.CanFillerClearAddressPacket;
+import com.adonis.fluid.packet.CanFillerTogglePacket;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.logistics.packager.PackagerBlock;
 import com.simibubi.create.content.logistics.packager.repackager.RepackagerBlock;
@@ -27,7 +27,7 @@ import org.joml.Vector3f;
 import static com.adonis.fluid.CreateFluid.MOD_ID;
 
 @EventBusSubscriber(modid = MOD_ID, bus = EventBusSubscriber.Bus.GAME)
-public class PackagerInteractionHandler {
+public class CanFillerInteractionHandler {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
@@ -61,13 +61,13 @@ public class PackagerInteractionHandler {
     private static void handlePackagerClick(BlockState state, BlockPos pos, Player player, Level level, boolean sneaking) {
         if (sneaking) {
             // Shift+右键：清除地址
-            PacketDistributor.sendToServer(new PackagerClearAddressPacket(pos));
+            PacketDistributor.sendToServer(new CanFillerClearAddressPacket(pos));
             level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
                     SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 0.5F, 1.0F, false);
             createPackagerToggleParticles(level, pos);
         } else {
             // 普通右键：切换红石状态
-            PacketDistributor.sendToServer(new PackagerTogglePacket(pos));
+            PacketDistributor.sendToServer(new CanFillerTogglePacket(pos));
             level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
                     SoundEvents.LEVER_CLICK, SoundSource.BLOCKS, 0.3F, 1.0F, false);
 
@@ -75,7 +75,7 @@ public class PackagerInteractionHandler {
             boolean isRepackager = state.getBlock() instanceof RepackagerBlock;
             String translationKey = isRepackager
                     ? (isPowered ? "create_fluid.baton.repackager.powered_off" : "create_fluid.baton.repackager.powered_on")
-                    : (isPowered ? "create_fluid.baton.packager.powered_off" : "create_fluid.baton.packager.powered_on");
+                    : (isPowered ? "create_fluid.baton.can_filler.powered_off" : "create_fluid.baton.can_filler.powered_on");
 
             CreateLang.builder()
                     .translate(translationKey)

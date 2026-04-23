@@ -124,13 +124,13 @@
   "create.goggles.repackager_title": "Переупаковщик",
   "create.goggles.address_label": "Адрес:",
   "create.goggles.no_address": "Нет адреса",
-  "create.create_fluid.baton.packager.powered_on": "Упаковщик включён",
-  "create.create_fluid.baton.packager.powered_off": "Упаковщик выключен",
+  "create.create_fluid.baton.can_filler.powered_on": "Упаковщик включён",
+  "create.create_fluid.baton.can_filler.powered_off": "Упаковщик выключен",
   "create.create_fluid.baton.repackager.powered_on": "Переупаковщик включён",
   "create.create_fluid.baton.repackager.powered_off": "Переупаковщик выключен",
-  "create.create_fluid.baton.packager.address_cannot_clear_sign": "Адрес таблички нельзя очистить",
-  "create.create_fluid.baton.packager.address_already_empty": "Адрес уже пуст",
-  "create.create_fluid.baton.packager.address_cleared": "Адрес очищен",
+  "create.create_fluid.baton.can_filler.address_cannot_clear_sign": "Адрес таблички нельзя очистить",
+  "create.create_fluid.baton.can_filler.address_already_empty": "Адрес уже пуст",
+  "create.create_fluid.baton.can_filler.address_cleared": "Адрес очищен",
   "create.create_fluid.clipboard.no_valid_address": "Нет действительного адреса в буфере обмена (начните с #)",
   "create.create_fluid.clipboard.address_set_by_sign": "Адрес %1$s установлен табличкой, нельзя переопределить",
   "create.create_fluid.clipboard.address_set": "Адрес %1$s установлен на %2$s",
@@ -148,5 +148,6 @@
   "create.create_fluid.baton.mailbox.connected": "Почтовый ящик подключён к станции",
   "create.create_fluid.baton.mailbox.disconnected": "Почтовый ящик отключён от станции",
   "block.fluid.redstone_valve": "Редстоуновый клапан",
-  "block.fluid.redstone_triple_valve": "Редстоуновый трёхходовой клапан"
+  "block.fluid.redstone_triple_valve": "Редстоуновый трёхходовой клапан",
+  "create.create.goggles.can_filler_title": "Упаковщик"
 }

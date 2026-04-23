@@ -7,22 +7,22 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.neoforged.neoforge.fluids.FluidStack;
 
-public record FluidPackageContent(FluidStack fluid, int capacity) {
+public record CopperCanContent(FluidStack fluid, int capacity) {
 	public static final int DEFAULT_CAPACITY = 10000;
 
-	public static final Codec<FluidPackageContent> CODEC = RecordCodecBuilder.create(instance ->
+	public static final Codec<CopperCanContent> CODEC = RecordCodecBuilder.create(instance ->
 		instance.group(
-			FluidStack.CODEC.fieldOf("fluid").forGetter(FluidPackageContent::fluid),
-			Codec.INT.fieldOf("capacity").forGetter(FluidPackageContent::capacity)
-		).apply(instance, FluidPackageContent::new)
+			FluidStack.CODEC.fieldOf("fluid").forGetter(CopperCanContent::fluid),
+			Codec.INT.fieldOf("capacity").forGetter(CopperCanContent::capacity)
+		).apply(instance, CopperCanContent::new)
 	);
 
-	public static final StreamCodec<RegistryFriendlyByteBuf, FluidPackageContent> STREAM_CODEC = StreamCodec.composite(
+	public static final StreamCodec<RegistryFriendlyByteBuf, CopperCanContent> STREAM_CODEC = StreamCodec.composite(
 		FluidStack.STREAM_CODEC,
-		FluidPackageContent::fluid,
+		CopperCanContent::fluid,
 		ByteBufCodecs.VAR_INT,
-		FluidPackageContent::capacity,
-		FluidPackageContent::new
+		CopperCanContent::capacity,
+		CopperCanContent::new
 	);
 
 	public boolean isEmpty() {

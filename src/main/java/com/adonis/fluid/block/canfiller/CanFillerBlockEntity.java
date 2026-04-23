@@ -1,10 +1,10 @@
-package com.adonis.fluid.block.fluidpackager;
+package com.adonis.fluid.block.canfiller;
 
 import java.util.List;
 
 import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.item.FluidManifestItem;
-import com.adonis.fluid.item.FluidPackageItem;
+import com.adonis.fluid.item.CopperCanItem;
 import com.simibubi.create.content.logistics.BigItemStack;
 import com.simibubi.create.content.logistics.box.PackageItem;
 import com.simibubi.create.content.logistics.packager.PackagerBlockEntity;
@@ -21,11 +21,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
-public class FluidPackagerBlockEntity extends PackagerBlockEntity {
+public class CanFillerBlockEntity extends PackagerBlockEntity {
 
 	public TankManipulationBehaviour fluidTarget;
 
-	public FluidPackagerBlockEntity(BlockEntityType<?> typeIn, BlockPos pos, BlockState state) {
+	public CanFillerBlockEntity(BlockEntityType<?> typeIn, BlockPos pos, BlockState state) {
 		super(typeIn, pos, state);
 	}
 
@@ -108,7 +108,7 @@ public class FluidPackagerBlockEntity extends PackagerBlockEntity {
 			if (extracted.isEmpty())
 				continue;
 
-			ItemStack fluidPackage = FluidPackageItem.create(extracted, fluidPerPackage);
+			ItemStack fluidPackage = CopperCanItem.create(extracted, fluidPerPackage);
 			PackageItem.clearAddress(fluidPackage);
 			if (!signBasedAddress.isBlank())
 				PackageItem.addAddress(fluidPackage, signBasedAddress);
@@ -123,9 +123,6 @@ public class FluidPackagerBlockEntity extends PackagerBlockEntity {
 	}
 
 	private void attemptToSendFluid(List<PackagingRequest> queuedRequests) {
-		if (!heldBox.isEmpty() || animationTicks != 0 || buttonCooldown > 0)
-			return;
-
 		IFluidHandler fluidHandler = getFluidHandler();
 		if (fluidHandler == null)
 			return;
@@ -176,7 +173,7 @@ public class FluidPackagerBlockEntity extends PackagerBlockEntity {
 			return;
 		}
 
-		ItemStack fluidPackage = FluidPackageItem.create(extracted, fluidPerPackage);
+		ItemStack fluidPackage = CopperCanItem.create(extracted, fluidPerPackage);
 
 		PackageItem.clearAddress(fluidPackage);
 		String address = nextRequest.address();
@@ -197,11 +194,12 @@ public class FluidPackagerBlockEntity extends PackagerBlockEntity {
 
 		if (!heldBox.isEmpty() || animationTicks != 0) {
 			queuedExitingPackages.add(new BigItemStack(fluidPackage, 1));
-		} else {
-			heldBox = fluidPackage;
-			animationInward = false;
-			animationTicks = CYCLE;
+			return;
 		}
+
+		heldBox = fluidPackage;
+		animationInward = false;
+		animationTicks = CYCLE;
 
 		triggerStockCheck();
 		notifyUpdate();
@@ -209,13 +207,13 @@ public class FluidPackagerBlockEntity extends PackagerBlockEntity {
 
 	@Override
 	public boolean unwrapBox(ItemStack box, boolean simulate) {
-		if (FluidPackageItem.isFluidPackage(box)) {
-			return unwrapFluidPackage(box, simulate);
+		if (CopperCanItem.isCopperCan(box)) {
+			return unwrapCopperCan(box, simulate);
 		}
 		return super.unwrapBox(box, simulate);
 	}
 
-	private boolean unwrapFluidPackage(ItemStack box, boolean simulate) {
+	private boolean unwrapCopperCan(ItemStack box, boolean simulate) {
 		if (animationTicks > 0)
 			return false;
 
@@ -223,7 +221,7 @@ public class FluidPackagerBlockEntity extends PackagerBlockEntity {
 		if (fluidHandler == null)
 			return false;
 
-		FluidStack fluid = FluidPackageItem.getFluid(box);
+		FluidStack fluid = CopperCanItem.getFluid(box);
 		if (fluid.isEmpty())
 			return true;
 

@@ -1,9 +1,9 @@
 package com.adonis.fluid.mixin;
 
-import com.adonis.fluid.block.fluidpackager.FluidPackagerBlockEntity;
-import com.adonis.fluid.goggle.PackagerGoggleInfo;
-import com.adonis.fluid.item.FluidPackageItem;
-import com.adonis.fluid.util.IPackagerData;
+import com.adonis.fluid.block.canfiller.CanFillerBlockEntity;
+import com.adonis.fluid.goggle.CanFillerGoggleInfo;
+import com.adonis.fluid.item.CopperCanItem;
+import com.adonis.fluid.util.ICanFillerData;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.content.logistics.packager.PackagerBlock;
 import com.simibubi.create.content.logistics.packager.PackagerBlockEntity;
@@ -26,7 +26,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.List;
 
 @Mixin(PackagerBlockEntity.class)
-public class PackagerBlockEntityMixin implements IPackagerData, IHaveGoggleInformation {
+public class CanFillerBlockEntityMixin implements ICanFillerData, IHaveGoggleInformation {
     @Unique
     private String fluid$clipboardAddress = "";
     @Unique
@@ -97,8 +97,8 @@ public class PackagerBlockEntityMixin implements IPackagerData, IHaveGoggleInfor
     }
 
     @Inject(method = "unwrapBox", at = @At("HEAD"), cancellable = true)
-    private void fluid$preventFluidPackageUnpack(net.minecraft.world.item.ItemStack box, boolean simulate, CallbackInfoReturnable<Boolean> cir) {
-        if (FluidPackageItem.isFluidPackage(box) && !((Object) this instanceof FluidPackagerBlockEntity)) {
+    private void fluid$preventCopperCanUnpack(net.minecraft.world.item.ItemStack box, boolean simulate, CallbackInfoReturnable<Boolean> cir) {
+        if (CopperCanItem.isCopperCan(box) && !((Object) this instanceof CanFillerBlockEntity)) {
             cir.setReturnValue(false);
         }
     }
@@ -118,7 +118,8 @@ public class PackagerBlockEntityMixin implements IPackagerData, IHaveGoggleInfor
         }
 
         boolean isRepackager = packager instanceof RepackagerBlockEntity;
-        PackagerGoggleInfo.addToTooltip(tooltip, address, isRepackager);
+        boolean isCanFiller = packager instanceof CanFillerBlockEntity;
+        CanFillerGoggleInfo.addToTooltip(tooltip, address, isRepackager, isCanFiller);
         return true;
     }
 }

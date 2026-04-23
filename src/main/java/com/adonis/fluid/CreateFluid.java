@@ -37,7 +37,6 @@ public class CreateFluid {
 				.andThen(TooltipModifier.mapNull(KineticStats.create(item)))
 		);
 
-	// 关键：在这里定义静态配置常量
 	public static final CFStressConfig STRESS_CONFIG = new CFStressConfig(MOD_ID);
 
 	private static ModConfigSpec stressConfigSpec;

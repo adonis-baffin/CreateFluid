@@ -1,6 +1,6 @@
 package com.adonis.fluid.util;
 
-public interface IPackagerData {
+public interface ICanFillerData {
     String getClipboardAddress();
 
     void setClipboardAddress(String address);

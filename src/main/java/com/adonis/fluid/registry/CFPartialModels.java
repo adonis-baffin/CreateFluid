@@ -22,6 +22,11 @@ public class CFPartialModels {
     public static PartialModel PIPETTE_HEAD_1000;
     public static PartialModel PIPETTE_HEAD;
 
+    // 装罐机模型
+    public static PartialModel CAN_FILLER_TRAY;
+    public static PartialModel CAN_FILLER_HATCH_OPEN;
+    public static PartialModel CAN_FILLER_HATCH_CLOSED;
+
     public static void register() {
         // 在模组构造时调用，用于触发静态初始化
     }
@@ -49,9 +54,14 @@ public class CFPartialModels {
                 initFallbackModels();
             }
 
-            // 注册流体包裹模型到Create的包裹模型映射中
-            // 这样 PackageEntity 渲染 FluidPackageItem 时能找到正确的模型
-            registerFluidPackageModels();
+            // 注册铜罐模型到Create的包裹模型映射中
+            // 这样 PackageEntity 渲染 CopperCanItem 时能找到正确的模型
+            registerCopperCanModels();
+
+            // 注册装罐机托盘和舱门模型
+            CAN_FILLER_TRAY = createPartialModel("can_filler/tray");
+            CAN_FILLER_HATCH_OPEN = createPartialModel("can_filler/hatch_open");
+            CAN_FILLER_HATCH_CLOSED = createPartialModel("can_filler/hatch_closed");
 
             initialized = true;
 
@@ -60,16 +70,16 @@ public class CFPartialModels {
         }
     }
 
-    private static void registerFluidPackageModels() {
+    private static void registerCopperCanModels() {
         try {
-            ResourceLocation fluidPackageId = ResourceLocation.fromNamespaceAndPath(CreateFluid.MOD_ID, "fluid_package");
-            ResourceLocation creeperPackageId = Create.asResource("rare_creeper_package");
+            ResourceLocation fluidPackageId = ResourceLocation.fromNamespaceAndPath(CreateFluid.MOD_ID, "copper_can");
+            ResourceLocation newCopperCanModel = ResourceLocation.fromNamespaceAndPath(CreateFluid.MOD_ID, "item/new_copper_can");
 
-            PartialModel creeperModel = AllPartialModels.PACKAGES.get(creeperPackageId);
-            PartialModel creeperRigging = AllPartialModels.PACKAGE_RIGGING.get(creeperPackageId);
+            PartialModel copperCanModel = PartialModel.of(newCopperCanModel);
+            PartialModel creeperRigging = AllPartialModels.PACKAGE_RIGGING.get(Create.asResource("rare_creeper_package"));
 
-            if (creeperModel != null) {
-                AllPartialModels.PACKAGES.put(fluidPackageId, creeperModel);
+            if (copperCanModel != null) {
+                AllPartialModels.PACKAGES.put(fluidPackageId, copperCanModel);
             }
             if (creeperRigging != null) {
                 AllPartialModels.PACKAGE_RIGGING.put(fluidPackageId, creeperRigging);

@@ -6,13 +6,21 @@ import net.minecraft.network.chat.Component;
 
 import java.util.List;
 
-public class PackagerGoggleInfo {
-    public static void addToTooltip(List<Component> tooltip, String address, boolean isRepackager) {
+public class CanFillerGoggleInfo {
+    public static void addToTooltip(List<Component> tooltip, String address, boolean isRepackager, boolean isCanFiller) {
         if (isRepackager) {
             CreateLang.builder().translate("goggles.repackager_title").style(ChatFormatting.WHITE).forGoggles(tooltip);
             if (address != null && !address.isBlank()) {
                 CreateLang.builder().translate("goggles.address_label").style(ChatFormatting.GRAY).forGoggles(tooltip, 1);
                 CreateLang.builder().text(address).style(ChatFormatting.GOLD).forGoggles(tooltip, 1);
+            }
+        } else if (isCanFiller) {
+            CreateLang.builder().translate("create.goggles.can_filler_title").style(ChatFormatting.WHITE).forGoggles(tooltip);
+            CreateLang.builder().translate("goggles.address_label").style(ChatFormatting.GRAY).forGoggles(tooltip);
+            if (address != null && !address.isBlank()) {
+                CreateLang.builder().text(address).style(ChatFormatting.GOLD).forGoggles(tooltip, 1);
+            } else {
+                CreateLang.builder().translate("goggles.no_address").style(ChatFormatting.DARK_GRAY).forGoggles(tooltip, 1);
             }
         } else {
             CreateLang.builder().translate("goggles.packager_title").style(ChatFormatting.WHITE).forGoggles(tooltip);

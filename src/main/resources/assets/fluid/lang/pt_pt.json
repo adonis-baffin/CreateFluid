@@ -124,13 +124,13 @@
   "create.goggles.repackager_title": "Reempacotador",
   "create.goggles.address_label": "Endereço:",
   "create.goggles.no_address": "Sem endereço",
-  "create.create_fluid.baton.packager.powered_on": "Empacotador ligado",
-  "create.create_fluid.baton.packager.powered_off": "Empacotador desligado",
+  "create.create_fluid.baton.can_filler.powered_on": "Empacotador ligado",
+  "create.create_fluid.baton.can_filler.powered_off": "Empacotador desligado",
   "create.create_fluid.baton.repackager.powered_on": "Reempacotador ligado",
   "create.create_fluid.baton.repackager.powered_off": "Reempacotador desligado",
-  "create.create_fluid.baton.packager.address_cannot_clear_sign": "Endereço do letreiro não pode ser apagado",
-  "create.create_fluid.baton.packager.address_already_empty": "Endereço já está vazio",
-  "create.create_fluid.baton.packager.address_cleared": "Endereço apagado",
+  "create.create_fluid.baton.can_filler.address_cannot_clear_sign": "Endereço do letreiro não pode ser apagado",
+  "create.create_fluid.baton.can_filler.address_already_empty": "Endereço já está vazio",
+  "create.create_fluid.baton.can_filler.address_cleared": "Endereço apagado",
   "create.create_fluid.clipboard.no_valid_address": "Nenhum endereço válido na prancheta (comece com #)",
   "create.create_fluid.clipboard.address_set_by_sign": "O endereço de %1$s é definido por um letreiro, não pode ser substituído",
   "create.create_fluid.clipboard.address_set": "Endereço de %1$s definido para %2$s",
@@ -148,5 +148,6 @@
   "create.create_fluid.baton.mailbox.connected": "Caixa de Correio conectada à estação",
   "create.create_fluid.baton.mailbox.disconnected": "Caixa de Correio desconectada da estação",
   "block.fluid.redstone_valve": "Válvula de Redstone",
-  "block.fluid.redstone_triple_valve": "Válvula Tripla de Redstone"
+  "block.fluid.redstone_triple_valve": "Válvula Tripla de Redstone",
+  "create.create.goggles.can_filler_title": "Empacotador"
 }

@@ -1,7 +1,7 @@
 package com.adonis.fluid.packet;
 
 import com.adonis.fluid.CreateFluid;
-import com.adonis.fluid.util.IPackagerData;
+import com.adonis.fluid.util.ICanFillerData;
 import com.simibubi.create.content.logistics.packager.PackagerBlockEntity;
 import com.simibubi.create.content.logistics.packager.repackager.RepackagerBlockEntity;
 import io.netty.buffer.ByteBuf;
@@ -19,10 +19,10 @@ import net.minecraft.world.level.block.entity.SignText;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-public record PackagerClearAddressPacket(BlockPos pos) implements CustomPacketPayload {
-    public static final Type<PackagerClearAddressPacket> TYPE = new Type<>(CreateFluid.asResource("packager_clear_address"));
-    public static final StreamCodec<ByteBuf, PackagerClearAddressPacket> STREAM_CODEC = StreamCodec.composite(
-            BlockPos.STREAM_CODEC, PackagerClearAddressPacket::pos, PackagerClearAddressPacket::new
+public record CanFillerClearAddressPacket(BlockPos pos) implements CustomPacketPayload {
+    public static final Type<CanFillerClearAddressPacket> TYPE = new Type<>(CreateFluid.asResource("packager_clear_address"));
+    public static final StreamCodec<ByteBuf, CanFillerClearAddressPacket> STREAM_CODEC = StreamCodec.composite(
+            BlockPos.STREAM_CODEC, CanFillerClearAddressPacket::pos, CanFillerClearAddressPacket::new
     );
 
     @Override
@@ -46,21 +46,21 @@ public record PackagerClearAddressPacket(BlockPos pos) implements CustomPacketPa
                 String blockTypeName = isRepackager ? "Repackager" : "Packager";
                 boolean hasSignAddress = checkHasSignAddress(world, this.pos);
                 if (hasSignAddress) {
-                    player.displayClientMessage(Component.translatable("create.create_fluid.baton.packager.address_cannot_clear_sign").withStyle(ChatFormatting.RED), true);
+                    player.displayClientMessage(Component.translatable("create.create_fluid.baton.can_filler.address_cannot_clear_sign").withStyle(ChatFormatting.RED), true);
                     return;
                 }
 
-                if (packager instanceof IPackagerData packagerData) {
+                if (packager instanceof ICanFillerData packagerData) {
                     String clipboardAddress = packagerData.getClipboardAddress();
                     if (clipboardAddress.isBlank()) {
-                        player.displayClientMessage(Component.translatable("create.create_fluid.baton.packager.address_already_empty").withStyle(ChatFormatting.GRAY), true);
+                        player.displayClientMessage(Component.translatable("create.create_fluid.baton.can_filler.address_already_empty").withStyle(ChatFormatting.GRAY), true);
                         return;
                     }
 
                     packager.signBasedAddress = "";
                     packagerData.setClipboardAddress("");
                     packager.notifyUpdate();
-                    player.displayClientMessage(Component.translatable("create.create_fluid.baton.packager.address_cleared").withStyle(ChatFormatting.WHITE), true);
+                    player.displayClientMessage(Component.translatable("create.create_fluid.baton.can_filler.address_cleared").withStyle(ChatFormatting.WHITE), true);
                 }
             }
         });

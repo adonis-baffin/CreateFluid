@@ -124,13 +124,13 @@
   "create.goggles.repackager_title": "Umpacker",
   "create.goggles.address_label": "Adresse:",
   "create.goggles.no_address": "Keine Adresse",
-  "create.create_fluid.baton.packager.powered_on": "Packager eingeschaltet",
-  "create.create_fluid.baton.packager.powered_off": "Packager ausgeschaltet",
+  "create.create_fluid.baton.can_filler.powered_on": "Packager eingeschaltet",
+  "create.create_fluid.baton.can_filler.powered_off": "Packager ausgeschaltet",
   "create.create_fluid.baton.repackager.powered_on": "Repackager eingeschaltet",
   "create.create_fluid.baton.repackager.powered_off": "Repackager ausgeschaltet",
-  "create.create_fluid.baton.packager.address_cannot_clear_sign": "Schild-Adresse kann nicht gelöscht werden",
-  "create.create_fluid.baton.packager.address_already_empty": "Adresse ist bereits leer",
-  "create.create_fluid.baton.packager.address_cleared": "Adresse gelöscht",
+  "create.create_fluid.baton.can_filler.address_cannot_clear_sign": "Schild-Adresse kann nicht gelöscht werden",
+  "create.create_fluid.baton.can_filler.address_already_empty": "Adresse ist bereits leer",
+  "create.create_fluid.baton.can_filler.address_cleared": "Adresse gelöscht",
   "create.create_fluid.clipboard.no_valid_address": "Keine gültige Adresse auf dem Klemmbrett (beginne mit #)",
   "create.create_fluid.clipboard.address_set_by_sign": "Adresse von %1$s ist durch ein Schild festgelegt, Überschreiben nicht möglich",
   "create.create_fluid.clipboard.address_set": "Adresse von %1$s auf %2$s gesetzt",
@@ -148,5 +148,6 @@
   "create.create_fluid.baton.mailbox.connected": "Briefkasten mit Station verbunden",
   "create.create_fluid.baton.mailbox.disconnected": "Briefkasten von Station getrennt",
   "block.fluid.redstone_valve": "Redstone-Ventil",
-  "block.fluid.redstone_triple_valve": "Redstone-Dreiwegventil"
+  "block.fluid.redstone_triple_valve": "Redstone-Dreiwegventil",
+  "create.create.goggles.can_filler_title": "Verpacker"
 }

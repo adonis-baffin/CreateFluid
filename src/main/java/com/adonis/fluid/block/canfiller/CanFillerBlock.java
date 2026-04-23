@@ -1,4 +1,4 @@
-package com.adonis.fluid.block.fluidpackager;
+package com.adonis.fluid.block.canfiller;
 
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.logistics.packager.PackagerBlock;
@@ -15,21 +15,21 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.common.util.FakePlayer;
 
-public class FluidPackagerBlock extends PackagerBlock {
+public class CanFillerBlock extends PackagerBlock {
 
-    public FluidPackagerBlock(Properties properties) {
+    public CanFillerBlock(Properties properties) {
         super(properties);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public Class<PackagerBlockEntity> getBlockEntityClass() {
-        return (Class<PackagerBlockEntity>) (Class<?>) FluidPackagerBlockEntity.class;
+        return (Class<PackagerBlockEntity>) (Class<?>) CanFillerBlockEntity.class;
     }
 
     @Override
     public BlockEntityType<? extends PackagerBlockEntity> getBlockEntityType() {
-        return com.adonis.fluid.registry.CFBlockEntities.FLUID_PACKAGER.get();
+        return com.adonis.fluid.registry.CFBlockEntities.CAN_FILLER.get();
     }
 
     @Override

@@ -1,5 +1,5 @@
 ﻿{
-	"parent": "fluid:block/packager/block",
+	"parent": "fluid:block/can_filler/block",
 	"textures": {
 		"2": "fluid:block/packager_horizontal_powered"
 	}

@@ -22,7 +22,7 @@ public class CFCommonConfig {
 	public static final ModConfigSpec.IntValue COPPER_TAP_EXPERIENCE_RATE;
 	public static final ModConfigSpec.IntValue COPPER_TAP_EXPERIENCE_INTERVAL;
 
-	// Fluid Packager 配置
+	// Can Filler 配置
 	public static final ModConfigSpec.IntValue FLUID_PER_PACKAGE;
 
 	private static boolean isConfigLoaded = false;
@@ -86,8 +86,8 @@ public class CFCommonConfig {
 
 		builder.pop();
 
-		builder.comment("Fluid Packager settings")
-			.push("fluid_packager");
+		builder.comment("Can Filler settings")
+			.push("can_filler");
 
 		FLUID_PER_PACKAGE = builder
 			.comment("Maximum mB of fluid one fluid package can hold. Packages can be created with less than this amount.")
@@ -203,7 +203,7 @@ public class CFCommonConfig {
 		}
 	}
 
-	// Fluid Packager 配置获取方法
+	// Can Filler 配置获取方法
 	public static int getFluidPerPackage() {
 		if (!isConfigLoaded) return 4000;
 		try {

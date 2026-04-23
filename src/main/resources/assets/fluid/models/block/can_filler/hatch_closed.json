@@ -3,7 +3,7 @@
 	"textures": {
 		"1": "fluid:block/packager_details",
 		"3": "fluid:block/packager_iris_closed",
-		"particle": "fluid:block/vault/vault_front_small"
+		"particle": "fluid:block/packager_particle"
 	},
 	"elements": [
 		{

@@ -2,7 +2,7 @@ package com.adonis.fluid.packet;
 
 import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.util.ClipboardAddressUtil;
-import com.adonis.fluid.util.IPackagerData;
+import com.adonis.fluid.util.ICanFillerData;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.logistics.packager.PackagerBlockEntity;
 import com.simibubi.create.content.logistics.packager.repackager.RepackagerBlockEntity;
@@ -76,7 +76,7 @@ public record ClipboardSetAddressPacket(BlockPos pos) implements CustomPacketPay
     }
 
     private static void applyAddressToPackager(PackagerBlockEntity packager, String address, Level level, BlockPos pos, Player player) {
-        if (!(packager instanceof IPackagerData packagerData)) return;
+        if (!(packager instanceof ICanFillerData packagerData)) return;
 
         boolean isRepackager = packager instanceof RepackagerBlockEntity;
         String blockTypeName = isRepackager ? "Repackager" : "Packager";

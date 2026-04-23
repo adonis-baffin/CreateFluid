@@ -2,7 +2,7 @@ package com.adonis.fluid.registry;
 
 import com.adonis.fluid.item.BatonItem;
 import com.adonis.fluid.item.FluidManifestItem;
-import com.adonis.fluid.item.FluidPackageItem;
+import com.adonis.fluid.item.CopperCanItem;
 import com.tterrag.registrate.util.entry.ItemEntry;
 import net.minecraft.world.item.Item;
 
@@ -22,9 +22,9 @@ public class CFItems {
 		.properties(p -> p.stacksTo(64))
 		.register();
 
-	// 流体包裹
-	public static final ItemEntry<FluidPackageItem> FLUID_PACKAGE = REGISTRATE
-		.item("fluid_package", FluidPackageItem::new)
+	// 铜罐
+	public static final ItemEntry<CopperCanItem> COPPER_CAN = REGISTRATE
+		.item("copper_can", CopperCanItem::new)
 		.properties(p -> p.stacksTo(1).fireResistant())
 		.register();
 

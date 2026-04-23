@@ -12,9 +12,10 @@
     "FluidUtilMixin",
     "VanillaFluidTargetsMixin",
     "FluidPipeBlockMixin",
-    "PackagerBlockEntityMixin",
+    "CanFillerBlockEntityMixin",
     "InventorySummaryMixin",
     "ClipboardBlockItemMixin",
+    "FactoryPanelBehaviourMixin",
     "accessor.ArmBlockEntityAccessor",
     "accessor.ItemDrainBlockEntityAccessor",
     "accessor.ChainConveyorShapeAccessor",
@@ -23,7 +24,9 @@
   "client": [
     "ArmBlockEntityWrenchUpdateMixin",
     "StockKeeperRequestScreenMixin",
-    "accessor.StockKeeperRequestScreenAccessor"
+    "accessor.StockKeeperRequestScreenAccessor",
+    "CanFillerRendererMixin",
+    "compat.jei.GhostIngredientHandlerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

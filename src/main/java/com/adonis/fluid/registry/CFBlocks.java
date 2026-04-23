@@ -13,7 +13,7 @@ import com.adonis.fluid.block.GutterOutlet.GutterOutletMovementBehaviour;
 import com.adonis.fluid.block.GutterOutlet.SmartGutterOutletBlock;
 import com.adonis.fluid.block.Pipette.PipetteBlock;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlock;
-import com.adonis.fluid.block.fluidpackager.FluidPackagerBlock;
+import com.adonis.fluid.block.canfiller.CanFillerBlock;
 import com.simibubi.create.foundation.data.ModelGen;
 import com.simibubi.create.foundation.data.SharedProperties;
 import com.simibubi.create.foundation.data.TagGen;
@@ -316,9 +316,9 @@ public class CFBlocks {
             .build()
             .register();
 
-    // 流体打包机
-    public static final BlockEntry<FluidPackagerBlock> FLUID_PACKAGER = REGISTRATE
-            .block("fluid_packager", FluidPackagerBlock::new)
+    // 装罐机
+    public static final BlockEntry<CanFillerBlock> CAN_FILLER = REGISTRATE
+            .block("can_filler", CanFillerBlock::new)
             .initialProperties(SharedProperties::softMetal)
             .properties(prop -> prop
                     .mapColor(MapColor.TERRACOTTA_BLUE)

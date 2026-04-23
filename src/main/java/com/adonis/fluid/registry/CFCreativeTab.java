@@ -32,7 +32,7 @@ public class CFCreativeTab {
                         output.accept(CFBlocks.COPPER_SINK);
                         output.accept(CFBlocks.REDSTONE_VALVE);
                         output.accept(CFBlocks.REDSTONE_TRIPLE_VALVE);
-                        output.accept(CFBlocks.FLUID_PACKAGER);
+                        output.accept(CFBlocks.CAN_FILLER);
 
                         // 手动添加物品
                         output.accept(CFItems.HONEYCOMB_MOLD);

@@ -1,5 +1,5 @@
 ﻿{
-	"parent": "fluid:block/packager/block_vertical",
+	"parent": "fluid:block/can_filler/block_vertical",
 	"textures": {
 		"5": "fluid:block/packager_vertical_linked"
 	}

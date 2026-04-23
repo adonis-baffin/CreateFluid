@@ -12,10 +12,10 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
-public record PackagerTogglePacket(BlockPos pos) implements CustomPacketPayload {
-    public static final Type<PackagerTogglePacket> TYPE = new Type<>(CreateFluid.asResource("packager_toggle"));
-    public static final StreamCodec<ByteBuf, PackagerTogglePacket> STREAM_CODEC = StreamCodec.composite(
-            BlockPos.STREAM_CODEC, PackagerTogglePacket::pos, PackagerTogglePacket::new
+public record CanFillerTogglePacket(BlockPos pos) implements CustomPacketPayload {
+    public static final Type<CanFillerTogglePacket> TYPE = new Type<>(CreateFluid.asResource("packager_toggle"));
+    public static final StreamCodec<ByteBuf, CanFillerTogglePacket> STREAM_CODEC = StreamCodec.composite(
+            BlockPos.STREAM_CODEC, CanFillerTogglePacket::pos, CanFillerTogglePacket::new
     );
 
     @Override
