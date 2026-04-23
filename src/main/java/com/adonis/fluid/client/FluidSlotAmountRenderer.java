@@ -23,10 +23,18 @@ public class FluidSlotAmountRenderer {
 		}
 
 		int renderX = STOCK_KEEPER_COUNT_X + (int) Math.floor(-visibleLength * 2.5);
-		blitCreateFont(graphics, text, renderX, STOCK_KEEPER_COUNT_Y);
+		renderAmount(graphics, text, renderX, STOCK_KEEPER_COUNT_Y);
 	}
 
-	private static void blitCreateFont(GuiGraphics graphics, String text, int startX, int startY) {
+	public static void renderAt(GuiGraphics graphics, int amount, int x, int y) {
+		String text = FluidAmountHelper.format(amount);
+		if (text.isBlank()) {
+			return;
+		}
+		renderAmount(graphics, text, x, y);
+	}
+
+	private static void renderAmount(GuiGraphics graphics, String text, int startX, int startY) {
 		int x = 0;
 		for (int i = 0; i < text.length(); i++) {
 			char c = Character.toLowerCase(text.charAt(i));

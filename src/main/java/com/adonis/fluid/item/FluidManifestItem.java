@@ -1,6 +1,7 @@
 package com.adonis.fluid.item;
 
 import com.adonis.fluid.datacomponent.FluidManifestContent;
+import com.adonis.fluid.logistics.data.FluidRequestKey;
 import com.adonis.fluid.registry.CFDataComponents;
 import com.adonis.fluid.registry.CFItems;
 
@@ -53,11 +54,25 @@ public class FluidManifestItem extends Item {
 		return read(stack).isEmpty();
 	}
 
+	public static FluidRequestKey readKey(ItemStack stack) {
+		FluidManifestContent content = stack.get(CFDataComponents.FLUID_MANIFEST.get());
+		if (content == null || content.fluidId() == null)
+			return null;
+		return new FluidRequestKey(content.fluidId());
+	}
+
+	public static int readAmount(ItemStack stack) {
+		FluidManifestContent content = stack.get(CFDataComponents.FLUID_MANIFEST.get());
+		if (content == null)
+			return 0;
+		return Math.max(content.amount(), 0);
+	}
+
 	@Override
 	public Component getName(ItemStack stack) {
 		FluidStack fluid = read(stack);
 		if (!fluid.isEmpty()) {
-			return Component.translatable("item.fluid.fluid_manifest.named", fluid.getHoverName());
+			return fluid.getHoverName().copy();
 		}
 		return super.getName(stack);
 	}

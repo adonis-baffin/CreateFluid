@@ -3,13 +3,19 @@ package com.adonis.fluid.block.canfiller;
 import java.util.List;
 
 import com.adonis.fluid.config.CFCommonConfig;
-import com.adonis.fluid.item.FluidManifestItem;
 import com.adonis.fluid.item.CopperCanItem;
+import com.adonis.fluid.item.FluidManifestItem;
+import com.adonis.fluid.logistics.api.IFluidLogisticsPackager;
+import com.adonis.fluid.logistics.data.FluidNetworkEntry;
+import com.adonis.fluid.logistics.data.FluidNetworkSummary;
+import com.adonis.fluid.logistics.data.FluidPackagingPlan;
+import com.adonis.fluid.logistics.data.FluidRequestKey;
+import com.adonis.fluid.logistics.manager.FluidLogisticsManager;
 import com.simibubi.create.content.logistics.BigItemStack;
 import com.simibubi.create.content.logistics.box.PackageItem;
+import com.simibubi.create.content.logistics.packager.InventorySummary;
 import com.simibubi.create.content.logistics.packager.PackagerBlockEntity;
 import com.simibubi.create.content.logistics.packager.PackagingRequest;
-import com.simibubi.create.content.logistics.packager.InventorySummary;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.inventory.CapManipulationBehaviourBase.InterfaceProvider;
 import com.simibubi.create.foundation.blockEntity.behaviour.inventory.TankManipulationBehaviour;
@@ -21,7 +27,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
-public class CanFillerBlockEntity extends PackagerBlockEntity {
+public class CanFillerBlockEntity extends PackagerBlockEntity implements IFluidLogisticsPackager {
 
 	public TankManipulationBehaviour fluidTarget;
 
@@ -39,17 +45,10 @@ public class CanFillerBlockEntity extends PackagerBlockEntity {
 	public InventorySummary getAvailableItems() {
 		InventorySummary summary = super.getAvailableItems();
 
-		IFluidHandler fluidHandler = getFluidHandler();
-		if (fluidHandler != null) {
-			for (int i = 0; i < fluidHandler.getTanks(); i++) {
-				FluidStack fluid = fluidHandler.getFluidInTank(i);
-				if (!fluid.isEmpty()) {
-					// count 单位就是 mB，直接上报实际 mB 数量
-					int mb = fluid.getAmount();
-					if (mb <= 0) mb = 1; // 至少显示 1mB，避免 0 导致条目消失
-					ItemStack manifest = FluidManifestItem.of(fluid, fluid.getAmount());
-					summary.add(manifest, mb);
-				}
+		for (FluidNetworkEntry entry : getFluidSummary().entries()) {
+			FluidStack fluid = resolveFluid(entry.key(), entry.amountMb());
+			if (!fluid.isEmpty()) {
+				summary.add(FluidManifestItem.of(fluid, entry.amountMb()), entry.amountMb());
 			}
 		}
 
@@ -59,9 +58,7 @@ public class CanFillerBlockEntity extends PackagerBlockEntity {
 	@Override
 	public void attemptToSend(List<PackagingRequest> queuedRequests) {
 		if (queuedRequests == null) {
-			// 红石/被动模式：先尝试原版物品打包
 			super.attemptToSend(null);
-			// 如果原版没有打出包裹，尝试被动流体打包
 			if (heldBox.isEmpty() && animationTicks == 0) {
 				attemptToSendFluidPassive();
 			}
@@ -84,31 +81,13 @@ public class CanFillerBlockEntity extends PackagerBlockEntity {
 		if (!heldBox.isEmpty() || animationTicks != 0 || buttonCooldown > 0)
 			return;
 
-		IFluidHandler fluidHandler = getFluidHandler();
-		if (fluidHandler == null)
-			return;
-
-		int fluidPerPackage = CFCommonConfig.getFluidPerPackage();
-
-		for (int i = 0; i < fluidHandler.getTanks(); i++) {
-			FluidStack fluid = fluidHandler.getFluidInTank(i);
-			if (fluid.isEmpty())
+		for (FluidNetworkEntry entry : getFluidSummary().entries()) {
+			FluidStack extracted = executePlan(entry.key(), entry.amountMb());
+			if (extracted.isEmpty()) {
 				continue;
+			}
 
-			int available = fluid.getAmount();
-			int toExtract = Math.min(available, fluidPerPackage);
-			if (toExtract <= 0)
-				continue;
-
-			FluidStack extracted = fluidHandler.drain(fluid.copyWithAmount(toExtract), IFluidHandler.FluidAction.SIMULATE);
-			if (extracted.isEmpty())
-				continue;
-
-			extracted = fluidHandler.drain(fluid.copyWithAmount(toExtract), IFluidHandler.FluidAction.EXECUTE);
-			if (extracted.isEmpty())
-				continue;
-
-			ItemStack fluidPackage = CopperCanItem.create(extracted, fluidPerPackage);
+			ItemStack fluidPackage = CopperCanItem.create(extracted, CFCommonConfig.getFluidPerPackage());
 			PackageItem.clearAddress(fluidPackage);
 			if (!signBasedAddress.isBlank())
 				PackageItem.addAddress(fluidPackage, signBasedAddress);
@@ -123,57 +102,21 @@ public class CanFillerBlockEntity extends PackagerBlockEntity {
 	}
 
 	private void attemptToSendFluid(List<PackagingRequest> queuedRequests) {
-		IFluidHandler fluidHandler = getFluidHandler();
-		if (fluidHandler == null)
-			return;
-
 		PackagingRequest nextRequest = queuedRequests.get(0);
-		FluidStack requestedFluid = FluidManifestItem.read(nextRequest.item());
-		if (requestedFluid.isEmpty()) {
+		FluidRequestKey requestedKey = FluidManifestItem.readKey(nextRequest.item());
+		if (requestedKey == null) {
 			queuedRequests.remove(0);
 			return;
 		}
 
-		int fluidPerPackage = CFCommonConfig.getFluidPerPackage();
-		// count 的单位就是 mB
-		int requestedMB = nextRequest.getCount();
-		int toExtract = Math.min(requestedMB, fluidPerPackage);
-		if (toExtract <= 0) {
-			queuedRequests.remove(0);
-			return;
-		}
-
-		// 检查实际可用量
-		int available = 0;
-		for (int i = 0; i < fluidHandler.getTanks(); i++) {
-			FluidStack fluid = fluidHandler.getFluidInTank(i);
-			if (fluid.getFluid() == requestedFluid.getFluid()) {
-				available += fluid.getAmount();
-			}
-		}
-		if (available <= 0) {
-			queuedRequests.remove(0);
-			return;
-		}
-
-		toExtract = Math.min(toExtract, available);
-		FluidStack extracted = fluidHandler.drain(
-			new FluidStack(requestedFluid.getFluid(), toExtract),
-			IFluidHandler.FluidAction.SIMULATE);
+		int requestedMb = nextRequest.getCount();
+		FluidStack extracted = executePlan(requestedKey, requestedMb);
 		if (extracted.isEmpty()) {
 			queuedRequests.remove(0);
 			return;
 		}
 
-		extracted = fluidHandler.drain(
-			new FluidStack(requestedFluid.getFluid(), toExtract),
-			IFluidHandler.FluidAction.EXECUTE);
-		if (extracted.isEmpty()) {
-			queuedRequests.remove(0);
-			return;
-		}
-
-		ItemStack fluidPackage = CopperCanItem.create(extracted, fluidPerPackage);
+		ItemStack fluidPackage = CopperCanItem.create(extracted, CFCommonConfig.getFluidPerPackage());
 
 		PackageItem.clearAddress(fluidPackage);
 		String address = nextRequest.address();
@@ -184,10 +127,7 @@ public class CanFillerBlockEntity extends PackagerBlockEntity {
 			nextRequest.finalLink().booleanValue(), nextRequest.packageCounter().getAndIncrement(),
 			nextRequest.isEmpty(), nextRequest.context());
 
-		// 扣除实际发送的 mB 数量
-		int sentUnits = extracted.getAmount();
-		if (sentUnits == 0 && extracted.getAmount() > 0) sentUnits = 1;
-		nextRequest.subtract(sentUnits);
+		nextRequest.subtract(extracted.getAmount());
 		if (nextRequest.isEmpty()) {
 			queuedRequests.remove(0);
 		}
@@ -240,10 +180,6 @@ public class CanFillerBlockEntity extends PackagerBlockEntity {
 		return true;
 	}
 
-	/**
-	 * 获取背面流体处理器，如果还未初始化则主动触发一次查找。
-	 * 解决 TankManipulationBehaviour 初始化延迟导致右键/红石立刻交互失败的问题。
-	 */
 	private IFluidHandler getFluidHandler() {
 		IFluidHandler handler = fluidTarget.getInventory();
 		if (handler == null) {
@@ -251,5 +187,78 @@ public class CanFillerBlockEntity extends PackagerBlockEntity {
 			handler = fluidTarget.getInventory();
 		}
 		return handler;
+	}
+
+	@Override
+	public FluidNetworkSummary getFluidSummary() {
+		IFluidHandler fluidHandler = getFluidHandler();
+		if (fluidHandler == null) {
+			return new FluidNetworkSummary();
+		}
+		return FluidLogisticsManager.summarize(fluidHandler);
+	}
+
+	@Override
+	public boolean canFulfill(FluidRequestKey key) {
+		return getAvailableAmount(key) > 0;
+	}
+
+	@Override
+	public int getAvailableAmount(FluidRequestKey key) {
+		IFluidHandler fluidHandler = getFluidHandler();
+		if (fluidHandler == null) {
+			return 0;
+		}
+		return FluidLogisticsManager.getAvailableAmount(fluidHandler, key);
+	}
+
+	@Override
+	public FluidPackagingPlan planRequest(FluidRequestKey key, int requestedMb) {
+		IFluidHandler fluidHandler = getFluidHandler();
+		if (fluidHandler == null) {
+			return null;
+		}
+		return FluidLogisticsManager.planPackaging(fluidHandler, key, requestedMb, CFCommonConfig.getFluidPerPackage());
+	}
+
+	private FluidStack executePlan(FluidRequestKey key, int requestedMb) {
+		IFluidHandler fluidHandler = getFluidHandler();
+		if (fluidHandler == null) {
+			return FluidStack.EMPTY;
+		}
+
+		FluidPackagingPlan plan = planRequest(key, requestedMb);
+		if (plan == null) {
+			return FluidStack.EMPTY;
+		}
+
+		FluidStack requestedFluid = resolveFluid(plan.key(), plan.plannedMb());
+		if (requestedFluid.isEmpty()) {
+			return FluidStack.EMPTY;
+		}
+
+		FluidStack simulated = FluidLogisticsManager.drainForPlan(fluidHandler, requestedFluid, plan,
+			IFluidHandler.FluidAction.SIMULATE);
+		if (simulated.isEmpty()) {
+			return FluidStack.EMPTY;
+		}
+
+		return FluidLogisticsManager.drainForPlan(fluidHandler, requestedFluid, plan, IFluidHandler.FluidAction.EXECUTE);
+	}
+
+	private FluidStack resolveFluid(FluidRequestKey key, int amountMb) {
+		IFluidHandler fluidHandler = getFluidHandler();
+		if (fluidHandler == null) {
+			return FluidStack.EMPTY;
+		}
+
+		for (int i = 0; i < fluidHandler.getTanks(); i++) {
+			FluidStack fluid = fluidHandler.getFluidInTank(i);
+			if (key.matches(fluid)) {
+				return fluid.copyWithAmount(amountMb);
+			}
+		}
+
+		return FluidStack.EMPTY;
 	}
 }

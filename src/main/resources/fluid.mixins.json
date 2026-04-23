@@ -13,6 +13,7 @@
     "VanillaFluidTargetsMixin",
     "FluidPipeBlockMixin",
     "CanFillerBlockEntityMixin",
+    "FactoryPanelBlockEntityMixin",
     "InventorySummaryMixin",
     "ClipboardBlockItemMixin",
     "FactoryPanelBehaviourMixin",
@@ -23,7 +24,10 @@
   ],
   "client": [
     "ArmBlockEntityWrenchUpdateMixin",
+    "FactoryPanelScreenMixin",
+    "FilteringRendererMixin",
     "StockKeeperRequestScreenMixin",
+    "accessor.AbstractSimiScreenAccessor",
     "accessor.StockKeeperRequestScreenAccessor",
     "CanFillerRendererMixin",
     "compat.jei.GhostIngredientHandlerMixin"
