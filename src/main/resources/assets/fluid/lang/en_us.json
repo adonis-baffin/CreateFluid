@@ -4,6 +4,7 @@
   "block.fluid.smart_fluid_interface": "Smart Fluid Interface",
   "block.fluid.centrifugal_pump": "Centrifugal Pump",
   "block.fluid.copper_tap": "Copper Tap",
+  "block.fluid.fluid_atomizer": "Fluid Atomzier",
   "block.fluid.redstone_valve": "Redstone Valve",
   "block.fluid.redstone_triple_valve": "Redstone Triple Valve",
   "item.fluid.honeycomb_mold": "Honeycomb Mold",
@@ -162,5 +163,18 @@
   "create.create.goggles.can_filler_title": "Can Filler",
   "item.fluid.copper_can.tooltip.fluid": "Contains: %s",
   "item.fluid.copper_can.tooltip.amount": "Amount: %s / %s mB",
-  "item.fluid.copper_can.tooltip.empty": "Empty"
+  "item.fluid.copper_can.tooltip.empty": "Empty",
+  "create.fluid.clipboard.tooltip.hint": "Hold Clipboard and right-click to copy address, left-click to paste",
+  "create.fluid.clipboard.hint.both": " [%s] Copy Address   [%s] Paste Address",
+  "create.fluid.clipboard.hint.copy_only": " [%s] Copy Address",
+  "create.fluid.clipboard.hint.paste_only": " [%s] Paste Address",
+  "create.fluid.clipboard.copy.no_address": "This block has no address to copy",
+  "create.fluid.clipboard.copy.success": "Address copied to clipboard: %s",
+  "create.fluid.clipboard.paste.no_address": "No valid address in clipboard",
+  "create.fluid.clipboard.paste.no_valid_address": "No valid address on clipboard (start with #)",
+  "create.fluid.clipboard.paste.no_clipboard": "No clipboard in hand",
+  "create.fluid.clipboard.address_set_by_sign": "%1$s address is set by sign, remove the sign and try again",
+  "create.fluid.clipboard.address_set": "%1$s address set to: %2$s",
+  "recipe.fluid.fan_freezing": "Bulk Freezing",
+  "recipe.fluid.fan_freezing.fan": "Fan behind Powder Snow"
 }

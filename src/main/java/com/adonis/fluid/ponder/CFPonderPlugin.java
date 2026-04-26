@@ -56,6 +56,23 @@ public class CFPonderPlugin implements PonderPlugin {
         // 注册细雪流体的场景（使用原版细雪桶）
         helper.forComponents(BuiltInRegistries.ITEM.getKey(Items.POWDER_SNOW_BUCKET))
                 .addStoryBoard("powder_snow", PowderSnowScenes::snow);
+
+        // 注册装罐机的场景
+        helper.forComponents(CFBlocks.CAN_FILLER.getId())
+                .addStoryBoard("can_filler", CanFillerScenes::filling);
+
+        // 注册雾化器的场景
+        helper.forComponents(CFBlocks.FLUID_ATOMIZER.getId())
+                .addStoryBoard("fluid_atomizer", FluidAtomizerScenes::processing)
+                .addStoryBoard("fluid_atomizer_potion", FluidAtomizerScenes::potionCloud);
+
+        // 注册连通器的场景
+        helper.forComponents(CFBlocks.COMMUNICATING_VESSEL.getId())
+                .addStoryBoard("communicating_vessel", CommunicatingVesselScenes::balancing);
+
+        // 注册指挥棒高级功能的场景
+        helper.forComponents(CFItems.BATON.getId())
+                .addStoryBoard("baton_advanced", ConductorBatonAdvancedScenes::advancedFeatures);
     }
 
     @Override

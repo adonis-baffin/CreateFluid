@@ -437,25 +437,57 @@ public class FluidInteractionPoint {
                 return 0;
             }
 
-            net.minecraft.world.item.ItemStack lavaBucket = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.LAVA_BUCKET);
+            int amount = resource.getAmount();
+            if (amount <= 0) return 0;
 
-            try {
-                net.minecraft.world.InteractionResultHolder<net.minecraft.world.item.ItemStack> result =
-                        com.simibubi.create.content.processing.burner.BlazeBurnerBlock.tryInsert(
-                                state, level, pos, lavaBucket, true, false, true);
-
-                if (result.getResult() == net.minecraft.world.InteractionResult.SUCCESS) {
-                    if (action.execute()) {
-                        com.simibubi.create.content.processing.burner.BlazeBurnerBlock.tryInsert(
-                                state, level, pos, lavaBucket, true, false, false);
-                    }
-                    return Math.min(resource.getAmount(), 1000);
-                }
-            } catch (Exception e) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (!(be instanceof com.simibubi.create.content.processing.burner.BlazeBurnerBlockEntity burner)) {
                 return 0;
             }
 
-            return 0;
+            com.adonis.fluid.mixin.accessor.BlazeBurnerBlockEntityAccessor accessor =
+                    (com.adonis.fluid.mixin.accessor.BlazeBurnerBlockEntityAccessor) burner;
+            com.simibubi.create.content.processing.burner.BlazeBurnerBlockEntity.FuelType activeFuel =
+                    accessor.getActiveFuel();
+            int remainingBurnTime = accessor.getRemainingBurnTime();
+
+            if (activeFuel == com.simibubi.create.content.processing.burner.BlazeBurnerBlockEntity.FuelType.SPECIAL) {
+                return 0;
+            }
+
+            if (activeFuel != com.simibubi.create.content.processing.burner.BlazeBurnerBlockEntity.FuelType.NONE
+                    && remainingBurnTime > com.simibubi.create.content.processing.burner.BlazeBurnerBlockEntity.INSERTION_THRESHOLD) {
+                return 0;
+            }
+
+            // 计算每 mB 岩浆的燃烧时间（岩浆桶 = 1000mB）
+            net.minecraft.world.item.ItemStack lavaBucket = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.LAVA_BUCKET);
+            int burnTimePerBucket = lavaBucket.getBurnTime(null);
+            if (burnTimePerBucket <= 0) burnTimePerBucket = 20000;
+
+            int addedTime = amount * burnTimePerBucket / 1000;
+            if (addedTime <= 0) return 0;
+
+            if (action.execute()) {
+
+                // 确保燃料类型至少为 NORMAL
+                if (activeFuel == com.simibubi.create.content.processing.burner.BlazeBurnerBlockEntity.FuelType.NONE) {
+                    accessor.setActiveFuel(com.simibubi.create.content.processing.burner.BlazeBurnerBlockEntity.FuelType.NORMAL);
+                }
+
+                // 按比例增加燃烧时间（上限 MAX_HEAT_CAPACITY）
+                int newTime = Math.min(remainingBurnTime + addedTime,
+                        com.simibubi.create.content.processing.burner.BlazeBurnerBlockEntity.MAX_HEAT_CAPACITY);
+                accessor.setRemainingBurnTime(newTime);
+
+                // 更新方块状态和音效
+                accessor.callUpdateBlockState();
+                if (amount >= 250) {
+                    accessor.callPlaySound();
+                }
+            }
+
+            return amount;
         }
 
         @Nonnull

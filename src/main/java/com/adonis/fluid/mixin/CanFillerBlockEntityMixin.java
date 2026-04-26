@@ -1,11 +1,10 @@
 package com.adonis.fluid.mixin;
 
-import com.adonis.fluid.block.canfiller.CanFillerBlockEntity;
+import com.adonis.fluid.block.CanFiller.CanFillerBlockEntity;
 import com.adonis.fluid.goggle.CanFillerGoggleInfo;
 import com.adonis.fluid.item.CopperCanItem;
 import com.adonis.fluid.util.ICanFillerData;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
-import com.simibubi.create.content.logistics.packager.PackagerBlock;
 import com.simibubi.create.content.logistics.packager.PackagerBlockEntity;
 import com.simibubi.create.content.logistics.packager.repackager.RepackagerBlockEntity;
 import net.minecraft.core.Direction;
@@ -15,7 +14,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.entity.SignText;
-import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;

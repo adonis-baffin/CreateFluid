@@ -1,12 +1,11 @@
 package com.adonis.fluid.mixin;
 
-import com.adonis.fluid.block.canfiller.CanFillerBlockEntity;
+import com.adonis.fluid.block.CanFiller.CanFillerBlockEntity;
 import com.adonis.fluid.client.FluidAmountHelper;
 import com.adonis.fluid.item.FluidManifestItem;
 import com.simibubi.create.content.logistics.BigItemStack;
 import com.simibubi.create.content.fluids.transfer.GenericItemEmptying;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelBehaviour;
-import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelPosition;
 import com.simibubi.create.content.logistics.packager.PackagerBlockEntity;
 import com.simibubi.create.content.logistics.packagerLink.LogisticsManager;
 import com.simibubi.create.content.logistics.packagerLink.RequestPromise;
@@ -64,16 +63,36 @@ public class FactoryPanelBehaviourMixin {
 	}
 
 	@Unique
+	private ItemStack fluid$normalizeManifest(ItemStack stack) {
+		if (!(stack.getItem() instanceof FluidManifestItem))
+			return stack;
+
+		FluidStack fluid = FluidManifestItem.read(stack);
+		if (fluid.isEmpty())
+			return stack;
+
+		return FluidManifestItem.of(fluid, 1);
+	}
+
+	@Unique
 	private int fluid$bucketsToMb(int buckets) {
 		return Math.max(0, buckets) * fluid$mbPerBucket;
 	}
 
 	@Unique
-	private int fluid$mbToBucketsForBoard(int amountMb) {
-		if (amountMb <= 0) {
-			return 0;
+	private int fluid$boardValueToMb(ValueSettingsBehaviour.ValueSettings settings) {
+		if (settings.row() == 1) {
+			return fluid$bucketsToMb(settings.value());
 		}
-		return Math.max(1, (int) Math.ceil(amountMb / (double) fluid$mbPerBucket));
+		return Math.max(0, settings.value()) * 10;
+	}
+
+	@Unique
+	private ValueSettingsBehaviour.ValueSettings fluid$mbToBoardSettings(int amountMb) {
+		if (amountMb >= fluid$mbPerBucket && amountMb % fluid$mbPerBucket == 0) {
+			return new ValueSettingsBehaviour.ValueSettings(1, amountMb / fluid$mbPerBucket);
+		}
+		return new ValueSettingsBehaviour.ValueSettings(0, Math.max(0, amountMb / 10));
 	}
 
 	@Unique
@@ -94,7 +113,12 @@ public class FactoryPanelBehaviourMixin {
 			return;
 		}
 
-		cir.setReturnValue(Component.literal(Math.max(0, value.value()) + "B"));
+		if (value.row() == 1) {
+			cir.setReturnValue(Component.literal(Math.max(0, value.value()) + "B"));
+			return;
+		}
+
+		cir.setReturnValue(Component.literal(Math.max(0, value.value() * 10) + "mB"));
 	}
 
 	@Inject(method = "setValueSettings", at = @At("HEAD"), cancellable = true, remap = false)
@@ -105,7 +129,7 @@ public class FactoryPanelBehaviourMixin {
 			return;
 		}
 
-		int storedAmountMb = fluid$bucketsToMb(settings.value());
+		int storedAmountMb = fluid$boardValueToMb(settings);
 		if (behaviour.count == storedAmountMb && behaviour.upTo) {
 			ci.cancel();
 			return;
@@ -128,7 +152,7 @@ public class FactoryPanelBehaviourMixin {
 			return;
 		}
 
-		cir.setReturnValue(new ValueSettingsBehaviour.ValueSettings(0, fluid$mbToBucketsForBoard(behaviour.count)));
+		cir.setReturnValue(fluid$mbToBoardSettings(behaviour.count));
 	}
 
 	@Inject(method = "createBoard", at = @At("HEAD"), cancellable = true, remap = false)
@@ -140,7 +164,7 @@ public class FactoryPanelBehaviourMixin {
 		}
 
 		cir.setReturnValue(new ValueSettingsBoard(CreateLang.translate("factory_panel.target_amount")
-			.component(), 100, 10, java.util.List.of(Component.literal("Buckets")),
+			.component(), 100, 10, java.util.List.of(Component.literal("mB"), Component.literal("B")),
 			new ValueSettingsFormatter(behaviour::formatValue)));
 	}
 
@@ -185,7 +209,7 @@ public class FactoryPanelBehaviourMixin {
 	@Inject(method = "tryRestock", at = @At("HEAD"), cancellable = true, remap = false)
 	private void fluid$tryRestockFromCanFiller(CallbackInfo ci) {
 		FactoryPanelBehaviour behaviour = (FactoryPanelBehaviour) (Object) this;
-		ItemStack item = behaviour.getFilter();
+		ItemStack item = fluid$normalizeManifest(behaviour.getFilter());
 		if (!(item.getItem() instanceof FluidManifestItem)) {
 			return;
 		}

@@ -1,0 +1,13 @@
+{
+  "type": "fluid:freezing",
+  "ingredients": [
+    {
+      "item": "minecraft:ice"
+    }
+  ],
+  "results": [
+    {
+      "id": "minecraft:packed_ice"
+    }
+  ]
+}

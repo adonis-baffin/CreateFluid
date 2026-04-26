@@ -27,6 +27,10 @@ public class CFPartialModels {
     public static PartialModel CAN_FILLER_HATCH_OPEN;
     public static PartialModel CAN_FILLER_HATCH_CLOSED;
 
+    // 流体雾化器模型
+    public static PartialModel FLUID_ATOMIZER_SHAFT;
+    public static PartialModel FLUID_ATOMIZER_FAN;
+
     public static void register() {
         // 在模组构造时调用，用于触发静态初始化
     }
@@ -62,6 +66,10 @@ public class CFPartialModels {
             CAN_FILLER_TRAY = createPartialModel("can_filler/tray");
             CAN_FILLER_HATCH_OPEN = createPartialModel("can_filler/hatch_open");
             CAN_FILLER_HATCH_CLOSED = createPartialModel("can_filler/hatch_closed");
+
+            // 注册流体雾化器扇叶模型
+            FLUID_ATOMIZER_SHAFT = createPartialModel("fluid_atomizer/shaft");
+            FLUID_ATOMIZER_FAN = createPartialModel("fluid_atomizer/fan");
 
             initialized = true;
 

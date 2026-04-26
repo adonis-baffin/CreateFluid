@@ -1,0 +1,94 @@
+{
+  "entries": [
+    {
+      "required_mod": "create_dragons_plus",
+      "tag": "create_dragons_plus:fan_processing_catalysts/ending",
+      "processing_type": "create_dragons_plus:ending"
+    },
+    {
+      "required_mod": "create_dragons_plus",
+      "fluid": "fluid:powder_snow",
+      "processing_type": "create_dragons_plus:freezing"
+    },
+    {
+      "required_mod": "create_dragons_plus",
+      "tag": "c:dyes/black",
+      "processing_type": "create_dragons_plus:coloring_black"
+    },
+    {
+      "required_mod": "create_dragons_plus",
+      "tag": "c:dyes/blue",
+      "processing_type": "create_dragons_plus:coloring_blue"
+    },
+    {
+      "required_mod": "create_dragons_plus",
+      "tag": "c:dyes/brown",
+      "processing_type": "create_dragons_plus:coloring_brown"
+    },
+    {
+      "required_mod": "create_dragons_plus",
+      "tag": "c:dyes/cyan",
+      "processing_type": "create_dragons_plus:coloring_cyan"
+    },
+    {
+      "required_mod": "create_dragons_plus",
+      "tag": "c:dyes/gray",
+      "processing_type": "create_dragons_plus:coloring_gray"
+    },
+    {
+      "required_mod": "create_dragons_plus",
+      "tag": "c:dyes/green",
+      "processing_type": "create_dragons_plus:coloring_green"
+    },
+    {
+      "required_mod": "create_dragons_plus",
+      "tag": "c:dyes/light_blue",
+      "processing_type": "create_dragons_plus:coloring_light_blue"
+    },
+    {
+      "required_mod": "create_dragons_plus",
+      "tag": "c:dyes/light_gray",
+      "processing_type": "create_dragons_plus:coloring_light_gray"
+    },
+    {
+      "required_mod": "create_dragons_plus",
+      "tag": "c:dyes/lime",
+      "processing_type": "create_dragons_plus:coloring_lime"
+    },
+    {
+      "required_mod": "create_dragons_plus",
+      "tag": "c:dyes/magenta",
+      "processing_type": "create_dragons_plus:coloring_magenta"
+    },
+    {
+      "required_mod": "create_dragons_plus",
+      "tag": "c:dyes/orange",
+      "processing_type": "create_dragons_plus:coloring_orange"
+    },
+    {
+      "required_mod": "create_dragons_plus",
+      "tag": "c:dyes/pink",
+      "processing_type": "create_dragons_plus:coloring_pink"
+    },
+    {
+      "required_mod": "create_dragons_plus",
+      "tag": "c:dyes/purple",
+      "processing_type": "create_dragons_plus:coloring_purple"
+    },
+    {
+      "required_mod": "create_dragons_plus",
+      "tag": "c:dyes/red",
+      "processing_type": "create_dragons_plus:coloring_red"
+    },
+    {
+      "required_mod": "create_dragons_plus",
+      "tag": "c:dyes/white",
+      "processing_type": "create_dragons_plus:coloring_white"
+    },
+    {
+      "required_mod": "create_dragons_plus",
+      "tag": "c:dyes/yellow",
+      "processing_type": "create_dragons_plus:coloring_yellow"
+    }
+  ]
+}

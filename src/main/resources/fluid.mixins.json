@@ -15,12 +15,13 @@
     "CanFillerBlockEntityMixin",
     "FactoryPanelBlockEntityMixin",
     "InventorySummaryMixin",
-    "ClipboardBlockItemMixin",
+    "NozzleBlockMixin",
     "FactoryPanelBehaviourMixin",
     "accessor.ArmBlockEntityAccessor",
     "accessor.ItemDrainBlockEntityAccessor",
     "accessor.ChainConveyorShapeAccessor",
-    "accessor.ChainConveyorOBBAccessor"
+    "accessor.ChainConveyorOBBAccessor",
+    "accessor.BlazeBurnerBlockEntityAccessor"
   ],
   "client": [
     "ArmBlockEntityWrenchUpdateMixin",

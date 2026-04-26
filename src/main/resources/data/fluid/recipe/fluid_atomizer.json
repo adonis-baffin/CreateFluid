@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": {
+      "item": "minecraft:iron_bars"
+    },
+    "B": {
+      "item": "create:propeller"
+    },
+    "C": {
+      "item": "create:shaft"
+    },
+    "D": {
+      "item": "create:copper_casing"
+    }
+  },
+  "pattern": [
+    " A ",
+    "BCB",
+    " D "
+  ],
+  "result": {
+    "id": "fluid:fluid_atomizer"
+  },
+  "show_notification": true
+}

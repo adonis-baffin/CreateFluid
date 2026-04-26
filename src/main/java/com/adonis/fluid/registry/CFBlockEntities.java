@@ -4,14 +4,15 @@ import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpBlockEntity;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpRenderer;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpVisual;
-import com.adonis.fluid.block.canfiller.CanFillerBlockEntity;
-import com.adonis.fluid.block.communicatingvessel.CommunicatingVesselBlockEntity;
+import com.adonis.fluid.block.CanFiller.CanFillerBlockEntity;
+import com.adonis.fluid.block.CommunicatingVessel.CommunicatingVesselBlockEntity;
+import com.adonis.fluid.block.FluidAtomizer.FluidAtomizerBlockEntity;
+import com.adonis.fluid.block.FluidAtomizer.FluidAtomizerRenderer;
 import com.adonis.fluid.block.CopperSink.CopperSinkBlockEntity;
 import com.adonis.fluid.block.CopperSink.CopperSinkRenderer;
 import com.adonis.fluid.block.CopperTap.CopperTapBlockEntity;
 import com.adonis.fluid.block.CopperTap.CopperTapRenderer;
 import com.adonis.fluid.block.RedstoneValve.RedstoneValveBlockEntity;
-import com.adonis.fluid.block.RedstoneTripleValve.RedstoneTripleValveBlockEntity;
 import com.adonis.fluid.block.RedstoneTripleValve.RedstoneTripleValveBlockEntity;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceBlockEntity;
 import com.adonis.fluid.block.FluidInterface.FluidInterfaceRenderer;
@@ -27,6 +28,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -120,6 +122,13 @@ public class CFBlockEntities {
             .validBlocks(CFBlocks.COMMUNICATING_VESSEL)
             .register();
 
+    // 流体雾化器方块实体
+    public static final BlockEntityEntry<FluidAtomizerBlockEntity> FLUID_ATOMIZER = REGISTRATE
+            .blockEntity("fluid_atomizer", FluidAtomizerBlockEntity::new)
+            .validBlocks(CFBlocks.FLUID_ATOMIZER)
+            .renderer(() -> FluidAtomizerRenderer::new)
+            .register();
+
     public static void register() {
     }
 
@@ -148,6 +157,14 @@ public class CFBlockEntities {
         @SuppressWarnings("unchecked")
         BlockEntityType<CopperSinkBlockEntity> copperSinkType = (BlockEntityType<CopperSinkBlockEntity>) COPPER_SINK.get();
         CopperSinkBlockEntity.registerCapabilities(event, copperSinkType);
+
+        // 注册流体雾化器的流体能力
+        FluidAtomizerBlockEntity.registerCapabilities(event);
+        event.registerBlockEntity(
+                Capabilities.ItemHandler.BLOCK,
+                CAN_FILLER.get(),
+                (be, side) -> be.inventory
+        );
 
         // 注册红石三通阀门的流体能力
         @SuppressWarnings("unchecked")

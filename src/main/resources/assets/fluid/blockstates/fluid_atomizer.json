@@ -1,0 +1,27 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "fluid:block/fluid_atomizer",
+      "x": 90
+    },
+    "facing=up": {
+      "model": "fluid:block/fluid_atomizer",
+      "x": 270
+    },
+    "facing=north": {
+      "model": "fluid:block/fluid_atomizer"
+    },
+    "facing=south": {
+      "model": "fluid:block/fluid_atomizer",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "fluid:block/fluid_atomizer",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "fluid:block/fluid_atomizer",
+      "y": 90
+    }
+  }
+}

@@ -52,6 +52,8 @@ public class CreateFluid {
 		CFFluids.FLUID_TYPES.register(modEventBus);
 		CFFluids.FLUIDS.register(modEventBus);
 		CFFluids.register();
+		CFRecipeTypes.register(modEventBus);
+		CFFanProcessingTypes.register(modEventBus);
 		CFBlocks.register();
 		CFBlockEntities.register();
 		CFMountedStorageTypes.register();
@@ -82,6 +84,9 @@ public class CreateFluid {
 			CFPartialModels.init();
 			// 细雪流体相关初始化
 			CFFluids.register();
+
+			// 注册雾化器加工类型映射
+			com.adonis.fluid.block.FluidAtomizer.AtomizerProcessingRegistry.init();
 
 			// 注册粉末雪流体到炼药锅注液行为（使注液器可以向炼药锅注入粉末雪，直接注满）
 			CauldronSpoutingBehavior.CAULDRON_INFO.register(

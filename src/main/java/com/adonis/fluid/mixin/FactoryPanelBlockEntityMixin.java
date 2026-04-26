@@ -1,6 +1,6 @@
 package com.adonis.fluid.mixin;
 
-import com.adonis.fluid.block.canfiller.CanFillerBlockEntity;
+import com.adonis.fluid.block.CanFiller.CanFillerBlockEntity;
 import com.adonis.fluid.registry.CFBlocks;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelBlock;

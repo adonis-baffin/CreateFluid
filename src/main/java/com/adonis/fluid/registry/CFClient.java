@@ -39,6 +39,7 @@ public class CFClient {
             ItemBlockRenderTypes.setRenderLayer(CFBlocks.SMART_FLUID_INTERFACE.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(CFBlocks.COPPER_TAP.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(CFBlocks.PIPETTE.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(CFBlocks.FLUID_ATOMIZER.get(), RenderType.cutoutMipped());
 
             // 注册 Ponder 插件
             PonderIndex.addPlugin(new CFPonderPlugin());

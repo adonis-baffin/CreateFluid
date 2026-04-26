@@ -9,6 +9,8 @@
     "fluid:gutter_outlet",
     "fluid:smart_gutter_outlet",
     "fluid:redstone_valve",
-    "fluid:redstone_triple_valve"
+    "fluid:redstone_triple_valve",
+    "fluid:communicating_vessel",
+    "fluid:fluid_atomizer"
   ]
 }

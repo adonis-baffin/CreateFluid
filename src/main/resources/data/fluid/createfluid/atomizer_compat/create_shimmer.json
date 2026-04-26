@@ -1,0 +1,9 @@
+{
+  "entries": [
+    {
+      "required_mod": "create_shimmer",
+      "tag": "create_shimmer:fan_transmutation_catalysts",
+      "processing_type": "create_shimmer:transmutation"
+    }
+  ]
+}

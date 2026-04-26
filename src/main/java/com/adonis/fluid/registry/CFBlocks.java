@@ -13,8 +13,9 @@ import com.adonis.fluid.block.GutterOutlet.GutterOutletMovementBehaviour;
 import com.adonis.fluid.block.GutterOutlet.SmartGutterOutletBlock;
 import com.adonis.fluid.block.Pipette.PipetteBlock;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlock;
-import com.adonis.fluid.block.canfiller.CanFillerBlock;
-import com.adonis.fluid.block.communicatingvessel.CommunicatingVesselBlock;
+import com.adonis.fluid.block.CanFiller.CanFillerBlock;
+import com.adonis.fluid.block.CommunicatingVessel.CommunicatingVesselBlock;
+import com.adonis.fluid.block.FluidAtomizer.FluidAtomizerBlock;
 import com.simibubi.create.foundation.data.ModelGen;
 import com.simibubi.create.foundation.data.SharedProperties;
 import com.simibubi.create.foundation.data.TagGen;
@@ -363,6 +364,39 @@ public class CFBlocks {
             .item()
             .model((ctx, prov) -> prov.withExistingParent(ctx.getName(),
                     net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("create", "block/smart_fluid_pipe/item")))
+            .build()
+            .register();
+
+    // 流体雾化器（测试方块）
+    public static final BlockEntry<FluidAtomizerBlock> FLUID_ATOMIZER = REGISTRATE
+            .block("fluid_atomizer", FluidAtomizerBlock::new)
+            .initialProperties(SharedProperties::softMetal)
+            .properties(prop -> prop
+                    .mapColor(MapColor.STONE)
+                    .sound(SoundType.METAL)
+                    .noOcclusion())
+            .transform(TagGen.pickaxeOnly())
+            .transform(CreateFluid.STRESS_CONFIG.setImpact(4.0))
+            .blockstate((ctx, prov) -> {
+                prov.getVariantBuilder(ctx.get())
+                        .forAllStates(state -> {
+                            Direction dir = state.getValue(FluidAtomizerBlock.FACING);
+                            ConfiguredModel.Builder<?> builder = ConfiguredModel.builder()
+                                    .modelFile(prov.models().getExistingFile(prov.modLoc("block/fluid_atomizer")));
+                            switch (dir) {
+                                case DOWN -> builder.rotationX(90);
+                                case EAST -> builder.rotationY(90);
+                                case NORTH -> {
+                                }
+                                case SOUTH -> builder.rotationY(180);
+                                case UP -> builder.rotationX(270);
+                                case WEST -> builder.rotationY(270);
+                            }
+                            return builder.build();
+                        });
+            })
+            .item()
+            .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), prov.modLoc("block/fluid_atomizer")))
             .build()
             .register();
 

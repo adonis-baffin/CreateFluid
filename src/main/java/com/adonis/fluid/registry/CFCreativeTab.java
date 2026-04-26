@@ -34,6 +34,7 @@ public class CFCreativeTab {
                         output.accept(CFBlocks.REDSTONE_TRIPLE_VALVE);
                         output.accept(CFBlocks.CAN_FILLER);
                         output.accept(CFBlocks.COMMUNICATING_VESSEL);
+                        output.accept(CFBlocks.FLUID_ATOMIZER);
 
                         // 手动添加物品
                         output.accept(CFItems.HONEYCOMB_MOLD);

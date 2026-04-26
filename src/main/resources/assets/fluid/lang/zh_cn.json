@@ -6,6 +6,7 @@
   "block.fluid.redstone_valve": "红石阀门",
   "block.fluid.redstone_triple_valve": "红石三通阀门",
   "block.fluid.copper_tap": "铜龙头",
+  "block.fluid.fluid_atomizer": "流体雾化器",
   "item.fluid.honeycomb_mold": "蜜脾模具",
   "item.fluid.honeycomb_mold.tooltip.summary": "用于蜜脾的压块塑形配方",
   "item.fluid.baton": "指挥棒",
@@ -162,5 +163,18 @@
   "create.create.goggles.can_filler_title": "装罐机",
   "item.fluid.copper_can.tooltip.fluid": "内含：%s",
   "item.fluid.copper_can.tooltip.amount": "容量：%s / %s mB",
-  "item.fluid.copper_can.tooltip.empty": "空罐"
+  "item.fluid.copper_can.tooltip.empty": "空罐",
+  "create.fluid.clipboard.tooltip.hint": "手持剪贴板右键复制地址，左键粘贴地址",
+  "create.fluid.clipboard.hint.both": " [%s] 复制地址   [%s] 粘贴地址",
+  "create.fluid.clipboard.hint.copy_only": " [%s] 复制地址",
+  "create.fluid.clipboard.hint.paste_only": " [%s] 粘贴地址",
+  "create.fluid.clipboard.copy.no_address": "该方块没有可复制的地址",
+  "create.fluid.clipboard.copy.success": "地址已复制到剪贴板: %s",
+  "create.fluid.clipboard.paste.no_address": "剪贴板中没有有效的地址",
+  "create.fluid.clipboard.paste.no_valid_address": "剪贴板中没有有效的地址（请以#开头）",
+  "create.fluid.clipboard.paste.no_clipboard": "手中没有剪贴板",
+  "create.fluid.clipboard.address_set_by_sign": "%1$s 已被告示牌设置地址，请移除告示牌后重试",
+  "create.fluid.clipboard.address_set": "%1$s 地址已设置为: %2$s",
+  "recipe.fluid.fan_freezing": "批量冷冻",
+  "recipe.fluid.fan_freezing.fan": "在细雪后放置鼓风机"
 }

@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "A": {
+      "item": "minecraft:copper_ingot"
+    },
+    "B": {
+      "tag": "c:storage_blocks/copper"
+    },
+    "C": {
+      "item": "minecraft:redstone"
+    }
+  },
+  "pattern": [
+    " A ",
+    "ABA",
+    "CAC"
+  ],
+  "result": {
+    "id": "fluid:can_filler"
+  },
+  "show_notification": true
+}

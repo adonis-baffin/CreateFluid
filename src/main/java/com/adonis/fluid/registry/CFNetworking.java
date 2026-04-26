@@ -116,6 +116,13 @@ public class CFNetworking {
                 ClipboardSetAddressPacket::handle
         );
 
+        // Clipboard 复制地址包（C→S）
+        registrar.playToServer(
+                ClipboardCopyAddressPacket.TYPE,
+                ClipboardCopyAddressPacket.STREAM_CODEC,
+                ClipboardCopyAddressPacket::handle
+        );
+
         // Clipboard 地址粒子效果包（S→C）
         registrar.playToClient(
                 ClipboardAddressParticlePacket.TYPE,
