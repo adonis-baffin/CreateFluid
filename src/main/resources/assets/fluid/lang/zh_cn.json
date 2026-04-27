@@ -1,4 +1,4 @@
-{
+﻿{
   "block.fluid.pipette": "动力移液器",
   "block.fluid.fluid_interface": "流体接口",
   "block.fluid.smart_fluid_interface": "智能流体接口",
@@ -176,5 +176,22 @@
   "create.fluid.clipboard.address_set_by_sign": "%1$s 已被告示牌设置地址，请移除告示牌后重试",
   "create.fluid.clipboard.address_set": "%1$s 地址已设置为: %2$s",
   "recipe.fluid.fan_freezing": "批量冷冻",
-  "recipe.fluid.fan_freezing.fan": "在细雪后放置鼓风机"
+  "recipe.fluid.fan_freezing.fan": "放置在细雪后的鼓风机",
+  "fluid.ponder.fluid_atomizer.header": "使用流体雾化器",
+  "fluid.ponder.fluid_atomizer.text_1": "流体雾化器会像鼓风机一样吹出气流，并以内部储存的流体作为加工媒介。",
+  "fluid.ponder.fluid_atomizer.text_2": "至少需要 250 mB 流体，气流才会获得对应的加工效果。",
+  "fluid.ponder.fluid_atomizer.text_3": "注入水后，气流会变成飞溅处理环境。",
+  "fluid.ponder.fluid_atomizer.text_4": "和普通鼓风加工类似，置物台与传送带上的物品都可以被处理。",
+  "fluid.ponder.fluid_atomizer.text_5": "更换内部储存的流体后，雾化器的加工类型也会立刻改变。",
+  "fluid.ponder.fluid_atomizer.text_6": "任何已注册的鼓风加工媒介流体都可以被雾化器复用，包括其他模组的兼容配方。",
+  "fluid.ponder.fluid_atomizer_potion.header": "流体雾化器的药云",
+  "fluid.ponder.fluid_atomizer_potion.text_1": "药水流体会被雾化为带有持续效果的药云。",
+  "fluid.ponder.fluid_atomizer_potion.text_2": "处于气流中的生物会获得对应的药水效果。",
+  "fluid.ponder.fluid_atomizer_potion.text_3": "出于平衡考虑，药云施加的持续时间会比直接使用药水更短。",
+  "fluid.ponder.communicating_vessel.header": "使用流体连通器",
+  "fluid.ponder.communicating_vessel.text_1": "流体连通器会直接连接相邻的流体容器，不需要动力，也不需要额外管道。",
+  "fluid.ponder.communicating_vessel.text_2": "当两端液位不一致时，它会把流体从较高的一侧转移到较低的一侧，直到重新找平。",
+  "fluid.ponder.communicating_vessel.text_3": "两端必须为空容器，或已经装有同一种流体；不同流体不会通过连通器混合。",
+  "fluid.ponder.communicating_vessel.text_4": "它同样支持创造流体罐这类无限流体源，并会持续向另一侧补液。",
+  "fluid.ponder.communicating_vessel.text_5": "只要相邻面具备流体处理能力，就都可以通过它连接起来，包括储罐、工作盆与创造流体罐。"
 }
