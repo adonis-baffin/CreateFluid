@@ -1,0 +1,28 @@
+{
+  "sources": [
+    {
+      "type": "single",
+      "resource": "fluid:fluid/haunting_fluid_still"
+    },
+    {
+      "type": "single",
+      "resource": "fluid:fluid/haunting_fluid_flow"
+    },
+    {
+      "type": "single",
+      "resource": "fluid:fluid/smoking_fluid_still"
+    },
+    {
+      "type": "single",
+      "resource": "fluid:fluid/smoking_fluid_flow"
+    },
+    {
+      "type": "single",
+      "resource": "fluid:fluid/slime_fluid_still"
+    },
+    {
+      "type": "single",
+      "resource": "fluid:fluid/slime_fluid_flow"
+    }
+  ]
+}

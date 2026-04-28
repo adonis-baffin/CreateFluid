@@ -13,6 +13,8 @@ import net.neoforged.neoforge.fluids.FluidStack;
 
 public class FluidGhostTarget<I, T extends GhostItemMenu<?>> implements IGhostIngredientHandler.Target<I> {
 
+	private static final int DEFAULT_FLUID_RECIPE_AMOUNT_MB = 250;
+
 	private final Rect2i area;
 	private final AbstractSimiContainerScreen<T> gui;
 	private final int slotIndex;
@@ -32,7 +34,7 @@ public class FluidGhostTarget<I, T extends GhostItemMenu<?>> implements IGhostIn
 	@Override
 	public void accept(I ingredient) {
 		FluidStack fluid = (FluidStack) ingredient;
-		ItemStack manifest = FluidManifestItem.of(fluid, 1);
+		ItemStack manifest = FluidManifestItem.of(fluid, DEFAULT_FLUID_RECIPE_AMOUNT_MB);
 		gui.getMenu().ghostInventory.setStackInSlot(slotIndex, manifest);
 		CatnipServices.NETWORK.sendToServer(new GhostItemSubmitPacket(manifest, slotIndex));
 	}

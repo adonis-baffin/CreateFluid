@@ -41,6 +41,11 @@ public class CFCreativeTab {
 
                         // 细雪相关
                         output.accept(Items.POWDER_SNOW_BUCKET);
+
+                        // 新流体桶
+                        output.accept(CFFluids.HAUNTING_FLUID.getBucket().orElseThrow());
+                        output.accept(CFFluids.SMOKING_FLUID.getBucket().orElseThrow());
+                        output.accept(CFFluids.SLIME_FLUID.getBucket().orElseThrow());
                     })
                     .build());
 

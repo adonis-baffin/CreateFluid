@@ -1,5 +1,6 @@
 package com.adonis.fluid.mixin;
 
+import com.adonis.fluid.client.FluidAmountHelper;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -9,6 +10,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.llamalad7.mixinextras.sugar.Local;
 import com.adonis.fluid.client.FluidSlotAmountRenderer;
 import com.adonis.fluid.client.FluidSlotRenderer;
 import com.adonis.fluid.item.FluidManifestItem;
@@ -17,17 +19,35 @@ import com.simibubi.create.content.logistics.AddressEditBox;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelBehaviour;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelScreen;
 import com.simibubi.create.content.logistics.BigItemStack;
+import com.simibubi.create.foundation.gui.widget.ScrollInput;
+import com.simibubi.create.foundation.utility.CreateLang;
 
 import net.createmod.catnip.gui.element.GuiGameElement;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.fluids.FluidStack;
 
+import java.util.List;
+
 @Mixin(FactoryPanelScreen.class)
 public class FactoryPanelScreenMixin {
+
+	@Unique
+	private static final int fluid$defaultRecipeAmountMb = 250;
+
+	@Unique
+	private static final int fluid$recipeStepAmountMb = 10;
+
+	@Unique
+	private static final int fluid$minRecipeAmountMb = 10;
+
+	@Unique
+	private static final int fluid$maxRecipeAmountMb = 50000;
 
 	@Shadow(remap = false)
 	@Final
@@ -50,6 +70,27 @@ public class FactoryPanelScreenMixin {
 
 	@Unique
 	private FluidStack fluid$previewFluid = FluidStack.EMPTY;
+
+	@Unique
+	private void fluid$normalizeRecipeAmounts() {
+		for (BigItemStack itemStack : inputConfig) {
+			if (itemStack.stack.getItem() instanceof FluidManifestItem) {
+				int normalized = itemStack.count == 1 ? fluid$defaultRecipeAmountMb : itemStack.count;
+				if (normalized <= 0) {
+					normalized = fluid$defaultRecipeAmountMb;
+				}
+				itemStack.count = Math.clamp(normalized, fluid$minRecipeAmountMb, fluid$maxRecipeAmountMb);
+			}
+		}
+
+		if (outputConfig != null && outputConfig.stack.getItem() instanceof FluidManifestItem) {
+			int normalized = outputConfig.count == 1 ? fluid$defaultRecipeAmountMb : outputConfig.count;
+			if (normalized <= 0) {
+				normalized = fluid$defaultRecipeAmountMb;
+			}
+			outputConfig.count = Math.clamp(normalized, fluid$minRecipeAmountMb, fluid$maxRecipeAmountMb);
+		}
+	}
 
 	@Redirect(
 		method = "renderInputItem",
@@ -90,6 +131,66 @@ public class FactoryPanelScreenMixin {
 			}
 		}
 		graphics.renderItemDecorations(font, stack, x, y, text);
+	}
+
+	@Redirect(
+		method = "renderInputItem",
+		at = @At(
+			value = "INVOKE",
+			target = "Lnet/minecraft/client/gui/GuiGraphics;renderComponentTooltip(Lnet/minecraft/client/gui/Font;Ljava/util/List;II)V"
+		),
+		remap = false
+	)
+	private void fluid$renderInputFluidTooltip(GuiGraphics graphics, Font font, List<Component> tooltips, int mouseX,
+		int mouseY, @Local(argsOnly = true) BigItemStack itemStack) {
+		if (itemStack.stack.getItem() instanceof FluidManifestItem) {
+			FluidStack fluid = FluidManifestItem.read(itemStack.stack);
+			if (!fluid.isEmpty()) {
+				String amountText = fluid$formatTooltipAmount(itemStack.count);
+				String fluidName = fluid.getHoverName().getString();
+				List<Component> newTooltips;
+
+				if (restocker) {
+					newTooltips = List.of(CreateLang.translate("gui.factory_panel.sending_item", fluidName)
+						.color(ScrollInput.HEADER_RGB)
+						.component(), CreateLang.translate("gui.factory_panel.sending_item_tip")
+							.style(ChatFormatting.GRAY)
+							.component(), CreateLang.translate("gui.factory_panel.sending_item_tip_1")
+								.style(ChatFormatting.GRAY)
+								.component());
+				} else {
+					newTooltips = List.of(
+						CreateLang.translate("gui.factory_panel.sending_item", fluidName + " x" + amountText)
+							.color(ScrollInput.HEADER_RGB)
+							.component(),
+						CreateLang.translate("gui.factory_panel.scroll_to_change_amount")
+							.style(ChatFormatting.DARK_GRAY)
+							.style(ChatFormatting.ITALIC)
+							.component(),
+						CreateLang.translate("gui.factory_panel.left_click_disconnect")
+							.style(ChatFormatting.DARK_GRAY)
+							.style(ChatFormatting.ITALIC)
+							.component());
+				}
+
+				graphics.renderComponentTooltip(font, newTooltips, mouseX, mouseY);
+				return;
+			}
+		}
+
+		graphics.renderComponentTooltip(font, tooltips, mouseX, mouseY);
+	}
+
+	@Unique
+	private String fluid$formatTooltipAmount(int amountMb) {
+		int clamped = Math.max(0, amountMb);
+		if (clamped < 1000) {
+			return clamped + "mb";
+		}
+		if (clamped % 1000 == 0) {
+			return clamped / 1000 + "B";
+		}
+		return FluidAmountHelper.format(clamped) + "B";
 	}
 
 	@Redirect(
@@ -161,12 +262,56 @@ public class FactoryPanelScreenMixin {
 	)
 	private void fluid$renderPreviewFluid(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks,
 		CallbackInfo ci) {
+		fluid$normalizeRecipeAmounts();
+
 		if (!fluid$previewFluid.isEmpty()) {
 			AbstractSimiScreenAccessor screen = (AbstractSimiScreenAccessor) this;
 			int previewY = behaviour.panelBE().restocker ? 0 : 60;
 			FluidSlotRenderer.renderFluidSlot(graphics, screen.fluid$getGuiLeft() + 208,
 				screen.fluid$getGuiTop() + 62 + previewY, fluid$previewFluid);
 		}
+	}
+
+	@Redirect(
+		method = "renderWindow",
+		at = @At(
+			value = "INVOKE",
+			target = "Lnet/minecraft/client/gui/GuiGraphics;renderComponentTooltip(Lnet/minecraft/client/gui/Font;Ljava/util/List;II)V"
+		),
+		remap = false
+	)
+	private void fluid$renderWindowFluidTooltip(GuiGraphics graphics, Font font, List<Component> tooltips, int mouseX,
+		int mouseY) {
+		if (!restocker && outputConfig != null && outputConfig.stack.getItem() instanceof FluidManifestItem) {
+			AbstractSimiScreenAccessor screen = (AbstractSimiScreenAccessor) this;
+			int outputX = screen.fluid$getGuiLeft() + 160;
+			int outputY = screen.fluid$getGuiTop() + 48;
+			if (mouseX >= outputX - 1 && mouseX < outputX + 17 && mouseY >= outputY - 1 && mouseY < outputY + 17) {
+				FluidStack fluid = FluidManifestItem.read(outputConfig.stack);
+				if (!fluid.isEmpty()) {
+					String fluidName = fluid.getHoverName().getString();
+					String amountText = fluid$formatTooltipAmount(outputConfig.count);
+					List<Component> newTooltips = List.of(
+						CreateLang.translate("gui.factory_panel.expected_output", fluidName + " x" + amountText)
+							.color(ScrollInput.HEADER_RGB)
+							.component(),
+						CreateLang.translate("gui.factory_panel.expected_output_tip")
+							.style(ChatFormatting.GRAY)
+							.component(),
+						CreateLang.translate("gui.factory_panel.expected_output_tip_1")
+							.style(ChatFormatting.GRAY)
+							.component(),
+						CreateLang.translate("gui.factory_panel.expected_output_tip_2")
+							.style(ChatFormatting.DARK_GRAY)
+							.style(ChatFormatting.ITALIC)
+							.component());
+					graphics.renderComponentTooltip(font, newTooltips, mouseX, mouseY);
+					return;
+				}
+			}
+		}
+
+		graphics.renderComponentTooltip(font, tooltips, mouseX, mouseY);
 	}
 
 	@Inject(method = "mouseScrolled", at = @At("HEAD"), cancellable = true, remap = false)
@@ -179,7 +324,7 @@ public class FactoryPanelScreenMixin {
 		AbstractSimiScreenAccessor screen = (AbstractSimiScreenAccessor) this;
 		int x = screen.fluid$getGuiLeft();
 		int y = screen.fluid$getGuiTop();
-		int step = Screen.hasShiftDown() ? 10000 : 1000;
+		int step = fluid$recipeStepAmountMb;
 		int direction = (int) Math.signum(scrollY);
 
 		if (direction == 0) {
@@ -198,7 +343,8 @@ public class FactoryPanelScreenMixin {
 				return;
 			}
 
-			itemStack.count = Math.clamp(itemStack.count + direction * step, 1000, 50000);
+			itemStack.count = Math.clamp(itemStack.count + direction * step, fluid$minRecipeAmountMb,
+				fluid$maxRecipeAmountMb);
 			cir.setReturnValue(true);
 			return;
 		}
@@ -217,7 +363,8 @@ public class FactoryPanelScreenMixin {
 			return;
 		}
 
-		outputConfig.count = Math.clamp(outputConfig.count + direction * step, 1000, 50000);
+		outputConfig.count = Math.clamp(outputConfig.count + direction * step, fluid$minRecipeAmountMb,
+			fluid$maxRecipeAmountMb);
 		cir.setReturnValue(true);
 	}
 }

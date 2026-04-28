@@ -104,7 +104,7 @@ public class StockKeeperRequestScreenMixin {
 		if (stack.getItem() instanceof FluidManifestItem) {
 			FluidStack fluid = FluidManifestItem.read(stack);
 			if (!fluid.isEmpty()) {
-				FluidTooltipHelper.renderTooltip(graphics, font, fluid, x, y);
+				FluidTooltipHelper.renderTooltip(graphics, font, fluid, fluid$fluidAmount, x, y);
 				return;
 			}
 		}

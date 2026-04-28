@@ -3,7 +3,10 @@ package com.adonis.fluid.registry;
 import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.fluid.powdersnow.PowderSnowFluid;
 import com.adonis.fluid.fluid.powdersnow.PowderSnowFluidType;
+import com.tterrag.registrate.util.entry.FluidEntry;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 import net.neoforged.neoforge.fluids.FluidType;
@@ -13,10 +16,17 @@ import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 import java.util.function.Supplier;
 
+import static com.adonis.fluid.CreateFluid.REGISTRATE;
+
 /**
  * 流体注册
  */
 public class CFFluids {
+
+    public static final TagKey<Fluid> FAN_PROCESSING_CATALYSTS_HAUNTING = TagKey.create(Registries.FLUID,
+            ResourceLocation.fromNamespaceAndPath("create", "fan_processing_catalysts/haunting"));
+    public static final TagKey<Fluid> FAN_PROCESSING_CATALYSTS_SMOKING = TagKey.create(Registries.FLUID,
+            ResourceLocation.fromNamespaceAndPath("create", "fan_processing_catalysts/smoking"));
 
     // 流体类型注册
     public static final DeferredRegister<FluidType> FLUID_TYPES =
@@ -36,6 +46,62 @@ public class CFFluids {
 
     public static final DeferredHolder<Fluid, Fluid> POWDER_SNOW_FLOWING = FLUIDS.register("flowing_powder_snow",
             () -> new PowderSnowFluid.Flowing(PowderSnowFluid.PROPERTIES));
+
+    // 缠魂液
+    public static final FluidEntry<BaseFlowingFluid.Flowing> HAUNTING_FLUID = REGISTRATE
+            .fluid("haunting_fluid",
+                    CreateFluid.asResource("fluid/haunting_fluid_still"),
+                    CreateFluid.asResource("fluid/haunting_fluid_flow"))
+            .properties(properties -> properties
+                    .density(1200)
+                    .viscosity(1200))
+            .fluidProperties(properties -> properties
+                    .levelDecreasePerBlock(2)
+                    .tickRate(15))
+            .source(BaseFlowingFluid.Source::new)
+            .tag(FAN_PROCESSING_CATALYSTS_HAUNTING)
+            .block()
+            .build()
+            .bucket()
+            .build()
+            .register();
+
+    // 烟熏液
+    public static final FluidEntry<BaseFlowingFluid.Flowing> SMOKING_FLUID = REGISTRATE
+            .fluid("smoking_fluid",
+                    CreateFluid.asResource("fluid/smoking_fluid_still"),
+                    CreateFluid.asResource("fluid/smoking_fluid_flow"))
+            .properties(properties -> properties
+                    .density(1200)
+                    .viscosity(1200))
+            .fluidProperties(properties -> properties
+                    .levelDecreasePerBlock(2)
+                    .tickRate(15))
+            .source(BaseFlowingFluid.Source::new)
+            .tag(FAN_PROCESSING_CATALYSTS_SMOKING)
+            .block()
+            .build()
+            .bucket()
+            .build()
+            .register();
+
+    // 史莱姆黏液
+    public static final FluidEntry<BaseFlowingFluid.Flowing> SLIME_FLUID = REGISTRATE
+            .fluid("slime_fluid",
+                    CreateFluid.asResource("fluid/slime_fluid_still"),
+                    CreateFluid.asResource("fluid/slime_fluid_flow"))
+            .properties(properties -> properties
+                    .density(1500)
+                    .viscosity(3000))
+            .fluidProperties(properties -> properties
+                    .levelDecreasePerBlock(2)
+                    .tickRate(20))
+            .source(BaseFlowingFluid.Source::new)
+            .block()
+            .build()
+            .bucket()
+            .build()
+            .register();
 
     public static void register() {
         // 实际注册在事件总线上进行
