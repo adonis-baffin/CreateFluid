@@ -1,6 +1,7 @@
 package com.adonis.fluid.registry;
 
 import com.adonis.fluid.CreateFluid;
+import com.adonis.fluid.client.FluidManifestItemDecorator;
 import com.adonis.fluid.client.gui.StockpileSwitchScreen;
 import com.adonis.fluid.item.BatonItemPropertyFunction;
 import com.adonis.fluid.ponder.CFPonderPlugin;
@@ -22,6 +23,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
+import net.neoforged.neoforge.client.event.RegisterItemDecorationsEvent;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
@@ -61,11 +63,11 @@ public class CFClient {
                 if (content != null && content.fluidId() != null) {
                     net.minecraft.world.level.material.Fluid fluid = net.minecraft.core.registries.BuiltInRegistries.FLUID.get(content.fluidId());
                     if (fluid != null) {
-                        return IClientFluidTypeExtensions.of(fluid).getTintColor();
+                        return IClientFluidTypeExtensions.of(fluid).getTintColor() | 0xFF000000;
                     }
                 }
             }
-            return 0xFFFFFF;
+            return 0xFFFFFFFF;
         }, CFItems.FLUID_MANIFEST.get());
     }
 
@@ -83,6 +85,11 @@ public class CFClient {
                 return ResourceLocation.fromNamespaceAndPath("minecraft", "block/powder_snow");
             }
         }, CFFluids.POWDER_SNOW_TYPE.get());
+    }
+
+    @SubscribeEvent
+    public static void registerItemDecorations(RegisterItemDecorationsEvent event) {
+        event.register(CFItems.FLUID_MANIFEST.get(), FluidManifestItemDecorator.DECORATOR);
     }
 
     @EventBusSubscriber(modid = CreateFluid.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)

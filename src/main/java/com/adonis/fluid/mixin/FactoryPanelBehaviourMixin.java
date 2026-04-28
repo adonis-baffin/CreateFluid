@@ -4,7 +4,6 @@ import com.adonis.fluid.block.CanFiller.CanFillerBlockEntity;
 import com.adonis.fluid.client.FluidAmountHelper;
 import com.adonis.fluid.item.FluidManifestItem;
 import com.simibubi.create.content.logistics.BigItemStack;
-import com.simibubi.create.content.fluids.transfer.GenericItemEmptying;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelBehaviour;
 import com.simibubi.create.content.logistics.packager.PackagerBlockEntity;
 import com.simibubi.create.content.logistics.packagerLink.LogisticsManager;
@@ -14,13 +13,11 @@ import com.simibubi.create.foundation.blockEntity.behaviour.ValueSettingsBehavio
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueSettingsBoard;
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueSettingsFormatter;
 import com.simibubi.create.foundation.utility.CreateLang;
-import net.createmod.catnip.data.Pair;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.neoforged.neoforge.fluids.FluidStack;
 import org.spongepowered.asm.mixin.Mixin;
@@ -39,22 +36,10 @@ public class FactoryPanelBehaviourMixin {
 
 	@ModifyVariable(method = "setFilter", at = @At("HEAD"), argsOnly = true)
 	private ItemStack fluid$convertFluidContainerToManifest(ItemStack stack) {
-		if (stack.isEmpty() || stack.getItem() instanceof FluidManifestItem)
+		if (!(stack.getItem() instanceof FluidManifestItem))
 			return stack;
 
-		Level level = ((FactoryPanelBehaviour) (Object) this).blockEntity.getLevel();
-		if (level == null)
-			return stack;
-
-		if (GenericItemEmptying.canItemBeEmptied(level, stack)) {
-			Pair<FluidStack, ItemStack> result = GenericItemEmptying.emptyItem(level, stack, true);
-			FluidStack fluid = result.getFirst();
-			if (!fluid.isEmpty()) {
-				return FluidManifestItem.of(fluid, 1);
-			}
-		}
-
-		return stack;
+		return fluid$normalizeManifest(stack);
 	}
 
 	@Unique

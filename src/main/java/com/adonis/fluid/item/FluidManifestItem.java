@@ -12,14 +12,21 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.SlotAccess;
+import net.minecraft.world.inventory.ClickAction;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
+import com.simibubi.create.content.fluids.transfer.GenericItemEmptying;
+import net.createmod.catnip.data.Pair;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
@@ -38,7 +45,7 @@ public class FluidManifestItem extends Item {
 	public static ItemStack of(FluidStack fluid, int amount) {
 		ItemStack stack = new ItemStack(CFItems.FLUID_MANIFEST.get());
 		stack.set(CFDataComponents.FLUID_MANIFEST.get(),
-			new FluidManifestContent(BuiltInRegistries.FLUID.getKey(fluid.getFluid()), amount));
+			new FluidManifestContent(BuiltInRegistries.FLUID.getKey(fluid.getFluid()), fluid.isEmpty() ? 0 : 1));
 		return stack;
 	}
 
@@ -72,7 +79,7 @@ public class FluidManifestItem extends Item {
 	public Component getName(ItemStack stack) {
 		FluidStack fluid = read(stack);
 		if (!fluid.isEmpty()) {
-			return fluid.getHoverName().copy();
+			return Component.translatable("item.fluid.fluid_manifest.named", fluid.getHoverName());
 		}
 		return super.getName(stack);
 	}
@@ -100,13 +107,8 @@ public class FluidManifestItem extends Item {
 		Player player = context.getPlayer();
 		ItemStack heldStack = context.getItemInHand();
 
-		if (level.isClientSide()) {
+		if (level.isClientSide())
 			return InteractionResult.SUCCESS;
-		}
-
-		if (!isEmpty(heldStack)) {
-			return InteractionResult.PASS;
-		}
 
 		IFluidHandler fluidHandler = level.getCapability(Capabilities.FluidHandler.BLOCK, pos, side);
 		if (fluidHandler == null) {
@@ -116,13 +118,91 @@ public class FluidManifestItem extends Item {
 		for (int i = 0; i < fluidHandler.getTanks(); i++) {
 			FluidStack fluid = fluidHandler.getFluidInTank(i);
 			if (!fluid.isEmpty()) {
-				heldStack.set(CFDataComponents.FLUID_MANIFEST.get(),
-					new FluidManifestContent(BuiltInRegistries.FLUID.getKey(fluid.getFluid()), fluid.getAmount()));
-				level.playSound(null, pos, SoundEvents.BOTTLE_FILL, SoundSource.BLOCKS, 1.0f, 1.0f);
+				fluid$writeFluid(heldStack, fluid);
+				fluid$playSampleSound(level, pos);
 				return InteractionResult.SUCCESS;
 			}
 		}
 
 		return InteractionResult.PASS;
+	}
+
+	@Override
+	public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
+		ItemStack heldStack = player.getItemInHand(usedHand);
+		InteractionHand otherHand = usedHand == InteractionHand.MAIN_HAND ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+		ItemStack otherStack = player.getItemInHand(otherHand);
+
+		if (otherStack.isEmpty() || !GenericItemEmptying.canItemBeEmptied(level, otherStack))
+			return super.use(level, player, usedHand);
+
+		Pair<FluidStack, ItemStack> result = GenericItemEmptying.emptyItem(level, otherStack, true);
+		FluidStack fluid = result.getFirst();
+		if (fluid.isEmpty())
+			return super.use(level, player, usedHand);
+
+		if (!level.isClientSide()) {
+			fluid$writeFluid(heldStack, fluid);
+			fluid$playSampleSound(level, player.blockPosition());
+		}
+
+		return InteractionResultHolder.sidedSuccess(heldStack, level.isClientSide());
+	}
+
+	@Override
+	public boolean overrideStackedOnOther(ItemStack stack, Slot slot, ClickAction action, Player player) {
+		if (stack.getCount() != 1 || action != ClickAction.SECONDARY)
+			return false;
+
+		ItemStack slotItem = slot.getItem();
+		if (!fluid$canSampleFrom(player.level(), slotItem))
+			return false;
+
+		FluidStack fluid = fluid$getFluidToSample(player.level(), slotItem);
+		if (fluid.isEmpty())
+			return false;
+
+		fluid$writeFluid(stack, fluid);
+		fluid$playSampleSound(player.level(), player.blockPosition());
+		return true;
+	}
+
+	@Override
+	public boolean overrideOtherStackedOnMe(ItemStack stack, ItemStack other, Slot slot, ClickAction action, Player player,
+		SlotAccess access) {
+		if (stack.getCount() != 1 || action != ClickAction.SECONDARY || !slot.allowModification(player))
+			return false;
+
+		if (!fluid$canSampleFrom(player.level(), other))
+			return false;
+
+		FluidStack fluid = fluid$getFluidToSample(player.level(), other);
+		if (fluid.isEmpty())
+			return false;
+
+		fluid$writeFluid(stack, fluid);
+		fluid$playSampleSound(player.level(), player.blockPosition());
+		return true;
+	}
+
+	private static boolean fluid$canSampleFrom(Level level, ItemStack stack) {
+		return !stack.isEmpty() && GenericItemEmptying.canItemBeEmptied(level, stack);
+	}
+
+	private static FluidStack fluid$getFluidToSample(Level level, ItemStack stack) {
+		if (!fluid$canSampleFrom(level, stack))
+			return FluidStack.EMPTY;
+
+		Pair<FluidStack, ItemStack> result = GenericItemEmptying.emptyItem(level, stack, true);
+		return result.getFirst();
+	}
+
+	private static void fluid$writeFluid(ItemStack stack, FluidStack fluid) {
+		stack.set(CFDataComponents.FLUID_MANIFEST.get(),
+			new FluidManifestContent(BuiltInRegistries.FLUID.getKey(fluid.getFluid()), fluid.isEmpty() ? 0 : 1));
+	}
+
+	private static void fluid$playSampleSound(Level level, BlockPos pos) {
+		level.playSound(null, pos, SoundEvents.BOTTLE_FILL, SoundSource.BLOCKS, 1.0f, 1.0f);
 	}
 }

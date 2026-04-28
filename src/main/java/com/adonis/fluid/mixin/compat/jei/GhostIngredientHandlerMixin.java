@@ -3,6 +3,7 @@ package com.adonis.fluid.mixin.compat.jei;
 import com.adonis.fluid.compat.jei.FluidGhostTarget;
 import com.simibubi.create.compat.jei.GhostIngredientHandler;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelSetItemScreen;
+import com.simibubi.create.content.logistics.redstoneRequester.RedstoneRequesterScreen;
 import com.simibubi.create.foundation.gui.menu.AbstractSimiContainerScreen;
 import com.simibubi.create.foundation.gui.menu.GhostItemMenu;
 import mezz.jei.api.gui.handlers.IGhostIngredientHandler;
@@ -32,6 +33,17 @@ public class GhostIngredientHandlerMixin<T extends GhostItemMenu<?>> {
 				if (gui.getMenu().slots.get(i).isActive()) {
 					targets.add(new FluidGhostTarget<>(gui, i - 36));
 					break;
+				}
+			}
+			cir.setReturnValue(targets);
+			return;
+		}
+
+		if (ingredient.getType() == NeoForgeTypes.FLUID_STACK && gui instanceof RedstoneRequesterScreen) {
+			List<IGhostIngredientHandler.Target<I>> targets = new LinkedList<>();
+			for (int i = 36; i < gui.getMenu().slots.size(); i++) {
+				if (gui.getMenu().slots.get(i).isActive()) {
+					targets.add(new FluidGhostTarget<>(gui, i - 36));
 				}
 			}
 			cir.setReturnValue(targets);

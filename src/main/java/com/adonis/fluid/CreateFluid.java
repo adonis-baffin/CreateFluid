@@ -3,6 +3,8 @@ package com.adonis.fluid;
 import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.config.CFStressConfig;
 import com.adonis.fluid.fluid.powdersnow.PowderSnowBucketHandler;
+import com.adonis.fluid.fluid.quicksand.QuicksandBucketHandler;
+import com.adonis.fluid.fluid.quicksand.QuicksandFluid;
 import com.adonis.fluid.registry.*;
 import com.simibubi.create.api.behaviour.spouting.CauldronSpoutingBehavior;
 import net.minecraft.world.level.block.Blocks;
@@ -64,6 +66,9 @@ public class CreateFluid {
 		// 注册细雪桶能力
 		modEventBus.addListener(PowderSnowBucketHandler::register);
 
+		// 注册流沙桶能力
+		modEventBus.addListener(QuicksandBucketHandler::register);
+
 		// 注册应力配置
 		ModConfigSpec.Builder stressBuilder = new ModConfigSpec.Builder();
 		STRESS_CONFIG.registerAll(stressBuilder);
@@ -95,6 +100,9 @@ public class CreateFluid {
 					Blocks.POWDER_SNOW_CAULDRON.defaultBlockState()
 						.setValue(BlockStateProperties.LEVEL_CAULDRON, 3))
 			);
+
+			// 设置流沙流体对应的桶物品
+			QuicksandFluid.setBucketSupplier(() -> CFItems.QUICKSAND_BUCKET.asItem());
 		});
 	}
 

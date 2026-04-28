@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "create:item/chocolate_bucket"
+    "layer0": "fluid:item/haunting_fluid_bucket"
   }
 }

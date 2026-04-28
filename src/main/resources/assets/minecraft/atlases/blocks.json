@@ -23,6 +23,14 @@
     {
       "type": "single",
       "resource": "fluid:fluid/slime_fluid_flow"
+    },
+    {
+      "type": "single",
+      "resource": "fluid:fluid/quicksand_fluid_still"
+    },
+    {
+      "type": "single",
+      "resource": "fluid:fluid/quicksand_fluid_flow"
     }
   ]
 }

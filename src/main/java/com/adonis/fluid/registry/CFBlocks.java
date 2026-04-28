@@ -16,6 +16,7 @@ import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlock;
 import com.adonis.fluid.block.CanFiller.CanFillerBlock;
 import com.adonis.fluid.block.CommunicatingVessel.CommunicatingVesselBlock;
 import com.adonis.fluid.block.FluidAtomizer.FluidAtomizerBlock;
+import com.adonis.fluid.block.QuicksandBlock;
 import com.simibubi.create.foundation.data.ModelGen;
 import com.simibubi.create.foundation.data.SharedProperties;
 import com.simibubi.create.foundation.data.TagGen;
@@ -398,6 +399,14 @@ public class CFBlocks {
             .item()
             .model((ctx, prov) -> prov.withExistingParent(ctx.getName(), prov.modLoc("block/fluid_atomizer")))
             .build()
+            .register();
+
+    // 流沙方块
+    public static final BlockEntry<QuicksandBlock> QUICKSAND = REGISTRATE
+            .block("quicksand", QuicksandBlock::new)
+            .initialProperties(() -> net.minecraft.world.level.block.Blocks.SAND)
+            .properties(prop -> prop.strength(0.25f))
+            .simpleItem()
             .register();
 
     public static void register() {

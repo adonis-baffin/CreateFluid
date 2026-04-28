@@ -3,6 +3,8 @@ package com.adonis.fluid.registry;
 import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.fluid.powdersnow.PowderSnowFluid;
 import com.adonis.fluid.fluid.powdersnow.PowderSnowFluidType;
+import com.adonis.fluid.fluid.quicksand.QuicksandFluid;
+import com.adonis.fluid.fluid.quicksand.QuicksandFluidType;
 import com.tterrag.registrate.util.entry.FluidEntry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
@@ -47,17 +49,27 @@ public class CFFluids {
     public static final DeferredHolder<Fluid, Fluid> POWDER_SNOW_FLOWING = FLUIDS.register("flowing_powder_snow",
             () -> new PowderSnowFluid.Flowing(PowderSnowFluid.PROPERTIES));
 
+    // 流沙流体类型
+    public static final Supplier<FluidType> QUICKSAND_FLUID_TYPE = FLUID_TYPES.register("quicksand_fluid", QuicksandFluidType::create);
+
+    // 流沙流体（源）和（流动）需要一起注册以避免循环引用
+    public static final DeferredHolder<Fluid, Fluid> QUICKSAND_SOURCE = FLUIDS.register("quicksand_fluid",
+            () -> new QuicksandFluid.Source(QuicksandFluid.PROPERTIES));
+
+    public static final DeferredHolder<Fluid, Fluid> QUICKSAND_FLOWING = FLUIDS.register("flowing_quicksand_fluid",
+            () -> new QuicksandFluid.Flowing(QuicksandFluid.PROPERTIES));
+
     // 缠魂液
     public static final FluidEntry<BaseFlowingFluid.Flowing> HAUNTING_FLUID = REGISTRATE
             .fluid("haunting_fluid",
                     CreateFluid.asResource("fluid/haunting_fluid_still"),
                     CreateFluid.asResource("fluid/haunting_fluid_flow"))
             .properties(properties -> properties
-                    .density(1200)
-                    .viscosity(1200))
+                    .density(1800)
+                    .viscosity(2500))
             .fluidProperties(properties -> properties
                     .levelDecreasePerBlock(2)
-                    .tickRate(15))
+                    .tickRate(18))
             .source(BaseFlowingFluid.Source::new)
             .tag(FAN_PROCESSING_CATALYSTS_HAUNTING)
             .block()
@@ -72,11 +84,11 @@ public class CFFluids {
                     CreateFluid.asResource("fluid/smoking_fluid_still"),
                     CreateFluid.asResource("fluid/smoking_fluid_flow"))
             .properties(properties -> properties
-                    .density(1200)
-                    .viscosity(1200))
+                    .density(1650)
+                    .viscosity(2300))
             .fluidProperties(properties -> properties
                     .levelDecreasePerBlock(2)
-                    .tickRate(15))
+                    .tickRate(18))
             .source(BaseFlowingFluid.Source::new)
             .tag(FAN_PROCESSING_CATALYSTS_SMOKING)
             .block()
@@ -91,11 +103,11 @@ public class CFFluids {
                     CreateFluid.asResource("fluid/slime_fluid_still"),
                     CreateFluid.asResource("fluid/slime_fluid_flow"))
             .properties(properties -> properties
-                    .density(1500)
-                    .viscosity(3000))
+                    .density(2200)
+                    .viscosity(7200))
             .fluidProperties(properties -> properties
                     .levelDecreasePerBlock(2)
-                    .tickRate(20))
+                    .tickRate(28))
             .source(BaseFlowingFluid.Source::new)
             .block()
             .build()

@@ -1,5 +1,6 @@
 package com.adonis.fluid.item;
 
+import com.adonis.fluid.client.FluidAmountHelper;
 import com.adonis.fluid.datacomponent.CopperCanContent;
 import com.adonis.fluid.registry.CFDataComponents;
 import com.adonis.fluid.registry.CFItems;
@@ -54,14 +55,23 @@ public class CopperCanItem extends PackageItem {
 		super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
 		FluidStack fluid = getFluid(stack);
 		if (!fluid.isEmpty()) {
-			tooltipComponents.add(Component.translatable("item.fluid.copper_can.tooltip.fluid", fluid.getHoverName())
-				.withStyle(ChatFormatting.GRAY));
-			tooltipComponents.add(Component.translatable("item.fluid.copper_can.tooltip.amount",
-				fluid.getAmount(), getCapacity(stack))
+			tooltipComponents.add(fluid.getHoverName()
+				.copy()
+				.append(" x")
+				.append(fluid$formatTooltipAmount(fluid.getAmount()))
 				.withStyle(ChatFormatting.GRAY));
 		} else {
 			tooltipComponents.add(Component.translatable("item.fluid.copper_can.tooltip.empty")
 				.withStyle(ChatFormatting.GRAY));
 		}
+	}
+
+	private static String fluid$formatTooltipAmount(int amountMb) {
+		int clamped = Math.max(0, amountMb);
+		if (clamped < 1000)
+			return clamped + "mb";
+		if (clamped % 1000 == 0)
+			return clamped / 1000 + "B";
+		return FluidAmountHelper.format(clamped) + "B";
 	}
 }
