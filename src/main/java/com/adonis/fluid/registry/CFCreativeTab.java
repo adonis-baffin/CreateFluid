@@ -35,18 +35,17 @@ public class CFCreativeTab {
                         output.accept(CFBlocks.COMMUNICATING_VESSEL);
                         output.accept(CFBlocks.FLUID_ATOMIZER);
 
-                        output.accept(CFItems.HONEYCOMB_MOLD);
-                        output.accept(CFItems.CHOCOLATE_MOLD);
-                        output.accept(CFItems.CHOCOLATE_SLAB);
                         output.accept(CFItems.FLUID_MANIFEST);
+                        output.accept(CFItems.HONEYCOMB_MOLD);
+//                        output.accept(CFItems.CHOCOLATE_MOLD);
+//                        output.accept(CFItems.CHOCOLATE_SLAB);
 
-                        output.accept(Items.POWDER_SNOW_BUCKET);
-
+                        output.accept(CFFluids.SLIME_FLUID.getBucket().orElseThrow());
                         output.accept(CFFluids.HAUNTING_FLUID.getBucket().orElseThrow());
                         output.accept(CFFluids.SMOKING_FLUID.getBucket().orElseThrow());
-                        output.accept(CFFluids.SLIME_FLUID.getBucket().orElseThrow());
 
                         output.accept(CFItems.QUICKSAND_BUCKET);
+                        output.accept(Items.POWDER_SNOW_BUCKET);
                     })
                     .build());
 

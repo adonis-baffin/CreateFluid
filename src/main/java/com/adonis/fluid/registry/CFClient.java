@@ -85,6 +85,7 @@ public class CFClient {
                 return ResourceLocation.fromNamespaceAndPath("minecraft", "block/powder_snow");
             }
         }, CFFluids.POWDER_SNOW_TYPE.get());
+
     }
 
     @SubscribeEvent
