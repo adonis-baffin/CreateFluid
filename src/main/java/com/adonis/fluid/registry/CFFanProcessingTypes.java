@@ -2,6 +2,8 @@ package com.adonis.fluid.registry;
 
 import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.content.kinetics.fan.freezing.FreezingFanProcessingType;
+import com.adonis.fluid.content.kinetics.fan.glueing.GlueingFanProcessingType;
+import com.adonis.fluid.content.kinetics.fan.sandblasting.SandblastingFanProcessingType;
 import com.simibubi.create.api.registry.CreateRegistries;
 import com.simibubi.create.content.kinetics.fan.processing.FanProcessingType;
 import net.neoforged.bus.api.IEventBus;
@@ -15,6 +17,12 @@ public class CFFanProcessingTypes {
 
 	public static final DeferredHolder<FanProcessingType, FreezingFanProcessingType> FREEZING =
 		TYPES.register("freezing", FreezingFanProcessingType::new);
+
+	public static final DeferredHolder<FanProcessingType, SandblastingFanProcessingType> SANDBLASTING =
+		TYPES.register("sandblasting", SandblastingFanProcessingType::new);
+
+	public static final DeferredHolder<FanProcessingType, GlueingFanProcessingType> GLUEING =
+		TYPES.register("glueing", GlueingFanProcessingType::new);
 
 	public static void register(IEventBus modBus) {
 		TYPES.register(modBus);

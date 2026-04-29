@@ -68,7 +68,7 @@ public class CFFluids {
                     .density(1800)
                     .viscosity(2500))
             .fluidProperties(properties -> properties
-                    .levelDecreasePerBlock(2)
+                    .levelDecreasePerBlock(3)
                     .tickRate(18))
             .source(BaseFlowingFluid.Source::new)
             .tag(FAN_PROCESSING_CATALYSTS_HAUNTING)
@@ -87,7 +87,7 @@ public class CFFluids {
                     .density(1650)
                     .viscosity(2300))
             .fluidProperties(properties -> properties
-                    .levelDecreasePerBlock(2)
+                    .levelDecreasePerBlock(3)
                     .tickRate(18))
             .source(BaseFlowingFluid.Source::new)
             .tag(FAN_PROCESSING_CATALYSTS_SMOKING)
@@ -106,7 +106,7 @@ public class CFFluids {
                     .density(2200)
                     .viscosity(7200))
             .fluidProperties(properties -> properties
-                    .levelDecreasePerBlock(2)
+                    .levelDecreasePerBlock(3)
                     .tickRate(28))
             .source(BaseFlowingFluid.Source::new)
             .block()

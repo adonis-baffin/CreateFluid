@@ -213,12 +213,9 @@ public class FluidAtomizerBlockEntity extends KineticBlockEntity implements IAir
 
     @Override
     public Direction getAirFlowDirection() {
-        float speed = getSpeed();
-        if (speed == 0)
+        if (getSpeed() == 0)
             return null;
-        Direction facing = getBlockState().getValue(com.adonis.fluid.block.FluidAtomizer.FluidAtomizerBlock.FACING);
-        speed = convertToDirection(speed, facing);
-        return speed > 0 ? facing : facing.getOpposite();
+        return getBlockState().getValue(com.adonis.fluid.block.FluidAtomizer.FluidAtomizerBlock.FACING);
     }
 
     @Override

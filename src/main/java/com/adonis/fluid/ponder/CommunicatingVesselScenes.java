@@ -41,10 +41,12 @@ public class CommunicatingVesselScenes {
 
         scene.world().showSection(frontTanks, Direction.DOWN);
         scene.idle(8);
+        connectFluidTank(scene, frontTankA, 3);
+        connectFluidTank(scene, frontTankB, 3);
         scene.world().showSection(frontVessels, Direction.DOWN);
         scene.idle(15);
 
-        fillTank(scene, frontTankA, new FluidStack(Fluids.WATER, 24000));
+        fillTank(scene, frontTankA, new FluidStack(Fluids.WATER, 8000));
         fillTank(scene, frontTankB, FluidStack.EMPTY);
         scene.idle(10);
 
@@ -63,7 +65,7 @@ public class CommunicatingVesselScenes {
                 .placeNearTarget();
         scene.idle(70);
 
-        int[] transfers = new int[] {4000, 4000, 4000};
+        int[] transfers = new int[] {2000, 2000};
         for (int amount : transfers) {
             transfer(scene, frontTankA, frontTankB, Fluids.WATER, amount);
             spawnFlow(scene, util.vector().centerOf(3, 1, 1), util.vector().centerOf(1, 1, 1),
@@ -82,6 +84,7 @@ public class CommunicatingVesselScenes {
 
         scene.world().showSection(backSetup, Direction.DOWN);
         scene.idle(15);
+        connectFluidTank(scene, outputTank, 3);
 
         fillCreativeTank(scene, creativeTank, new FluidStack(Fluids.WATER, 8000));
         fillTank(scene, outputTank, FluidStack.EMPTY);
@@ -112,6 +115,20 @@ public class CommunicatingVesselScenes {
         scene.idle(100);
 
         scene.markAsFinished();
+    }
+
+    private static void connectFluidTank(CreateSceneBuilder scene, BlockPos bottomPos, int height) {
+        scene.world().modifyBlockEntity(bottomPos, FluidTankBlockEntity.class, be -> {
+            be.setHeight(height);
+            be.setWidth(1);
+            be.applyFluidTankSize(height);
+        });
+        for (int y = 1; y < height; y++) {
+            BlockPos layerPos = bottomPos.above(y);
+            scene.world().modifyBlockEntity(layerPos, FluidTankBlockEntity.class, be -> {
+                be.setController(bottomPos);
+            });
+        }
     }
 
     private static void fillTank(CreateSceneBuilder scene, BlockPos pos, FluidStack fluidStack) {

@@ -2,10 +2,15 @@ package com.adonis.fluid.item;
 
 import com.adonis.fluid.datacomponent.FluidManifestContent;
 import com.adonis.fluid.logistics.data.FluidRequestKey;
+import com.adonis.fluid.registry.CFBlocks;
 import com.adonis.fluid.registry.CFDataComponents;
+import com.adonis.fluid.registry.CFFluids;
 import com.adonis.fluid.registry.CFItems;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -111,17 +116,34 @@ public class FluidManifestItem extends Item {
 			return InteractionResult.SUCCESS;
 
 		IFluidHandler fluidHandler = level.getCapability(Capabilities.FluidHandler.BLOCK, pos, side);
-		if (fluidHandler == null) {
-			return InteractionResult.PASS;
+		if (fluidHandler != null) {
+			for (int i = 0; i < fluidHandler.getTanks(); i++) {
+				FluidStack fluid = fluidHandler.getFluidInTank(i);
+				if (!fluid.isEmpty()) {
+					fluid$writeFluid(heldStack, fluid);
+					fluid$playSampleSound(level, pos);
+					return InteractionResult.SUCCESS;
+				}
+			}
 		}
 
-		for (int i = 0; i < fluidHandler.getTanks(); i++) {
-			FluidStack fluid = fluidHandler.getFluidInTank(i);
-			if (!fluid.isEmpty()) {
-				fluid$writeFluid(heldStack, fluid);
-				fluid$playSampleSound(level, pos);
-				return InteractionResult.SUCCESS;
-			}
+		FluidState fluidState = level.getFluidState(pos);
+		if (!fluidState.isEmpty()) {
+			fluid$writeFluid(heldStack, new FluidStack(fluidState.getType(), 1));
+			fluid$playSampleSound(level, pos);
+			return InteractionResult.SUCCESS;
+		}
+
+		BlockState state = level.getBlockState(pos);
+		if (state.is(CFBlocks.QUICKSAND.get())) {
+			fluid$writeFluid(heldStack, new FluidStack(CFFluids.QUICKSAND_SOURCE.get(), 1));
+			fluid$playSampleSound(level, pos);
+			return InteractionResult.SUCCESS;
+		}
+		if (state.is(Blocks.POWDER_SNOW)) {
+			fluid$writeFluid(heldStack, new FluidStack(CFFluids.POWDER_SNOW.get(), 1));
+			fluid$playSampleSound(level, pos);
+			return InteractionResult.SUCCESS;
 		}
 
 		return InteractionResult.PASS;

@@ -1,9 +1,18 @@
 {
-  "type": "minecraft:crafting_shapeless",
-  "ingredients": [
-    { "item": "minecraft:paper" },
-    { "item": "minecraft:redstone" }
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "   ",
+    "CWC",
+    "   "
   ],
+  "key": {
+    "C": {
+      "item": "create:copper_nugget"
+    },
+    "W": {
+      "tag": "minecraft:wool"
+    }
+  },
   "result": {
     "id": "fluid:fluid_manifest",
     "count": 1

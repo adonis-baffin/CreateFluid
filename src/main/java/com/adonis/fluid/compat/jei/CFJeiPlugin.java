@@ -2,6 +2,8 @@ package com.adonis.fluid.compat.jei;
 
 import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.compat.jei.category.FanFreezingCategory;
+import com.adonis.fluid.compat.jei.category.FanGlueingCategory;
+import com.adonis.fluid.compat.jei.category.FanSandblastingCategory;
 import com.adonis.fluid.registry.CFBlocks;
 import com.google.common.base.Preconditions;
 import com.simibubi.create.Create;
@@ -38,8 +40,11 @@ public class CFJeiPlugin implements IModPlugin {
 	@Override
 	public void registerCategories(IRecipeCategoryRegistration registration) {
 		categories.clear();
-		if (!ModList.get().isLoaded("create_dragons_plus"))
+		if (!ModList.get().isLoaded("create_dragons_plus")) {
 			categories.add(FanFreezingCategory.create());
+			categories.add(FanSandblastingCategory.create());
+		}
+		categories.add(FanGlueingCategory.create());
 		registration.addRecipeCategories(categories.toArray(IRecipeCategory[]::new));
 	}
 
@@ -68,8 +73,11 @@ public class CFJeiPlugin implements IModPlugin {
 		if (ModList.get().isLoaded("create_shimmer"))
 			registration.addRecipeCatalysts(fanType(ResourceLocation.fromNamespaceAndPath("create_shimmer", "transmutation")),
 				CFBlocks.FLUID_ATOMIZER.get());
-		if (!ModList.get().isLoaded("create_dragons_plus"))
+		if (!ModList.get().isLoaded("create_dragons_plus")) {
 			registration.addRecipeCatalysts(FanFreezingCategory.TYPE, CFBlocks.FLUID_ATOMIZER.get());
+			registration.addRecipeCatalysts(FanSandblastingCategory.TYPE, CFBlocks.FLUID_ATOMIZER.get());
+		}
+		registration.addRecipeCatalysts(FanGlueingCategory.TYPE, CFBlocks.FLUID_ATOMIZER.get());
 	}
 
 	@SuppressWarnings({"rawtypes", "unchecked"})

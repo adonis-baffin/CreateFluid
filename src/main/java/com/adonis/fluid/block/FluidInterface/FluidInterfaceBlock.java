@@ -29,7 +29,7 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.DirectionalBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -49,10 +49,10 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 
 import javax.annotation.Nullable;
 
-public class FluidInterfaceBlock extends HorizontalDirectionalBlock implements IBE<FluidInterfaceBlockEntity>, IWrenchable {
+public class FluidInterfaceBlock extends DirectionalBlock implements IBE<FluidInterfaceBlockEntity>, IWrenchable {
 
     public static final MapCodec<FluidInterfaceBlock> CODEC = simpleCodec(FluidInterfaceBlock::new);
-    public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+    public static final DirectionProperty FACING = BlockStateProperties.FACING;
 
     // 定义形状
     private static final VoxelShape NORTH_LAYER_1 = Block.box(3, 3, 14, 13, 12.9, 16);
@@ -75,13 +75,23 @@ public class FluidInterfaceBlock extends HorizontalDirectionalBlock implements I
     private static final VoxelShape WEST_LAYER_3 = Block.box(11, 5, 5, 13, 11, 11);
     private static final VoxelShape WEST_SHAPE = Shapes.or(WEST_LAYER_1, WEST_LAYER_2, WEST_LAYER_3);
 
+    private static final VoxelShape UP_LAYER_1 = Block.box(3, 0, 3, 13, 2, 13);
+    private static final VoxelShape UP_LAYER_2 = Block.box(4, 2, 4, 12, 3, 12);
+    private static final VoxelShape UP_LAYER_3 = Block.box(5, 3, 5, 11, 5, 11);
+    private static final VoxelShape UP_SHAPE = Shapes.or(UP_LAYER_1, UP_LAYER_2, UP_LAYER_3);
+
+    private static final VoxelShape DOWN_LAYER_1 = Block.box(3, 14, 3, 13, 16, 13);
+    private static final VoxelShape DOWN_LAYER_2 = Block.box(4, 13, 4, 12, 14, 12);
+    private static final VoxelShape DOWN_LAYER_3 = Block.box(5, 11, 5, 11, 13, 11);
+    private static final VoxelShape DOWN_SHAPE = Shapes.or(DOWN_LAYER_1, DOWN_LAYER_2, DOWN_LAYER_3);
+
     public FluidInterfaceBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
 
     @Override
-    protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
+    protected MapCodec<? extends DirectionalBlock> codec() {
         return CODEC;
     }
 
@@ -97,7 +107,8 @@ public class FluidInterfaceBlock extends HorizontalDirectionalBlock implements I
             case SOUTH -> SOUTH_SHAPE;
             case EAST -> EAST_SHAPE;
             case WEST -> WEST_SHAPE;
-            default -> NORTH_SHAPE;
+            case UP -> UP_SHAPE;
+            case DOWN -> DOWN_SHAPE;
         };
     }
 
@@ -147,7 +158,7 @@ public class FluidInterfaceBlock extends HorizontalDirectionalBlock implements I
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        Direction direction = context.getHorizontalDirection().getOpposite();
+        Direction direction = context.getClickedFace();
         BlockPos blockpos = context.getClickedPos();
         BlockPos attachedPos = blockpos.relative(direction.getOpposite());
         Level level = context.getLevel();
@@ -157,8 +168,8 @@ public class FluidInterfaceBlock extends HorizontalDirectionalBlock implements I
             return this.defaultBlockState().setValue(FACING, direction);
         }
 
-        // 尝试其他水平方向
-        for (Direction dir : Direction.Plane.HORIZONTAL) {
+        // 尝试所有方向
+        for (Direction dir : Direction.values()) {
             BlockPos testPos = blockpos.relative(dir.getOpposite());
             if (hasFluidCapability(level, testPos, dir)) {
                 return this.defaultBlockState().setValue(FACING, dir);

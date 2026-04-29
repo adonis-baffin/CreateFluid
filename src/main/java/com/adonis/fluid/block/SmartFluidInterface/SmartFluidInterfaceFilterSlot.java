@@ -17,11 +17,12 @@ public class SmartFluidInterfaceFilterSlot extends ValueBoxTransform.Sided {
 
         if (side == facing) {
             return switch (facing) {
-                case NORTH -> VecHelper.voxelSpace(8, 8, 10.5);
-                case SOUTH -> VecHelper.voxelSpace(8, 8, 5.5);
-                case EAST -> VecHelper.voxelSpace(5.5, 8, 8);
-                case WEST -> VecHelper.voxelSpace(10.5, 8, 8);
-                default -> VecHelper.voxelSpace(8, 8, 10.5);
+                case NORTH -> VecHelper.voxelSpace(8, 8, 1);
+                case SOUTH -> VecHelper.voxelSpace(8, 8, 15);
+                case EAST -> VecHelper.voxelSpace(15, 8, 8);
+                case WEST -> VecHelper.voxelSpace(1, 8, 8);
+                case UP -> VecHelper.voxelSpace(8, 15, 8);
+                case DOWN -> VecHelper.voxelSpace(8, 1, 8);
             };
         }
 
@@ -36,6 +37,6 @@ public class SmartFluidInterfaceFilterSlot extends ValueBoxTransform.Sided {
 
     @Override
     protected Vec3 getSouthLocation() {
-        return VecHelper.voxelSpace(8, 8, 5.5);
+        return VecHelper.voxelSpace(8, 8, 1);
     }
 }

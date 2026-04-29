@@ -14,6 +14,14 @@
     "facing=east": {
       "model": "fluid:block/smart_fluid_interface",
       "y": 90
+    },
+    "facing=up": {
+      "model": "fluid:block/smart_fluid_interface",
+      "x": 270
+    },
+    "facing=down": {
+      "model": "fluid:block/smart_fluid_interface",
+      "x": 90
     }
   }
 }

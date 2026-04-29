@@ -2,6 +2,8 @@ package com.adonis.fluid.registry;
 
 import com.adonis.fluid.CreateFluid;
 import com.adonis.fluid.content.kinetics.fan.freezing.FreezingRecipe;
+import com.adonis.fluid.content.kinetics.fan.glueing.GlueingRecipe;
+import com.adonis.fluid.content.kinetics.fan.sandblasting.SandblastingRecipe;
 import com.simibubi.create.content.processing.recipe.StandardProcessingRecipe;
 import com.simibubi.create.foundation.recipe.IRecipeTypeInfo;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -24,6 +26,12 @@ public class CFRecipeTypes {
 
 	public static final RecipeTypeInfo<FreezingRecipe> FREEZING =
 		register("freezing", () -> new StandardProcessingRecipe.Serializer<>(FreezingRecipe::new));
+
+	public static final RecipeTypeInfo<SandblastingRecipe> SANDBLASTING =
+		register("sandblasting", () -> new StandardProcessingRecipe.Serializer<>(SandblastingRecipe::new));
+
+	public static final RecipeTypeInfo<GlueingRecipe> GLUEING =
+		register("glueing", () -> new StandardProcessingRecipe.Serializer<>(GlueingRecipe::new));
 
 	public static void register(IEventBus modBus) {
 		TYPES.register(modBus);

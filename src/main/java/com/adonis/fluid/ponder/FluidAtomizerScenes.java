@@ -101,7 +101,7 @@ public class FluidAtomizerScenes {
                 .text(tr("fluid.ponder.fluid_atomizer.text_3"))
                 .pointAt(util.vector().centerOf(3, 1, 3))
                 .placeNearTarget();
-        scene.idle(80);
+        scene.idle(60);
 
         ElementLink<BeltItemElement> gravel = scene.world().createItemOnBelt(beltStart, Direction.EAST, new ItemStack(Items.GRAVEL));
         scene.idle(32);
@@ -199,6 +199,7 @@ public class FluidAtomizerScenes {
         scene.idle(8);
         scene.world().showSection(tankSel, Direction.DOWN);
         scene.idle(8);
+        connectFluidTank(scene, tankPos, 3);
         scene.world().showSection(kineticsSel, Direction.WEST);
         scene.idle(18);
 
@@ -279,9 +280,23 @@ public class FluidAtomizerScenes {
                 .placeNearTarget();
         scene.idle(90);
 
-        scene.world().modifyEntity(sheep, entity -> entity.discard());
+//        scene.world().modifyEntity(sheep, entity -> entity.discard());
         scene.idle(20);
         scene.markAsFinished();
+    }
+
+    private static void connectFluidTank(CreateSceneBuilder scene, BlockPos bottomPos, int height) {
+        scene.world().modifyBlockEntity(bottomPos, FluidTankBlockEntity.class, be -> {
+            be.setHeight(height);
+            be.setWidth(1);
+            be.applyFluidTankSize(height);
+        });
+        for (int y = 1; y < height; y++) {
+            BlockPos layerPos = bottomPos.above(y);
+            scene.world().modifyBlockEntity(layerPos, FluidTankBlockEntity.class, be -> {
+                be.setController(bottomPos);
+            });
+        }
     }
 
     private static void fillAtomizer(CreateSceneBuilder scene, BlockPos atomizerPos, FluidStack fluidStack) {

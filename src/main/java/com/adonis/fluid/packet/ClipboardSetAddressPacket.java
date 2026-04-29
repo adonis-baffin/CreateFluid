@@ -50,7 +50,7 @@ public record ClipboardSetAddressPacket(BlockPos pos, String address) implements
 			ItemStack clipboard = ClipboardAddressHandler.findClipboard(player);
 			if (clipboard == null) {
 				player.displayClientMessage(
-					Component.translatable("fluid.clipboard.paste.no_clipboard").withStyle(ChatFormatting.RED), true);
+					Component.translatable("create.fluid.clipboard.paste.no_clipboard").withStyle(ChatFormatting.RED), true);
 				return;
 			}
 
@@ -63,7 +63,7 @@ public record ClipboardSetAddressPacket(BlockPos pos, String address) implements
 
 			if (resolvedAddress.isEmpty()) {
 				player.displayClientMessage(
-					Component.translatable("fluid.clipboard.paste.no_valid_address").withStyle(ChatFormatting.RED), true);
+					Component.translatable("create.fluid.clipboard.paste.no_valid_address").withStyle(ChatFormatting.RED), true);
 				PacketDistributor.sendToPlayer(player, new ClipboardAddressParticlePacket(pos));
 				return;
 			}

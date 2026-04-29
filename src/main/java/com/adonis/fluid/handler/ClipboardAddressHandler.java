@@ -178,7 +178,7 @@ public class ClipboardAddressHandler {
 		String address = extractFirstAddress(clipboard);
 		if (address == null) {
 			CreateLang.builder()
-				.translate("fluid.clipboard.paste.no_valid_address")
+				.translate("create.fluid.clipboard.paste.no_valid_address")
 				.style(ChatFormatting.RED)
 				.sendStatus(player);
 			return;

@@ -48,7 +48,9 @@ public class AtomizerProcessingRegistry {
 		registerBuiltin(AllFluidTags.FAN_PROCESSING_CATALYSTS_SMOKING::matches, AllFanProcessingTypes.SMOKING);
 		if (!ModList.get().isLoaded("create_dragons_plus")) {
 			registerBuiltin(candidate -> candidate.isSame(CFFluids.POWDER_SNOW.get()), CFFanProcessingTypes.FREEZING.get());
+			registerBuiltin(candidate -> candidate.isSame(CFFluids.QUICKSAND_SOURCE.get()), CFFanProcessingTypes.SANDBLASTING.get());
 		}
+		registerBuiltin(candidate -> candidate.isSame(CFFluids.SLIME_FLUID.getSource()), CFFanProcessingTypes.GLUEING.get());
 	}
 
 	public static void replaceDatapackEntries(List<Entry> entries) {
