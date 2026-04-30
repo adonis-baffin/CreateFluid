@@ -32,12 +32,16 @@ public record MailboxStationConnectionPacket(BlockPos mailboxPos, BlockPos stati
             if (!player.mayBuild()) return;
 
             Level world = player.level();
-            if (!world.isLoaded(this.mailboxPos) || !world.isLoaded(this.stationPos)) return;
+            if (!world.isLoaded(this.mailboxPos)) return;
 
             if (player.distanceToSqr(this.mailboxPos.getX() + 0.5, this.mailboxPos.getY() + 0.5, this.mailboxPos.getZ() + 0.5) > 64.0) return;
 
             if (world.getBlockEntity(this.mailboxPos) instanceof PostboxBlockEntity postbox) {
-                if (world.getBlockEntity(this.stationPos) instanceof StationBlockEntity station) {
+                // stationPos 与 mailboxPos 相同表示断开连接
+                if (this.stationPos.equals(this.mailboxPos)) {
+                    postbox.target = null;
+                    postbox.notifyUpdate();
+                } else if (world.isLoaded(this.stationPos) && world.getBlockEntity(this.stationPos) instanceof StationBlockEntity station) {
                     GlobalStation globalStation = station.getStation();
                     if (globalStation != null) {
                         postbox.target = new TrainStationFrogportTarget(

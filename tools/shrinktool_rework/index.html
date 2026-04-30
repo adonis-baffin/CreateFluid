@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minecraft 贴图缩图工具</title>
+  <style>
+    :root {
+      --bg: #f2ede4;
+      --panel: rgba(255, 252, 246, 0.94);
+      --panel-strong: #fffdf8;
+      --line: #d8cdbd;
+      --text: #2b241f;
+      --muted: #6f6558;
+      --accent: #1f6f5f;
+      --accent-strong: #155145;
+      --danger: #b24a35;
+      --shadow: 0 18px 38px rgba(67, 48, 25, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 24px;
+      color: var(--text);
+      font-family: "Microsoft YaHei UI", "PingFang SC", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.9), transparent 32%),
+        radial-gradient(circle at bottom right, rgba(31, 111, 95, 0.12), transparent 28%),
+        linear-gradient(180deg, #efe6d9 0%, #f6f1e8 44%, #ebe2d4 100%);
+    }
+
+    .shell {
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      margin-bottom: 18px;
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 5vw, 42px);
+      line-height: 1;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 820px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(360px, 440px) minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid rgba(216, 205, 189, 0.92);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .controls {
+      padding: 22px;
+    }
+
+    .section + .section {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(216, 205, 189, 0.82);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      margin-top: 6px;
+    }
+
+    .field + .field {
+      margin-top: 12px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .grid .field > label {
+      min-height: 40px;
+      display: flex;
+      align-items: flex-end;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      height: 44px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font: inherit;
+      color: var(--text);
+    }
+
+    input[type="file"] {
+      width: 100%;
+      font: inherit;
+      color: var(--text);
+    }
+
+    .file-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .file-row input[type="file"] {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .file-row button {
+      flex: none;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      align-items: start;
+    }
+
+    .checkboxes {
+      display: grid;
+      gap: 10px;
+    }
+
+    .checkbox {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255, 253, 248, 0.88);
+      border: 1px solid rgba(216, 205, 189, 0.82);
+    }
+
+    .checkbox input {
+      margin-top: 3px;
+    }
+
+    .checkbox strong {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 14px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    button,
+    .download-link {
+      appearance: none;
+      border: none;
+      border-radius: 999px;
+      padding: 11px 16px;
+      font: inherit;
+      cursor: pointer;
+      transition: transform 120ms ease, background 120ms ease;
+      text-decoration: none;
+    }
+
+    button:hover,
+    .download-link:hover {
+      transform: translateY(-1px);
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .primary:hover {
+      background: var(--accent-strong);
+    }
+
+    .ghost {
+      background: rgba(255, 253, 248, 0.92);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .download-link {
+      display: none;
+      background: #fff;
+      color: var(--accent-strong);
+      border: 1px solid rgba(31, 111, 95, 0.28);
+      font-weight: 700;
+    }
+
+    .workspace {
+      padding: 18px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .preview-box {
+      background: rgba(255, 253, 248, 0.92);
+      border: 1px solid rgba(216, 205, 189, 0.92);
+      border-radius: 18px;
+      padding: 14px;
+    }
+
+    .preview-box h2 {
+      margin: 0 0 10px;
+      font-size: 15px;
+    }
+
+    .canvas-wrap {
+      min-height: 220px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      border: 1px solid rgba(216, 205, 189, 0.92);
+      background:
+        linear-gradient(45deg, rgba(216, 205, 189, 0.65) 25%, transparent 25%) 0 0 / 18px 18px,
+        linear-gradient(-45deg, rgba(216, 205, 189, 0.65) 25%, transparent 25%) 0 0 / 18px 18px,
+        linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.9) 75%) 0 0 / 18px 18px,
+        linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.9) 75%) 0 0 / 18px 18px,
+        #f3ece1;
+      overflow: hidden;
+    }
+
+    .canvas-wrap canvas {
+      display: block;
+      max-width: 100%;
+      max-height: 360px;
+      image-rendering: pixelated;
+    }
+
+    .stat-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .stat {
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(31, 111, 95, 0.08);
+      color: var(--accent-strong);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .log {
+      width: 100%;
+      min-height: 190px;
+      border: 1px solid #2b3b38;
+      background: #172220;
+      color: #eaf1ef;
+      border-radius: 18px;
+      padding: 14px;
+      resize: vertical;
+      font: 13px/1.5 Consolas, "Courier New", monospace;
+    }
+
+    .status {
+      min-height: 24px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .status.error {
+      color: var(--danger);
+      font-weight: 700;
+    }
+
+    @media (max-width: 980px) {
+      body { padding: 16px; }
+      .layout { grid-template-columns: 1fr; }
+      .preview-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="hero">
+      <h1>Minecraft 贴图缩图工具</h1>
+      <p>单文件、本地运行、直接打开就能用。当前算法已经按真实样本收敛到 Minecraft 物品贴图用途：优先抽主体、尽量保轮廓、可选套参考形状遮罩。</p>
+    </div>
+
+    <div class="layout">
+      <div class="panel controls">
+        <div class="section">
+          <div class="section-title">输入</div>
+          <div class="field">
+            <label for="inputImage">源图片</label>
+            <input id="inputImage" type="file" accept="image/*">
+          </div>
+          <div class="field">
+            <label for="maskImage">形状遮罩（可选，推荐透明 PNG）</label>
+            <div class="file-row">
+              <input id="maskImage" type="file" accept="image/png">
+              <button class="ghost" id="clearMaskBtn" type="button">取消遮罩</button>
+            </div>
+            <div class="hint">普通物品可以不填。像飞斧、桶这类需要贴固定轮廓时再用。</div>
+          </div>
+          <div class="field">
+            <label for="outputName">输出文件名</label>
+            <input id="outputName" type="text" value="output_16x16.png">
+          </div>
+          <div class="hint">浏览器本地页不能直接写入任意目录，所以这里改成生成后下载。</div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">参数</div>
+          <div class="grid">
+            <div class="field">
+              <label for="targetSize">输出尺寸</label>
+              <input id="targetSize" type="number" min="8" max="128" value="16">
+              <div class="hint">常用 16 或 32。</div>
+            </div>
+            <div class="field">
+              <label for="colorCount">颜色数量（0 = 不量化）</label>
+              <input id="colorCount" type="number" min="0" max="256" value="0">
+              <div class="hint">先用 0，只有颜色太杂时再开。</div>
+            </div>
+            <div class="field">
+              <label for="paddingRatio">边距</label>
+              <input id="paddingRatio" type="number" min="0" max="0.45" step="0.01" value="0.08">
+              <div class="hint">方块 0.05，普通物品 0.08，长武器 0.12。</div>
+            </div>
+            <div class="field">
+              <label for="majorPixels">主体占格</label>
+              <input id="majorPixels" type="number" min="8" max="16" step="1" value="14">
+              <div class="hint">主体最长边在 16x16 中大约占 13-15 格。</div>
+            </div>
+            <div class="field">
+              <label for="matteThreshold">背景识别强度</label>
+              <input id="matteThreshold" type="number" min="0" max="80" value="16">
+              <div class="hint">灰底常用 14-22。</div>
+            </div>
+            <div class="field">
+              <label for="shapeMode">遮罩模式</label>
+              <select id="shapeMode">
+                <option value="auto" selected>自动判断</option>
+                <option value="overlay">只裁轮廓</option>
+                <option value="fit">贴近形状</option>
+              </select>
+              <div class="hint">桶类通常用只裁轮廓，飞斧这类用贴近形状。</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">开关</div>
+          <div class="checkboxes">
+            <label class="checkbox">
+              <input id="useDither" type="checkbox">
+              <span>
+                <strong>量化后抖动</strong>
+                只有在开启颜色数量压缩时才建议试。
+              </span>
+            </label>
+            <label class="checkbox">
+              <input id="autoDownload" type="checkbox">
+              <span>
+                <strong>生成后自动下载</strong>
+                某些浏览器会拦截，拦截时仍可点“下载结果”。
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="actions">
+            <button class="primary" id="convertBtn">开始转换</button>
+            <button class="ghost" id="clearBtn" type="button">清空日志</button>
+            <a class="download-link" id="downloadLink" download="output_16x16.png">下载结果</a>
+          </div>
+          <div class="status" id="statusText"></div>
+        </div>
+      </div>
+
+      <div class="panel workspace">
+        <div class="preview-grid">
+          <div class="preview-box">
+            <h2>主体检测</h2>
+            <div class="canvas-wrap"><canvas id="previewSource" width="16" height="16"></canvas></div>
+          </div>
+          <div class="preview-box">
+            <h2>裁切结果</h2>
+            <div class="canvas-wrap"><canvas id="previewCrop" width="16" height="16"></canvas></div>
+          </div>
+          <div class="preview-box">
+            <h2>最终输出</h2>
+            <div class="canvas-wrap"><canvas id="previewDst" width="16" height="16"></canvas></div>
+            <div class="stat-bar" id="resultStats"></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-title">日志</div>
+          <textarea class="log" id="logArea" readonly></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+
+    const logArea = $("logArea");
+    const statusText = $("statusText");
+    const previewSource = $("previewSource");
+    const previewCrop = $("previewCrop");
+    const previewDst = $("previewDst");
+    const sourceCtx = previewSource.getContext("2d");
+    const cropCtx = previewCrop.getContext("2d");
+    const dstCtx = previewDst.getContext("2d");
+    const downloadLink = $("downloadLink");
+    const resultStats = $("resultStats");
+
+    function log(message) {
+      logArea.value += `${message}\n`;
+      logArea.scrollTop = logArea.scrollHeight;
+    }
+
+    function setStatus(message, isError = false) {
+      statusText.textContent = message;
+      statusText.className = isError ? "status error" : "status";
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function roundByte(value) {
+      return clamp(Math.round(value), 0, 255);
+    }
+
+    function colorDistance(a, b) {
+      return Math.sqrt((a.r - b.r) ** 2 + (a.g - b.g) ** 2 + (a.b - b.b) ** 2);
+    }
+
+    function saturation(r, g, b) {
+      return Math.max(r, g, b) - Math.min(r, g, b);
+    }
+
+    function createCanvas(width, height) {
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      return canvas;
+    }
+
+    function cloneCanvas(sourceCanvas) {
+      const canvas = createCanvas(sourceCanvas.width, sourceCanvas.height);
+      canvas.getContext("2d", { willReadFrequently: true }).drawImage(sourceCanvas, 0, 0);
+      return canvas;
+    }
+
+    function imageToCanvas(image) {
+      const canvas = createCanvas(image.width, image.height);
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(image, 0, 0);
+      return { canvas, ctx };
+    }
+
+    function clearCanvas(ctx, canvas) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function resizeCanvasDisplay(canvas, target, scale = 10) {
+      target.width = canvas.width;
+      target.height = canvas.height;
+      target.style.width = `${Math.max(160, canvas.width * scale)}px`;
+      target.style.height = `${Math.max(160, canvas.height * scale)}px`;
+      const ctx = target.getContext("2d", { willReadFrequently: true });
+      ctx.imageSmoothingEnabled = false;
+      ctx.clearRect(0, 0, target.width, target.height);
+      ctx.drawImage(canvas, 0, 0);
+    }
+
+    function drawPreviewWithSquare(sourceCanvas, target, square, scale = 2) {
+      target.width = sourceCanvas.width;
+      target.height = sourceCanvas.height;
+      target.style.width = `${Math.max(160, sourceCanvas.width * scale)}px`;
+      target.style.height = `${Math.max(160, sourceCanvas.height * scale)}px`;
+      const ctx = target.getContext("2d", { willReadFrequently: true });
+      ctx.imageSmoothingEnabled = false;
+      ctx.clearRect(0, 0, target.width, target.height);
+      ctx.drawImage(sourceCanvas, 0, 0);
+      if (square) {
+        ctx.save();
+        ctx.strokeStyle = "#ff5c41";
+        ctx.lineWidth = Math.max(1, Math.round(sourceCanvas.width / 96));
+        ctx.strokeRect(square.left + 0.5, square.top + 0.5, Math.max(1, square.side - 1), Math.max(1, square.side - 1));
+        ctx.restore();
+      }
+    }
+
+    function revokeBlobUrl() {
+      if (downloadLink.dataset.url) {
+        URL.revokeObjectURL(downloadLink.dataset.url);
+        downloadLink.dataset.url = "";
+      }
+    }
+
+    function resetDownload() {
+      revokeBlobUrl();
+      downloadLink.removeAttribute("href");
+      downloadLink.style.display = "none";
+    }
+
+    function setDownload(blob, filename) {
+      resetDownload();
+      const url = URL.createObjectURL(blob);
+      downloadLink.href = url;
+      downloadLink.download = filename;
+      downloadLink.dataset.url = url;
+      downloadLink.style.display = "inline-flex";
+    }
+
+    async function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error(`读取文件失败: ${file.name}`));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function fileToImage(file) {
+      const dataUrl = await fileToDataUrl(file);
+      const img = new Image();
+      img.decoding = "sync";
+      img.src = dataUrl;
+      await img.decode();
+      return img;
+    }
+
+    function getPixel(data, width, x, y) {
+      const i = (y * width + x) * 4;
+      return { r: data[i], g: data[i + 1], b: data[i + 2], a: data[i + 3] };
+    }
+
+    function setPixel(data, width, x, y, p) {
+      const i = (y * width + x) * 4;
+      data[i] = p.r;
+      data[i + 1] = p.g;
+      data[i + 2] = p.b;
+      data[i + 3] = p.a;
+    }
+
+    function estimateCornerBackground(canvas) {
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      const radius = Math.max(3, Math.floor(Math.min(canvas.width, canvas.height) * 0.04));
+      const corners = [
+        [0, 0],
+        [canvas.width - 1, 0],
+        [0, canvas.height - 1],
+        [canvas.width - 1, canvas.height - 1]
+      ];
+      let sumR = 0;
+      let sumG = 0;
+      let sumB = 0;
+      let count = 0;
+
+      for (const [cx, cy] of corners) {
+        for (let dy = 0; dy < radius; dy++) {
+          for (let dx = 0; dx < radius; dx++) {
+            const x = cx === 0 ? dx : canvas.width - 1 - dx;
+            const y = cy === 0 ? dy : canvas.height - 1 - dy;
+            const p = getPixel(data, canvas.width, x, y);
+            if (p.a <= 8) continue;
+            sumR += p.r;
+            sumG += p.g;
+            sumB += p.b;
+            count++;
+          }
+        }
+      }
+
+      return count ? { r: Math.round(sumR / count), g: Math.round(sumG / count), b: Math.round(sumB / count) } : { r: 0, g: 0, b: 0 };
+    }
+
+    function hasMeaningfulAlpha(canvas) {
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      let transparent = 0;
+      for (let i = 3; i < data.length; i += 4) {
+        if (data[i] < 250) transparent++;
+      }
+      return transparent / (canvas.width * canvas.height) > 0.005;
+    }
+
+    function buildForegroundMask(canvas, options) {
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      const alphaDriven = hasMeaningfulAlpha(canvas);
+      const background = estimateCornerBackground(canvas);
+      const width = canvas.width;
+      const height = canvas.height;
+      const mask = new Uint8Array(width * height);
+      const matte = clamp(options.matteThreshold ?? 16, 0, 80);
+      const bgThresholdBase = clamp((options.shapeMask ? 10 : 6) + matte, 8, 86);
+      const edgeSoftThreshold = clamp(Math.round(bgThresholdBase * 0.62), 6, 56);
+
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const idx = y * width + x;
+          const p = getPixel(data, width, x, y);
+          if (alphaDriven) {
+            mask[idx] = p.a > options.alphaThreshold ? 1 : 0;
+            continue;
+          }
+          const dist = colorDistance(p, background);
+          const sat = saturation(p.r, p.g, p.b);
+          const centerBias = 1 - Math.hypot(x - width / 2, y - height / 2) / Math.hypot(width / 2, height / 2);
+          const threshold = Math.max(4, bgThresholdBase - centerBias * 8);
+          if (dist >= threshold || sat >= 24) {
+            mask[idx] = 1;
+          } else if (dist >= edgeSoftThreshold && sat >= 10 && centerBias > 0.15) {
+            mask[idx] = 1;
+          }
+        }
+      }
+
+      return { mask, alphaDriven, background };
+    }
+
+    function largestCentralComponent(mask, width, height) {
+      const visited = new Uint8Array(width * height);
+      const centerX = (width - 1) / 2;
+      const centerY = (height - 1) / 2;
+      const maxDist = Math.hypot(centerX, centerY) || 1;
+      let best = null;
+
+      for (let start = 0; start < mask.length; start++) {
+        if (!mask[start] || visited[start]) continue;
+        const queue = [start];
+        visited[start] = 1;
+        const pixels = [];
+        let minX = width;
+        let minY = height;
+        let maxX = -1;
+        let maxY = -1;
+        let sumX = 0;
+        let sumY = 0;
+
+        while (queue.length) {
+          const idx = queue.pop();
+          pixels.push(idx);
+          const x = idx % width;
+          const y = Math.floor(idx / width);
+          sumX += x;
+          sumY += y;
+          if (x < minX) minX = x;
+          if (y < minY) minY = y;
+          if (x > maxX) maxX = x;
+          if (y > maxY) maxY = y;
+
+          if (x > 0) {
+            const n = idx - 1;
+            if (mask[n] && !visited[n]) { visited[n] = 1; queue.push(n); }
+          }
+          if (x < width - 1) {
+            const n = idx + 1;
+            if (mask[n] && !visited[n]) { visited[n] = 1; queue.push(n); }
+          }
+          if (y > 0) {
+            const n = idx - width;
+            if (mask[n] && !visited[n]) { visited[n] = 1; queue.push(n); }
+          }
+          if (y < height - 1) {
+            const n = idx + width;
+            if (mask[n] && !visited[n]) { visited[n] = 1; queue.push(n); }
+          }
+        }
+
+        const cx = sumX / pixels.length;
+        const cy = sumY / pixels.length;
+        const centerScore = 1 - Math.hypot(cx - centerX, cy - centerY) / maxDist;
+        const bboxArea = (maxX - minX + 1) * (maxY - minY + 1);
+        const fillScore = pixels.length / Math.max(1, bboxArea);
+        const score = pixels.length * (0.7 + Math.max(0, centerScore)) * (0.85 + fillScore * 0.4);
+
+        if (!best || score > best.score) {
+          best = { pixels, minX, minY, maxX, maxY, score };
+        }
+      }
+
+      return best;
+    }
+
+    function dilateToKeepEdges(componentMask, canvas, background, edgeThreshold = 10, iterations = 2) {
+      const width = canvas.width;
+      const height = canvas.height;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      const data = ctx.getImageData(0, 0, width, height).data;
+      let current = componentMask;
+
+      for (let step = 0; step < iterations; step++) {
+        const next = new Uint8Array(current);
+        for (let y = 1; y < height - 1; y++) {
+          for (let x = 1; x < width - 1; x++) {
+            const idx = y * width + x;
+            if (current[idx]) continue;
+            let touches = 0;
+            for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+              if (current[(y + dy) * width + (x + dx)]) touches++;
+            }
+            if (!touches) continue;
+            const p = getPixel(data, width, x, y);
+            if (colorDistance(p, background) >= edgeThreshold || saturation(p.r, p.g, p.b) >= 14) next[idx] = 1;
+          }
+        }
+        current = next;
+      }
+
+      return current;
+    }
+
+    function applyMaskToCanvas(canvas, mask) {
+      const out = cloneCanvas(canvas);
+      const ctx = out.getContext("2d", { willReadFrequently: true });
+      const imageData = ctx.getImageData(0, 0, out.width, out.height);
+      const data = imageData.data;
+      for (let y = 0; y < out.height; y++) {
+        for (let x = 0; x < out.width; x++) {
+          if (!mask[y * out.width + x]) setPixel(data, out.width, x, y, { r: 0, g: 0, b: 0, a: 0 });
+        }
+      }
+      ctx.putImageData(imageData, 0, 0);
+      return out;
+    }
+
+    function cleanupResidualBackground(canvas, background, strength = 16) {
+      const out = cloneCanvas(canvas);
+      const ctx = out.getContext("2d", { willReadFrequently: true });
+      const imageData = ctx.getImageData(0, 0, out.width, out.height);
+      const data = imageData.data;
+      const keep = new Uint8Array(out.width * out.height);
+
+      for (let y = 0; y < out.height; y++) {
+        for (let x = 0; x < out.width; x++) {
+          const idx = y * out.width + x;
+          const p = getPixel(data, out.width, x, y);
+          if (p.a <= 10) continue;
+          if (colorDistance(p, background) > strength || saturation(p.r, p.g, p.b) > 18) keep[idx] = 1;
+        }
+      }
+
+      for (let y = 1; y < out.height - 1; y++) {
+        for (let x = 1; x < out.width - 1; x++) {
+          const idx = y * out.width + x;
+          if (!keep[idx]) continue;
+          let neighbors = 0;
+          for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+            if (keep[(y + dy) * out.width + (x + dx)]) neighbors++;
+          }
+          if (neighbors === 0) keep[idx] = 0;
+        }
+      }
+
+      for (let y = 0; y < out.height; y++) {
+        for (let x = 0; x < out.width; x++) {
+          if (!keep[y * out.width + x]) setPixel(data, out.width, x, y, { r: 0, g: 0, b: 0, a: 0 });
+        }
+      }
+      ctx.putImageData(imageData, 0, 0);
+      return out;
+    }
+
+    function boundsFromMask(mask, width, height) {
+      let minX = width;
+      let minY = height;
+      let maxX = -1;
+      let maxY = -1;
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          if (!mask[y * width + x]) continue;
+          if (x < minX) minX = x;
+          if (y < minY) minY = y;
+          if (x > maxX) maxX = x;
+          if (y > maxY) maxY = y;
+        }
+      }
+      if (maxX < minX || maxY < minY) throw new Error("没有检测到主体像素");
+      return { minX, minY, maxX, maxY };
+    }
+
+    function getAlphaMask(canvas) {
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      const mask = new Uint8Array(canvas.width * canvas.height);
+      for (let y = 0; y < canvas.height; y++) {
+        for (let x = 0; x < canvas.width; x++) mask[y * canvas.width + x] = getPixel(data, canvas.width, x, y).a > 10 ? 1 : 0;
+      }
+      return mask;
+    }
+
+    function cropSquare(canvas, bounds, paddingRatio) {
+      const contentWidth = bounds.maxX - bounds.minX + 1;
+      const contentHeight = bounds.maxY - bounds.minY + 1;
+      const contentSide = Math.max(contentWidth, contentHeight);
+      const padding = Math.round(contentSide * paddingRatio);
+      const side = contentSide + padding * 2;
+      const cx = (bounds.minX + bounds.maxX) / 2;
+      const cy = (bounds.minY + bounds.maxY) / 2;
+      let left = Math.round(cx - side / 2);
+      let top = Math.round(cy - side / 2);
+      left = clamp(left, 0, Math.max(0, canvas.width - side));
+      top = clamp(top, 0, Math.max(0, canvas.height - side));
+      const out = createCanvas(Math.min(side, canvas.width - left), Math.min(side, canvas.height - top));
+      out.getContext("2d", { willReadFrequently: true }).drawImage(canvas, left, top, out.width, out.height, 0, 0, out.width, out.height);
+      return { canvas: out, meta: { left, top, side: out.width, padding } };
+    }
+
+    function extractBoundsCanvas(canvas, bounds) {
+      const width = bounds.maxX - bounds.minX + 1;
+      const height = bounds.maxY - bounds.minY + 1;
+      const out = createCanvas(width, height);
+      out.getContext("2d", { willReadFrequently: true }).drawImage(canvas, bounds.minX, bounds.minY, width, height, 0, 0, width, height);
+      return out;
+    }
+
+    function fitRectCanvasToSquare(rectCanvas, targetSize, paddingRatio) {
+      const out = createCanvas(targetSize, targetSize);
+      const ctx = out.getContext("2d", { willReadFrequently: true });
+      ctx.imageSmoothingEnabled = false;
+      const usable = Math.max(1, targetSize * (1 - paddingRatio * 2));
+      const scale = Math.min(usable / rectCanvas.width, usable / rectCanvas.height);
+      const drawW = Math.max(1, Math.round(rectCanvas.width * scale));
+      const drawH = Math.max(1, Math.round(rectCanvas.height * scale));
+      const dx = Math.round((targetSize - drawW) / 2);
+      const dy = Math.round((targetSize - drawH) / 2);
+      ctx.drawImage(rectCanvas, 0, 0, rectCanvas.width, rectCanvas.height, dx, dy, drawW, drawH);
+      return out;
+    }
+
+    function dominantResizeToBox(canvas, outW, outH) {
+      const srcCtx = canvas.getContext("2d", { willReadFrequently: true });
+      const srcData = srcCtx.getImageData(0, 0, canvas.width, canvas.height).data;
+      const out = createCanvas(outW, outH);
+      const outCtx = out.getContext("2d", { willReadFrequently: true });
+      const outImage = outCtx.createImageData(outW, outH);
+      const outData = outImage.data;
+
+      for (let ty = 0; ty < outH; ty++) {
+        const y0 = Math.floor((ty * canvas.height) / outH);
+        const y1 = Math.max(y0 + 1, Math.ceil(((ty + 1) * canvas.height) / outH));
+        for (let tx = 0; tx < outW; tx++) {
+          const x0 = Math.floor((tx * canvas.width) / outW);
+          const x1 = Math.max(x0 + 1, Math.ceil(((tx + 1) * canvas.width) / outW));
+          const buckets = new Map();
+          let solid = 0;
+
+          for (let y = y0; y < y1; y++) {
+            for (let x = x0; x < x1; x++) {
+              const p = getPixel(srcData, canvas.width, x, y);
+              if (p.a <= 10) continue;
+              const key = `${Math.round(p.r / 24)},${Math.round(p.g / 24)},${Math.round(p.b / 24)}`;
+              const weight = Math.max(0.25, p.a / 255);
+              const bucket = buckets.get(key) || { w: 0, strong: 0, a: 0, r: 0, g: 0, b: 0 };
+              bucket.w += weight;
+              bucket.a += p.a * weight;
+              bucket.r += p.r * weight;
+              bucket.g += p.g * weight;
+              bucket.b += p.b * weight;
+              if (p.a >= 220) bucket.strong++;
+              buckets.set(key, bucket);
+              solid++;
+            }
+          }
+
+          if (!solid || !buckets.size) continue;
+          let best = null;
+          for (const bucket of buckets.values()) {
+            if (!best || bucket.strong > best.strong || (bucket.strong === best.strong && bucket.w > best.w)) best = bucket;
+          }
+
+          setPixel(outData, outW, tx, ty, {
+            r: Math.round(best.r / best.w),
+            g: Math.round(best.g / best.w),
+            b: Math.round(best.b / best.w),
+            a: Math.round(best.a / best.w)
+          });
+        }
+      }
+
+      outCtx.putImageData(outImage, 0, 0);
+      return out;
+    }
+
+    function fitToSquareByMajorPixels(rectCanvas, targetSize, majorPixels) {
+      const out = createCanvas(targetSize, targetSize);
+      const maxSide = Math.max(rectCanvas.width, rectCanvas.height);
+      const scale = majorPixels / Math.max(1, maxSide);
+      const outW = clamp(Math.round(rectCanvas.width * scale), 1, targetSize);
+      const outH = clamp(Math.round(rectCanvas.height * scale), 1, targetSize);
+      const resized = dominantResizeToBox(rectCanvas, outW, outH);
+      out.getContext("2d", { willReadFrequently: true }).drawImage(
+        resized,
+        Math.floor((targetSize - outW) / 2),
+        Math.floor((targetSize - outH) / 2)
+      );
+      return out;
+    }
+
+    function dominantBlockResize(canvas, targetSize) {
+      const srcCtx = canvas.getContext("2d", { willReadFrequently: true });
+      const srcData = srcCtx.getImageData(0, 0, canvas.width, canvas.height).data;
+      const out = createCanvas(targetSize, targetSize);
+      const outCtx = out.getContext("2d", { willReadFrequently: true });
+      const outImage = outCtx.createImageData(targetSize, targetSize);
+      const outData = outImage.data;
+
+      for (let ty = 0; ty < targetSize; ty++) {
+        const y0 = Math.floor((ty * canvas.height) / targetSize);
+        const y1 = Math.max(y0 + 1, Math.ceil(((ty + 1) * canvas.height) / targetSize));
+        for (let tx = 0; tx < targetSize; tx++) {
+          const x0 = Math.floor((tx * canvas.width) / targetSize);
+          const x1 = Math.max(x0 + 1, Math.ceil(((tx + 1) * canvas.width) / targetSize));
+          const buckets = new Map();
+          let solid = 0;
+
+          for (let y = y0; y < y1; y++) {
+            for (let x = x0; x < x1; x++) {
+              const p = getPixel(srcData, canvas.width, x, y);
+              if (p.a <= 10) continue;
+              const key = `${Math.round(p.r / 24)},${Math.round(p.g / 24)},${Math.round(p.b / 24)}`;
+              const weight = Math.max(0.35, (p.a / 255) ** 1.35);
+              const bucket = buckets.get(key) || { w: 0, a: 0, r: 0, g: 0, b: 0 };
+              bucket.w += weight;
+              bucket.a += p.a * weight;
+              bucket.r += p.r * weight;
+              bucket.g += p.g * weight;
+              bucket.b += p.b * weight;
+              buckets.set(key, bucket);
+              solid++;
+            }
+          }
+
+          if (!solid) continue;
+          let best = null;
+          for (const bucket of buckets.values()) {
+            if (!best || bucket.w > best.w) best = bucket;
+          }
+
+          setPixel(outData, targetSize, tx, ty, {
+            r: Math.round(best.r / best.w),
+            g: Math.round(best.g / best.w),
+            b: Math.round(best.b / best.w),
+            a: Math.round(best.a / best.w)
+          });
+        }
+      }
+
+      outCtx.putImageData(outImage, 0, 0);
+      return out;
+    }
+
+    function resizeNearest(canvas, width, height) {
+      const out = createCanvas(width, height);
+      const ctx = out.getContext("2d", { willReadFrequently: true });
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(canvas, 0, 0, width, height);
+      return out;
+    }
+
+    function fitInsideMaskCanvas(rectCanvas, maskCanvas) {
+      const targetSize = maskCanvas.width;
+      const maskBounds = getMaskBounds(maskCanvas);
+      const boxW = maskBounds.maxX - maskBounds.minX + 1;
+      const boxH = maskBounds.maxY - maskBounds.minY + 1;
+      const scale = Math.min(boxW / Math.max(1, rectCanvas.width), boxH / Math.max(1, rectCanvas.height));
+      const outW = clamp(Math.round(rectCanvas.width * scale), 1, targetSize);
+      const outH = clamp(Math.round(rectCanvas.height * scale), 1, targetSize);
+      const resized = dominantResizeToBox(rectCanvas, outW, outH);
+      const out = createCanvas(targetSize, targetSize);
+      out.getContext("2d", { willReadFrequently: true }).drawImage(
+        resized,
+        maskBounds.minX + Math.floor((boxW - outW) / 2),
+        maskBounds.minY + Math.floor((boxH - outH) / 2)
+      );
+      return out;
+    }
+
+    async function buildMaskCanvas(maskFile, targetSize) {
+      if (!maskFile) return null;
+      const maskImage = await fileToImage(maskFile);
+      const { canvas } = imageToCanvas(maskImage);
+      return resizeNearest(canvas, targetSize, targetSize);
+    }
+
+    function getMaskBounds(maskCanvas) {
+      return boundsFromMask(getAlphaMask(maskCanvas), maskCanvas.width, maskCanvas.height);
+    }
+
+    function applyShapeMaskToCanvas(canvas, maskCanvas) {
+      if (!maskCanvas) return cloneCanvas(canvas);
+      const out = cloneCanvas(canvas);
+      const outCtx = out.getContext("2d", { willReadFrequently: true });
+      const outImage = outCtx.getImageData(0, 0, out.width, out.height);
+      const outData = outImage.data;
+      const maskData = maskCanvas.getContext("2d", { willReadFrequently: true }).getImageData(0, 0, out.width, out.height).data;
+
+      for (let y = 0; y < out.height; y++) {
+        for (let x = 0; x < out.width; x++) {
+          if (getPixel(maskData, out.width, x, y).a <= 10) setPixel(outData, out.width, x, y, { r: 0, g: 0, b: 0, a: 0 });
+        }
+      }
+
+      outCtx.putImageData(outImage, 0, 0);
+      return out;
+    }
+
+    async function fitToMask(cropCanvas, maskCanvas, preserveAspect) {
+      const targetSize = maskCanvas.width;
+      const maskBits = getAlphaMask(maskCanvas);
+      const maskBounds = boundsFromMask(maskBits, targetSize, targetSize);
+      const maskWidth = maskBounds.maxX - maskBounds.minX + 1;
+      const maskHeight = maskBounds.maxY - maskBounds.minY + 1;
+      const widthScales = preserveAspect ? [0.88, 0.94, 1.0, 1.06, 1.12] : [0.8, 0.9, 1.0, 1.1, 1.2];
+      const heightScales = preserveAspect ? [0.88, 0.94, 1.0, 1.06, 1.12] : [0.8, 0.9, 1.0, 1.1, 1.2];
+      const offsetRange = preserveAspect ? 1 : 2;
+      let best = null;
+
+      for (const widthScale of widthScales) {
+        for (const heightScale of heightScales) {
+          if (preserveAspect && widthScale !== heightScale) continue;
+          const baseW = Math.max(1, Math.round(maskWidth * widthScale));
+          const baseH = Math.max(1, Math.round(maskHeight * heightScale));
+          const resized = dominantResizeToBox(cropCanvas, baseW, baseH);
+
+          for (let oy = -offsetRange; oy <= offsetRange; oy++) {
+            for (let ox = -offsetRange; ox <= offsetRange; ox++) {
+              const canvas = createCanvas(targetSize, targetSize);
+              canvas.getContext("2d", { willReadFrequently: true }).drawImage(
+                resized,
+                Math.round((targetSize - baseW) / 2) + ox,
+                Math.round((targetSize - baseH) / 2) + oy
+              );
+              const masked = applyShapeMaskToCanvas(canvas, maskCanvas);
+              const alphaBits = getAlphaMask(masked);
+              let overlap = 0;
+              let outside = 0;
+              let insideMiss = 0;
+              for (let i = 0; i < alphaBits.length; i++) {
+                const a = alphaBits[i];
+                const m = maskBits[i];
+                if (a && m) overlap++;
+                else if (a && !m) outside++;
+                else if (!a && m) insideMiss++;
+              }
+              const distortionPenalty = Math.abs(widthScale - 1) + Math.abs(heightScale - 1);
+              const score = overlap * 5 - outside * 6 - insideMiss * 2 - distortionPenalty * 3;
+              if (!best || score > best.score) best = { canvas: masked, score };
+            }
+          }
+        }
+      }
+
+      return best ? best.canvas : applyShapeMaskToCanvas(dominantResizeToBox(cropCanvas, targetSize, targetSize), maskCanvas);
+    }
+
+    function nearestFillOutline(canvas, maskCanvas) {
+      const out = cloneCanvas(canvas);
+      const outCtx = out.getContext("2d", { willReadFrequently: true });
+      const outImage = outCtx.getImageData(0, 0, out.width, out.height);
+      const outData = outImage.data;
+      const maskData = maskCanvas.getContext("2d", { willReadFrequently: true }).getImageData(0, 0, out.width, out.height).data;
+
+      for (let y = 0; y < out.height; y++) {
+        for (let x = 0; x < out.width; x++) {
+          const m = getPixel(maskData, out.width, x, y);
+          const p = getPixel(outData, out.width, x, y);
+          if (m.a <= 10 || p.a > 10) continue;
+          let found = null;
+          for (const radius of [1, 2, 3]) {
+            for (let dy = -radius; dy <= radius; dy++) {
+              for (let dx = -radius; dx <= radius; dx++) {
+                const nx = x + dx;
+                const ny = y + dy;
+                if (nx < 0 || ny < 0 || nx >= out.width || ny >= out.height) continue;
+                const np = getPixel(outData, out.width, nx, ny);
+                if (np.a > 10) {
+                  found = np;
+                  break;
+                }
+              }
+              if (found) break;
+            }
+            if (found) break;
+          }
+          if (found) setPixel(outData, out.width, x, y, found);
+        }
+      }
+
+      outCtx.putImageData(outImage, 0, 0);
+      return out;
+    }
+
+    function trimResidualGrayEdgePixels(canvas) {
+      const out = cloneCanvas(canvas);
+      const ctx = out.getContext("2d", { willReadFrequently: true });
+      const imageData = ctx.getImageData(0, 0, out.width, out.height);
+      const data = imageData.data;
+      const toClear = [];
+
+      for (let y = 0; y < out.height; y++) {
+        for (let x = 0; x < out.width; x++) {
+          const p = getPixel(data, out.width, x, y);
+          if (p.a <= 10) continue;
+          if (saturation(p.r, p.g, p.b) > 18) continue;
+
+          let opaqueNeighbors = 0;
+          let vividNeighbors = 0;
+          for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]]) {
+            const nx = x + dx;
+            const ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= out.width || ny >= out.height) continue;
+            const np = getPixel(data, out.width, nx, ny);
+            if (np.a > 10) {
+              opaqueNeighbors++;
+              if (saturation(np.r, np.g, np.b) > 18) vividNeighbors++;
+            }
+          }
+
+          if (opaqueNeighbors <= 3 && vividNeighbors <= 2) toClear.push([x, y]);
+        }
+      }
+
+      for (const [x, y] of toClear) setPixel(data, out.width, x, y, { r: 0, g: 0, b: 0, a: 0 });
+      ctx.putImageData(imageData, 0, 0);
+      return out;
+    }
+
+    function pickDeterministicCenters(colors, k) {
+      const uniqueMap = new Map();
+      for (const [r, g, b, a] of colors) {
+        const key = `${r},${g},${b}`;
+        uniqueMap.set(key, (uniqueMap.get(key) || 0) + a);
+      }
+      const entries = [...uniqueMap.entries()].map(([key, weight]) => ({ color: key.split(",").map(Number), weight }));
+      entries.sort((a, b) => b.weight - a.weight);
+      if (entries.length <= k) return entries.map(entry => entry.color);
+      const centers = [entries[0].color];
+      while (centers.length < k) {
+        let bestEntry = null;
+        let bestScore = -1;
+        for (const entry of entries) {
+          const nearest = centers.reduce((min, center) => Math.min(min, (entry.color[0] - center[0]) ** 2 + (entry.color[1] - center[1]) ** 2 + (entry.color[2] - center[2]) ** 2), Infinity);
+          const score = nearest * entry.weight;
+          if (score > bestScore) {
+            bestScore = score;
+            bestEntry = entry;
+          }
+        }
+        centers.push(bestEntry.color);
+      }
+      return centers;
+    }
+
+    function quantizeCanvas(canvas, colorCount, useDither) {
+      if (colorCount <= 0) return cloneCanvas(canvas);
+      const out = cloneCanvas(canvas);
+      const ctx = out.getContext("2d", { willReadFrequently: true });
+      const imageData = ctx.getImageData(0, 0, out.width, out.height);
+      const data = imageData.data;
+      const colors = [];
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] > 10) colors.push([data[i], data[i + 1], data[i + 2], data[i + 3]]);
+      }
+      const uniqueBefore = new Set(colors.map(c => `${c[0]},${c[1]},${c[2]}`)).size;
+      if (!uniqueBefore) return out;
+      const palette = pickDeterministicCenters(colors, Math.min(colorCount, uniqueBefore));
+      const work = new Float32Array(data.length);
+      for (let i = 0; i < data.length; i++) work[i] = data[i];
+
+      function diffuse(x, y, errR, errG, errB, factor) {
+        if (x < 0 || y < 0 || x >= out.width || y >= out.height) return;
+        const i = (y * out.width + x) * 4;
+        if (work[i + 3] <= 0) return;
+        work[i] = clamp(work[i] + errR * factor, 0, 255);
+        work[i + 1] = clamp(work[i + 1] + errG * factor, 0, 255);
+        work[i + 2] = clamp(work[i + 2] + errB * factor, 0, 255);
+      }
+
+      for (let y = 0; y < out.height; y++) {
+        for (let x = 0; x < out.width; x++) {
+          const i = (y * out.width + x) * 4;
+          if (work[i + 3] <= 10) {
+            data[i + 3] = 0;
+            continue;
+          }
+          const current = [work[i], work[i + 1], work[i + 2]];
+          let best = palette[0];
+          let bestDist = Infinity;
+          for (const candidate of palette) {
+            const d = (current[0] - candidate[0]) ** 2 + (current[1] - candidate[1]) ** 2 + (current[2] - candidate[2]) ** 2;
+            if (d < bestDist) { bestDist = d; best = candidate; }
+          }
+          const oldR = work[i];
+          const oldG = work[i + 1];
+          const oldB = work[i + 2];
+          data[i] = best[0];
+          data[i + 1] = best[1];
+          data[i + 2] = best[2];
+          data[i + 3] = roundByte(work[i + 3]);
+          if (!useDither) continue;
+          const errR = oldR - best[0];
+          const errG = oldG - best[1];
+          const errB = oldB - best[2];
+          diffuse(x + 1, y, errR, errG, errB, 7 / 16);
+          diffuse(x - 1, y + 1, errR, errG, errB, 3 / 16);
+          diffuse(x, y + 1, errR, errG, errB, 5 / 16);
+          diffuse(x + 1, y + 1, errR, errG, errB, 1 / 16);
+        }
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+      return out;
+    }
+
+    function collectStats(canvas) {
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      const colors = new Set();
+      let opaquePixels = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] > 0) {
+          opaquePixels++;
+          colors.add(`${data[i]},${data[i + 1]},${data[i + 2]}`);
+        }
+      }
+      return [
+        `实色像素 ${opaquePixels}`,
+        `结果颜色 ${colors.size}`,
+        `输出 ${canvas.width}x${canvas.height}`
+      ];
+    }
+
+    function readOptions() {
+      return {
+        targetSize: clamp(parseInt($("targetSize").value, 10) || 16, 8, 128),
+        colorCount: clamp(parseInt($("colorCount").value, 10) || 0, 0, 256),
+        paddingRatio: clamp(parseFloat($("paddingRatio").value) || 0.08, 0, 0.45),
+        majorPixels: clamp(parseInt($("majorPixels").value, 10) || 14, 8, 16),
+        matteThreshold: clamp(parseInt($("matteThreshold").value, 10) || 16, 0, 80),
+        alphaThreshold: 10,
+        shapeMask: $("maskImage").files[0] || null,
+        shapeMode: $("shapeMode").value,
+        useDither: $("useDither").checked,
+        autoDownload: $("autoDownload").checked
+      };
+    }
+
+    function updateOutputName() {
+      const file = $("inputImage").files[0];
+      if (!file) return;
+      if ($("outputName").dataset.userEdited === "true") return;
+      const size = clamp(parseInt($("targetSize").value, 10) || 16, 8, 128);
+      const base = file.name.replace(/\.[^.]+$/, "");
+      $("outputName").value = `${base}_${size}x${size}.png`;
+    }
+
+    async function renderResult() {
+      const sourceFile = $("inputImage").files[0];
+      if (!sourceFile) throw new Error("请先选择源图片。");
+      const options = readOptions();
+      const outputName = ($("outputName").value || `output_${options.targetSize}x${options.targetSize}.png`).trim();
+
+      log(`开始转换: ${sourceFile.name}`);
+      log(`参数: ${JSON.stringify({
+        targetSize: options.targetSize,
+        colorCount: options.colorCount,
+        paddingRatio: options.paddingRatio,
+        majorPixels: options.majorPixels,
+        matteThreshold: options.matteThreshold,
+        shapeMode: options.shapeMode,
+        hasMask: !!options.shapeMask
+      })}`);
+
+      const sourceImage = await fileToImage(sourceFile);
+      const { canvas: sourceCanvas } = imageToCanvas(sourceImage);
+      const { mask, alphaDriven, background } = buildForegroundMask(sourceCanvas, options);
+      log(`背景估计: rgb(${background.r}, ${background.g}, ${background.b})`);
+      log(alphaDriven ? "检测到透明素材：主体提取优先依赖 alpha。" : "检测到不透明素材：主体提取使用背景颜色 + 中心主体规则。");
+
+      const component = largestCentralComponent(mask, sourceCanvas.width, sourceCanvas.height);
+      if (!component) throw new Error("没有找到可用主体。");
+
+      const componentMask = new Uint8Array(sourceCanvas.width * sourceCanvas.height);
+      for (const index of component.pixels) componentMask[index] = 1;
+      const edgeThreshold = clamp(Math.round(options.matteThreshold * 0.55), 4, 44);
+      const cleanupStrength = clamp(options.matteThreshold, 0, 80);
+      const expandedMask = alphaDriven ? componentMask : dilateToKeepEdges(componentMask, sourceCanvas, background, edgeThreshold, 2);
+      const maskedCanvas = cleanupResidualBackground(applyMaskToCanvas(sourceCanvas, expandedMask), background, cleanupStrength);
+      const cleanBounds = boundsFromMask(getAlphaMask(maskedCanvas), maskedCanvas.width, maskedCanvas.height);
+      const crop = cropSquare(maskedCanvas, cleanBounds, options.paddingRatio);
+      const rectCanvas = extractBoundsCanvas(maskedCanvas, cleanBounds);
+      log(`主体边界: x=${cleanBounds.minX}-${cleanBounds.maxX}, y=${cleanBounds.minY}-${cleanBounds.maxY}`);
+      log(`裁切边长: ${crop.meta.side}px, 留白: ${crop.meta.padding}px`);
+
+      drawPreviewWithSquare(maskedCanvas, previewSource, {
+        left: crop.meta.left,
+        top: crop.meta.top,
+        side: crop.meta.side
+      }, 2);
+      resizeCanvasDisplay(crop.canvas, previewCrop, 3);
+
+      const base16 = fitToSquareByMajorPixels(rectCanvas, options.targetSize, options.majorPixels);
+      const maskCanvas = await buildMaskCanvas(options.shapeMask, options.targetSize);
+
+      let outputCanvas;
+      let resolvedShapeMode = options.shapeMode;
+      if (maskCanvas && resolvedShapeMode === "auto") {
+        const rectAspect = rectCanvas.width / Math.max(1, rectCanvas.height);
+        const maskBounds = getMaskBounds(maskCanvas);
+        const maskAspect = (maskBounds.maxX - maskBounds.minX + 1) / Math.max(1, (maskBounds.maxY - maskBounds.minY + 1));
+        const aspectRatioDelta = Math.max(rectAspect, maskAspect) / Math.max(0.001, Math.min(rectAspect, maskAspect));
+        resolvedShapeMode = aspectRatioDelta > 1.18 ? "fit" : "overlay";
+        log(`遮罩模式自动判断: ${resolvedShapeMode === "fit" ? "贴近形状" : "只裁轮廓"}。`);
+      }
+
+      if (maskCanvas && resolvedShapeMode === "overlay") {
+        outputCanvas = applyShapeMaskToCanvas(fitInsideMaskCanvas(rectCanvas, maskCanvas), maskCanvas);
+        log("遮罩模式: 只裁轮廓，不强行扭形。");
+      } else if (maskCanvas && resolvedShapeMode === "fit") {
+        outputCanvas = await fitToMask(rectCanvas, maskCanvas, false);
+        log("遮罩模式: 贴近参考形状。");
+      } else {
+        outputCanvas = base16;
+      }
+
+      if (maskCanvas && resolvedShapeMode === "overlay") {
+        outputCanvas = nearestFillOutline(outputCanvas, maskCanvas);
+      }
+
+      outputCanvas = trimResidualGrayEdgePixels(outputCanvas);
+      outputCanvas = quantizeCanvas(outputCanvas, options.colorCount, options.useDither);
+
+      resizeCanvasDisplay(outputCanvas, previewDst, 10);
+      const stats = collectStats(outputCanvas);
+      resultStats.innerHTML = stats.map(item => `<span class="stat">${item}</span>`).join("");
+
+      const blob = await new Promise(resolve => outputCanvas.toBlob(resolve, "image/png"));
+      if (!blob) throw new Error("PNG 导出失败。");
+      setDownload(blob, outputName);
+      setStatus(`已生成 ${outputName}`);
+      log(`结果已生成: ${outputName}`);
+
+      if (options.autoDownload) {
+        downloadLink.click();
+        log("已尝试自动下载。如果浏览器拦截，请点击“下载结果”。");
+      }
+    }
+
+    $("convertBtn").addEventListener("click", async () => {
+      setStatus("处理中...");
+      try {
+        await renderResult();
+      } catch (error) {
+        console.error(error);
+        log(`错误: ${error.message}`);
+        setStatus(error.message, true);
+      }
+    });
+
+    $("clearBtn").addEventListener("click", () => {
+      logArea.value = "";
+      setStatus("");
+    });
+
+    $("clearMaskBtn").addEventListener("click", () => {
+      $("maskImage").value = "";
+      log("已取消形状遮罩。");
+    });
+
+    $("inputImage").addEventListener("change", () => {
+      $("outputName").dataset.userEdited = "false";
+      updateOutputName();
+      resetDownload();
+      resultStats.innerHTML = "";
+    });
+
+    $("targetSize").addEventListener("input", updateOutputName);
+    $("outputName").addEventListener("input", () => {
+      $("outputName").dataset.userEdited = "true";
+    });
+
+    window.addEventListener("beforeunload", revokeBlobUrl);
+
+    clearCanvas(sourceCtx, previewSource);
+    clearCanvas(cropCtx, previewCrop);
+    clearCanvas(dstCtx, previewDst);
+  </script>
+</body>
+</html>

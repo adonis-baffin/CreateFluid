@@ -128,7 +128,9 @@ public class FluidInteractionPoint {
 
         if (AllBlocks.BASIN.has(state) ||
                 CFBlocks.FLUID_INTERFACE.has(state) ||
-                CFBlocks.SMART_FLUID_INTERFACE.has(state)) {
+                CFBlocks.SMART_FLUID_INTERFACE.has(state) ||
+                CFBlocks.GUTTER_OUTLET.has(state) ||
+                CFBlocks.SMART_GUTTER_OUTLET.has(state)) {
             return true;
         }
 

@@ -19,6 +19,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -62,8 +64,18 @@ public class FrogportInteractionHandler {
         BlockPos selectedFrogportPos = FrogportSelectionHandler.getSelectedFrogportPos();
         if (EditModeManager.getCurrentMode() == EditModeManager.EditMode.FROGPORT
                 && selectedFrogportPos != null && selectedFrogportPos.equals(pos)) {
-            EditModeManager.exitMode(player, level);
-            sendPlayerMessage(player, "create_fluid.baton.frogport.deselected", ChatFormatting.GRAY);
+            if (FrogportSelectionHandler.hasPendingTarget()) {
+                PacketDistributor.sendToServer(new com.adonis.fluid.packet.FrogportConnectionPacket(
+                        pos,
+                        FrogportSelectionHandler.getPendingLiftPos(),
+                        FrogportSelectionHandler.getPendingChainPosition(),
+                        FrogportSelectionHandler.getPendingConnection()));
+                FrogportSelectionHandler.playSelectionSuccessEffect(Minecraft.getInstance(), pos);
+                EditModeManager.exitMode(player, level, false);
+            } else {
+                EditModeManager.exitMode(player, level);
+                sendPlayerMessage(player, "create_fluid.baton.frogport.deselected", ChatFormatting.GRAY);
+            }
         } else {
             EditModeManager.enterMode(EditModeManager.EditMode.FROGPORT, pos, player, level);
             FrogportSelectionHandler.setSelection(pos);
@@ -75,9 +87,17 @@ public class FrogportInteractionHandler {
     @SubscribeEvent
     public static void onKeyInput(InputEvent.InteractionKeyMappingTriggered event) {
         if (EditModeManager.isInEditMode() && EditModeManager.getCurrentMode() == EditModeManager.EditMode.FROGPORT) {
+            Minecraft mc = Minecraft.getInstance();
+            BlockPos selectedFrogportPos = FrogportSelectionHandler.getSelectedFrogportPos();
+            if (selectedFrogportPos != null
+                    && mc.hitResult instanceof BlockHitResult hit
+                    && hit.getType() == HitResult.Type.BLOCK
+                    && selectedFrogportPos.equals(hit.getBlockPos())) {
+                return;
+            }
             event.setCanceled(true);
             event.setSwingHand(true);
-            handleFrogportChainClick(null, Minecraft.getInstance().player, Minecraft.getInstance().level);
+            handleFrogportChainClick(null, mc.player, mc.level);
         }
     }
 
@@ -137,10 +157,9 @@ public class FrogportInteractionHandler {
                     && targetLocation.closerThan(
                     Vec3.atBottomCenterOf(frogportPos),
                     (double) AllConfigs.server().logistics.packagePortRange.get())) {
-                sendPlayerMessage(player, "create_fluid.baton.frogport.can_connect", 10416499);
-                PacketDistributor.sendToServer(
-                        new com.adonis.fluid.packet.FrogportConnectionPacket(frogportPos, selectedLift, selectedChainPosition, selectedConnection));
-                EditModeManager.exitMode(player, level, false);
+                FrogportSelectionHandler.setPendingTarget(level, selectedLift, selectedChainPosition, selectedConnection, targetLocation);
+                sendPlayerMessage(player, "create_fluid.baton.frogport.target_selected", 10416499);
+                FrogportSelectionHandler.playSelectionSuccessEffect(mc, selectedLift);
             } else {
                 sendPlayerMessage(player, "create_fluid.baton.frogport.too_far", 16736625);
             }

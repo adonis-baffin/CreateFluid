@@ -75,9 +75,9 @@ public class CFPartialModels {
     private static void registerCopperCanModels() {
         try {
             ResourceLocation fluidPackageId = ResourceLocation.fromNamespaceAndPath(CreateFluid.MOD_ID, "copper_can");
-            ResourceLocation newCopperCanModel = ResourceLocation.fromNamespaceAndPath(CreateFluid.MOD_ID, "item/new_copper_can");
+            ResourceLocation copperCanModelLocation = ResourceLocation.fromNamespaceAndPath(CreateFluid.MOD_ID, "item/copper_can");
 
-            PartialModel copperCanModel = PartialModel.of(newCopperCanModel);
+            PartialModel copperCanModel = PartialModel.of(copperCanModelLocation);
             PartialModel creeperRigging = AllPartialModels.PACKAGE_RIGGING.get(Create.asResource("rare_creeper_package"));
 
             if (copperCanModel != null) {

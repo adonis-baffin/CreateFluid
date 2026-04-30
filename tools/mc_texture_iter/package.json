@@ -1,0 +1,12 @@
+{
+  "name": "mc-texture-iter",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "run": "node iterate.js"
+  },
+  "dependencies": {
+    "jimp": "^1.6.1"
+  }
+}

@@ -1,3 +1,65 @@
 {
-  "parent": "fluid:item/new_copper_can"
+	"format_version": "1.21.11",
+	"credit": "Made with Blockbench",
+	"parent": "block/block",
+	"textures": {
+		"1": "fluid:block/copper_can",
+		"particle": "block/copper_block"
+	},
+	"elements": [
+		{
+			"from": [5, 11, 5],
+			"to": [11, 14, 11],
+			"rotation": {"angle": 0, "axis": "y", "origin": [5, 11, 5]},
+			"faces": {
+				"north": {"uv": [12, 8, 13.5, 11], "rotation": 270, "texture": "#1"},
+				"east": {"uv": [12, 8, 13.5, 11], "rotation": 270, "texture": "#1"},
+				"south": {"uv": [12, 8, 13.5, 11], "rotation": 270, "texture": "#1"},
+				"west": {"uv": [12, 8, 13.5, 11], "rotation": 270, "texture": "#1"},
+				"up": {"uv": [13, 8, 16, 11], "texture": "#1"},
+				"down": {"uv": [13, 8, 16, 11], "texture": "#1"}
+			}
+		},
+		{
+			"from": [3, 8, 3],
+			"to": [13, 11, 13],
+			"rotation": {"angle": 0, "axis": "y", "origin": [2, 8, 2]},
+			"faces": {
+				"north": {"uv": [9, 11, 10.5, 16], "rotation": 90, "texture": "#1"},
+				"east": {"uv": [9, 11, 10.5, 16], "rotation": 90, "texture": "#1"},
+				"south": {"uv": [9, 11, 10.5, 16], "rotation": 90, "texture": "#1"},
+				"west": {"uv": [9, 11, 10.5, 16], "rotation": 90, "texture": "#1"},
+				"up": {"uv": [11, 11, 16, 16], "texture": "#1"},
+				"down": {"uv": [11, 11, 16, 16], "texture": "#1"}
+			}
+		},
+		{
+			"from": [4, 0, 4],
+			"to": [12, 8, 12],
+			"rotation": {"angle": 0, "axis": "y", "origin": [4, 0, 4]},
+			"faces": {
+				"north": {"uv": [9, 2, 13, 6], "texture": "#1"},
+				"east": {"uv": [9, 2, 13, 6], "texture": "#1"},
+				"south": {"uv": [9, 2, 13, 6], "texture": "#1"},
+				"west": {"uv": [9, 2, 13, 6], "texture": "#1"},
+				"up": {"uv": [1.5, 11.5, 5.5, 15.5], "texture": "#1"},
+				"down": {"uv": [1.5, 11.5, 5.5, 15.5], "texture": "#1"}
+			}
+		}
+	],
+	"display": {
+		"fixed": {
+			"rotation": [0, 90, 0],
+			"scale": [0.5, 0.5, 0.5]
+		}
+	},
+	"groups": [
+		{
+			"name": "group",
+			"origin": [8, 8, 8],
+			"scope": 0,
+			"color": 0,
+			"children": [0, 1, 2]
+		}
+	]
 }

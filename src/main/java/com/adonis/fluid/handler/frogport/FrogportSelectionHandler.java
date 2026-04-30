@@ -8,6 +8,8 @@ import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.kinetics.chainConveyor.ChainConveyorBlockEntity;
 import com.simibubi.create.content.kinetics.chainConveyor.ChainConveyorInteractionHandler;
 import com.simibubi.create.content.kinetics.chainConveyor.ChainConveyorShape;
+import com.simibubi.create.content.logistics.packagePort.PackagePortBlockEntity;
+import com.simibubi.create.content.logistics.packagePort.PackagePortTarget;
 import com.simibubi.create.foundation.utility.RaycastHelper;
 import com.simibubi.create.infrastructure.config.AllConfigs;
 import com.simibubi.create.foundation.utility.CreateLang;
@@ -40,8 +42,13 @@ import java.util.Set;
 
 public class FrogportSelectionHandler {
     private static BlockPos selectedFrogportPos = null;
+    private static BlockPos pendingLiftPos = null;
+    private static BlockPos pendingConnection = null;
+    private static Vec3 pendingTargetLocation = null;
+    private static float pendingChainPosition = 0.0F;
     private static boolean hasSelection = false;
     private static int statusUpdateCounter = 0;
+    private static int particleCounter = 0;
     private static final Color FROGPORT_HIGHLIGHT_COLOR = new Color(14532966);
     private static final Color CONNECTION_PREVIEW_COLOR = new Color(10416499);
     private static final Color CHAIN_SELECTION_COLOR = new Color(16777215);
@@ -54,15 +61,68 @@ public class FrogportSelectionHandler {
         return selectedFrogportPos;
     }
 
+    public static boolean hasPendingTarget() {
+        return pendingLiftPos != null && pendingTargetLocation != null;
+    }
+
+    public static BlockPos getPendingLiftPos() {
+        return pendingLiftPos;
+    }
+
+    public static BlockPos getPendingConnection() {
+        return pendingConnection;
+    }
+
+    public static float getPendingChainPosition() {
+        return pendingChainPosition;
+    }
+
     public static void setSelection(BlockPos pos) {
         selectedFrogportPos = pos;
         hasSelection = true;
+        loadExistingTarget();
     }
 
     public static void clearSelection() {
         selectedFrogportPos = null;
+        clearPendingTarget();
         hasSelection = false;
         clearChainSelection();
+    }
+
+    public static void clearPendingTarget() {
+        pendingLiftPos = null;
+        pendingConnection = null;
+        pendingTargetLocation = null;
+        pendingChainPosition = 0.0F;
+        Outliner.getInstance().remove("BatonFrogportPendingTarget");
+    }
+
+    public static void setPendingTarget(Level level, BlockPos liftPos, float chainPosition, BlockPos connection, Vec3 targetLocation) {
+        pendingLiftPos = liftPos;
+        pendingChainPosition = chainPosition;
+        pendingConnection = connection;
+        pendingTargetLocation = targetLocation;
+    }
+
+    private static void loadExistingTarget() {
+        clearPendingTarget();
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || selectedFrogportPos == null)
+            return;
+        if (!(mc.level.getBlockEntity(selectedFrogportPos) instanceof PackagePortBlockEntity frogport))
+            return;
+        if (!(frogport.target instanceof PackagePortTarget.ChainConveyorFrogportTarget target))
+            return;
+
+        Vec3 targetLocation = target.getExactTargetLocation(frogport, mc.level, selectedFrogportPos);
+        if (targetLocation == null || targetLocation == Vec3.ZERO)
+            return;
+
+        pendingLiftPos = selectedFrogportPos.offset(target.relativePos);
+        pendingChainPosition = target.chainPos;
+        pendingConnection = target.connection;
+        pendingTargetLocation = targetLocation;
     }
 
     private static void clearChainSelection() {
@@ -183,10 +243,14 @@ public class FrogportSelectionHandler {
         if (!hasSelection()) {
             clearOutlines();
         } else {
+            createContinuousParticles(mc);
             renderFrogportHighlight(mc);
+            renderPendingTarget(mc);
             if (ChainConveyorInteractionHandler.selectedLift != null) {
                 renderChainPreview(mc);
-                updateDistanceStatus(mc);
+                if (!hasPendingTarget()) {
+                    updateDistanceStatus(mc);
+                }
             }
         }
     }
@@ -249,6 +313,9 @@ public class FrogportSelectionHandler {
     }
 
     public static void playSelectionSuccessEffect(Minecraft mc, BlockPos pos) {
+        if (mc.level == null)
+            return;
+
         mc.level.playLocalSound(
                 (double) pos.getX() + 0.5,
                 (double) pos.getY() + 0.5,
@@ -267,6 +334,38 @@ public class FrogportSelectionHandler {
             double y = (double) pos.getY() + 0.5;
             double z = (double) pos.getZ() + 0.5 + Math.sin(angle) * radius;
             mc.level.addParticle(new DustParticleOptions(new Vector3f(1.0F, 1.0F, 1.0F), 1.5F), x, y, z, 0.0, 0.05, 0.0);
+        }
+    }
+
+    private static void renderPendingTarget(Minecraft mc) {
+        if (pendingTargetLocation == null || selectedFrogportPos == null)
+            return;
+
+        int color = CONNECTION_PREVIEW_COLOR.getRGB();
+        Outliner.getInstance()
+                .chaseAABB("BatonFrogportPendingTarget", new AABB(pendingTargetLocation, pendingTargetLocation))
+                .colored(color)
+                .lineWidth(0.16666667F)
+                .disableLineNormals();
+        animateConnection(mc, Vec3.atCenterOf(selectedFrogportPos), pendingTargetLocation, CONNECTION_PREVIEW_COLOR);
+    }
+
+    private static void createContinuousParticles(Minecraft mc) {
+        if (mc.level == null || selectedFrogportPos == null)
+            return;
+
+        particleCounter = (particleCounter + 1) % 1000;
+        if (particleCounter % 10 != 0)
+            return;
+
+        for (int i = 0; i < 6; i++) {
+            double angle = (Math.PI * 2) * i / 6.0;
+            double radius = 0.55;
+            double x = selectedFrogportPos.getX() + 0.5 + Math.cos(angle) * radius;
+            double y = selectedFrogportPos.getY() + 1.15;
+            double z = selectedFrogportPos.getZ() + 0.5 + Math.sin(angle) * radius;
+            mc.level.addParticle(new DustParticleOptions(new Vector3f(1.0F, 1.0F, 1.0F), 0.65F),
+                    x, y, z, 0.0, 0.015, 0.0);
         }
     }
 

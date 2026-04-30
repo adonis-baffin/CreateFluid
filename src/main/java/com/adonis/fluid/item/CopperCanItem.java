@@ -9,8 +9,12 @@ import com.simibubi.create.content.logistics.box.PackageStyles;
 import com.simibubi.create.content.logistics.box.PackageStyles.PackageStyle;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.fluids.FluidStack;
 
 import java.util.List;
@@ -51,19 +55,22 @@ public class CopperCanItem extends PackageItem {
 	}
 
 	@Override
+	public InteractionResultHolder<ItemStack> open(Level worldIn, Player playerIn, InteractionHand handIn) {
+		return InteractionResultHolder.fail(playerIn.getItemInHand(handIn));
+	}
+
+	@Override
 	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
 		super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
 		FluidStack fluid = getFluid(stack);
-		if (!fluid.isEmpty()) {
-			tooltipComponents.add(fluid.getHoverName()
-				.copy()
-				.append(" x")
-				.append(fluid$formatTooltipAmount(fluid.getAmount()))
-				.withStyle(ChatFormatting.GRAY));
-		} else {
-			tooltipComponents.add(Component.translatable("item.fluid.copper_can.tooltip.empty")
-				.withStyle(ChatFormatting.GRAY));
-		}
+		if (fluid.isEmpty())
+			return;
+
+		tooltipComponents.add(fluid.getHoverName()
+			.copy()
+			.append(" x")
+			.append(fluid$formatTooltipAmount(fluid.getAmount()))
+			.withStyle(ChatFormatting.GRAY));
 	}
 
 	private static String fluid$formatTooltipAmount(int amountMb) {

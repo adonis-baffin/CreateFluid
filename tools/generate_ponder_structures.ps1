@@ -194,3 +194,33 @@ $ponderDir = Join-Path $PSScriptRoot '..\\src\\main\\resources\\assets\\fluid\\p
 Write-Structure (Join-Path $ponderDir 'fluid_atomizer.nbt') @(7, 4, 7) $palette $atomizerBlocks
 Write-Structure (Join-Path $ponderDir 'fluid_atomizer_potion.nbt') @(7, 4, 7) $palette $potionBlocks
 Write-Structure (Join-Path $ponderDir 'communicating_vessel.nbt') @(7, 4, 7) $palette $vesselBlocks
+
+# Can Filler scene
+$canFillerPalette = @(
+  [pscustomobject]@{ Key = 'white_concrete'; Name = 'minecraft:white_concrete'; Properties = @{} },
+  [pscustomobject]@{ Key = 'snow_block'; Name = 'minecraft:snow_block'; Properties = @{} },
+  [pscustomobject]@{ Key = 'tank_bottom'; Name = 'create:fluid_tank'; Properties = [ordered]@{ bottom = 'true'; shape = 'window'; top = 'false' } },
+  [pscustomobject]@{ Key = 'tank_top'; Name = 'create:fluid_tank'; Properties = [ordered]@{ bottom = 'false'; shape = 'window'; top = 'true' } },
+  [pscustomobject]@{ Key = 'can_filler_east'; Name = 'fluid:can_filler'; Properties = [ordered]@{ facing = 'east'; linked = 'false'; powered = 'false' } },
+  [pscustomobject]@{ Key = 'can_filler_west'; Name = 'fluid:can_filler'; Properties = [ordered]@{ facing = 'west'; linked = 'false'; powered = 'false' } },
+  [pscustomobject]@{ Key = 'funnel_push_down'; Name = 'create:andesite_funnel'; Properties = [ordered]@{ extracting = 'true'; facing = 'down'; powered = 'false'; waterlogged = 'false' } },
+  [pscustomobject]@{ Key = 'funnel_pull_down'; Name = 'create:andesite_funnel'; Properties = [ordered]@{ extracting = 'false'; facing = 'down'; powered = 'false'; waterlogged = 'false' } },
+  [pscustomobject]@{ Key = 'belt_start'; Name = 'create:belt'; Properties = [ordered]@{ casing = 'false'; facing = 'east'; part = 'start'; slope = 'horizontal'; waterlogged = 'false' } },
+  [pscustomobject]@{ Key = 'belt_end'; Name = 'create:belt'; Properties = [ordered]@{ casing = 'false'; facing = 'east'; part = 'end'; slope = 'horizontal'; waterlogged = 'false' } }
+)
+
+$canFillerBlocks = @(Floor-Blocks 9 7)
+$canFillerBlocks += @(
+  [pscustomobject]@{ Pos = @(1, 1, 2); State = 'tank_bottom' },
+  [pscustomobject]@{ Pos = @(1, 2, 2); State = 'tank_top' },
+  [pscustomobject]@{ Pos = @(2, 1, 2); State = 'can_filler_east' },
+  [pscustomobject]@{ Pos = @(3, 1, 2); State = 'belt_start' },
+  [pscustomobject]@{ Pos = @(4, 1, 2); State = 'belt_end' },
+  [pscustomobject]@{ Pos = @(3, 2, 2); State = 'funnel_push_down' },
+  [pscustomobject]@{ Pos = @(4, 2, 2); State = 'funnel_pull_down' },
+  [pscustomobject]@{ Pos = @(5, 1, 2); State = 'can_filler_west' },
+  [pscustomobject]@{ Pos = @(6, 1, 2); State = 'tank_bottom' },
+  [pscustomobject]@{ Pos = @(6, 2, 2); State = 'tank_top' }
+)
+
+Write-Structure (Join-Path $ponderDir 'can_filler.nbt') @(9, 4, 7) $canFillerPalette $canFillerBlocks

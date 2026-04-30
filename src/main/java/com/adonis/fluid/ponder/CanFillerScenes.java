@@ -2,6 +2,7 @@ package com.adonis.fluid.ponder;
 
 import com.adonis.fluid.item.CopperCanItem;
 import com.simibubi.create.content.fluids.tank.FluidTankBlockEntity;
+import com.simibubi.create.content.logistics.packager.PackagerBlock;
 import com.simibubi.create.content.logistics.packager.PackagerBlockEntity;
 import com.simibubi.create.foundation.ponder.CreateSceneBuilder;
 import net.createmod.ponder.api.PonderPalette;
@@ -28,6 +29,7 @@ public class CanFillerScenes {
 
         BlockPos tank1Pos = util.grid().at(1, 2, 4);
         BlockPos canFiller1Pos = util.grid().at(1, 2, 3);
+        BlockPos leverPos = util.grid().at(1, 3, 3);
         BlockPos beltStartPos = util.grid().at(1, 1, 2);
         BlockPos beltEndPos = util.grid().at(5, 1, 2);
         BlockPos funnel1Pos = util.grid().at(1, 2, 2);
@@ -36,9 +38,10 @@ public class CanFillerScenes {
         BlockPos tank2Pos = util.grid().at(6, 2, 3);
 
         Selection tank1Sel = util.select().fromTo(1, 1, 4, 1, 3, 4);
-        Selection canFiller1Sel = util.select().fromTo(1, 1, 3, 1, 2, 3);
+        Selection canFiller1Sel = util.select().fromTo(1, 1, 3, 1, 3, 3);
         Selection beltSel = util.select().fromTo(0, 1, 2, 7, 1, 2)
-                .add(util.select().position(7, 1, 3));
+                .add(util.select().position(7, 1, 3))
+                .add(util.select().position(8, 0, 3));
         Selection funnel1Sel = util.select().position(funnel1Pos);
         Selection funnel2Sel = util.select().position(funnel2Pos);
         Selection canFiller2Sel = util.select().position(canFiller2Pos);
@@ -92,6 +95,9 @@ public class CanFillerScenes {
         scene.idle(90);
 
         ItemStack waterCan = CopperCanItem.create(new FluidStack(Fluids.WATER, 1000), 1000);
+        scene.world().toggleRedstonePower(util.select().position(leverPos));
+        scene.world().modifyBlock(canFiller1Pos, state -> state.setValue(PackagerBlock.POWERED, true), true);
+        scene.idle(10);
         canFillerCreate(scene, canFiller1Pos, waterCan);
         scene.idle(5);
         scene.world().modifyBlockEntity(tank1Pos, FluidTankBlockEntity.class, be -> {
@@ -110,8 +116,8 @@ public class CanFillerScenes {
         canFillerClear(scene, canFiller1Pos);
         scene.world().setKineticSpeed(beltSel, -16);
         scene.world().flapFunnel(funnel1Pos, false);
-        scene.world().createItemOnBelt(beltStartPos, Direction.EAST, waterCan);
-        scene.idle(30);
+        scene.world().createItemOnBelt(beltStartPos, Direction.UP, waterCan);
+        scene.idle(20);
 
         scene.overlay().showText(70)
                 .attachKeyFrame()
@@ -119,7 +125,7 @@ public class CanFillerScenes {
                 .text(tr("fluid.ponder.can_filler.text_5"))
                 .pointAt(util.vector().blockSurface(beltStartPos, Direction.UP))
                 .placeNearTarget();
-        scene.idle(50);
+        scene.idle(100);
 
         scene.world().removeItemsFromBelt(beltEndPos);
         scene.world().flapFunnel(funnel2Pos, false);
@@ -139,6 +145,14 @@ public class CanFillerScenes {
                 .pointAt(util.vector().blockSurface(canFiller2Pos, Direction.EAST))
                 .placeNearTarget();
         scene.idle(90);
+
+        scene.overlay().showText(100)
+                .attachKeyFrame()
+                .colored(PonderPalette.WHITE)
+                .text(tr("fluid.ponder.can_filler.text_7"))
+                .pointAt(util.vector().blockSurface(tank2Pos, Direction.EAST))
+                .placeNearTarget();
+        scene.idle(110);
 
         scene.markAsFinished();
     }

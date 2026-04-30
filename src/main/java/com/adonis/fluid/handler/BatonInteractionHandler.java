@@ -167,7 +167,7 @@ public class BatonInteractionHandler {
         if (com.simibubi.create.AllBlocks.DEPOT.has(state)) {
             if (!(be instanceof EjectorBlockEntity)) {
                 // 普通置物台，在选择模式下作为交互点
-                if (!sneaking && isInSelectionMode()) {
+                if (!sneaking && selectionType != SelectionType.NONE) {
                     if (selectionType == SelectionType.ARM) {
                         handleArmPointInteraction(level, pos, state, player);
                     } else if (selectionType == SelectionType.PIPETTE) {
@@ -270,7 +270,7 @@ public class BatonInteractionHandler {
         }
 
         // 在选择模式下点击其他方块
-        if (isInSelectionMode()) {
+        if (selectionType != SelectionType.NONE) {
             if (!sneaking) {
                 if (selectionType == SelectionType.EJECTOR && selectedEjectorPos != null) {
                     handleEjectorTargetSelection(pos, player, level);
