@@ -92,11 +92,7 @@ public class FluidManifestItem extends Item {
 	@Override
 	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
 		super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
-		FluidStack fluid = read(stack);
-		if (fluid.isEmpty()) {
-			tooltipComponents.add(Component.translatable("item.fluid.fluid_manifest.empty")
-				.withStyle(ChatFormatting.GRAY));
-		}
+		// Tooltip 由 ItemDescription.Modifier (tooltip.summary) 提供，不在这里额外添加
 	}
 
 	@Override
@@ -114,6 +110,13 @@ public class FluidManifestItem extends Item {
 
 		if (level.isClientSide())
 			return InteractionResult.SUCCESS;
+
+		// 潜行右键清空
+		if (player != null && player.isShiftKeyDown() && !isEmpty(heldStack)) {
+			fluid$writeFluid(heldStack, FluidStack.EMPTY);
+			fluid$playClearSound(level, pos);
+			return InteractionResult.SUCCESS;
+		}
 
 		IFluidHandler fluidHandler = level.getCapability(Capabilities.FluidHandler.BLOCK, pos, side);
 		if (fluidHandler != null) {
@@ -134,6 +137,17 @@ public class FluidManifestItem extends Item {
 			return InteractionResult.SUCCESS;
 		}
 
+		// 射线穿过流体命中后方方块时，检测流体实际所在的相邻位置
+		if (fluidHandler == null) {
+			BlockPos fluidPos = pos.relative(side);
+			FluidState adjacentFluid = level.getFluidState(fluidPos);
+			if (!adjacentFluid.isEmpty()) {
+				fluid$writeFluid(heldStack, new FluidStack(adjacentFluid.getType(), 1));
+				fluid$playSampleSound(level, fluidPos);
+				return InteractionResult.SUCCESS;
+			}
+		}
+
 		BlockState state = level.getBlockState(pos);
 		if (state.is(CFBlocks.QUICKSAND.get())) {
 			fluid$writeFluid(heldStack, new FluidStack(CFFluids.QUICKSAND_SOURCE.get(), 1));
@@ -152,6 +166,39 @@ public class FluidManifestItem extends Item {
 	@Override
 	public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
 		ItemStack heldStack = player.getItemInHand(usedHand);
+
+		// 潜行右键空气清空
+		if (player.isShiftKeyDown() && !isEmpty(heldStack)) {
+			if (!level.isClientSide()) {
+				fluid$writeFluid(heldStack, FluidStack.EMPTY);
+				fluid$playClearSound(level, player.blockPosition());
+			}
+			return InteractionResultHolder.sidedSuccess(heldStack, level.isClientSide());
+		}
+
+		// 射线检测流体方块（流动的流体和源方块）
+		var hitResult = player.pick(player.blockInteractionRange(), 1.0F, false);
+		if (hitResult.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
+			net.minecraft.world.phys.BlockHitResult blockHit = (net.minecraft.world.phys.BlockHitResult) hitResult;
+			BlockPos pos = blockHit.getBlockPos();
+			FluidState fluidState = level.getFluidState(pos);
+			if (fluidState.isEmpty()) {
+				BlockPos fluidPos = pos.relative(blockHit.getDirection());
+				fluidState = level.getFluidState(fluidPos);
+			}
+			if (!fluidState.isEmpty()) {
+				if (!level.isClientSide()) {
+					Fluid fluid = fluidState.getType();
+					if (fluid instanceof net.minecraft.world.level.material.FlowingFluid flowing) {
+						fluid = flowing.getSource();
+					}
+					fluid$writeFluid(heldStack, new FluidStack(fluid, 1));
+					fluid$playSampleSound(level, pos);
+				}
+				return InteractionResultHolder.sidedSuccess(heldStack, level.isClientSide());
+			}
+		}
+
 		InteractionHand otherHand = usedHand == InteractionHand.MAIN_HAND ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
 		ItemStack otherStack = player.getItemInHand(otherHand);
 
@@ -226,5 +273,9 @@ public class FluidManifestItem extends Item {
 
 	private static void fluid$playSampleSound(Level level, BlockPos pos) {
 		level.playSound(null, pos, SoundEvents.BOTTLE_FILL, SoundSource.BLOCKS, 1.0f, 1.0f);
+	}
+
+	private static void fluid$playClearSound(Level level, BlockPos pos) {
+		level.playSound(null, pos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f);
 	}
 }

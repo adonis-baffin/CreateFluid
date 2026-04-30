@@ -57,18 +57,7 @@ public class CFClient {
 
     @SubscribeEvent
     public static void onItemColors(RegisterColorHandlersEvent.Item event) {
-        event.register((stack, tintIndex) -> {
-            if (stack.getItem() instanceof com.adonis.fluid.item.FluidManifestItem) {
-                com.adonis.fluid.datacomponent.FluidManifestContent content = stack.get(com.adonis.fluid.registry.CFDataComponents.FLUID_MANIFEST.get());
-                if (content != null && content.fluidId() != null) {
-                    net.minecraft.world.level.material.Fluid fluid = net.minecraft.core.registries.BuiltInRegistries.FLUID.get(content.fluidId());
-                    if (fluid != null) {
-                        return IClientFluidTypeExtensions.of(fluid).getTintColor() | 0xFF000000;
-                    }
-                }
-            }
-            return 0xFFFFFFFF;
-        }, CFItems.FLUID_MANIFEST.get());
+        // 流体清单的着色由 FluidManifestItemDecorator 处理，不使用 ItemColors
     }
 
     @SubscribeEvent

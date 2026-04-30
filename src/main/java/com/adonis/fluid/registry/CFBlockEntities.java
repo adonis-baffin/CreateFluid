@@ -6,6 +6,7 @@ import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpRenderer;
 import com.adonis.fluid.block.CentrifugalPump.CentrifugalPumpVisual;
 import com.adonis.fluid.block.CanFiller.CanFillerBlockEntity;
 import com.adonis.fluid.block.CommunicatingVessel.CommunicatingVesselBlockEntity;
+import com.adonis.fluid.block.CommunicatingVessel.CommunicatingVesselRenderer;
 import com.adonis.fluid.block.FluidAtomizer.FluidAtomizerBlockEntity;
 import com.adonis.fluid.block.FluidAtomizer.FluidAtomizerRenderer;
 import com.adonis.fluid.block.CopperSink.CopperSinkBlockEntity;
@@ -120,6 +121,7 @@ public class CFBlockEntities {
     public static final BlockEntityEntry<CommunicatingVesselBlockEntity> COMMUNICATING_VESSEL = REGISTRATE
             .blockEntity("communicating_vessel", CommunicatingVesselBlockEntity::new)
             .validBlocks(CFBlocks.COMMUNICATING_VESSEL)
+            .renderer(() -> CommunicatingVesselRenderer::new)
             .register();
 
     // 流体雾化器方块实体

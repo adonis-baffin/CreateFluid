@@ -7,6 +7,7 @@ import com.adonis.fluid.fluid.quicksand.QuicksandBucketHandler;
 import com.adonis.fluid.fluid.quicksand.QuicksandFluid;
 import com.adonis.fluid.registry.*;
 import com.simibubi.create.api.behaviour.spouting.CauldronSpoutingBehavior;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.neoforged.neoforge.capabilities.Capabilities;
@@ -103,6 +104,10 @@ public class CreateFluid {
 
 			// 设置流沙流体对应的桶物品
 			QuicksandFluid.setBucketSupplier(() -> CFItems.QUICKSAND_BUCKET.asItem());
+
+			// 注册原版细雪桶的 tooltip
+			TooltipModifier.REGISTRY.register(Items.POWDER_SNOW_BUCKET,
+				new ItemDescription.Modifier(Items.POWDER_SNOW_BUCKET, FontHelper.Palette.STANDARD_CREATE));
 		});
 	}
 

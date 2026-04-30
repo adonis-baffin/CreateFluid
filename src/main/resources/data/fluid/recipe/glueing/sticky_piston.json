@@ -1,0 +1,13 @@
+{
+  "type": "fluid:glueing",
+  "ingredients": [
+    {
+      "item": "minecraft:piston"
+    }
+  ],
+  "results": [
+    {
+      "id": "minecraft:sticky_piston"
+    }
+  ]
+}

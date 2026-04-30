@@ -1,9 +1,13 @@
 package com.adonis.fluid.block.CopperTap;
 
+import com.adonis.fluid.registry.CFPartialModels;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import com.simibubi.create.content.fluids.FluidPropagator;
 import com.simibubi.create.foundation.blockEntity.renderer.SafeBlockEntityRenderer;
+import net.createmod.catnip.render.CachedBuffers;
+import net.createmod.catnip.render.SuperByteBuffer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -28,7 +32,25 @@ public class CopperTapRenderer extends SafeBlockEntityRenderer<CopperTapBlockEnt
     protected void renderSafe(CopperTapBlockEntity be, float partialTicks, PoseStack ms,
                               MultiBufferSource buffer, int light, int overlay) {
 
-        // 检查是否需要渲染
+        // 依附于流体容器时渲染 drain
+        if (be.getLevel() != null && CFPartialModels.FLUID_INTERFACE_DRAIN != null) {
+            Direction facing = be.getBlockState().getValue(CopperTapBlock.FACING);
+            Direction attachedFace = facing.getOpposite();
+
+            if (FluidPropagator.hasFluidCapability(be.getLevel(),
+                    be.getBlockPos().relative(attachedFace), facing)) {
+                SuperByteBuffer drain = CachedBuffers.partialFacing(
+                        CFPartialModels.FLUID_INTERFACE_DRAIN,
+                        be.getBlockState(),
+                        attachedFace
+                );
+                if (drain != null) {
+                    drain.light(light).renderInto(ms, buffer.getBuffer(RenderType.solid()));
+                }
+            }
+        }
+
+        // 检查是否需要渲染流体
         if (!be.hasFluidToRender())
             return;
 

@@ -1,0 +1,13 @@
+{
+  "type": "fluid:glueing",
+  "ingredients": [
+    {
+      "item": "create:mechanical_piston"
+    }
+  ],
+  "results": [
+    {
+      "id": "create:sticky_mechanical_piston"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "type": "create:haunting",
+  "ingredients": [
+    {
+      "item": "fluid:slime_fluid_bucket"
+    }
+  ],
+  "results": [
+    {
+      "id": "fluid:haunting_fluid_bucket"
+    }
+  ]
+}

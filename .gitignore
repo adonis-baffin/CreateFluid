@@ -24,3 +24,8 @@ runs
 run-data
 
 repo
+.gradle-user-home/
+
+# dependencies
+node_modules/
+.venv/

@@ -1,0 +1,13 @@
+{
+  "type": "fluid:sandblasting",
+  "ingredients": [
+    {
+      "item": "minecraft:andesite"
+    }
+  ],
+  "results": [
+    {
+      "id": "minecraft:polished_andesite"
+    }
+  ]
+}

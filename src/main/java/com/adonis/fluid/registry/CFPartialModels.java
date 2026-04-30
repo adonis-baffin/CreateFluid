@@ -10,7 +10,6 @@ public class CFPartialModels {
     private static boolean initialized = false;
     private static boolean useFallback = false;
 
-    // 移液器模型
     public static PartialModel PIPETTE_COG;
     public static PartialModel PIPETTE_BASE;
     public static PartialModel PIPETTE_LOWER_ARM;
@@ -22,27 +21,26 @@ public class CFPartialModels {
     public static PartialModel PIPETTE_HEAD_1000;
     public static PartialModel PIPETTE_HEAD;
 
-    // 装罐机模型
     public static PartialModel CAN_FILLER_TRAY;
     public static PartialModel CAN_FILLER_HATCH_OPEN;
     public static PartialModel CAN_FILLER_HATCH_CLOSED;
 
-    // 流体雾化器模型
     public static PartialModel FLUID_ATOMIZER_SHAFT;
     public static PartialModel FLUID_ATOMIZER_FAN;
 
+    // Only the protruding nozzle; the interface body already contains the base.
+    public static PartialModel FLUID_INTERFACE_DRAIN;
+
     public static void register() {
-        // 在模组构造时调用，用于触发静态初始化
+        // Trigger static initialization during mod construction.
     }
 
     public static void init() {
         if (initialized) return;
 
         try {
-            // 使用Create的现有模型作为基础
             PIPETTE_COG = AllPartialModels.ARM_COG;
 
-            // 尝试加载自定义模型
             try {
                 PIPETTE_BASE = createPartialModel("pipette/base");
                 PIPETTE_LOWER_ARM = createPartialModel("pipette/lower_arm");
@@ -53,26 +51,22 @@ public class CFPartialModels {
                 PIPETTE_HEAD_750 = createPartialModel("pipette/head_750");
                 PIPETTE_HEAD_1000 = createPartialModel("pipette/head_1000");
                 PIPETTE_HEAD = PIPETTE_HEAD_EMPTY;
-
             } catch (Exception e) {
                 initFallbackModels();
             }
 
-            // 注册铜罐模型到Create的包裹模型映射中
-            // 这样 PackageEntity 渲染 CopperCanItem 时能找到正确的模型
             registerCopperCanModels();
 
-            // 注册装罐机托盘和舱门模型
             CAN_FILLER_TRAY = createPartialModel("can_filler/tray");
             CAN_FILLER_HATCH_OPEN = createPartialModel("can_filler/hatch_open");
             CAN_FILLER_HATCH_CLOSED = createPartialModel("can_filler/hatch_closed");
 
-            // 注册流体雾化器扇叶模型
             FLUID_ATOMIZER_SHAFT = createPartialModel("fluid_atomizer/shaft");
             FLUID_ATOMIZER_FAN = createPartialModel("fluid_atomizer/fan");
 
-            initialized = true;
+            FLUID_INTERFACE_DRAIN = createPartialModel("fluid_interface_drain");
 
+            initialized = true;
         } catch (Exception e) {
             initFallbackModels();
         }
@@ -93,18 +87,16 @@ public class CFPartialModels {
                 AllPartialModels.PACKAGE_RIGGING.put(fluidPackageId, creeperRigging);
             }
         } catch (Exception e) {
-            // 静默失败，包裹会显示为黑紫但功能正常
+            // Ignore; package visuals can fail independently.
         }
     }
 
     private static void initFallbackModels() {
-        // 使用Create的机械臂模型作为后备
         PIPETTE_COG = AllPartialModels.ARM_COG;
         PIPETTE_BASE = AllPartialModels.ARM_BASE;
         PIPETTE_LOWER_ARM = AllPartialModels.ARM_LOWER_BODY;
         PIPETTE_UPPER_ARM = AllPartialModels.ARM_UPPER_BODY;
 
-        // 使用机械爪基础作为头部
         PIPETTE_HEAD_EMPTY = AllPartialModels.ARM_CLAW_BASE;
         PIPETTE_HEAD_250 = AllPartialModels.ARM_CLAW_BASE;
         PIPETTE_HEAD_500 = AllPartialModels.ARM_CLAW_BASE;
@@ -121,9 +113,6 @@ public class CFPartialModels {
         return PartialModel.of(location);
     }
 
-    /**
-     * 根据流体量获取对应的头部模型
-     */
     public static PartialModel getPipetteHeadForFluidAmount(int fluidAmount) {
         if (!initialized) {
             init();
@@ -140,7 +129,7 @@ public class CFPartialModels {
             if (fluidAmount >= 250 && PIPETTE_HEAD_250 != null) return PIPETTE_HEAD_250;
             if (PIPETTE_HEAD_EMPTY != null) return PIPETTE_HEAD_EMPTY;
         } catch (Exception e) {
-            // 静默处理
+            // Ignore and fall back below.
         }
 
         return AllPartialModels.ARM_CLAW_BASE;

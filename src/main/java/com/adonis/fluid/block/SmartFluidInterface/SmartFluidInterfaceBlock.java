@@ -116,7 +116,7 @@ public class SmartFluidInterfaceBlock extends DirectionalBlock implements IBE<Sm
 
     @Override
     protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return getShape(state, level, pos, context);
+        return Shapes.empty();
     }
 
     // 检查是否是铜格栅（所有变种）

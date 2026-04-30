@@ -1,0 +1,14 @@
+{
+  "type": "create:mixing",
+  "ingredients": [
+    {
+      "item": "minecraft:sand"
+    }
+  ],
+  "results": [
+    {
+      "amount": 1000,
+      "id": "fluid:quicksand_fluid"
+    }
+  ]
+}

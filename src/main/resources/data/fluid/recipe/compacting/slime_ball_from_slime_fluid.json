@@ -1,0 +1,15 @@
+{
+  "type": "create:compacting",
+  "ingredients": [
+    {
+      "type": "fluid_stack",
+      "amount": 1000,
+      "fluid": "fluid:slime_fluid"
+    }
+  ],
+  "results": [
+    {
+      "id": "minecraft:slime_ball"
+    }
+  ]
+}

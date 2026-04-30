@@ -1,0 +1,13 @@
+{
+  "type": "fluid:sandblasting",
+  "ingredients": [
+    {
+      "item": "minecraft:deepslate"
+    }
+  ],
+  "results": [
+    {
+      "id": "minecraft:polished_deepslate"
+    }
+  ]
+}
