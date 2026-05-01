@@ -194,7 +194,6 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
 
     private void handlePrecipitationCollection() {
         if (level == null || level.isClientSide) return;
-        if (!level.canSeeSky(worldPosition.above())) return;
 
         if (TwilightForestHelper.isTwilightForestLoaded()) {
             Pair<Biome.Precipitation, Float> tfPrecip =
@@ -217,6 +216,7 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
             }
         }
 
+        if (!level.canSeeSky(worldPosition.above())) return;
         if (!level.isRaining()) return;
 
         Biome.Precipitation precipitation = level.getBiome(worldPosition).value()

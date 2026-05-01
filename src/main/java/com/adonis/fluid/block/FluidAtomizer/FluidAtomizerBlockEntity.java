@@ -26,6 +26,7 @@ import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import org.jetbrains.annotations.Nullable;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 
 import java.util.List;
 
@@ -99,6 +100,13 @@ public class FluidAtomizerBlockEntity extends KineticBlockEntity implements IAir
 
     public IFluidHandler getTankInventory() {
         return tankBehaviour == null ? null : tankBehaviour.getCapability();
+    }
+
+    public FluidTank getPrimaryTankInventory() {
+        if (tankBehaviour == null) {
+            return new FluidTank(0);
+        }
+        return tankBehaviour.getPrimaryHandler();
     }
 
     public FluidStack getFluid() {

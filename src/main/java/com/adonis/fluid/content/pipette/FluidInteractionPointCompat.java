@@ -55,7 +55,15 @@ public class FluidInteractionPointCompat {
                     (level, pos, state) -> new GenericFluidInteractionPoint(level, pos, state, FluidInteractionPoint.Mode.DEPOSIT)
             );
             FluidInteractionPointTypes.registerDeferred(
-                    CREATE_ENCHANTMENT_INDUSTRY, "disenchanter",
+                    CREATE_ENCHANTMENT_INDUSTRY, "blaze_forger",
+                    (level, pos, state) -> new GenericFluidInteractionPoint(level, pos, state, FluidInteractionPoint.Mode.DEPOSIT)
+            );
+            FluidInteractionPointTypes.registerDeferred(
+                    CREATE_ENCHANTMENT_INDUSTRY, "printer",
+                    GenericFluidInteractionPoint::new
+            );
+            FluidInteractionPointTypes.registerDeferred(
+                    CREATE_ENCHANTMENT_INDUSTRY, "experience_lantern",
                     GenericFluidInteractionPoint::new
             );
         }
@@ -89,7 +97,7 @@ public class FluidInteractionPointCompat {
                     (level, pos, state) -> new GenericFluidInteractionPoint(level, pos, state, FluidInteractionPoint.Mode.DEPOSIT)
             );
             FluidInteractionPointTypes.registerDeferred(
-                    CREATE_DIESEL, "distillation_tower",
+                    CREATE_DIESEL, "distillation_tank",
                     GenericFluidInteractionPoint::new
             );
         }

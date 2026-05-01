@@ -1,5 +1,6 @@
 package com.adonis.fluid.block.GutterOutlet;
 
+import com.adonis.fluid.compat.TwilightForestHelper;
 import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.registry.CFBlockEntities;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
@@ -23,6 +24,7 @@ import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
+import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -326,10 +328,33 @@ public class SmartGutterOutletBlockEntity extends GutterOutletBlockEntity {
 
     private void handlePrecipitationCollectionFiltered() {
         if (level == null || level.isClientSide) return;
-        if (!level.canSeeSky(worldPosition.above())) return;
 
         FluidStack currentFluid = getFluid();
 
+        if (TwilightForestHelper.isTwilightForestLoaded()) {
+            Pair<Biome.Precipitation, Float> tfPrecip =
+                    TwilightForestHelper.getCloudPrecipitationAt(level, worldPosition.above());
+            if (tfPrecip.getLeft() == Biome.Precipitation.RAIN) {
+                if (!CFCommonConfig.canGutterCollectRain()) return;
+                if (!testFluidFilter(Fluids.WATER)) return;
+                if (!currentFluid.isEmpty() && !currentFluid.getFluid().isSame(Fluids.WATER)) return;
+
+                accumulateAndFill(new FluidStack(Fluids.WATER, 1), true);
+                return;
+            }
+
+            if (tfPrecip.getLeft() == Biome.Precipitation.SNOW) {
+                if (!CFCommonConfig.canGutterCollectSnow()) return;
+                FluidStack snowStack = getPowderSnowFluidStack(1);
+                if (!testFluidFilter(snowStack)) return;
+                if (!currentFluid.isEmpty() && !isPowderSnowFluid(currentFluid.getFluid())) return;
+
+                accumulateAndFill(snowStack, true);
+                return;
+            }
+        }
+
+        if (!level.canSeeSky(worldPosition.above())) return;
         if (!level.isRaining()) return;
 
         Biome.Precipitation precipitation = level.getBiome(worldPosition).value()

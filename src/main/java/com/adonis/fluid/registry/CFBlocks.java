@@ -16,6 +16,7 @@ import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlock;
 import com.adonis.fluid.block.CanFiller.CanFillerBlock;
 import com.adonis.fluid.block.CommunicatingVessel.CommunicatingVesselBlock;
 import com.adonis.fluid.block.FluidAtomizer.FluidAtomizerBlock;
+import com.adonis.fluid.block.FluidAtomizer.FluidAtomizerMovementBehaviour;
 import com.adonis.fluid.block.QuicksandBlock;
 import com.simibubi.create.foundation.data.ModelGen;
 import com.simibubi.create.foundation.data.SharedProperties;
@@ -378,6 +379,8 @@ public class CFBlocks {
                     .noOcclusion())
             .transform(TagGen.pickaxeOnly())
             .transform(CreateFluid.STRESS_CONFIG.setImpact(4.0))
+            .transform(mountedFluidStorage(CFMountedStorageTypes.FLUID_ATOMIZER))
+            .onRegister(movementBehaviour(new FluidAtomizerMovementBehaviour()))
             .blockstate((ctx, prov) -> {
                 prov.getVariantBuilder(ctx.get())
                         .forAllStates(state -> {
