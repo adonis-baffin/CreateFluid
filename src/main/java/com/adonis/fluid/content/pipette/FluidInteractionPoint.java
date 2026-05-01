@@ -130,7 +130,8 @@ public class FluidInteractionPoint {
                 CFBlocks.FLUID_INTERFACE.has(state) ||
                 CFBlocks.SMART_FLUID_INTERFACE.has(state) ||
                 CFBlocks.GUTTER_OUTLET.has(state) ||
-                CFBlocks.SMART_GUTTER_OUTLET.has(state)) {
+                CFBlocks.SMART_GUTTER_OUTLET.has(state) ||
+                CFBlocks.COPPER_SINK.has(state)) {
             return true;
         }
 

@@ -150,14 +150,14 @@ public class VirtualRelayManager {
                         case HIGH:
                             if (injectionReadySignalReceived || pipette.isReadyToInject()) {
                                 waitingForPipetteAnimation = false;
-                                localProcessingTicks = 5;
+                                localProcessingTicks = pipette.isContinuousProcessing() ? 1 : 2;
                             }
                             break;
 
                         case LOW:
                             if (injectionReadySignalReceived || pipette.getWorkProgress() >= 0.6F) {
                                 waitingForPipetteAnimation = false;
-                                localProcessingTicks = 10;
+                                localProcessingTicks = pipette.isContinuousProcessing() ? 5 : 10;
                             }
                             break;
 
@@ -166,7 +166,9 @@ public class VirtualRelayManager {
                                 waitingForPipetteAnimation = false;
                                 float speed = Math.abs(pipette.getSpeed());
                                 int remainingTicks = (int)((1.0F - pipette.getWorkProgress()) * 1024.0F / Math.max(speed, 1.0F));
-                                localProcessingTicks = Math.min(remainingTicks + 5, 15);
+                                localProcessingTicks = pipette.isContinuousProcessing()
+                                        ? Math.min(remainingTicks + 3, 8)
+                                        : Math.min(remainingTicks + 5, 15);
                             }
                             break;
                     }
@@ -188,12 +190,65 @@ public class VirtualRelayManager {
                 }
 
                 // 执行实际填充
-                if (localProcessingTicks == 2) {
-                    performActualFilling(transported, handler, processor);
+                if (localProcessingTicks == 2 && !particlesSent) {
+                    if (processor instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
+                        FluidStack fluidForParticles = pipette.getHeldFluid().copy();
+                        pipette.sendBeltProcessingEffects(beltSegmentPos, fluidForParticles);
+                        particlesSent = true;
+                    }
                 }
 
                 if (localProcessingTicks > 0) {
                     return BeltProcessingBehaviour.ProcessingResult.HOLD;
+                }
+
+                TransportedItemStack leftover = performActualFilling(transported, handler, processor);
+
+                if (leftover != null && !leftover.stack.isEmpty()) {
+                    FluidStack fluid = processor.getHeldFluid();
+                    ItemStack singleItem = leftover.stack.copy();
+                    singleItem.setCount(1);
+                    int required = FillingBySpout.getRequiredAmountForItem(
+                            workstation.getLevel(), singleItem, fluid);
+
+                    if (!fluid.isEmpty() && required > 0 && required <= fluid.getAmount()) {
+                        currentlyProcessing = leftover;
+                        particlesSent = false;
+
+                        if (processor instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
+                            if (!pipette.isContinuousProcessing()) {
+                                pipette.startContinuousProcessing();
+                            }
+                            pipette.incrementContinuousProcessing();
+                            pipette.beginContinuousBeltInjectionCycle(beltSegmentPos);
+                            waitingForFluid = false;
+                            waitingForPipetteAnimation = true;
+                            injectionReadySignalReceived = false;
+                            localProcessingTicks = -1;
+                        } else {
+                            waitingForFluid = false;
+                            waitingForPipetteAnimation = true;
+                            injectionReadySignalReceived = false;
+                            localProcessingTicks = -1;
+                            processor.notifyProcessingStarted(beltSegmentPos);
+                        }
+                        return BeltProcessingBehaviour.ProcessingResult.HOLD;
+                    }
+
+                    if (processor instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette
+                            && pipette.isContinuousProcessing()) {
+                        pipette.endContinuousProcessing();
+                    }
+
+                    if (processor.requestFluidForItem(singleItem, beltSegmentPos)) {
+                        currentlyProcessing = leftover;
+                        waitingForFluid = true;
+                        waitingForPipetteAnimation = false;
+                        injectionReadySignalReceived = false;
+                        particlesSent = false;
+                        localProcessingTicks = -1;
+                        return BeltProcessingBehaviour.ProcessingResult.HOLD;
+                    }
                 }
             }
 
@@ -201,15 +256,18 @@ public class VirtualRelayManager {
             resetState();
 
             if (processor instanceof com.adonis.fluid.block.Pipette.PipetteBlockEntity pipette) {
+                if (pipette.isContinuousProcessing()) {
+                    pipette.endContinuousProcessing();
+                }
                 pipette.onBeltProcessingFinished(beltSegmentPos);
             }
 
             return BeltProcessingBehaviour.ProcessingResult.PASS;
         }
 
-        private void performActualFilling(TransportedItemStack transported,
-                                          TransportedItemStackHandlerBehaviour handler,
-                                          IRemoteFluidProcessor processor) {
+        private TransportedItemStack performActualFilling(TransportedItemStack transported,
+                                                          TransportedItemStackHandlerBehaviour handler,
+                                                          IRemoteFluidProcessor processor) {
             FluidStack fluid = processor.getHeldFluid();
             Level level = workstationRef.get().getLevel();
 
@@ -248,6 +306,7 @@ public class VirtualRelayManager {
                         TransportedItemStackHandlerBehaviour.TransportedResult result =
                                 TransportedItemStackHandlerBehaviour.TransportedResult.convertTo(outList);
                         handler.handleProcessingOnItem(transported, result);
+                        return null;
                     } else {
                         TransportedItemStack leftover = null;
 
@@ -261,9 +320,11 @@ public class VirtualRelayManager {
                                 TransportedItemStackHandlerBehaviour.TransportedResult
                                         .convertToAndLeaveHeld(outList, leftover);
                         handler.handleProcessingOnItem(transported, result);
+                        return leftover;
                     }
                 }
             }
+            return null;
         }
 
         private void resetState() {

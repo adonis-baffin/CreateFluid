@@ -99,6 +99,7 @@ public class PipetteBlockEntity extends KineticBlockEntity
     // Belt processing fields
     private boolean processingBelt = false;
     private BlockPos processingBeltPos = null;
+    private boolean isServingBelt = false;
     private int beltProcessingTicks = 0;
     private boolean isPerformingInjection = false;
     private float injectionStartProgress = 0.8f;
@@ -236,7 +237,9 @@ public class PipetteBlockEntity extends KineticBlockEntity
             if (this.phase == Phase.MOVE_TO_INPUT) {
                 this.collectFluid();
             } else if (this.phase == Phase.MOVE_TO_OUTPUT) {
-                this.depositFluid();
+                if (!this.isProcessingBeltOutput()) {
+                    this.depositFluid();
+                }
             } else if (this.phase == Phase.MOVE_TO_RETURN) {
                 this.returnFluid();
             } else if (this.phase == Phase.SEARCH_INPUTS) {
@@ -257,6 +260,15 @@ public class PipetteBlockEntity extends KineticBlockEntity
 
         // Add belt processing logic to tick() method
         handleBeltInjection();
+    }
+
+    private boolean isProcessingBeltOutput() {
+        if (!processingBelt || processingBeltPos == null) {
+            return false;
+        }
+        FluidInteractionPoint point = this.getTargetedInteractionPoint();
+        return point != null && point.getPos().equals(processingBeltPos)
+                && AllBlocks.BELT.has(level.getBlockState(point.getPos()));
     }
 
     @Override
@@ -466,6 +478,10 @@ public class PipetteBlockEntity extends KineticBlockEntity
     protected void searchForDestination() {
         FluidStack held = this.heldFluid.copy();
 
+        if (this.isServingBelt) {
+            return;
+        }
+
         for (int i = 0; i < this.outputs.size(); i++) {
             FluidInteractionPoint point = this.outputs.get(i);
 
@@ -493,6 +509,10 @@ public class PipetteBlockEntity extends KineticBlockEntity
         }
 
         // 搜索普通输出（排除传送带）
+        if (this.isServingBelt) {
+            return;
+        }
+
         for (int i = 0; i < this.outputs.size(); i++) {
             FluidInteractionPoint point = this.outputs.get(i);
             BlockState outputState = level.getBlockState(point.getPos());
@@ -1143,6 +1163,7 @@ public class PipetteBlockEntity extends KineticBlockEntity
             compound.putBoolean("ProcessingBelt", true);
             compound.putLong("ProcessingBeltPos", processingBeltPos.asLong());
             compound.putInt("BeltProcessingTicks", beltProcessingTicks);
+            compound.putBoolean("IsServingBelt", this.isServingBelt);
         }
     }
 
@@ -1150,6 +1171,7 @@ public class PipetteBlockEntity extends KineticBlockEntity
     protected void read(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
         int previousIndex = this.chasedPointIndex;
         Phase previousPhase = this.phase;
+        float previousProgress = this.chasedPointProgress;
         ListTag interactionPointTagBefore = this.interactionPointTag;
 
         super.read(compound, registries, clientPacket);
@@ -1186,7 +1208,11 @@ public class PipetteBlockEntity extends KineticBlockEntity
             if (processingBelt) {
                 processingBeltPos = BlockPos.of(compound.getLong("ProcessingBeltPos"));
                 beltProcessingTicks = compound.getInt("BeltProcessingTicks");
+            } else {
+                processingBeltPos = null;
+                beltProcessingTicks = 0;
             }
+            this.isServingBelt = compound.contains("IsServingBelt") && compound.getBoolean("IsServingBelt");
         }
 
         if (!clientPacket)
@@ -1204,9 +1230,19 @@ public class PipetteBlockEntity extends KineticBlockEntity
             this.updateInteractionPoints = true;
         }
 
-        if (previousIndex != this.chasedPointIndex || previousPhase != this.phase) {
+        boolean targetChanged = previousIndex != this.chasedPointIndex || previousPhase != this.phase;
+        boolean restartedBeltInjection = this.isServingBelt
+                && previousPhase == Phase.MOVE_TO_OUTPUT
+                && this.phase == Phase.MOVE_TO_OUTPUT
+                && previousIndex == this.chasedPointIndex
+                && previousProgress > 0.75F
+                && this.chasedPointProgress < 0.35F;
+
+        if (targetChanged || restartedBeltInjection) {
             FluidInteractionPoint previousPoint = null;
-            if (previousPhase == Phase.MOVE_TO_INPUT && previousIndex < this.inputs.size()) {
+            if (restartedBeltInjection) {
+                previousPoint = this.getTargetedInteractionPoint();
+            } else if (previousPhase == Phase.MOVE_TO_INPUT && previousIndex < this.inputs.size()) {
                 previousPoint = this.inputs.get(previousIndex);
             } else if (previousPhase == Phase.MOVE_TO_OUTPUT && previousIndex < this.outputs.size()) {
                 previousPoint = this.outputs.get(previousIndex);
@@ -1559,6 +1595,26 @@ public class PipetteBlockEntity extends KineticBlockEntity
         continuousProcessingCount++;
     }
 
+    public void beginContinuousBeltInjectionCycle(BlockPos beltPos) {
+        this.processingBelt = true;
+        this.processingBeltPos = beltPos;
+        this.isServingBelt = true;
+        this.isPerformingInjection = false;
+
+        for (int i = 0; i < outputs.size(); i++) {
+            if (outputs.get(i).getPos().equals(beltPos)) {
+                this.phase = Phase.MOVE_TO_OUTPUT;
+                this.chasedPointIndex = i;
+                break;
+            }
+        }
+
+        this.chasedPointProgress = 0.15F;
+        this.beltProcessingTicks = 10;
+        sendData();
+        setChanged();
+    }
+
     public void endContinuousProcessing() {
         continuousProcessing = false;
         continuousProcessingCount = 0;
@@ -1588,9 +1644,12 @@ public class PipetteBlockEntity extends KineticBlockEntity
 
     @Override
     public boolean requestFluidForItem(ItemStack stack, BlockPos sourcePos) {
+        ItemStack singleItem = stack.copy();
+        singleItem.setCount(1);
+
         // 先检查是否有足够的流体
         if (!heldFluid.isEmpty()) {
-            int required = FillingBySpout.getRequiredAmountForItem(level, stack, heldFluid);
+            int required = FillingBySpout.getRequiredAmountForItem(level, singleItem, heldFluid);
             if (required > 0 && required <= heldFluid.getAmount()) {
                 // 如果是传送带请求且有足够流体，直接移动到传送带
                 for (int i = 0; i < outputs.size(); i++) {
@@ -1616,10 +1675,10 @@ public class PipetteBlockEntity extends KineticBlockEntity
                 FluidStack simulatedFluid = input.extract(TRANSFER_AMOUNT, true);
 
                 if (!simulatedFluid.isEmpty()) {
-                    int required = FillingBySpout.getRequiredAmountForItem(level, stack, simulatedFluid);
+                    int required = FillingBySpout.getRequiredAmountForItem(level, singleItem, simulatedFluid);
                     if (required > 0 && required <= simulatedFluid.getAmount()) {
                         pendingBeltRequest = sourcePos;
-                        pendingBeltItem = stack.copy();
+                        pendingBeltItem = singleItem.copy();
 
                         phase = Phase.MOVE_TO_INPUT;
                         chasedPointIndex = i;
@@ -1643,6 +1702,7 @@ public class PipetteBlockEntity extends KineticBlockEntity
         // Clean up processing state
         processingBelt = false;
         processingBeltPos = null;
+        isServingBelt = false;
         beltProcessingTicks = 0;
         isPerformingInjection = false;
     }
@@ -1654,7 +1714,15 @@ public class PipetteBlockEntity extends KineticBlockEntity
     public void startBeltProcessing(BlockPos beltPos) {
         this.processingBelt = true;
         this.processingBeltPos = beltPos;
+        this.isServingBelt = true;
         this.isPerformingInjection = false;
+
+        if (this.phase == Phase.SEARCH_OUTPUTS ||
+                (this.phase == Phase.MOVE_TO_OUTPUT && this.chasedPointProgress < 0.5f)) {
+            this.beltProcessingTicks = 20;
+        } else {
+            this.beltProcessingTicks = 10;
+        }
 
         // Find the output point for this belt
         for (int i = 0; i < outputs.size(); i++) {
@@ -1676,6 +1744,8 @@ public class PipetteBlockEntity extends KineticBlockEntity
         this.processingBeltPos = null;
         this.beltProcessingTicks = 0;
         this.isPerformingInjection = false;
+        this.isServingBelt = false;
+        this.endContinuousProcessing();
 
         // 重置移液器状态
         if (!heldFluid.isEmpty()) {
@@ -1738,13 +1808,19 @@ public class PipetteBlockEntity extends KineticBlockEntity
         injectionStartProgress = 0.8f;
 
         if (this.phase == Phase.MOVE_TO_OUTPUT && processingBelt) {
-            if (!isPerformingInjection && this.chasedPointProgress >= injectionStartProgress) {
+            if (continuousProcessing && this.chasedPointProgress >= 0.9F) {
+                this.chasedPointProgress = Math.min(this.chasedPointProgress, 0.95F);
+            }
+
+            if (!isPerformingInjection &&
+                    previousProgressForInjection < injectionStartProgress &&
+                    this.chasedPointProgress >= injectionStartProgress) {
                 isPerformingInjection = true;
                 notifyRelayInjectionReady(processingBeltPos);
             }
 
             // 高速模式下，到达目标后立即完成
-            if (this.chasedPointProgress >= 1.0F) {
+            if (this.chasedPointProgress >= 1.0F && !continuousProcessing) {
                 // 不要在这里卡住，让虚拟中继器处理完成
                 isPerformingInjection = false;
             }
