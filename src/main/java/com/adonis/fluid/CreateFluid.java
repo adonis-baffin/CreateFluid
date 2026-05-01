@@ -2,6 +2,8 @@ package com.adonis.fluid;
 
 import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.config.CFStressConfig;
+import com.adonis.fluid.content.pipette.FluidInteractionPointCompat;
+import com.adonis.fluid.content.pipette.FluidInteractionPointTypes;
 import com.adonis.fluid.fluid.powdersnow.PowderSnowBucketHandler;
 import com.adonis.fluid.fluid.quicksand.QuicksandBucketHandler;
 import com.adonis.fluid.fluid.quicksand.QuicksandFluid;
@@ -108,6 +110,8 @@ public class CreateFluid {
 			// 注册原版细雪桶的 tooltip
 			TooltipModifier.REGISTRY.register(Items.POWDER_SNOW_BUCKET,
 				new ItemDescription.Modifier(Items.POWDER_SNOW_BUCKET, FontHelper.Palette.STANDARD_CREATE));
+			FluidInteractionPointCompat.init();
+			FluidInteractionPointTypes.resolveDeferredRegistrations();
 		});
 	}
 

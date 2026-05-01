@@ -29,3 +29,9 @@ repo
 # dependencies
 node_modules/
 .venv/
+
+# temporary translation tools and references
+tools/sync_*.py
+tools/generate_ponder_structures.ps1
+CREATE_TRANSLATION_REFERENCE.md
+FLUID_TRANSLATION_REFERENCE.md

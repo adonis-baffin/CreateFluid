@@ -51,6 +51,11 @@ public class FluidInteractionPoint {
 
     @Nullable
     public static FluidInteractionPoint create(Level level, BlockPos pos, BlockState state) {
+        FluidInteractionPoint registeredPoint = FluidInteractionPointTypes.tryCreate(level, pos, state);
+        if (registeredPoint != null) {
+            return registeredPoint;
+        }
+
         // Priority check for depot
         if (AllBlocks.DEPOT.has(state) || AllBlocks.WEIGHTED_EJECTOR.has(state)) {
             return new DepotFluidInteractionPoint(level, pos, state);

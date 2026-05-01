@@ -1,5 +1,6 @@
 package com.adonis.fluid.block.GutterOutlet;
 
+import com.adonis.fluid.compat.TwilightForestHelper;
 import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.registry.CFBlockEntities;
 import com.adonis.fluid.registry.CFFluids;
@@ -34,6 +35,7 @@ import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
+import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -193,6 +195,27 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
     private void handlePrecipitationCollection() {
         if (level == null || level.isClientSide) return;
         if (!level.canSeeSky(worldPosition.above())) return;
+
+        if (TwilightForestHelper.isTwilightForestLoaded()) {
+            Pair<Biome.Precipitation, Float> tfPrecip =
+                    TwilightForestHelper.getCloudPrecipitationAt(level, worldPosition.above());
+            if (tfPrecip.getLeft() == Biome.Precipitation.RAIN) {
+                FluidStack current = getFluid();
+                if (CFCommonConfig.canGutterCollectRain()
+                        && (current.isEmpty() || current.getFluid().isSame(Fluids.WATER))) {
+                    accumulateAndFill(new FluidStack(Fluids.WATER, 1), true);
+                }
+                return;
+            }
+            if (tfPrecip.getLeft() == Biome.Precipitation.SNOW) {
+                FluidStack current = getFluid();
+                if (CFCommonConfig.canGutterCollectSnow()
+                        && (current.isEmpty() || isPowderSnowFluid(current.getFluid()))) {
+                    accumulateAndFill(getPowderSnowFluidStack(1), true);
+                }
+                return;
+            }
+        }
 
         if (!level.isRaining()) return;
 
