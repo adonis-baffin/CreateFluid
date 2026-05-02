@@ -18,6 +18,7 @@ public class CFCommonConfig {
 	public static final ModConfigSpec.IntValue CENTRIFUGAL_PUMP_RANGE;
 
 	// Copper Tap Experience Release 配置
+	public static final ModConfigSpec.BooleanValue COPPER_TAP_LOW_SPEED_MODE;
 	public static final ModConfigSpec.BooleanValue COPPER_TAP_EXPERIENCE_ENABLED;
 	public static final ModConfigSpec.IntValue COPPER_TAP_EXPERIENCE_RATE;
 	public static final ModConfigSpec.IntValue COPPER_TAP_EXPERIENCE_INTERVAL;
@@ -69,8 +70,15 @@ public class CFCommonConfig {
 
 		builder.pop();
 
-		builder.comment("Copper Tap Experience Release settings")
-			.push("copper_tap_experience");
+		builder.comment("Copper Tap settings")
+			.push("copper_tap");
+
+		COPPER_TAP_LOW_SPEED_MODE = builder
+			.comment("Whether the Copper Tap uses low speed mode, increasing item filling time to 30 ticks.")
+			.define("lowSpeedMode", false);
+
+		builder.comment("Copper Tap experience release settings")
+			.push("experience");
 
 		COPPER_TAP_EXPERIENCE_ENABLED = builder
 			.comment("Whether the Copper Tap can release experience orbs when open and no valid target is present.")
@@ -84,6 +92,7 @@ public class CFCommonConfig {
 			.comment("Tick interval between each experience orb release.")
 			.defineInRange("interval", 1, 1, 100);
 
+		builder.pop();
 		builder.pop();
 
 		builder.comment("Can Filler settings")
@@ -176,6 +185,15 @@ public class CFCommonConfig {
 	}
 
 	// Copper Tap Experience Release 配置获取方法
+	public static boolean isCopperTapLowSpeedMode() {
+		if (!isConfigLoaded) return false;
+		try {
+			return COPPER_TAP_LOW_SPEED_MODE.get();
+		} catch (IllegalStateException e) {
+			return false;
+		}
+	}
+
 	public static boolean isCopperTapExperienceEnabled() {
 		if (!isConfigLoaded) return true;
 		try {

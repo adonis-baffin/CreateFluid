@@ -41,7 +41,7 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
 
     private FluidStack renderingFluid = FluidStack.EMPTY;
     private int processingTicks = 0;
-    private static final int FILLING_TIME = 20;
+    private static final int BASE_FILLING_TIME = 20;
     private static final int TRANSFER_RATE = 250;
     private static final int TRANSFER_INTERVAL = 10;
     private int transferCooldown = 0;
@@ -60,7 +60,7 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
     private BlockPos beltProcessingPos = null;
     private int beltProcessingTicks = 0;
     private FluidStack beltProcessingFluid = FluidStack.EMPTY;
-    private static final int BELT_FILLING_TIME = 20;
+    private static final int BASE_BELT_FILLING_TIME = 20;
 
     // 滴水效果相关
     private boolean shouldDrip = false;
@@ -112,7 +112,7 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
     public void startBeltProcessing(BlockPos beltPos, FluidStack fluid) {
         this.beltProcessing = true;
         this.beltProcessingPos = beltPos;
-        this.beltProcessingTicks = BELT_FILLING_TIME;
+        this.beltProcessingTicks = getBeltFillingTime();
         this.beltProcessingFluid = fluid.copy();
         notifyUpdate();
     }
@@ -652,7 +652,7 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
             return false;
 
         isFillingItem = true;
-        processingTicks = FILLING_TIME;
+        processingTicks = getItemFillingTime();
         processingItem = item.copy();
         processingItem.setCount(1);
         pendingFluid = simulatedDrain.copy();
@@ -1031,5 +1031,20 @@ public class CopperTapBlockEntity extends SmartBlockEntity {
 
     public boolean shouldDrip() {
         return shouldDrip;
+    }
+
+    public static int getItemFillingTime() {
+        return getAdjustedFillingTime(BASE_FILLING_TIME);
+    }
+
+    public static int getBeltFillingTime() {
+        return getAdjustedFillingTime(BASE_BELT_FILLING_TIME);
+    }
+
+    private static int getAdjustedFillingTime(int baseTime) {
+        if (!CFCommonConfig.isCopperTapLowSpeedMode()) {
+            return baseTime;
+        }
+        return 30;
     }
 }

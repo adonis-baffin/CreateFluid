@@ -40,7 +40,6 @@ public class TapVirtualRelayManager {
         private TransportedItemStack currentlyProcessing;
         private int processingTicks = -1;
         private boolean particlesSent = false;
-        private static final int FILLING_TIME = 20;
 
         public TapVirtualRelay(BlockPos beltPos, BlockPos tapPos, Level level) {
             this.beltPos = beltPos;
@@ -112,7 +111,7 @@ public class TapVirtualRelayManager {
 
             // 开始处理
             currentlyProcessing = transported;
-            processingTicks = FILLING_TIME;
+            processingTicks = CopperTapBlockEntity.getBeltFillingTime();
             particlesSent = false;
 
             // 通知铜龙头开始传送带加工，用于渲染
@@ -154,7 +153,7 @@ public class TapVirtualRelayManager {
                 tap.updateBeltProcessingTicks(processingTicks);
 
                 // 在中间时刻发送粒子和播放声音
-                if (processingTicks == FILLING_TIME / 2 && !particlesSent) {
+                if (processingTicks == CopperTapBlockEntity.getBeltFillingTime() / 2 && !particlesSent) {
                     FluidStack fluid = getAvailableFluid(tap);
                     if (!fluid.isEmpty()) {
                         sendFillingEffects(tap, fluid);
@@ -177,7 +176,7 @@ public class TapVirtualRelayManager {
                     if (required > 0 && required <= availableFluid.getAmount()) {
                         // 继续处理剩余物品
                         currentlyProcessing = held;
-                        processingTicks = FILLING_TIME;
+                        processingTicks = CopperTapBlockEntity.getBeltFillingTime();
                         particlesSent = false;
                         tap.updateBeltProcessingTicks(processingTicks);
                         return BeltProcessingBehaviour.ProcessingResult.HOLD;
