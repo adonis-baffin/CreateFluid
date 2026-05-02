@@ -1,5 +1,6 @@
 package com.adonis.fluid.block.GutterOutlet;
 
+import com.adonis.fluid.compat.ContraptionBlockEntityHelper;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.simibubi.create.api.contraption.storage.SyncedMountedStorage;
@@ -73,7 +74,7 @@ public class GutterOutletMountedStorage extends WrapperMountedFluidStorage<Gutte
 
     @Override
     public void afterSync(Contraption contraption, BlockPos localPos) {
-        BlockEntity be = contraption.presentBlockEntities.get(localPos);
+        BlockEntity be = ContraptionBlockEntityHelper.getBlockEntity(contraption, localPos);
         if (!(be instanceof GutterOutletBlockEntity gutter))
             return;
 

@@ -1,5 +1,6 @@
 package com.adonis.fluid.block.FluidAtomizer;
 
+import com.adonis.fluid.compat.ContraptionBlockEntityHelper;
 import com.simibubi.create.api.behaviour.movement.MovementBehaviour;
 import com.simibubi.create.content.contraptions.behaviour.MovementContext;
 import com.simibubi.create.foundation.blockEntity.behaviour.fluid.SmartFluidTankBehaviour;
@@ -18,7 +19,7 @@ public class FluidAtomizerMovementBehaviour implements MovementBehaviour {
             return;
         }
 
-        BlockEntity be = context.contraption.presentBlockEntities.get(context.localPos);
+        BlockEntity be = ContraptionBlockEntityHelper.getBlockEntity(context.contraption, context.localPos);
         if (!(be instanceof FluidAtomizerBlockEntity atomizer) || atomizer.tankBehaviour == null) {
             return;
         }

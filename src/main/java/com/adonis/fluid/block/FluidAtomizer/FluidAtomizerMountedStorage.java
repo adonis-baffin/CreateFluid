@@ -1,5 +1,6 @@
 package com.adonis.fluid.block.FluidAtomizer;
 
+import com.adonis.fluid.compat.ContraptionBlockEntityHelper;
 import com.adonis.fluid.registry.CFMountedStorageTypes;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -64,7 +65,7 @@ public class FluidAtomizerMountedStorage extends WrapperMountedFluidStorage<Flui
 
     @Override
     public void afterSync(Contraption contraption, BlockPos localPos) {
-        BlockEntity be = contraption.presentBlockEntities.get(localPos);
+        BlockEntity be = ContraptionBlockEntityHelper.getBlockEntity(contraption, localPos);
         if (!(be instanceof FluidAtomizerBlockEntity atomizer)) {
             return;
         }

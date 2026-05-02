@@ -1,5 +1,6 @@
 package com.adonis.fluid.block.CopperSink;
 
+import com.adonis.fluid.compat.ContraptionBlockEntityHelper;
 import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.registry.CFMountedStorageTypes;
 import com.mojang.serialization.MapCodec;
@@ -60,7 +61,7 @@ public class CopperSinkMountedStorage extends WrapperMountedFluidStorage<CopperS
 
     @Override
     public void afterSync(Contraption contraption, BlockPos localPos) {
-        BlockEntity be = contraption.presentBlockEntities.get(localPos);
+        BlockEntity be = ContraptionBlockEntityHelper.getBlockEntity(contraption, localPos);
         if (!(be instanceof CopperSinkBlockEntity sink)) return;
 
         sink.getTank().setFluid(this.wrapped.getFluid().copy());

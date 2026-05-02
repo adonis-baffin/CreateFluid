@@ -1,5 +1,6 @@
 package com.adonis.fluid.block.CopperSink;
 
+import com.adonis.fluid.compat.ContraptionBlockEntityHelper;
 import com.simibubi.create.api.behaviour.movement.MovementBehaviour;
 import com.simibubi.create.content.contraptions.behaviour.MovementContext;
 
@@ -15,7 +16,7 @@ public class CopperSinkMovementBehaviour implements MovementBehaviour {
     @Override
     public void tick(MovementContext context) {
         if (context.world.isClientSide) {
-            BlockEntity be = context.contraption.presentBlockEntities.get(context.localPos);
+            BlockEntity be = ContraptionBlockEntityHelper.getBlockEntity(context.contraption, context.localPos);
             if (be instanceof CopperSinkBlockEntity sink) {
                 if (sink.getFluidLevel() != null) {
                     sink.getFluidLevel().tickChaser();
