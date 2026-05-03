@@ -56,6 +56,8 @@ public class CFJeiPlugin implements IModPlugin {
 	@Override
 	public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
 		categories.forEach(category -> category.registerCatalysts(registration));
+		registration.addRecipeCatalysts(fanType(Create.asResource("spout_filling")), CFBlocks.COPPER_TAP.get());
+		registration.addRecipeCatalysts(fanType(Create.asResource("spout_filling")), CFBlocks.PIPETTE.get());
 		registration.addRecipeCatalysts(fanType(Create.asResource("fan_washing")), CFBlocks.FLUID_ATOMIZER.get());
 		registration.addRecipeCatalysts(fanType(Create.asResource("fan_smoking")), CFBlocks.FLUID_ATOMIZER.get());
 		registration.addRecipeCatalysts(fanType(Create.asResource("fan_blasting")), CFBlocks.FLUID_ATOMIZER.get());

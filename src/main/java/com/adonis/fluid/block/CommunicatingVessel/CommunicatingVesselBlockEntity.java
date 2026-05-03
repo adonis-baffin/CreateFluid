@@ -410,6 +410,13 @@ public class CommunicatingVesselBlockEntity extends SmartBlockEntity {
             return;
         }
 
+        if (CFCommonConfig.isCommunicatingVesselInfiniteSourceRateLimitEnabled()) {
+            toFill = Math.min(toFill, CFCommonConfig.getCommunicatingVesselInfiniteSourceRateLimit());
+            if (toFill <= 0) {
+                return;
+            }
+        }
+
         FluidStack stack = fluid.copyWithAmount(toFill);
         int sim = targetHandler.fill(stack, IFluidHandler.FluidAction.SIMULATE);
         if (sim > 0) {

@@ -12,6 +12,11 @@
     },
     {
       "required_mod": "create_dragons_plus",
+      "fluid": "fluid:quicksand_fluid",
+      "processing_type": "create_dragons_plus:sanding"
+    },
+    {
+      "required_mod": "create_dragons_plus",
       "tag": "c:dyes/black",
       "processing_type": "create_dragons_plus:coloring_black"
     },

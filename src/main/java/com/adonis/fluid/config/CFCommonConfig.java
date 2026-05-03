@@ -13,6 +13,8 @@ public class CFCommonConfig {
 
 	// CopperSink 配置
 	public static final ModConfigSpec.BooleanValue COPPER_SINK_INFINITE;
+	public static final ModConfigSpec.BooleanValue COMMUNICATING_VESSEL_INFINITE_SOURCE_RATE_LIMIT_ENABLED;
+	public static final ModConfigSpec.IntValue COMMUNICATING_VESSEL_INFINITE_SOURCE_RATE_LIMIT;
 
 	// Centrifugal Pump 配置
 	public static final ModConfigSpec.IntValue CENTRIFUGAL_PUMP_RANGE;
@@ -58,6 +60,19 @@ public class CFCommonConfig {
 		COPPER_SINK_INFINITE = builder
 			.comment("Whether the Copper Sink provides infinite water (if false, it's just a normal 2000mB tank)")
 			.define("infiniteWater", true);
+
+		builder.pop();
+
+		builder.comment("Communicating Vessel settings")
+			.push("communicating_vessel");
+
+		COMMUNICATING_VESSEL_INFINITE_SOURCE_RATE_LIMIT_ENABLED = builder
+			.comment("Whether infinite fluid sources connected to a Communicating Vessel are rate-limited")
+			.define("infiniteSourceRateLimitEnabled", true);
+
+		COMMUNICATING_VESSEL_INFINITE_SOURCE_RATE_LIMIT = builder
+			.comment("Maximum mB per tick transferred from an infinite fluid source through a Communicating Vessel")
+			.defineInRange("infiniteSourceRateLimit", 64000, 1, Integer.MAX_VALUE);
 
 		builder.pop();
 
@@ -191,6 +206,28 @@ public class CFCommonConfig {
 			return COPPER_TAP_LOW_SPEED_MODE.get();
 		} catch (IllegalStateException e) {
 			return false;
+		}
+	}
+
+	public static boolean isCommunicatingVesselInfiniteSourceRateLimitEnabled() {
+		if (!isConfigLoaded) {
+			return true;
+		}
+		try {
+			return COMMUNICATING_VESSEL_INFINITE_SOURCE_RATE_LIMIT_ENABLED.get();
+		} catch (IllegalStateException e) {
+			return true;
+		}
+	}
+
+	public static int getCommunicatingVesselInfiniteSourceRateLimit() {
+		if (!isConfigLoaded) {
+			return 64000;
+		}
+		try {
+			return COMMUNICATING_VESSEL_INFINITE_SOURCE_RATE_LIMIT.get();
+		} catch (IllegalStateException e) {
+			return 64000;
 		}
 	}
 
