@@ -2,6 +2,7 @@ package com.adonis.fluid.ponder;
 
 import com.adonis.fluid.block.Pipette.PipetteBlockEntity;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlockEntity;
+import com.adonis.fluid.content.pipette.FluidInteractionPoint;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.AllFluids;
 import com.simibubi.create.AllItems;
@@ -24,6 +25,8 @@ import net.minecraft.core.Direction;
 import com.simibubi.create.content.fluids.FluidFX;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
@@ -106,6 +109,10 @@ public class PipetteScenes {
                 .placeNearTarget();
         scene.idle(90);
 
+        configurePipettePoints(scene, pipettePos,
+                new BlockPos[] { splashingPos, fluidInterfacePos },
+                new BlockPos[] { basinPos, blazeBurnerPos });
+
         // 第一次动作：从分液池到工作盆
         scene.world().showSection(gearsSel, Direction.DOWN);
         scene.idle(10);
@@ -163,6 +170,10 @@ public class PipetteScenes {
         scene.idle(5);
         scene.world().showSection(fluidInterfaceSel, Direction.DOWN);
         scene.idle(10);
+
+        scene.world().modifyBlockEntity(tankPos, FluidTankBlockEntity.class, be -> {
+            be.getTankInventory().fill(new FluidStack(Fluids.LAVA, 1000), IFluidHandler.FluidAction.EXECUTE);
+        });
 
         scene.overlay().showOutlineWithText(fluidInterfaceSel, 80)
                 .attachKeyFrame()
@@ -395,6 +406,10 @@ public class PipetteScenes {
                 .placeNearTarget();
         scene.idle(90);
 
+        configurePipettePoints(scene, pipettePos,
+                new BlockPos[] { smartInterfacePos },
+                new BlockPos[] { fluidInterfacePos });
+
         // 在过滤槽设置巧克力桶
         ItemStack chocolateBucket = AllFluids.CHOCOLATE.get().getFluidType()
                 .getBucket(new FluidStack(finalChocolateFluid, 1000));
@@ -593,6 +608,10 @@ public class PipetteScenes {
                 .placeNearTarget();
         scene.idle(110);
 
+        configurePipettePoints(scene, pipettePos,
+                new BlockPos[] { milkInterfacePos, honeyInterfacePos },
+                new BlockPos[] { depotPos, beltStartPos });
+
         // 显示齿轮并启动
         scene.world().setKineticSpeed(pipetteSel, -48);
         scene.world().setKineticSpeed(gearsSel, -48);
@@ -656,19 +675,30 @@ public class PipetteScenes {
 
     private static void instructPipette(CreateSceneBuilder scene, BlockPos pipettePos,
                                         PipetteBlockEntity.Phase phase, FluidStack heldFluid, int targetedPoint) {
-        // 使用与 instructArm 相同的方式：通过 NBT 修改来触发动画
-        // 从 PonderScene 的世界获取 HolderLookup.Provider
-        scene.world().modifyBlockEntityNBT(scene.getScene().getSceneBuildingUtil().select().position(pipettePos),
-                PipetteBlockEntity.class, compound -> {
-                    NBTHelper.writeEnum(compound, "Phase", phase);
-                    if (!heldFluid.isEmpty()) {
-                        // 使用 scene.getScene().getWorld().registryAccess() 获取 HolderLookup.Provider
-                        compound.put("HeldFluid", heldFluid.saveOptional(scene.getScene().getWorld().registryAccess()));
-                    } else {
-                        compound.putBoolean("EmptyFluid", true);
-                    }
-                    compound.putInt("TargetPointIndex", targetedPoint);
-                    compound.putFloat("MovementProgress", 0);
-                });
+        scene.world().modifyBlockEntity(pipettePos,
+                PipetteBlockEntity.class, be -> be.applyPonderState(phase, heldFluid, targetedPoint));
+    }
+
+    private static void configurePipettePoints(CreateSceneBuilder scene, BlockPos pipettePos,
+                                               BlockPos[] inputs, BlockPos[] outputs) {
+        scene.world().modifyBlockEntity(pipettePos, PipetteBlockEntity.class, be -> {
+            ListTag points = new ListTag();
+            for (BlockPos input : inputs) {
+                points.add(createPipettePointTag(pipettePos, input, FluidInteractionPoint.Mode.TAKE));
+            }
+            for (BlockPos output : outputs) {
+                points.add(createPipettePointTag(pipettePos, output, FluidInteractionPoint.Mode.DEPOSIT));
+            }
+            be.setInteractionPointTag(points);
+            be.forceReloadInteractionPoints();
+        });
+    }
+
+    private static CompoundTag createPipettePointTag(BlockPos pipettePos, BlockPos targetPos,
+                                                     FluidInteractionPoint.Mode mode) {
+        CompoundTag point = new CompoundTag();
+        point.put("Pos", NbtUtils.writeBlockPos(targetPos.subtract(pipettePos)));
+        point.putString("Mode", mode.name());
+        return point;
     }
 }

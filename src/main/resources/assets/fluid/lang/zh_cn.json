@@ -211,7 +211,7 @@
   "fluid.ponder.fluid_atomizer.header": "使用流体雾化器",
   "fluid.ponder.fluid_atomizer.text_1": "流体雾化器会像鼓风机一样吹出气流，并以内部储存的流体作为加工媒介。",
   "fluid.ponder.fluid_atomizer.text_2": "至少需要 250 mB 流体，气流才会获得对应的加工效果。",
-  "fluid.ponder.fluid_atomizer.text_3": "注入水后，气流会变成飞溅处理环境。",
+  "fluid.ponder.fluid_atomizer.text_3": "注入水后，气流会变成批量水洗处理气流。",
   "fluid.ponder.fluid_atomizer.text_4": "和普通鼓风加工类似，置物台与传送带上的物品都可以被处理。",
   "fluid.ponder.fluid_atomizer.text_5": "更换内部储存的流体后，雾化器的加工类型也会立刻改变。",
   "fluid.ponder.fluid_atomizer.text_6": "任何已注册的鼓风加工媒介流体都可以被雾化器复用，包括其他模组的兼容配方。",
@@ -230,7 +230,7 @@
   "fluid.ponder.can_filler.text_2": "两台装罐机配合中间的传送带，可以在一端打包流体，并在另一端拆包回注。",
   "fluid.ponder.can_filler.text_3": "装罐机背后的储罐会为它提供流体货源。",
   "fluid.ponder.can_filler.text_4": "装罐机会抽取流体，将其封装进铜罐，再把装满的铜罐送出。",
-  "fluid.ponder.can_filler.text_5": "铜罐可以通过普通传送带运输到物流网络中的任何地方。",
+  "fluid.ponder.can_filler.text_5": "铜罐可以被运输到物流网络中的任何地方。",
   "fluid.ponder.can_filler.text_6": "另一端的装罐机会拆开铜罐，并把其中储存的流体重新注入背后的储罐。",
   "fluid.ponder.can_filler.text_7": "装罐机背后的储罐若已有流体，只有与输入铜罐中的流体相同才会接受注入。装罐机本身设置了地址时，输出的铜罐也会携带该地址。"
 }

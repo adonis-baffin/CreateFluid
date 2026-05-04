@@ -2,6 +2,7 @@ package com.adonis.fluid.ponder;
 
 import com.adonis.fluid.block.Pipette.PipetteBlockEntity;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlockEntity;
+import com.adonis.fluid.content.pipette.FluidInteractionPoint;
 import com.adonis.fluid.registry.CFFluids;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.fluids.tank.FluidTankBlockEntity;
@@ -17,6 +18,8 @@ import net.createmod.ponder.api.scene.Selection;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
@@ -143,6 +146,10 @@ public class PowderSnowScenes {
         scene.world().showSection(pipetteGearsSel, Direction.DOWN);
         scene.idle(10);
 
+        configurePipettePoints(scene, pipettePos,
+                new BlockPos[] { smartInterfacePos },
+                new BlockPos[] { cauldronPos });
+
         scene.world().setKineticSpeed(pipetteSel, -48);
         scene.world().setKineticSpeed(pipetteGearsSel, -48);
         scene.world().multiplyKineticSpeed(util.select().position(0, 1, 5), -1);
@@ -245,17 +252,31 @@ public class PowderSnowScenes {
 
     private static void instructPipette(CreateSceneBuilder scene, BlockPos pipettePos,
                                         PipetteBlockEntity.Phase phase, FluidStack heldFluid, int targetedPoint) {
-        scene.world().modifyBlockEntityNBT(scene.getScene().getSceneBuildingUtil().select().position(pipettePos),
-                PipetteBlockEntity.class, compound -> {
-                    NBTHelper.writeEnum(compound, "Phase", phase);
-                    if (!heldFluid.isEmpty()) {
-                        compound.put("HeldFluid", heldFluid.saveOptional(scene.getScene().getWorld().registryAccess()));
-                    } else {
-                        compound.putBoolean("EmptyFluid", true);
-                    }
-                    compound.putInt("TargetPointIndex", targetedPoint);
-                    compound.putFloat("MovementProgress", 0);
-                });
+        scene.world().modifyBlockEntity(pipettePos,
+                PipetteBlockEntity.class, be -> be.applyPonderState(phase, heldFluid, targetedPoint));
+    }
+
+    private static void configurePipettePoints(CreateSceneBuilder scene, BlockPos pipettePos,
+                                               BlockPos[] inputs, BlockPos[] outputs) {
+        scene.world().modifyBlockEntity(pipettePos, PipetteBlockEntity.class, be -> {
+            ListTag points = new ListTag();
+            for (BlockPos input : inputs) {
+                points.add(createPipettePointTag(pipettePos, input, FluidInteractionPoint.Mode.TAKE));
+            }
+            for (BlockPos output : outputs) {
+                points.add(createPipettePointTag(pipettePos, output, FluidInteractionPoint.Mode.DEPOSIT));
+            }
+            be.setInteractionPointTag(points);
+            be.forceReloadInteractionPoints();
+        });
+    }
+
+    private static CompoundTag createPipettePointTag(BlockPos pipettePos, BlockPos targetPos,
+                                                     FluidInteractionPoint.Mode mode) {
+        CompoundTag point = new CompoundTag();
+        point.put("Pos", NbtUtils.writeBlockPos(targetPos.subtract(pipettePos)));
+        point.putString("Mode", mode.name());
+        return point;
     }
 
     private static FluidStack getPowderSnowFluidStack(int amount) {

@@ -230,7 +230,7 @@
   "fluid.ponder.can_filler.text_2": "Two Can Fillers with a belt between them can package fluid on one side and unpack it on the other.",
   "fluid.ponder.can_filler.text_3": "The tank behind the Can Filler supplies the source fluid.",
   "fluid.ponder.can_filler.text_4": "The Can Filler extracts fluid, packs it into a Copper Can, and ejects the filled can.",
-  "fluid.ponder.can_filler.text_5": "Copper Cans can be transported through your logistics line with ordinary belts.",
+  "fluid.ponder.can_filler.text_5": "Copper Cans can be transported through your logistics line.",
   "fluid.ponder.can_filler.text_6": "A second Can Filler can unpack the Copper Can and inject the stored fluid back into the tank behind it.",
   "fluid.ponder.can_filler.text_7": "If the tank behind a Can Filler already contains fluid, it only accepts Copper Cans with the same fluid. When the Can Filler has an address, its output Copper Cans carry that address."
 }

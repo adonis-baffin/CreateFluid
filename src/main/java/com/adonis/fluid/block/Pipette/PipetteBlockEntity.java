@@ -56,6 +56,7 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class PipetteBlockEntity extends KineticBlockEntity
@@ -344,6 +345,48 @@ public class PipetteBlockEntity extends KineticBlockEntity
     public void setInteractionPointTag(ListTag tag) {
         this.interactionPointTag = tag;
         this.updateInteractionPoints = true;
+    }
+
+    public void applyPonderState(Phase phase, FluidStack heldFluid, int targetedPoint) {
+        if (this.updateInteractionPoints && this.interactionPointTag != null) {
+            if (this.level != null && this.level.isClientSide) {
+                this.rebuildClientInteractionPoints();
+            } else {
+                this.forceReloadInteractionPoints();
+            }
+        }
+
+        if (this.inputs.isEmpty() && this.outputs.isEmpty()) {
+            this.populateFallbackInteractionPoints();
+        }
+
+        FluidInteractionPoint previousPoint = null;
+        if (this.phase == Phase.MOVE_TO_INPUT && this.chasedPointIndex >= 0 && this.chasedPointIndex < this.inputs.size()) {
+            previousPoint = this.inputs.get(this.chasedPointIndex);
+        } else if (this.phase == Phase.MOVE_TO_OUTPUT && this.chasedPointIndex >= 0 && this.chasedPointIndex < this.outputs.size()) {
+            previousPoint = this.outputs.get(this.chasedPointIndex);
+        } else if (this.phase == Phase.MOVE_TO_RETURN) {
+            previousPoint = this.getReturnTargetPoint();
+        }
+
+        this.previousTarget = previousPoint == null ? PipetteAngleTarget.NO_TARGET : this.createAngleTarget(previousPoint);
+        this.previousBaseAngle = this.previousTarget.baseAngle;
+        this.baseAngle.setValue(this.previousBaseAngle);
+        this.lowerArmAngle.setValue(this.previousTarget.lowerArmAngle);
+        this.upperArmAngle.setValue(this.previousTarget.upperArmAngle);
+        this.headAngle.setValue(this.previousTarget.headAngle);
+
+        this.phase = phase;
+        this.heldFluid = heldFluid.copy();
+        this.chasedPointIndex = targetedPoint;
+        this.chasedPointProgress = 0.0F;
+
+        FluidInteractionPoint targetedInteractionPoint = this.getTargetedInteractionPoint();
+        if (targetedInteractionPoint != null) {
+            targetedInteractionPoint.updateCachedState();
+        }
+
+        this.setChanged();
     }
 
     public void setUpdateInteractionPoints(boolean update) {
@@ -1129,6 +1172,106 @@ public class PipetteBlockEntity extends KineticBlockEntity
         }
     }
 
+    private void rebuildClientInteractionPoints() {
+        this.inputs.clear();
+        this.outputs.clear();
+
+        if (this.interactionPointTag == null || this.level == null) {
+            this.updateInteractionPoints = false;
+            return;
+        }
+
+        for (Tag tag : this.interactionPointTag) {
+            FluidInteractionPoint point = FluidInteractionPoint.deserialize((CompoundTag) tag, this.level, this.worldPosition);
+            if (point == null) {
+                continue;
+            }
+
+            if (point.getMode() == FluidInteractionPoint.Mode.TAKE) {
+                this.inputs.add(point);
+            } else {
+                this.outputs.add(point);
+            }
+        }
+
+        this.updateInteractionPoints = false;
+    }
+
+    private void populateFallbackInteractionPoints() {
+        if (this.level == null) {
+            return;
+        }
+
+        this.inputs.clear();
+        this.outputs.clear();
+
+        int range = getRange();
+        BlockPos start = this.worldPosition.offset(-range, -range, -range);
+        BlockPos end = this.worldPosition.offset(range, range, range);
+
+        for (BlockPos pos : BlockPos.betweenClosed(start, end)) {
+            if (pos.equals(this.worldPosition)) {
+                continue;
+            }
+
+            FluidInteractionPoint point = FluidInteractionPoint.create(this.level, pos, this.level.getBlockState(pos));
+            if (point == null || !point.isValid()) {
+                continue;
+            }
+
+            if (point.getMode() == FluidInteractionPoint.Mode.TAKE) {
+                this.inputs.add(point);
+            } else {
+                this.outputs.add(point);
+            }
+        }
+
+        Comparator<FluidInteractionPoint> sorter = Comparator
+                .comparingDouble((FluidInteractionPoint point) -> point.getPos().distSqr(this.worldPosition))
+                .thenComparingInt(point -> point.getPos().getY())
+                .thenComparingInt(point -> point.getPos().getX())
+                .thenComparingInt(point -> point.getPos().getZ());
+        this.inputs.sort(sorter);
+        this.outputs.sort(sorter);
+    }
+
+    private void refreshClientTargets(int previousIndex, Phase previousPhase, float previousProgress, boolean allowBeltRestart) {
+        boolean targetChanged = previousIndex != this.chasedPointIndex || previousPhase != this.phase;
+        boolean restartedBeltInjection = allowBeltRestart
+                && this.isServingBelt
+                && previousPhase == Phase.MOVE_TO_OUTPUT
+                && this.phase == Phase.MOVE_TO_OUTPUT
+                && previousIndex == this.chasedPointIndex
+                && previousProgress > 0.75F
+                && this.chasedPointProgress < 0.35F;
+
+        if (!targetChanged && !restartedBeltInjection) {
+            return;
+        }
+
+        FluidInteractionPoint previousPoint = null;
+        if (restartedBeltInjection) {
+            previousPoint = this.getTargetedInteractionPoint();
+        } else if (previousPhase == Phase.MOVE_TO_INPUT && previousIndex < this.inputs.size()) {
+            previousPoint = this.inputs.get(previousIndex);
+        } else if (previousPhase == Phase.MOVE_TO_OUTPUT && previousIndex < this.outputs.size()) {
+            previousPoint = this.outputs.get(previousIndex);
+        } else if (previousPhase == Phase.MOVE_TO_RETURN) {
+            previousPoint = this.getReturnTargetPoint();
+        }
+
+        this.previousTarget = previousPoint == null ? PipetteAngleTarget.NO_TARGET :
+                this.createAngleTarget(previousPoint);
+        if (previousPoint != null) {
+            this.previousBaseAngle = this.previousTarget.baseAngle;
+        }
+
+        FluidInteractionPoint targetedPoint = this.getTargetedInteractionPoint();
+        if (targetedPoint != null) {
+            targetedPoint.updateCachedState();
+        }
+    }
+
     @Override
     protected void write(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
         super.write(compound, registries, clientPacket);
@@ -1230,37 +1373,11 @@ public class PipetteBlockEntity extends KineticBlockEntity
             this.updateInteractionPoints = true;
         }
 
-        boolean targetChanged = previousIndex != this.chasedPointIndex || previousPhase != this.phase;
-        boolean restartedBeltInjection = this.isServingBelt
-                && previousPhase == Phase.MOVE_TO_OUTPUT
-                && this.phase == Phase.MOVE_TO_OUTPUT
-                && previousIndex == this.chasedPointIndex
-                && previousProgress > 0.75F
-                && this.chasedPointProgress < 0.35F;
-
-        if (targetChanged || restartedBeltInjection) {
-            FluidInteractionPoint previousPoint = null;
-            if (restartedBeltInjection) {
-                previousPoint = this.getTargetedInteractionPoint();
-            } else if (previousPhase == Phase.MOVE_TO_INPUT && previousIndex < this.inputs.size()) {
-                previousPoint = this.inputs.get(previousIndex);
-            } else if (previousPhase == Phase.MOVE_TO_OUTPUT && previousIndex < this.outputs.size()) {
-                previousPoint = this.outputs.get(previousIndex);
-            } else if (previousPhase == Phase.MOVE_TO_RETURN) {
-                previousPoint = this.getReturnTargetPoint();
-            }
-
-            this.previousTarget = previousPoint == null ? PipetteAngleTarget.NO_TARGET :
-                    this.createAngleTarget(previousPoint);
-            if (previousPoint != null) {
-                this.previousBaseAngle = this.previousTarget.baseAngle;
-            }
-
-            FluidInteractionPoint targetedPoint = this.getTargetedInteractionPoint();
-            if (targetedPoint != null) {
-                targetedPoint.updateCachedState();
-            }
+        if (this.updateInteractionPoints && this.interactionPointTag != null && this.level != null) {
+            this.rebuildClientInteractionPoints();
         }
+
+        this.refreshClientTargets(previousIndex, previousPhase, previousProgress, true);
     }
 
     @Override
@@ -1328,49 +1445,16 @@ public class PipetteBlockEntity extends KineticBlockEntity
             boolean forceUpdate = compound.getBoolean("ForceUpdate");
             boolean tagChanged = interactionPointTagBefore == null ||
                     interactionPointTagBefore.size() != this.interactionPointTag.size();
+            boolean missingClientPoints = this.interactionPointTag != null
+                    && !this.interactionPointTag.isEmpty()
+                    && this.inputs.isEmpty()
+                    && this.outputs.isEmpty();
 
-            if (forceUpdate || tagChanged) {
-                this.inputs.clear();
-                this.outputs.clear();
-
-                if (this.interactionPointTag != null && this.level != null) {
-                    for (Tag tag : this.interactionPointTag) {
-                        FluidInteractionPoint point = FluidInteractionPoint.deserialize(
-                                (CompoundTag) tag, this.level, this.worldPosition);
-                        if (point != null) {
-                            if (point.getMode() == FluidInteractionPoint.Mode.TAKE) {
-                                this.inputs.add(point);
-                            } else {
-                                this.outputs.add(point);
-                            }
-                        }
-                    }
-                }
-
-                this.updateInteractionPoints = false;
+            if (forceUpdate || tagChanged || this.updateInteractionPoints || missingClientPoints) {
+                this.rebuildClientInteractionPoints();
             }
 
-            if (previousIndex != this.chasedPointIndex || previousPhase != this.phase) {
-                FluidInteractionPoint previousPoint = null;
-                if (previousPhase == Phase.MOVE_TO_INPUT && previousIndex < this.inputs.size()) {
-                    previousPoint = this.inputs.get(previousIndex);
-                }
-
-                if (previousPhase == Phase.MOVE_TO_OUTPUT && previousIndex < this.outputs.size()) {
-                    previousPoint = this.outputs.get(previousIndex);
-                }
-
-                this.previousTarget = previousPoint == null ? PipetteAngleTarget.NO_TARGET :
-                        this.createAngleTarget(previousPoint);
-                if (previousPoint != null) {
-                    this.previousBaseAngle = this.previousTarget.baseAngle;
-                }
-
-                FluidInteractionPoint targetedPoint = this.getTargetedInteractionPoint();
-                if (targetedPoint != null) {
-                    targetedPoint.updateCachedState();
-                }
-            }
+            this.refreshClientTargets(previousIndex, previousPhase, this.chasedPointProgress, false);
         }
     }
 
