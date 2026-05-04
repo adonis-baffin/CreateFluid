@@ -1,0 +1,113 @@
+{
+  "block.create.redstone_requester": {
+    "de_de": "Redstone-Anfrager",
+    "en_gb": "Redstone Requester",
+    "es_es": "Solicitador de Redstone",
+    "fr_fr": "Commandeur à redstone",
+    "ja_jp": "レッドストーンリクエスター",
+    "pt_br": "Solicitador de Redstone",
+    "pt_pt": "Solicitador de redstone",
+    "ru_ru": "Редстоуновый запрашиватель",
+    "zh_cn": "红石请求器"
+  },
+  "block.create.factory_gauge": {
+    "de_de": "Fabrikanzeige",
+    "en_gb": "Factory Gauge",
+    "es_es": "Medidor Industrial",
+    "fr_fr": "Jauge d'usine",
+    "ja_jp": "ファクトリーゲージ",
+    "pt_br": "Controlador de Estoque",
+    "pt_pt": "Controlador de fábrica",
+    "ru_ru": "Фабричный контроллер",
+    "zh_cn": "工厂仪表"
+  },
+  "block.create.stock_link": {
+    "de_de": "Lagerverbindung",
+    "en_gb": "Stock Link",
+    "es_es": "Enlace de existencias",
+    "fr_fr": "Liaison de stock",
+    "ja_jp": "ストックリンク",
+    "pt_br": "Conector de Estoque",
+    "pt_pt": "Link de stock",
+    "ru_ru": "Складской передатчик",
+    "zh_cn": "仓储链接站"
+  },
+  "block.create.andesite_belt_funnel": {
+    "de_de": "Andesit Förderbandtrichter",
+    "en_gb": "Andesite Belt Funnel",
+    "es_es": "Embudo lateral de andesita",
+    "fr_fr": "Entonnoir d'andésite sur tapis roulant",
+    "ja_jp": "安山岩ベルトファンネル",
+    "pt_br": "Funil Bidirecional de Andesito na Esteira",
+    "pt_pt": "Canal de correia de andesito",
+    "ru_ru": "Андезитовый конвейерный шлюз",
+    "zh_cn": "安山传送带漏斗"
+  },
+  "block.create.brass_belt_funnel": {
+    "de_de": "Messingschleuse",
+    "en_gb": "Brass Belt Funnel",
+    "es_es": "Embudo lateral de latón",
+    "fr_fr": "Entonnoir de laiton sur tapis roulant",
+    "ja_jp": "真鍮ベルトファンネル",
+    "pt_br": "Funil Bidirecional de Latão na Esteira",
+    "pt_pt": "Canal de correia de latão",
+    "ru_ru": "Латунный конвейерный шлюз",
+    "zh_cn": "黄铜传送带漏斗"
+  },
+  "block.create.package_frogport": {
+    "de_de": "Frosch-Anschluss für Pakete",
+    "en_gb": "Package Frogport",
+    "es_es": "Ranapuerto",
+    "fr_fr": "Crapauport à colis",
+    "ja_jp": "小包配送ガエル",
+    "pt_br": "Rã-Porto Transportadora",
+    "pt_pt": "Sapo-doca de pacotes",
+    "ru_ru": "Квакопорт",
+    "zh_cn": "货物蛙港"
+  },
+  "block.create.copper_casing": {
+    "de_de": "Kupferrahmen",
+    "en_gb": "Copper Casing",
+    "es_es": "Revestimiento de Cobre",
+    "fr_fr": "Boitier de cuivre",
+    "ja_jp": "銅ケーシング",
+    "pt_br": "Revestimento de Cobre",
+    "pt_pt": "Revestimento de cobre",
+    "ru_ru": "Медный корпус",
+    "zh_cn": "铜机壳"
+  },
+  "block.create.fluid_tank": {
+    "de_de": "Flüssigkeitstank",
+    "en_gb": "Fluid Tank",
+    "es_es": "Depósito de fluidos",
+    "fr_fr": "Réservoir à fluide",
+    "ja_jp": "液体タンク",
+    "pt_br": "Tanque de Fluidos",
+    "pt_pt": "Tanque de fluidos",
+    "ru_ru": "Жидкостный бак",
+    "zh_cn": "流体储罐"
+  },
+  "block.create.mechanical_pump": {
+    "de_de": "Mechanische Pumpe",
+    "en_gb": "Mechanical Pump",
+    "es_es": "Bomba mecánica",
+    "fr_fr": "Pompe mécanique",
+    "ja_jp": "メカニカルポンプ",
+    "pt_br": "Bomba Mecânica",
+    "pt_pt": "Bomba mecânica",
+    "ru_ru": "Механическая помпа",
+    "zh_cn": "动力泵"
+  },
+  "block.create.sign": {},
+  "item.create.copper_nugget": {
+    "de_de": "Kupferklumpen",
+    "en_gb": "Copper Nugget",
+    "es_es": "Pepita de cobre",
+    "fr_fr": "Pépite de cuivre",
+    "ja_jp": "銅塊",
+    "pt_br": "Pepita de Cobre",
+    "pt_pt": "Pepita de cobre",
+    "ru_ru": "Кусочек меди",
+    "zh_cn": "铜粒"
+  }
+}

@@ -1,6 +1,5 @@
 {
   "itemGroup.fluid.main": "Create: Fluid",
-
   "block.fluid.pipette": "メカニカルピペット",
   "block.fluid.fluid_interface": "液体インターフェース",
   "block.fluid.smart_fluid_interface": "スマート液体インターフェース",
@@ -28,7 +27,6 @@
   "block.fluid.smart_gutter_outlet": "スマート雨樋出口",
   "block.fluid.copper_sink": "銅のシンク",
   "block.fluid.copper_sink.tooltip.summary": "常に満杯の美しい銅のシンク。入力された液体はすべて破壊されます；無限の水出力",
-
   "item.fluid.honeycomb_mold": "ハニカム金型",
   "item.fluid.honeycomb_mold.tooltip.summary": "ハニカム圧縮レシピに使用",
   "item.fluid.baton": "指揮棒",
@@ -44,16 +42,14 @@
   "item.fluid.copper_can": "銅缶",
   "item.fluid.copper_can.tooltip.summary": "_銅缶_は段ボールの小包よりも頑丈です。_缶充填機_でのみ受け取ることができ、他の手段では開梱できません。各缶は_単一の液体_を最大_4000 mB_まで保持できます",
   "item.fluid.fluid_manifest": "液体マニフェスト",
-  "item.fluid.fluid_manifest.tooltip.summary": "液体源、容器、バケツ、ボトル、タンクを右クリックして内容物をサンプリングします。_スニーク右クリック_でクリア",
+  "item.fluid.fluid_manifest.tooltip.summary": "液体源、容器、バケツ、ボトル、タンクを右クリックして内容物をサンプリングします。_スニーク右クリック_でクリア. ファクトリーゲージやレッドストーンリクエスターなどの部品で液体を設定するために使用できます。",
   "item.fluid.fluid_manifest.named": "液体マニフェスト (%s)",
-
   "fluid_type.fluid.powder_snow": "粉雪",
   "fluid_type.fluid.quicksand_fluid": "流砂",
   "fluid.fluid.quicksand_fluid": "流砂",
   "fluid.fluid.haunting_fluid": "憑霊液体",
   "fluid.fluid.smoking_fluid": "燻煙液体",
   "fluid.fluid.slime_fluid": "スライム液体",
-
   "create.fluid.mechanical_pipette.extract": "%1$sから液体を排出",
   "create.fluid.mechanical_pipette.deposit": "%1$sに液体を注入",
   "create.fluid.mechanical_pipette.points_outside_range": "%1$s個の液体対象地点が範囲外になったため削除されました",
@@ -147,7 +143,6 @@
   "recipe.fluid.fan_sandblasting.fan": "砂の奥のケース入りファン",
   "recipe.fluid.fan_glueing": "一括接着",
   "recipe.fluid.fan_glueing.fan": "スライム液体の奥のケース入りファン",
-
   "fluid.ponder.mechanical_pipette.header": "メカニカルピペットの設定",
   "fluid.ponder.mechanical_pipette.text_1": "搬入元",
   "fluid.ponder.mechanical_pipette.text_2": "搬出先",
@@ -226,11 +221,16 @@
   "fluid.ponder.communicating_vessel.text_4": "クリエイティブ液体タンクなどの無限ソースとも連動し、反対側を継続的に補充します。",
   "fluid.ponder.communicating_vessel.text_5": "液体を扱える隣接するブロック面はすべてこの方法で接続でき、タンク、鉢、クリエイティブタンクを含みます。",
   "fluid.ponder.can_filler.header": "缶充填機の使用",
-  "fluid.ponder.can_filler.text_1": "缶充填機は液体小包物流の中核です。背後の容器から液体を引き出し、銅缶に封入します。",
-  "fluid.ponder.can_filler.text_2": "ベルトで結ばれた2台の缶充填機は、一方で液体を梱包し、もう一方で開梱できます。",
-  "fluid.ponder.can_filler.text_3": "缶充填機の背後のタンクがソース液体を供給します。",
-  "fluid.ponder.can_filler.text_4": "缶充填機は液体を抽出し、銅缶に梱包して、満杯の缶を排出します。",
-  "fluid.ponder.can_filler.text_5": "銅缶は通常のベルトを使って物流ラインを通じて輸送できます。",
-  "fluid.ponder.can_filler.text_6": "2台目の缶充填機は銅缶を開け、貯蔵された液体を背後のタンクに戻して注入できます。",
-  "fluid.ponder.can_filler.text_7": "缶充填機の背後のタンクにすでに液体が含まれている場合、同じ液体の銅缶のみを受け入れます。缶充填機にアドレスがある場合、出力される銅缶はそのアドレスを保持します。"
+  "fluid.ponder.can_filler.text_1": "缶充填機は液体物流システムの中核です。背後の容器から液体を引き出し、銅缶に封入します。",
+  "fluid.ponder.can_filler.text_2": "ファンネルや小包配送ガエルを介して、銅缶は物流システム内を循環し、別の缶充填機によって受け取られます。",
+  "fluid.ponder.can_filler.text_3": "缶充填機の背後の液体タンクがソース液体を供給します。",
+  "fluid.ponder.can_filler.text_4": "レッドストーン信号で缶充填機を有効化し、液体を銅缶に梱包します。",
+  "fluid.ponder.can_filler.text_5": "銅缶は物流ネットワークのどこにでも輸送できます。",
+  "fluid.ponder.can_filler.text_6": "受信側の缶充填機は銅缶を消費し、貯蔵された液体を背後のタンクに戻して注入します。",
+  "fluid.ponder.can_filler.text_7": "缶充填機の背後のタンクにすでに液体が含まれている場合、同じ液体の銅缶のみを受け入れます。",
+  "fluid.ponder.can_filler.text_8": "看板を使って缶充填機にアドレスを設定すると、出力される銅缶はそのアドレスを保持します。",
+  "fluid.ponder.can_filler.text_9": "ファクトリーゲージやレッドストーンリクエスターで特定の液体を設定するには、液体マニフェストを使用する必要があります。",
+  "fluid.ponder.can_filler.text_10": "設定後、これらの部品を使用して液体在庫を直接リクエストできます。",
+  "block.fluid.redstone_valve.tooltip": "レッドストーン信号で開閉できる流体バルブ。",
+  "block.fluid.redstone_triple_valve.tooltip": "レッドストーン信号で曲がる方向を制御できる流体パイプ。"
 }

@@ -1,12 +1,13 @@
-﻿{
+{
   "itemGroup.fluid.main": "机械动力：流体",
-
   "block.fluid.pipette": "动力移液器",
   "block.fluid.fluid_interface": "流体接口",
   "block.fluid.smart_fluid_interface": "智能流体接口",
   "block.fluid.centrifugal_pump": "离心泵",
   "block.fluid.redstone_valve": "红石阀门",
+  "block.fluid.redstone_valve.tooltip": "一个可以用红石信号控制开关的流体阀门",
   "block.fluid.redstone_triple_valve": "红石三通阀门",
+  "block.fluid.redstone_triple_valve.tooltip": "一个可以用红石信号控制转弯方向的流体管道",
   "block.fluid.copper_tap": "铜龙头",
   "block.fluid.fluid_atomizer": "流体雾化器",
   "block.fluid.communicating_vessel": "流体连通器",
@@ -28,7 +29,6 @@
   "block.fluid.smart_gutter_outlet": "智能集水器",
   "block.fluid.copper_sink": "铜水槽",
   "block.fluid.copper_sink.tooltip.summary": "一个漂亮的铜制水槽，会自动保持满水状态。任意方向的流体输入将被销毁；可无限输出水",
-
   "item.fluid.honeycomb_mold": "蜜脾模具",
   "item.fluid.honeycomb_mold.tooltip.summary": "用于蜜脾的压块塑形配方",
   "item.fluid.baton": "指挥棒",
@@ -44,16 +44,14 @@
   "item.fluid.copper_can": "铜罐",
   "item.fluid.copper_can.tooltip.summary": "_铜罐_比纸板包裹更坚固，只能被_装罐机_接收，无法通过其他方式解包。最多只能装_4000mb_的_同种流体_。",
   "item.fluid.fluid_manifest": "流体清单",
-  "item.fluid.fluid_manifest.tooltip.summary": "右键流体源、流体容器、桶、瓶或储罐以采样其中的流体，_潜行右键_以清空",
+  "item.fluid.fluid_manifest.tooltip.summary": "右键流体源、流体容器、桶、瓶或储罐以采样其中的流体，_潜行右键_以清空。可用于在工厂仪表，红石请求器等元件中设定流体。",
   "item.fluid.fluid_manifest.named": "流体清单 (%s)",
-
   "fluid_type.fluid.powder_snow": "细雪",
   "fluid_type.fluid.quicksand_fluid": "流沙",
   "fluid.fluid.quicksand_fluid": "流沙",
   "fluid.fluid.haunting_fluid": "缠魂液",
   "fluid.fluid.smoking_fluid": "烟熏液",
   "fluid.fluid.slime_fluid": "史莱姆黏液",
-
   "create.fluid.mechanical_pipette.extract": "从%1$s吸取流体",
   "create.fluid.mechanical_pipette.deposit": "将流体注入%1$s",
   "create.fluid.mechanical_pipette.points_outside_range": "由于距离限制，%1$s 个已选定的交互点已被移除。",
@@ -147,7 +145,6 @@
   "recipe.fluid.fan_sandblasting.fan": "放置在沙子后的鼓风机",
   "recipe.fluid.fan_glueing": "批量胶合",
   "recipe.fluid.fan_glueing.fan": "放置在史莱姆黏液后的鼓风机",
-
   "fluid.ponder.mechanical_pipette.header": "配置动力移液器",
   "fluid.ponder.mechanical_pipette.text_1": "输入",
   "fluid.ponder.mechanical_pipette.text_2": "输出",
@@ -227,10 +224,13 @@
   "fluid.ponder.communicating_vessel.text_5": "只要相邻面具备流体处理能力，就都可以通过它连接起来，包括储罐、工作盆与创造流体罐。",
   "fluid.ponder.can_filler.header": "使用装罐机",
   "fluid.ponder.can_filler.text_1": "装罐机是流体物流系统的核心。它会从背后的流体容器中抽取流体，并将其封装进铜罐。",
-  "fluid.ponder.can_filler.text_2": "两台装罐机配合中间的传送带，可以在一端打包流体，并在另一端拆包回注。",
+  "fluid.ponder.can_filler.text_2": "通过漏斗或货物蛙港，铜罐可以在物流系统中流转，然后被另一个装罐机接收。",
   "fluid.ponder.can_filler.text_3": "装罐机背后的储罐会为它提供流体货源。",
-  "fluid.ponder.can_filler.text_4": "装罐机会抽取流体，将其封装进铜罐，再把装满的铜罐送出。",
+  "fluid.ponder.can_filler.text_4": "通过红石信号来激活装罐机，把流体打包为铜罐。",
   "fluid.ponder.can_filler.text_5": "铜罐可以被运输到物流网络中的任何地方。",
-  "fluid.ponder.can_filler.text_6": "另一端的装罐机会拆开铜罐，并把其中储存的流体重新注入背后的储罐。",
-  "fluid.ponder.can_filler.text_7": "装罐机背后的储罐若已有流体，只有与输入铜罐中的流体相同才会接受注入。装罐机本身设置了地址时，输出的铜罐也会携带该地址。"
+  "fluid.ponder.can_filler.text_6": "接收端的装罐机会吞掉铜罐，并把其中储存的流体重新注入背后的储罐。",
+  "fluid.ponder.can_filler.text_7": "装罐机背后的储罐若已有流体，只有输入铜罐中的流体与其相同才会接受注入。",
+  "fluid.ponder.can_filler.text_8": "在装罐机上用告示牌设置地址后，输出的铜罐会携带该地址。",
+  "fluid.ponder.can_filler.text_9": "要在工厂仪表或红石请求器中设定某种流体，需要用到流体清单",
+  "fluid.ponder.can_filler.text_10": "设定后，可以用这些元件直接请求流体库存"
 }

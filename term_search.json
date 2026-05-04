@@ -1,0 +1,445 @@
+{
+  "can_filler": {
+    "de_de": "Dosenfüller",
+    "en_us": "Can Filler",
+    "es_es": "Empaquetador",
+    "fr_fr": "Remplisseuse de canettes",
+    "ja_jp": "缶充填機",
+    "pt_br": "Enchimento de Latas",
+    "pt_pt": "Enchimento de latas",
+    "ru_ru": "Упаковщик",
+    "zh_cn": "装罐机"
+  },
+  "copper_can": {
+    "de_de": "Kupferkanne",
+    "en_us": "Copper Can",
+    "es_es": "Lata de cobre",
+    "fr_fr": "Canette en cuivre",
+    "ja_jp": "銅缶",
+    "pt_br": "Lata de Cobre",
+    "pt_pt": "Lata de cobre",
+    "ru_ru": "Медная банка",
+    "zh_cn": "铜罐"
+  },
+  "fluid_manifest": {
+    "de_de": "Flüssigkeitsmanifest",
+    "en_us": "Fluid Manifest",
+    "es_es": "Manifiesto de fluidos",
+    "fr_fr": "Manifeste de fluide",
+    "ja_jp": "液体マニフェスト",
+    "pt_br": "Manifesto de Fluido",
+    "pt_pt": "Manifesto de fluidos",
+    "ru_ru": "Жидкостный манифест",
+    "zh_cn": "流体清单"
+  },
+  "sign_from_baton": {
+    "de_de": "Schild-Adresse kann nicht gelöscht werden",
+    "en_us": "Sign address cannot be cleared",
+    "es_es": "No se puede borrar la dirección del cartel",
+    "fr_fr": "Impossible d'effacer l'adresse du panneau",
+    "ja_jp": "看板のアドレスは削除できません",
+    "pt_br": "Endereço da placa não pode ser apagado",
+    "pt_pt": "Endereço do letreiro não pode ser apagado",
+    "ru_ru": "Адрес таблички нельзя очистить",
+    "zh_cn": "告示牌地址无法清除"
+  },
+  "frogport": {
+    "de_de": "Frosch-Anschluss ausgewählt",
+    "en_us": "Frogport selected",
+    "es_es": "Ranapuerto seleccionado",
+    "fr_fr": "crapauport sélectionné",
+    "ja_jp": "小包配送ガエルを選択しました",
+    "pt_br": "Rã-Porto selecionado",
+    "pt_pt": "Sapo-doca selecionado",
+    "ru_ru": "Квакопорт выбран",
+    "zh_cn": "已选择货物蛙港"
+  },
+  "requester_keys": [],
+  "gauge_keys": [],
+  "stockpile_keys": [
+    "fluid.gui.stockpile_switch.input_title",
+    "fluid.gui.stockpile_switch.lower_input",
+    "fluid.gui.stockpile_switch.upper_input",
+    "fluid.gui.stockpile_switch.unit.bucket"
+  ],
+  "clipboard_keys": [
+    "create.create_fluid.clipboard.no_valid_address",
+    "create.create_fluid.clipboard.address_set_by_sign",
+    "create.create_fluid.clipboard.address_set",
+    "create.fluid.clipboard.tooltip.hint",
+    "create.fluid.clipboard.hint.both",
+    "create.fluid.clipboard.hint.copy_only",
+    "create.fluid.clipboard.hint.paste_only",
+    "create.fluid.clipboard.copy.no_address",
+    "create.fluid.clipboard.copy.success",
+    "create.fluid.clipboard.paste.no_address",
+    "create.fluid.clipboard.paste.no_valid_address",
+    "create.fluid.clipboard.paste.no_clipboard",
+    "create.fluid.clipboard.address_set_by_sign",
+    "create.fluid.clipboard.address_set"
+  ],
+  "logistics_keys": [],
+  "funnel_keys": [],
+  "funnel_search": {
+    "de_de": [
+      [
+        "create.hint.mechanical_arm_no_targets",
+        "Es scheint, diesem _Mechanischen_ _Arm_ wurden keine _Ziele_ zugewiesen. Wähle Förderbänder, Depots, Trichter und andere Blöcke indem du sie _Rechts-Klickst_ während du den _Mechanischen_ _Arm_ in deiner _Hand_ _hältst_"
+      ]
+    ],
+    "en_us": [
+      [
+        "create.hint.mechanical_arm_no_targets",
+        "It appears this _Mechanical_ _Arm_ has not been assigned any _targets._ Select belts, depots, funnels and other blocks by _right-clicking_ them while _holding_ the _Mechanical_ _Arm_ in your _hand_"
+      ]
+    ],
+    "es_es": [
+      [
+        "create.hint.mechanical_arm_no_targets",
+        "Parece que a este _Brazo_ _Mecánico_ no se le ha asignado ningún _objetivo_. Selecciona cintas, depósitos, embudos y otros bloques haciendo _clic derecho_ sobre ellos mientras _sostienes_ el _Brazo_ _Mecánico_ en tu _mano_"
+      ]
+    ],
+    "fr_fr": [
+      [
+        "create.hint.mechanical_arm_no_targets",
+        "Il semblerait qu'aucune _cible_ n'a été assignée à ce _Bras_ _mécanique_. Sélectionnez des tapis roulants, des dépôts, des entonnoirs et d'autres blocs en faisant _clic droit_ sur eux en _tenant_ le _Bras_ _mécanique_ dans votre _main_"
+      ]
+    ],
+    "zh_cn": [
+      [
+        "create.hint.mechanical_arm_no_targets",
+        "看起来这个_动力臂_没有被分配任何_目标_。_手持动力臂_，_右击_选取传送带、置物台、漏斗或其他元件来设置目标。"
+      ],
+      [
+        "fluid.ponder.can_filler.text_2",
+        "通过漏斗或货物蛙港，铜罐可以在物流系统中流转，然后被另一个装罐机接收。"
+      ]
+    ]
+  },
+  "logistics_search": {
+    "de_de": [
+      [
+        "fluid.ponder.mechanical_pipette_fill.text_3",
+        "Neben der Logistikabwicklung können Mechanische Pipetten auch in Verarbeitungsszenarien eingesetzt werden"
+      ],
+      [
+        "fluid.ponder.can_filler.text_1",
+        "Dosenfüller sind der Kern der Flüssigkeitspaket-Logistik. Sie entnehmen Flüssigkeit aus dem Behälter hinter ihnen und versiegeln sie in Kupferkannen."
+      ],
+      [
+        "fluid.ponder.can_filler.text_5",
+        "Kupferkannen können durch deine Logistiklinie mit gewöhnlichen Förderbändern transportiert werden."
+      ]
+    ],
+    "en_us": [
+      [
+        "fluid.ponder.mechanical_pipette_fill.text_3",
+        "Besides handling logistics, Mechanical Pipette can also be applied in processing scenarios"
+      ],
+      [
+        "fluid.ponder.can_filler.text_1",
+        "Can Fillers are the core of fluid parcel logistics. They draw fluid from the container behind them and seal it into Copper Cans."
+      ],
+      [
+        "fluid.ponder.can_filler.text_5",
+        "Copper Cans can be transported through your logistics line."
+      ]
+    ],
+    "es_es": [
+      [
+        "fluid.ponder.mechanical_pipette_fill.text_3",
+        "Además de manejar logística, la pipeta mecánica también puede aplicarse en escenarios de procesamiento"
+      ],
+      [
+        "fluid.ponder.can_filler.text_1",
+        "Los empaquetadores son el núcleo de la logística de fluidos por paquetes. Extraen fluido del contenedor detrás de ellos y lo sellan en latas de cobre."
+      ],
+      [
+        "fluid.ponder.can_filler.text_5",
+        "Las latas de cobre pueden transportarse a través de tu línea logística usando cintas ordinarias."
+      ]
+    ],
+    "fr_fr": [
+      [
+        "fluid.ponder.mechanical_pipette_fill.text_3",
+        "En plus de gérer la logistique, la pipette mécanique peut aussi être appliquée dans des scénarios de traitement"
+      ],
+      [
+        "fluid.ponder.can_filler.text_1",
+        "Les remplisseuses de canettes sont le cœur de la logistique de colis de fluides. Elles extraient le fluide du conteneur derrière elles et le scellent dans des canettes en cuivre."
+      ],
+      [
+        "fluid.ponder.can_filler.text_5",
+        "Les canettes en cuivre peuvent être transportées à travers votre ligne logistique avec des courroies ordinaires."
+      ]
+    ],
+    "ja_jp": [
+      [
+        "fluid.ponder.mechanical_pipette_fill.text_3",
+        "物流処理以外にも、メカニカルピペットは加工シナリオにも適用できます"
+      ],
+      [
+        "fluid.ponder.can_filler.text_1",
+        "缶充填機は液体小包物流の中核です。背後の容器から液体を引き出し、銅缶に封入します。"
+      ],
+      [
+        "fluid.ponder.can_filler.text_5",
+        "銅缶は通常のベルトを使って物流ラインを通じて輸送できます。"
+      ]
+    ],
+    "pt_br": [
+      [
+        "fluid.ponder.mechanical_pipette_fill.text_3",
+        "Além de lidar com logística, Pipeta Mecânica também pode ser aplicada em cenários de processamento"
+      ],
+      [
+        "fluid.ponder.can_filler.text_1",
+        "Os enchimentos de latas são o núcleo da logística de pacotes de fluido. Eles extraem fluido do contêiner atrás deles e o selam em latas de cobre."
+      ],
+      [
+        "fluid.ponder.can_filler.text_5",
+        "Latas de cobre podem ser transportadas através da sua linha logística com esteiras comuns."
+      ]
+    ],
+    "pt_pt": [
+      [
+        "fluid.ponder.can_filler.text_1",
+        "Os enchimentos de latas são o núcleo da logística de encomendas de fluidos. Extraem fluido do contentor atrás deles e selam-no em latas de cobre."
+      ],
+      [
+        "fluid.ponder.can_filler.text_5",
+        "As latas de cobre podem ser transportadas através da tua linha logística usando correias ordinárias."
+      ]
+    ],
+    "zh_cn": [
+      [
+        "fluid.ponder.mechanical_pipette_fill.text_3",
+        "除了处理物流，动力移液器也可以应用于加工场景"
+      ],
+      [
+        "fluid.ponder.baton_advanced.header",
+        "指挥棒与高级物流"
+      ],
+      [
+        "fluid.ponder.can_filler.text_1",
+        "装罐机是流体物流系统的核心。它会从背后的流体容器中抽取流体，并将其封装进铜罐。"
+      ],
+      [
+        "fluid.ponder.can_filler.text_2",
+        "通过漏斗或货物蛙港，铜罐可以在物流系统中流转，然后被另一个装罐机接收。"
+      ],
+      [
+        "fluid.ponder.can_filler.text_5",
+        "铜罐可以被运输到物流网络中的任何地方。"
+      ]
+    ]
+  },
+  "requester_search": {
+    "zh_cn": [
+      [
+        "fluid.ponder.can_filler.text_9",
+        "要在工厂仪表或物流请求器中设定某种流体，需要用到流体清单"
+      ]
+    ]
+  },
+  "gauge_search": {
+    "zh_cn": [
+      [
+        "fluid.ponder.can_filler.text_9",
+        "要在工厂仪表或物流请求器中设定某种流体，需要用到流体清单"
+      ]
+    ]
+  },
+  "stockpile_search": {
+    "de_de": [
+      [
+        "fluid.ponder.gutter_outlet_interact.text_5",
+        "_Mechanische Pipetten_ können Flüssigkeit in Rinnenauslässe einlagern oder daraus entnehmen"
+      ]
+    ],
+    "fr_fr": [
+      [
+        "fluid.ponder.fluid_atomizer.text_5",
+        "Changer le fluide stocké change immédiatement le type de traitement de l'atomiseur."
+      ],
+      [
+        "fluid.ponder.can_filler.text_6",
+        "Une seconde remplisseuse de canettes peut ouvrir la canette en cuivre et injecter le fluide stocké de retour dans le réservoir derrière elle."
+      ]
+    ],
+    "zh_cn": [
+      [
+        "fluid.ponder.can_filler.text_10",
+        "设定后，可以用这些元件直接请求流体库存"
+      ]
+    ]
+  },
+  "fluid_search": {
+    "de_de": [
+      [
+        "itemGroup.fluid.main",
+        "Create: Fluid"
+      ],
+      [
+        "block.fluid.fluid_interface",
+        "Flüssigkeitsschnittstelle"
+      ],
+      [
+        "block.fluid.smart_fluid_interface",
+        "Intelligente Flüssigkeitsschnittstelle"
+      ],
+      [
+        "block.fluid.fluid_atomizer",
+        "Flüssigkeitszerstäuber"
+      ],
+      [
+        "block.fluid.fluid_interface.tooltip",
+        "FLÜSSIGKEITSSCHNITTSTELLE"
+      ]
+    ],
+    "en_us": [
+      [
+        "itemGroup.fluid.main",
+        "Create: Fluid"
+      ],
+      [
+        "block.fluid.fluid_interface",
+        "Fluid Interface"
+      ],
+      [
+        "block.fluid.smart_fluid_interface",
+        "Smart Fluid Interface"
+      ],
+      [
+        "block.fluid.fluid_atomizer",
+        "Fluid Atomizer"
+      ],
+      [
+        "block.fluid.fluid_interface.tooltip",
+        "FLUID INTERFACE"
+      ]
+    ],
+    "es_es": [
+      [
+        "itemGroup.fluid.main",
+        "Create: Fluid"
+      ],
+      [
+        "block.fluid.fluid_interface",
+        "Interfaz de fluidos"
+      ],
+      [
+        "block.fluid.smart_fluid_interface",
+        "Interfaz de fluidos inteligente"
+      ],
+      [
+        "block.fluid.fluid_atomizer",
+        "Atomizador de fluidos"
+      ],
+      [
+        "block.fluid.fluid_interface.tooltip",
+        "INTERFAZ DE FLUIDOS"
+      ]
+    ],
+    "fr_fr": [
+      [
+        "itemGroup.fluid.main",
+        "Create: Fluid"
+      ],
+      [
+        "block.fluid.fluid_interface",
+        "Interface à fluide"
+      ],
+      [
+        "block.fluid.smart_fluid_interface",
+        "Interface à fluide intelligente"
+      ],
+      [
+        "block.fluid.fluid_atomizer",
+        "Atomiseur à fluide"
+      ],
+      [
+        "block.fluid.fluid_interface.tooltip",
+        "INTERFACE À FLUIDE"
+      ]
+    ],
+    "ja_jp": [
+      [
+        "itemGroup.fluid.main",
+        "Create: Fluid"
+      ]
+    ],
+    "pt_br": [
+      [
+        "itemGroup.fluid.main",
+        "Create: Fluid"
+      ],
+      [
+        "block.fluid.fluid_interface",
+        "Interface de Fluidos"
+      ],
+      [
+        "block.fluid.smart_fluid_interface",
+        "Interface de Fluidos Inteligente"
+      ],
+      [
+        "block.fluid.fluid_atomizer",
+        "Atomizador de Fluido"
+      ],
+      [
+        "block.fluid.fluid_interface.tooltip",
+        "INTERFACE DE FLUIDO"
+      ]
+    ],
+    "pt_pt": [
+      [
+        "itemGroup.fluid.main",
+        "Create: Fluid"
+      ],
+      [
+        "block.fluid.fluid_interface",
+        "Interface de Fluidos"
+      ],
+      [
+        "block.fluid.smart_fluid_interface",
+        "Interface de Fluidos Inteligente"
+      ],
+      [
+        "block.fluid.fluid_atomizer",
+        "Atomizador de fluidos"
+      ],
+      [
+        "block.fluid.fluid_interface.tooltip",
+        "INTERFACE DE FLUIDOS"
+      ]
+    ],
+    "ru_ru": [
+      [
+        "itemGroup.fluid.main",
+        "Create: Fluid"
+      ]
+    ],
+    "zh_cn": [
+      [
+        "itemGroup.fluid.main",
+        "机械动力：流体"
+      ],
+      [
+        "block.fluid.fluid_interface",
+        "流体接口"
+      ],
+      [
+        "block.fluid.smart_fluid_interface",
+        "智能流体接口"
+      ],
+      [
+        "block.fluid.fluid_atomizer",
+        "流体雾化器"
+      ],
+      [
+        "block.fluid.communicating_vessel",
+        "流体连通器"
+      ]
+    ]
+  }
+}

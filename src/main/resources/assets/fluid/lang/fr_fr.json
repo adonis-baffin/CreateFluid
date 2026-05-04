@@ -1,6 +1,5 @@
 {
   "itemGroup.fluid.main": "Create: Fluid",
-
   "block.fluid.pipette": "Pipette mécanique",
   "block.fluid.fluid_interface": "Interface à fluide",
   "block.fluid.smart_fluid_interface": "Interface à fluide intelligente",
@@ -28,7 +27,6 @@
   "block.fluid.smart_gutter_outlet": "Sortie de gouttière intelligente",
   "block.fluid.copper_sink": "Évier en cuivre",
   "block.fluid.copper_sink.tooltip.summary": "Un bel évier en cuivre qui reste toujours plein. Tout fluide introduit est détruit ; Sortie infinie d'eau",
-
   "item.fluid.honeycomb_mold": "Moule à rayon de miel",
   "item.fluid.honeycomb_mold.tooltip.summary": "Utilisé pour la recette de compactage de rayon de miel",
   "item.fluid.baton": "Baguette de chef d'orchestre",
@@ -44,16 +42,14 @@
   "item.fluid.copper_can": "Canette en cuivre",
   "item.fluid.copper_can.tooltip.summary": "Les _canettes en cuivre_ sont plus robustes que les paquets en carton. Elles ne peuvent être reçues que par des _remplisseuses de canettes_ et ne peuvent pas être déballées par d'autres moyens. Chaque canette peut contenir jusqu'à _4000 mB_ d'un _seul fluide_",
   "item.fluid.fluid_manifest": "Manifeste de fluide",
-  "item.fluid.fluid_manifest.tooltip.summary": "Faites clic droit sur une source de fluide, un conteneur, un seau, une bouteille ou un réservoir pour en extraire un échantillon. _Shift-clic droit_ pour effacer",
+  "item.fluid.fluid_manifest.tooltip.summary": "Faites clic droit sur une source de fluide, un conteneur, un seau, une bouteille ou un réservoir pour en extraire un échantillon. _Shift-clic droit_ pour effacer. Peut être utilisé pour définir des fluides dans des Jauges d'usine, des Commandeurs à redstone et d'autres composants.",
   "item.fluid.fluid_manifest.named": "Manifeste de fluide (%s)",
-
   "fluid_type.fluid.powder_snow": "Neige poudreuse",
   "fluid_type.fluid.quicksand_fluid": "Sable mouvant",
   "fluid.fluid.quicksand_fluid": "Sable mouvant",
   "fluid.fluid.haunting_fluid": "Fluide de hantise",
   "fluid.fluid.smoking_fluid": "Fluide de fumage",
   "fluid.fluid.slime_fluid": "Fluide de slime",
-
   "create.fluid.mechanical_pipette.extract": "Drainer le fluide de %1$s",
   "create.fluid.mechanical_pipette.deposit": "Injecter le fluide à %1$s",
   "create.fluid.mechanical_pipette.points_outside_range": "%1$s Points d'interaction de fluide ont été retirés car ils sont maintenant hors de portée",
@@ -147,7 +143,6 @@
   "recipe.fluid.fan_sandblasting.fan": "Ventilateur derrière du sable",
   "recipe.fluid.fan_glueing": "Collage en masse",
   "recipe.fluid.fan_glueing.fan": "Ventilateur derrière du fluide de slime",
-
   "fluid.ponder.mechanical_pipette.header": "Mettre en place la pipette mécanique",
   "fluid.ponder.mechanical_pipette.text_1": "Entrées",
   "fluid.ponder.mechanical_pipette.text_2": "Sorties",
@@ -226,11 +221,16 @@
   "fluid.ponder.communicating_vessel.text_4": "Ils fonctionnent aussi avec des sources infinies comme les réservoirs à fluide créatifs, rechargeant continuellement l'autre côté.",
   "fluid.ponder.communicating_vessel.text_5": "Toute face de bloc voisine avec une capacité de manutention de fluide peut être liée de cette façon, y compris les réservoirs, les bassins et les réservoirs créatifs.",
   "fluid.ponder.can_filler.header": "Utiliser les remplisseuses de canettes",
-  "fluid.ponder.can_filler.text_1": "Les remplisseuses de canettes sont le cœur de la logistique de colis de fluides. Elles extraient le fluide du conteneur derrière elles et le scellent dans des canettes en cuivre.",
-  "fluid.ponder.can_filler.text_2": "Deux remplisseuses de canettes avec une courroie entre elles peuvent empaqueter du fluide d'un côté et le dépaqueter de l'autre.",
-  "fluid.ponder.can_filler.text_3": "Le réservoir derrière la remplisseuse de canettes fournit le fluide source.",
-  "fluid.ponder.can_filler.text_4": "La remplisseuse de canettes extrait le fluide, l'empaquète dans une canette en cuivre et éjecte la canette remplie.",
-  "fluid.ponder.can_filler.text_5": "Les canettes en cuivre peuvent être transportées à travers votre ligne logistique avec des courroies ordinaires.",
-  "fluid.ponder.can_filler.text_6": "Une seconde remplisseuse de canettes peut ouvrir la canette en cuivre et injecter le fluide stocké de retour dans le réservoir derrière elle.",
-  "fluid.ponder.can_filler.text_7": "Si le réservoir derrière une remplisseuse de canettes contient déjà du fluide, elle n'accepte que des canettes en cuivre avec le même fluide. Quand la remplisseuse de canettes a une adresse, ses canettes en cuivre de sortie portent cette adresse."
+  "fluid.ponder.can_filler.text_1": "Les remplisseuses de canettes sont le cœur du système logistique de fluides. Elles extraient le fluide du conteneur derrière elles et le scellent dans des canettes en cuivre.",
+  "fluid.ponder.can_filler.text_2": "Via des entonnoirs ou des crapauports, les canettes en cuivre peuvent circuler dans le système logistique et être reçues par une autre remplisseuse de canettes.",
+  "fluid.ponder.can_filler.text_3": "Le réservoir à fluide derrière la remplisseuse de canettes lui fournit le fluide source.",
+  "fluid.ponder.can_filler.text_4": "Activez la remplisseuse de canettes avec un signal de redstone pour empaqueter le fluide dans une canette en cuivre.",
+  "fluid.ponder.can_filler.text_5": "Les canettes en cuivre peuvent être transportées n'importe où dans le réseau logistique.",
+  "fluid.ponder.can_filler.text_6": "La remplisseuse de canettes réceptrice consume la canette en cuivre et injecte le fluide stocké de retour dans le réservoir derrière elle.",
+  "fluid.ponder.can_filler.text_7": "Si le réservoir derrière une remplisseuse de canettes contient déjà du fluide, elle n'accepte que des canettes en cuivre entrantes avec le même fluide.",
+  "fluid.ponder.can_filler.text_8": "Après avoir défini une adresse sur la remplisseuse de canettes à l'aide d'un panneau, les canettes en cuivre de sortie porteront cette adresse.",
+  "fluid.ponder.can_filler.text_9": "Pour définir un fluide spécifique dans une Jauge d'usine ou un Commandeur à redstone, vous devez utiliser un Manifeste de fluide.",
+  "fluid.ponder.can_filler.text_10": "Une fois défini, vous pouvez utiliser ces composants pour demander directement du stock de fluide.",
+  "block.fluid.redstone_valve.tooltip": "Une valve à fluide qui peut être activée et désactivée avec un signal de redstone.",
+  "block.fluid.redstone_triple_valve.tooltip": "Un tuyau à fluide dont la direction de virage peut être contrôlée avec un signal de redstone."
 }

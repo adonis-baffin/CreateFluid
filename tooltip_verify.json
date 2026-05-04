@@ -1,0 +1,32 @@
+{
+  "block.fluid.redstone_valve.tooltip": {
+    "de_de": "Ein Flüssigkeitsventil, das mit einem Redstone-Signal ein- und ausgeschaltet werden kann.",
+    "en_us": "A fluid valve that can be turned on and off with a redstone signal.",
+    "es_es": "Una válvula de fluidos que puede encenderse y apagarse con una señal de redstone.",
+    "fr_fr": "Une valve à fluide qui peut être activée et désactivée avec un signal de redstone.",
+    "ja_jp": "レッドストーン信号で開閉できる流体バルブ。",
+    "pt_br": "Uma válvula de fluidos que pode ser ligada e desligada com um sinal de redstone.",
+    "pt_pt": "Uma válvula de fluidos que pode ser ligada e desligada com um sinal de redstone.",
+    "ru_ru": "Жидкостный клапан, который можно включать и выключать сигналом редстоуна."
+  },
+  "block.fluid.redstone_triple_valve.tooltip": {
+    "de_de": "Ein Flüssigkeitsrohr, dessen Richtung mit einem Redstone-Signal gesteuert werden kann.",
+    "en_us": "A fluid pipe whose turning direction can be controlled with a redstone signal.",
+    "es_es": "Una tubería de fluidos cuya dirección de giro puede controlarse con una señal de redstone.",
+    "fr_fr": "Un tuyau à fluide dont la direction de virage peut être contrôlée avec un signal de redstone.",
+    "ja_jp": "レッドストーン信号で曲がる方向を制御できる流体パイプ。",
+    "pt_br": "Um tubo de fluidos cuja direção de curva pode ser controlada com um sinal de redstone.",
+    "pt_pt": "Um tubo de fluidos cuja direção de curva pode ser controlada com um sinal de redstone.",
+    "ru_ru": "Жидкостная труба, направление поворота которой можно контролировать сигналом редстоуна."
+  },
+  "item.fluid.fluid_manifest.tooltip.summary": {
+    "de_de": "Rechtsklicke auf eine Flüssigkeitsquelle, einen Behälter, einen Eimer, eine Flasche oder einen Tank, um eine Probe zu entnehmen. _Shift-Rechtsklick_ zum Löschen. Kann verwendet werden, um Flüssigkeiten in Fabrikanzeigen, Redstone-Anfragern und anderen Komponenten festzulegen.",
+    "en_us": "Right-click a fluid source, container, bucket, bottle, or tank to sample its contents. _Sneak-right-click_ to clear. Can be used to set fluids in Factory Gauges, Redstone Requesters, and other components.",
+    "es_es": "Haz clic derecho en una fuente de fluido, contenedor, cubo, botella o tanque para tomar una muestra. _Shift-clic derecho_ para limpiar. Se puede usar para establecer fluidos en Medidores Industriales, Solicitadores de Redstone y otros componentes.",
+    "fr_fr": "Faites clic droit sur une source de fluide, un conteneur, un seau, une bouteille ou un réservoir pour en extraire un échantillon. _Shift-clic droit_ pour effacer. Peut être utilisé pour définir des fluides dans des Jauges d'usine, des Commandeurs à redstone et d'autres composants.",
+    "ja_jp": "液体源、容器、バケツ、ボトル、タンクを右クリックして内容物をサンプリングします。_スニーク右クリック_でクリア. ファクトリーゲージやレッドストーンリクエスターなどの部品で液体を設定するために使用できます。",
+    "pt_br": "Clique-direito em uma fonte de fluido, contêiner, balde, garrafa ou tanque para amostrar seu conteúdo. _Shift-clique-direito_ para limpar. Pode ser usado para definir fluidos em Controladores de Estoque, Solicitadores de Redstone e outros componentes.",
+    "pt_pt": "Clica com o botão direito numa fonte de fluido, contentor, balde, garrafa ou tanque para amostrar o seu conteúdo. _Shift-clica com o botão direito_ para limpar. Pode ser usado para definir fluidos em Controladores de fábrica, Solicitadores de redstone e outros componentes.",
+    "ru_ru": "Кликните ПКМ по источнику жидкости, контейнеру, ведру, бутылке или резервуару, чтобы взять пробу. _Shift-ПКМ_ для очистки. Может использоваться для установки жидкостей в Фабричных контроллерах, Редстоуновых запрашивателях и других компонентах."
+  }
+}

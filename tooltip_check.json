@@ -1,0 +1,47 @@
+{
+  "de_de": {
+    "block.fluid.redstone_valve": "Redstone-Ventil",
+    "block.fluid.redstone_triple_valve": "Redstone-Dreiwegventil",
+    "item.fluid.fluid_manifest.tooltip.summary": "Rechtsklicke auf eine Flüssigkeitsquelle, einen Behälter, einen Eimer, eine Flasche oder einen Tank, um eine Probe zu entnehmen. _Shift-Rechtsklick_ zum Löschen"
+  },
+  "en_us": {
+    "block.fluid.redstone_valve": "Redstone Valve",
+    "block.fluid.redstone_triple_valve": "Redstone Triple Valve",
+    "item.fluid.fluid_manifest.tooltip.summary": "Right-click a fluid source, container, bucket, bottle, or tank to sample its contents. _Sneak-right-click_ to clear"
+  },
+  "es_es": {
+    "block.fluid.redstone_valve": "Válvula de Redstone",
+    "block.fluid.redstone_triple_valve": "Válvula Triple de Redstone",
+    "item.fluid.fluid_manifest.tooltip.summary": "Haz clic derecho en una fuente de fluido, contenedor, cubo, botella o tanque para tomar una muestra. _Shift-clic derecho_ para limpiar"
+  },
+  "fr_fr": {
+    "block.fluid.redstone_valve": "Vanne Redstone",
+    "block.fluid.redstone_triple_valve": "Vanne Triple Redstone",
+    "item.fluid.fluid_manifest.tooltip.summary": "Faites clic droit sur une source de fluide, un conteneur, un seau, une bouteille ou un réservoir pour en extraire un échantillon. _Shift-clic droit_ pour effacer"
+  },
+  "ja_jp": {
+    "block.fluid.redstone_valve": "レッドストーンバルブ",
+    "block.fluid.redstone_triple_valve": "レッドストーン三方バルブ",
+    "item.fluid.fluid_manifest.tooltip.summary": "液体源、容器、バケツ、ボトル、タンクを右クリックして内容物をサンプリングします。_スニーク右クリック_でクリア"
+  },
+  "pt_br": {
+    "block.fluid.redstone_valve": "Válvula de Redstone",
+    "block.fluid.redstone_triple_valve": "Válvula Tripla de Redstone",
+    "item.fluid.fluid_manifest.tooltip.summary": "Clique-direito em uma fonte de fluido, contêiner, balde, garrafa ou tanque para amostrar seu conteúdo. _Shift-clique-direito_ para limpar"
+  },
+  "pt_pt": {
+    "block.fluid.redstone_valve": "Válvula de Redstone",
+    "block.fluid.redstone_triple_valve": "Válvula Tripla de Redstone",
+    "item.fluid.fluid_manifest.tooltip.summary": "Clica com o botão direito numa fonte de fluido, contentor, balde, garrafa ou tanque para amostrar o seu conteúdo. _Shift-clica com o botão direito_ para limpar"
+  },
+  "ru_ru": {
+    "block.fluid.redstone_valve": "Редстоуновый клапан",
+    "block.fluid.redstone_triple_valve": "Редстоуновый трёхходовой клапан",
+    "item.fluid.fluid_manifest.tooltip.summary": "Кликните ПКМ по источнику жидкости, контейнеру, ведру, бутылке или резервуару, чтобы взять пробу. _Shift-ПКМ_ для очистки"
+  },
+  "zh_cn": {
+    "block.fluid.redstone_valve": "红石阀门",
+    "block.fluid.redstone_triple_valve": "红石三通阀门",
+    "item.fluid.fluid_manifest.tooltip.summary": "右键流体源、流体容器、桶、瓶或储罐以采样其中的流体，_潜行右键_以清空。可用于在工厂仪表，红石请求器等元件中设定流体。"
+  }
+}

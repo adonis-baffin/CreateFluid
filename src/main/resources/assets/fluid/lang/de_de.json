@@ -1,6 +1,5 @@
 {
   "itemGroup.fluid.main": "Create: Fluid",
-
   "block.fluid.pipette": "Mechanische Pipette",
   "block.fluid.fluid_interface": "Flüssigkeitsschnittstelle",
   "block.fluid.smart_fluid_interface": "Intelligente Flüssigkeitsschnittstelle",
@@ -28,7 +27,6 @@
   "block.fluid.smart_gutter_outlet": "Intelligenter Rinnenauslass",
   "block.fluid.copper_sink": "Kupferspüle",
   "block.fluid.copper_sink.tooltip.summary": "Eine schöne Kupferspüle, die immer voll bleibt. Jede eingeführte Flüssigkeit wird zerstört; Unendliche Wasserausgabe",
-
   "item.fluid.honeycomb_mold": "Honigwabenform",
   "item.fluid.honeycomb_mold.tooltip.summary": "Verwendet für Honigwaben-Verdichtungsrezept",
   "item.fluid.baton": "Dirigentenstab",
@@ -44,16 +42,14 @@
   "item.fluid.copper_can": "Kupferkanne",
   "item.fluid.copper_can.tooltip.summary": "_Kupferkannen_ sind stabiler als Papp-Pakete. Sie können nur von _Dosenfüllern_ empfangen und nicht auf andere Weise entpackt werden. Jede Kanne fasst bis zu _4000 mB_ einer _einzigen Flüssigkeit_",
   "item.fluid.fluid_manifest": "Flüssigkeitsmanifest",
-  "item.fluid.fluid_manifest.tooltip.summary": "Rechtsklicke auf eine Flüssigkeitsquelle, einen Behälter, einen Eimer, eine Flasche oder einen Tank, um eine Probe zu entnehmen. _Shift-Rechtsklick_ zum Löschen",
+  "item.fluid.fluid_manifest.tooltip.summary": "Rechtsklicke auf eine Flüssigkeitsquelle, einen Behälter, einen Eimer, eine Flasche oder einen Tank, um eine Probe zu entnehmen. _Shift-Rechtsklick_ zum Löschen. Kann verwendet werden, um Flüssigkeiten in Fabrikanzeigen, Redstone-Anfragern und anderen Komponenten festzulegen.",
   "item.fluid.fluid_manifest.named": "Flüssigkeitsmanifest (%s)",
-
   "fluid_type.fluid.powder_snow": "Pulverschnee",
   "fluid_type.fluid.quicksand_fluid": "Treibsand",
   "fluid.fluid.quicksand_fluid": "Treibsand",
   "fluid.fluid.haunting_fluid": "Spukflüssigkeit",
   "fluid.fluid.smoking_fluid": "Rauchflüssigkeit",
   "fluid.fluid.slime_fluid": "Schleimflüssigkeit",
-
   "create.fluid.mechanical_pipette.extract": "Entnimm Flüssigkeit von %1$s",
   "create.fluid.mechanical_pipette.deposit": "Injiziere Flüssigkeit in %1$s",
   "create.fluid.mechanical_pipette.points_outside_range": "%1$s Flüssigkeitsinteraktionspunkte wurden entfernt, da sie nun außerhalb der Reichweite sind",
@@ -147,7 +143,6 @@
   "recipe.fluid.fan_sandblasting.fan": "Lüfter hinter Sand",
   "recipe.fluid.fan_glueing": "Massenkleben",
   "recipe.fluid.fan_glueing.fan": "Lüfter hinter Schleimflüssigkeit",
-
   "fluid.ponder.mechanical_pipette.header": "Mechanische Pipette einrichten",
   "fluid.ponder.mechanical_pipette.text_1": "Eingänge",
   "fluid.ponder.mechanical_pipette.text_2": "Ausgänge",
@@ -226,11 +221,16 @@
   "fluid.ponder.communicating_vessel.text_4": "Sie funktionieren auch mit unendlichen Quellen wie kreativen Flüssigkeitstanks und füllen die andere Seite kontinuierlich auf.",
   "fluid.ponder.communicating_vessel.text_5": "Jede benachbarte Blockseite mit Flüssigkeitsverarbeitungsfähigkeit kann auf diese Weise verbunden werden, einschließlich Tanks, Becken und kreativen Tanks.",
   "fluid.ponder.can_filler.header": "Verwendung von Dosenfüllern",
-  "fluid.ponder.can_filler.text_1": "Dosenfüller sind der Kern der Flüssigkeitspaket-Logistik. Sie entnehmen Flüssigkeit aus dem Behälter hinter ihnen und versiegeln sie in Kupferkannen.",
-  "fluid.ponder.can_filler.text_2": "Zwei Dosenfüller mit einem Förderband dazwischen können Flüssigkeit auf einer Seite verpacken und auf der anderen entpacken.",
-  "fluid.ponder.can_filler.text_3": "Der Tank hinter dem Dosenfüller liefert die Quellflüssigkeit.",
-  "fluid.ponder.can_filler.text_4": "Der Dosenfüller entnimmt Flüssigkeit, verpackt sie in eine Kupferkanne und wirft die gefüllte Kanne aus.",
-  "fluid.ponder.can_filler.text_5": "Kupferkannen können durch deine Logistiklinie mit gewöhnlichen Förderbändern transportiert werden.",
-  "fluid.ponder.can_filler.text_6": "Ein zweiter Dosenfüller kann die Kupferkanne öffnen und die gespeicherte Flüssigkeit zurück in den Tank hinter ihm injizieren.",
-  "fluid.ponder.can_filler.text_7": "Wenn der Tank hinter einem Dosenfüller bereits Flüssigkeit enthält, akzeptiert er nur Kupferkannen mit derselben Flüssigkeit. Wenn der Dosenfüller eine Adresse hat, tragen die ausgegebenen Kupferkannen diese Adresse."
+  "fluid.ponder.can_filler.text_1": "Dosenfüller sind der Kern des Flüssigkeits-Logistiksystems. Sie entnehmen Flüssigkeit aus dem Behälter hinter ihnen und versiegeln sie in Kupferkannen.",
+  "fluid.ponder.can_filler.text_2": "Über Trichter oder Frosch-Anschlüsse können Kupferkannen im Logistiksystem zirkulieren und von einem anderen Dosenfüller empfangen werden.",
+  "fluid.ponder.can_filler.text_3": "Der Flüssigkeitstank hinter dem Dosenfüller liefert die Quellflüssigkeit.",
+  "fluid.ponder.can_filler.text_4": "Aktiviere den Dosenfüller mit einem Redstone-Signal, um Flüssigkeit in eine Kupferkanne zu verpacken.",
+  "fluid.ponder.can_filler.text_5": "Kupferkannen können an jeden Ort im Logistiknetzwerk transportiert werden.",
+  "fluid.ponder.can_filler.text_6": "Der empfangende Dosenfüller verbraucht die Kupferkanne und injiziert die gespeicherte Flüssigkeit zurück in den Tank hinter ihm.",
+  "fluid.ponder.can_filler.text_7": "Wenn der Tank hinter einem Dosenfüller bereits Flüssigkeit enthält, akzeptiert er nur eingehende Kupferkannen mit derselben Flüssigkeit.",
+  "fluid.ponder.can_filler.text_8": "Nachdem du mit einem Schild eine Adresse auf dem Dosenfüller gesetzt hast, tragen die ausgegebenen Kupferkannen diese Adresse.",
+  "fluid.ponder.can_filler.text_9": "Um eine bestimmte Flüssigkeit in einer Fabrikanzeige oder einem Redstone-Anfrager festzulegen, benötigst du ein Flüssigkeitsmanifest.",
+  "fluid.ponder.can_filler.text_10": "Nach der Einstellung kannst du diese Komponenten verwenden, um direkt Flüssigkeitsbestand anzufordern.",
+  "block.fluid.redstone_valve.tooltip": "Ein Flüssigkeitsventil, das mit einem Redstone-Signal ein- und ausgeschaltet werden kann.",
+  "block.fluid.redstone_triple_valve.tooltip": "Ein Flüssigkeitsrohr, dessen Richtung mit einem Redstone-Signal gesteuert werden kann."
 }

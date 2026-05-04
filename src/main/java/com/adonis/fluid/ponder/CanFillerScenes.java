@@ -1,10 +1,11 @@
 package com.adonis.fluid.ponder;
 
+import com.adonis.fluid.item.FluidManifestItem;
 import com.adonis.fluid.item.CopperCanItem;
 import com.simibubi.create.content.fluids.tank.FluidTankBlockEntity;
-import com.simibubi.create.content.logistics.packager.PackagerBlock;
 import com.simibubi.create.content.logistics.packager.PackagerBlockEntity;
 import com.simibubi.create.foundation.ponder.CreateSceneBuilder;
+import net.createmod.catnip.math.Pointing;
 import net.createmod.ponder.api.PonderPalette;
 import net.createmod.ponder.api.scene.SceneBuilder;
 import net.createmod.ponder.api.scene.SceneBuildingUtil;
@@ -36,6 +37,10 @@ public class CanFillerScenes {
         BlockPos funnel2Pos = util.grid().at(5, 2, 2);
         BlockPos canFiller2Pos = util.grid().at(6, 2, 2);
         BlockPos tank2Pos = util.grid().at(6, 2, 3);
+        BlockPos requesterPos = util.grid().at(3, 2, 3);
+        BlockPos gaugePos = util.grid().at(4, 2, 2);
+        BlockPos canFiller3Pos = util.grid().at(4, 2, 3);
+        BlockPos signPos = util.grid().at(6, 2, 1);
 
         Selection tank1Sel = util.select().fromTo(1, 1, 4, 1, 3, 4);
         Selection canFiller1Sel = util.select().fromTo(1, 1, 3, 1, 3, 3);
@@ -46,6 +51,13 @@ public class CanFillerScenes {
         Selection funnel2Sel = util.select().position(funnel2Pos);
         Selection canFiller2Sel = util.select().position(canFiller2Pos);
         Selection tank2Sel = util.select().fromTo(6, 1, 3, 6, 3, 3);
+        Selection signSel = util.select().position(signPos);
+        Selection newAttachmentSel = util.select().position(3, 1, 3)
+                .add(util.select().position(requesterPos))
+                .add(util.select().position(gaugePos))
+                .add(util.select().position(canFiller3Pos))
+                .add(util.select().position(4, 1, 3))
+                .add(util.select().position(4, 3, 3));
 
         scene.idle(20);
 
@@ -95,8 +107,8 @@ public class CanFillerScenes {
         scene.idle(90);
 
         ItemStack waterCan = CopperCanItem.create(new FluidStack(Fluids.WATER, 1000), 1000);
-        scene.world().toggleRedstonePower(util.select().position(leverPos));
-        scene.world().modifyBlock(canFiller1Pos, state -> state.setValue(PackagerBlock.POWERED, true), true);
+        scene.world().toggleRedstonePower(util.select().fromTo(1, 3, 3, 1, 2, 3));
+        scene.effects().indicateRedstone(leverPos);
         scene.idle(10);
         canFillerCreate(scene, canFiller1Pos, waterCan);
         scene.idle(5);
@@ -153,6 +165,42 @@ public class CanFillerScenes {
                 .pointAt(util.vector().blockSurface(tank2Pos, Direction.EAST))
                 .placeNearTarget();
         scene.idle(110);
+
+        scene.world().showSection(signSel, Direction.DOWN);
+        scene.idle(10);
+
+        scene.overlay().showText(80)
+                .attachKeyFrame()
+                .colored(PonderPalette.WHITE)
+                .text(tr("fluid.ponder.can_filler.text_8"))
+                .pointAt(util.vector().blockSurface(signPos, Direction.NORTH))
+                .placeNearTarget();
+        scene.idle(90);
+
+        scene.world().showSection(newAttachmentSel, Direction.DOWN);
+        scene.idle(10);
+
+        scene.overlay().showText(80)
+                .attachKeyFrame()
+                .colored(PonderPalette.WHITE)
+                .text(tr("fluid.ponder.can_filler.text_9"))
+                .pointAt(util.vector().blockSurface(canFiller3Pos, Direction.EAST))
+                .placeNearTarget();
+        scene.idle(90);
+
+        ItemStack waterManifest = FluidManifestItem.of(new FluidStack(Fluids.WATER, 1000), 1000);
+        scene.overlay().showControls(util.vector().blockSurface(gaugePos, Direction.WEST), Pointing.RIGHT, 30)
+                .rightClick()
+                .withItem(waterManifest);
+        scene.idle(30);
+
+        scene.overlay().showText(80)
+                .attachKeyFrame()
+                .colored(PonderPalette.WHITE)
+                .text(tr("fluid.ponder.can_filler.text_10"))
+                .pointAt(util.vector().blockSurface(requesterPos, Direction.WEST))
+                .placeNearTarget();
+        scene.idle(90);
 
         scene.markAsFinished();
     }

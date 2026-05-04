@@ -1,0 +1,56 @@
+{
+  "de_de": {
+    "block.create.stock_ticker": "Lagerticker",
+    "block.create.stock_link": "Lagerverbindung",
+    "block.create.factory_gauge": "Fabrikanzeige",
+    "block.create.redstone_requester": "Redstone-Anfrager"
+  },
+  "en_gb": {
+    "block.create.stock_ticker": "Stock Ticker",
+    "block.create.stock_link": "Stock Link",
+    "block.create.factory_gauge": "Factory Gauge",
+    "block.create.redstone_requester": "Redstone Requester"
+  },
+  "es_es": {
+    "block.create.stock_ticker": "Telégrafo de existencias",
+    "block.create.stock_link": "Enlace de existencias",
+    "block.create.factory_gauge": "Medidor Industrial",
+    "block.create.redstone_requester": "Solicitador de Redstone"
+  },
+  "fr_fr": {
+    "block.create.stock_ticker": "Téléscripteur de stock",
+    "block.create.stock_link": "Liaison de stock",
+    "block.create.factory_gauge": "Jauge d'usine",
+    "block.create.redstone_requester": "Commandeur à redstone"
+  },
+  "ja_jp": {
+    "block.create.stock_ticker": "ストックティッカー",
+    "block.create.stock_link": "ストックリンク",
+    "block.create.factory_gauge": "ファクトリーゲージ",
+    "block.create.redstone_requester": "レッドストーンリクエスター"
+  },
+  "pt_br": {
+    "block.create.stock_ticker": "Telégrafo de Estoque",
+    "block.create.stock_link": "Conector de Estoque",
+    "block.create.factory_gauge": "Controlador de Estoque",
+    "block.create.redstone_requester": "Solicitador de Redstone"
+  },
+  "pt_pt": {
+    "block.create.stock_ticker": "Ticker de stock",
+    "block.create.stock_link": "Link de stock",
+    "block.create.factory_gauge": "Controlador de fábrica",
+    "block.create.redstone_requester": "Solicitador de redstone"
+  },
+  "ru_ru": {
+    "block.create.stock_ticker": "Складской тикер",
+    "block.create.stock_link": "Складской передатчик",
+    "block.create.factory_gauge": "Фабричный контроллер",
+    "block.create.redstone_requester": "Редстоуновый запрашиватель"
+  },
+  "zh_cn": {
+    "block.create.stock_ticker": "仓储发报机",
+    "block.create.stock_link": "仓储链接站",
+    "block.create.factory_gauge": "工厂仪表",
+    "block.create.redstone_requester": "红石请求器"
+  }
+}

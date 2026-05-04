@@ -1,6 +1,5 @@
 {
   "itemGroup.fluid.main": "Create: Fluid",
-
   "block.fluid.pipette": "Pipeta Mecânica",
   "block.fluid.fluid_interface": "Interface de Fluidos",
   "block.fluid.smart_fluid_interface": "Interface de Fluidos Inteligente",
@@ -28,7 +27,6 @@
   "block.fluid.smart_gutter_outlet": "Saída de Caleira Inteligente",
   "block.fluid.copper_sink": "Lavatório de Cobre",
   "block.fluid.copper_sink.tooltip.summary": "Um belo lavatório de cobre que permanece sempre cheio. Qualquer fluido introduzido é destruído; Saída infinita de água",
-
   "item.fluid.honeycomb_mold": "Molde de Colmeia",
   "item.fluid.honeycomb_mold.tooltip.summary": "Usado para a receita de compactação de colmeias",
   "item.fluid.baton": "Bastão de Condução",
@@ -44,16 +42,14 @@
   "item.fluid.copper_can": "Lata de cobre",
   "item.fluid.copper_can.tooltip.summary": "As _latas de cobre_ são mais resistentes do que pacotes de cartão. Só podem ser recebidas por _enchimentos de latas_ e não podem ser desempacotadas por outros meios. Cada lata pode conter até _4000 mB_ de um _único fluido_",
   "item.fluid.fluid_manifest": "Manifesto de fluidos",
-  "item.fluid.fluid_manifest.tooltip.summary": "Clica com o botão direito numa fonte de fluido, contentor, balde, garrafa ou tanque para amostrar o seu conteúdo. _Shift-clica com o botão direito_ para limpar",
+  "item.fluid.fluid_manifest.tooltip.summary": "Clica com o botão direito numa fonte de fluido, contentor, balde, garrafa ou tanque para amostrar o seu conteúdo. _Shift-clica com o botão direito_ para limpar. Pode ser usado para definir fluidos em Controladores de fábrica, Solicitadores de redstone e outros componentes.",
   "item.fluid.fluid_manifest.named": "Manifesto de fluidos (%s)",
-
   "fluid_type.fluid.powder_snow": "Neve Fofa",
   "fluid_type.fluid.quicksand_fluid": "Areia movediça",
   "fluid.fluid.quicksand_fluid": "Areia movediça",
   "fluid.fluid.haunting_fluid": "Fluido de assombração",
   "fluid.fluid.smoking_fluid": "Fluido de fumar",
   "fluid.fluid.slime_fluid": "Fluido de slime",
-
   "create.fluid.mechanical_pipette.extract": "Extrair fluido de %1$s",
   "create.fluid.mechanical_pipette.deposit": "Injetar fluido de %1$s",
   "create.fluid.mechanical_pipette.points_outside_range": "%1$s Pontos de Interação de Fluidos foram removidos por estarem demasiado distantes",
@@ -147,7 +143,6 @@
   "recipe.fluid.fan_sandblasting.fan": "Ventilador atrás de areia",
   "recipe.fluid.fan_glueing": "Colagem a granel",
   "recipe.fluid.fan_glueing.fan": "Ventilador atrás de fluido de slime",
-
   "fluid.ponder.mechanical_pipette.header": "Configurando a Pipeta Mecânica",
   "fluid.ponder.mechanical_pipette.text_1": "Entradas",
   "fluid.ponder.mechanical_pipette.text_2": "Saídas",
@@ -226,11 +221,16 @@
   "fluid.ponder.communicating_vessel.text_4": "Também funcionam com fontes infinitas como os Tanques Criativos de Fluido, reabastecendo continuamente o outro lado.",
   "fluid.ponder.communicating_vessel.text_5": "Qualquer face de bloco vizinha com capacidade de manuseio de fluido pode ser ligada desta forma, incluindo tanques, bacias e tanques criativos.",
   "fluid.ponder.can_filler.header": "Usar o enchimento de latas",
-  "fluid.ponder.can_filler.text_1": "Os enchimentos de latas são o núcleo da logística de encomendas de fluidos. Extraem fluido do contentor atrás deles e selam-no em latas de cobre.",
-  "fluid.ponder.can_filler.text_2": "Dois enchimentos de latas com uma correia entre eles podem empacotar fluido de um lado e desempacotar do outro.",
-  "fluid.ponder.can_filler.text_3": "O tanque atrás do enchimento de latas fornece o fluido de origem.",
-  "fluid.ponder.can_filler.text_4": "O enchimento de latas extrai fluido, empacota-o numa lata de cobre e expulsa a lata cheia.",
-  "fluid.ponder.can_filler.text_5": "As latas de cobre podem ser transportadas através da tua linha logística usando correias ordinárias.",
-  "fluid.ponder.can_filler.text_6": "Um segundo enchimento de latas pode abrir a lata de cobre e injetar o fluido armazenado de volta ao tanque atrás dele.",
-  "fluid.ponder.can_filler.text_7": "Se o tanque atrás de um enchimento de latas já contiver fluido, só aceitará latas de cobre com o mesmo fluido. Quando o enchimento de latas tem um endereço, as latas de cobre de saída transportam esse endereço."
+  "fluid.ponder.can_filler.text_1": "Os enchimentos de latas são o núcleo do sistema logístico de fluidos. Extraem fluido do contentor atrás deles e selam-no em latas de cobre.",
+  "fluid.ponder.can_filler.text_2": "Através de canais ou Sapos-docas, as latas de cobre podem circular pela rede logística e serem recebidas por outro enchimento de latas.",
+  "fluid.ponder.can_filler.text_3": "O tanque de fluidos atrás do enchimento de latas fornece o fluido de origem.",
+  "fluid.ponder.can_filler.text_4": "Ativa o enchimento de latas com um sinal de redstone para empacotar fluido numa lata de cobre.",
+  "fluid.ponder.can_filler.text_5": "As latas de cobre podem ser transportadas para qualquer lugar da rede logística.",
+  "fluid.ponder.can_filler.text_6": "O enchimento de latas receptor consome a lata de cobre e injeta o fluido armazenado de volta ao tanque atrás dele.",
+  "fluid.ponder.can_filler.text_7": "Se o tanque atrás de um enchimento de latas já contiver fluido, só aceitará latas de cobre entrantes com o mesmo fluido.",
+  "fluid.ponder.can_filler.text_8": "Após definir um endereço no enchimento de latas usando um letreiro, as latas de cobre de saída transportam esse endereço.",
+  "fluid.ponder.can_filler.text_9": "Para definir um fluido específico num Controlador de fábrica ou num Solicitador de redstone, precisas de usar um Manifesto de fluidos.",
+  "fluid.ponder.can_filler.text_10": "Uma vez definido, podes usar estes componentes para pedir diretamente stock de fluido.",
+  "block.fluid.redstone_valve.tooltip": "Uma válvula de fluidos que pode ser ligada e desligada com um sinal de redstone.",
+  "block.fluid.redstone_triple_valve.tooltip": "Um tubo de fluidos cuja direção de curva pode ser controlada com um sinal de redstone."
 }

@@ -1,6 +1,5 @@
 {
   "itemGroup.fluid.main": "Create: Fluid",
-
   "block.fluid.pipette": "Pipeta mecánica",
   "block.fluid.fluid_interface": "Interfaz de fluidos",
   "block.fluid.smart_fluid_interface": "Interfaz de fluidos inteligente",
@@ -28,7 +27,6 @@
   "block.fluid.smart_gutter_outlet": "Salida de canaleta inteligente",
   "block.fluid.copper_sink": "Fregadero de cobre",
   "block.fluid.copper_sink.tooltip.summary": "Un hermoso fregadero de cobre que siempre permanece lleno. Cualquier fluido introducido se destruye; Salida infinita de agua",
-
   "item.fluid.honeycomb_mold": "Molde de panal",
   "item.fluid.honeycomb_mold.tooltip.summary": "Se usa para la receta de compactación de panal",
   "item.fluid.baton": "Batuta del director",
@@ -44,16 +42,14 @@
   "item.fluid.copper_can": "Lata de cobre",
   "item.fluid.copper_can.tooltip.summary": "Las _latas de cobre_ son más resistentes que los paquetes de cartón. Solo pueden ser recibidas por _empaquetadores_ y no pueden desempaquetarse por otros medios. Cada lata puede contener hasta _4000 mB_ de un _único fluido_",
   "item.fluid.fluid_manifest": "Manifiesto de fluidos",
-  "item.fluid.fluid_manifest.tooltip.summary": "Haz clic derecho en una fuente de fluido, contenedor, cubo, botella o tanque para tomar una muestra. _Shift-clic derecho_ para limpiar",
+  "item.fluid.fluid_manifest.tooltip.summary": "Haz clic derecho en una fuente de fluido, contenedor, cubo, botella o tanque para tomar una muestra. _Shift-clic derecho_ para limpiar. Se puede usar para establecer fluidos en Medidores Industriales, Solicitadores de Redstone y otros componentes.",
   "item.fluid.fluid_manifest.named": "Manifiesto de fluidos (%s)",
-
   "fluid_type.fluid.powder_snow": "Nieve polvo",
   "fluid_type.fluid.quicksand_fluid": "Arena movediza",
   "fluid.fluid.quicksand_fluid": "Arena movediza",
   "fluid.fluid.haunting_fluid": "Fluido de embrujamiento",
   "fluid.fluid.smoking_fluid": "Fluido de ahumado",
   "fluid.fluid.slime_fluid": "Fluido de slime",
-
   "create.fluid.mechanical_pipette.extract": "Drenar fluido de %1$s",
   "create.fluid.mechanical_pipette.deposit": "Inyectar fluido a %1$s",
   "create.fluid.mechanical_pipette.points_outside_range": "%1$s puntos de interacción de fluidos fueron eliminados porque ahora están fuera de rango",
@@ -147,7 +143,6 @@
   "recipe.fluid.fan_sandblasting.fan": "Ventilador detrás de arena",
   "recipe.fluid.fan_glueing": "Encolado a granel",
   "recipe.fluid.fan_glueing.fan": "Ventilador detrás de fluido de slime",
-
   "fluid.ponder.mechanical_pipette.header": "Configurar la pipeta mecánica",
   "fluid.ponder.mechanical_pipette.text_1": "Entradas",
   "fluid.ponder.mechanical_pipette.text_2": "Salidas",
@@ -226,11 +221,16 @@
   "fluid.ponder.communicating_vessel.text_4": "También funcionan con fuentes infinitas como los Tanques Creativos de Fluido, rellenando continuamente el otro lado.",
   "fluid.ponder.communicating_vessel.text_5": "Cualquier cara de bloque vecina con capacidad de manejo de fluido puede vincularse de esta manera, incluyendo tanques, cuencas y tanques creativos.",
   "fluid.ponder.can_filler.header": "Usando el empaquetador",
-  "fluid.ponder.can_filler.text_1": "Los empaquetadores son el núcleo de la logística de fluidos por paquetes. Extraen fluido del contenedor detrás de ellos y lo sellan en latas de cobre.",
-  "fluid.ponder.can_filler.text_2": "Dos empaquetadores con una cinta entre ellos pueden empaquetar fluido de un lado y desempaquetarlo del otro.",
-  "fluid.ponder.can_filler.text_3": "El tanque detrás del empaquetador suministra el fluido de origen.",
-  "fluid.ponder.can_filler.text_4": "El empaquetador extrae fluido, lo empaqueta en una lata de cobre y expulsa la lata llena.",
-  "fluid.ponder.can_filler.text_5": "Las latas de cobre pueden transportarse a través de tu línea logística usando cintas ordinarias.",
-  "fluid.ponder.can_filler.text_6": "Un segundo empaquetador puede abrir la lata de cobre e inyectar el fluido almacenado de vuelta al tanque detrás de él.",
-  "fluid.ponder.can_filler.text_7": "Si el tanque detrás de un empaquetador ya contiene fluido, solo aceptará latas de cobre con el mismo fluido. Cuando el empaquetador tiene una dirección, las latas de cobre de salida llevarán esa dirección."
+  "fluid.ponder.can_filler.text_1": "Los empaquetadores son el núcleo del sistema logístico de fluidos. Extraen fluido del contenedor detrás de ellos y lo sellan en latas de cobre.",
+  "fluid.ponder.can_filler.text_2": "A través de embudos o ranapuertos, las latas de cobre pueden circular por el sistema logístico y ser recibidas por otro empaquetador.",
+  "fluid.ponder.can_filler.text_3": "El depósito de fluidos detrás del empaquetador le suministra el fluido de origen.",
+  "fluid.ponder.can_filler.text_4": "Activa el empaquetador con una señal de redstone para empaquetar fluido en una lata de cobre.",
+  "fluid.ponder.can_filler.text_5": "Las latas de cobre pueden transportarse a cualquier lugar de la red logística.",
+  "fluid.ponder.can_filler.text_6": "El empaquetador receptor consume la lata de cobre e inyecta el fluido almacenado de vuelta al depósito detrás de él.",
+  "fluid.ponder.can_filler.text_7": "Si el depósito detrás de un empaquetador ya contiene fluido, solo aceptará latas de cobre entrantes con el mismo fluido.",
+  "fluid.ponder.can_filler.text_8": "Después de establecer una dirección en el empaquetador usando un cartel, las latas de cobre de salida llevarán esa dirección.",
+  "fluid.ponder.can_filler.text_9": "Para establecer un fluido específico en un Medidor Industrial o un Solicitador de Redstone, necesitas usar un Manifiesto de fluidos.",
+  "fluid.ponder.can_filler.text_10": "Una vez establecido, puedes usar estos componentes para solicitar directamente existencias de fluido.",
+  "block.fluid.redstone_valve.tooltip": "Una válvula de fluidos que puede encenderse y apagarse con una señal de redstone.",
+  "block.fluid.redstone_triple_valve.tooltip": "Una tubería de fluidos cuya dirección de giro puede controlarse con una señal de redstone."
 }

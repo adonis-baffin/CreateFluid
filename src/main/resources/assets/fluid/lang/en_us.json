@@ -1,6 +1,5 @@
 {
   "itemGroup.fluid.main": "Create: Fluid",
-
   "block.fluid.pipette": "Mechanical Pipette",
   "block.fluid.fluid_interface": "Fluid Interface",
   "block.fluid.smart_fluid_interface": "Smart Fluid Interface",
@@ -28,7 +27,6 @@
   "block.fluid.smart_gutter_outlet": "Smart Gutter Outlet",
   "block.fluid.copper_sink": "Copper Sink",
   "block.fluid.copper_sink.tooltip.summary": "A beautiful copper sink that always stays full. Any fluid input is destroyed; Infinite water output",
-
   "item.fluid.honeycomb_mold": "Honeycomb Mold",
   "item.fluid.honeycomb_mold.tooltip.summary": "Used for honeycomb compacting recipe",
   "item.fluid.baton": "Conductor's Baton",
@@ -44,16 +42,14 @@
   "item.fluid.copper_can": "Copper Can",
   "item.fluid.copper_can.tooltip.summary": "_Copper Cans_ are sturdier than cardboard packages. They can only be received by _Can Fillers_ and cannot be unpacked by other means. Each can hold up to _4000 mB_ of a _single fluid_",
   "item.fluid.fluid_manifest": "Fluid Manifest",
-  "item.fluid.fluid_manifest.tooltip.summary": "Right-click a fluid source, container, bucket, bottle, or tank to sample its contents. _Sneak-right-click_ to clear",
+  "item.fluid.fluid_manifest.tooltip.summary": "Right-click a fluid source, container, bucket, bottle, or tank to sample its contents. _Sneak-right-click_ to clear. Can be used to set fluids in Factory Gauges, Redstone Requesters, and other components.",
   "item.fluid.fluid_manifest.named": "Fluid Manifest (%s)",
-
   "fluid_type.fluid.powder_snow": "Powder Snow",
   "fluid_type.fluid.quicksand_fluid": "Quicksand",
   "fluid.fluid.quicksand_fluid": "Quicksand",
   "fluid.fluid.haunting_fluid": "Haunting Fluid",
   "fluid.fluid.smoking_fluid": "Smoking Fluid",
   "fluid.fluid.slime_fluid": "Slime Fluid",
-
   "create.fluid.mechanical_pipette.extract": "Drain fluid from %1$s",
   "create.fluid.mechanical_pipette.deposit": "Inject fluid to %1$s",
   "create.fluid.mechanical_pipette.points_outside_range": "%1$s Fluid Interaction Points were removed because they are now out of range",
@@ -147,7 +143,6 @@
   "recipe.fluid.fan_sandblasting.fan": "Fan behind Sand",
   "recipe.fluid.fan_glueing": "Bulk Glueing",
   "recipe.fluid.fan_glueing.fan": "Fan behind Slime Fluid",
-
   "fluid.ponder.mechanical_pipette.header": "Setting up Mechanical Pipette",
   "fluid.ponder.mechanical_pipette.text_1": "Inputs",
   "fluid.ponder.mechanical_pipette.text_2": "Outputs",
@@ -226,11 +221,16 @@
   "fluid.ponder.communicating_vessel.text_4": "They also work with infinite sources such as Creative Fluid Tanks, continuously topping up the other side.",
   "fluid.ponder.communicating_vessel.text_5": "Any neighboring block face with fluid-handling capability can be linked this way, including tanks, basins, and creative tanks.",
   "fluid.ponder.can_filler.header": "Using Can Fillers",
-  "fluid.ponder.can_filler.text_1": "Can Fillers are the core of fluid parcel logistics. They draw fluid from the container behind them and seal it into Copper Cans.",
-  "fluid.ponder.can_filler.text_2": "Two Can Fillers with a belt between them can package fluid on one side and unpack it on the other.",
-  "fluid.ponder.can_filler.text_3": "The tank behind the Can Filler supplies the source fluid.",
-  "fluid.ponder.can_filler.text_4": "The Can Filler extracts fluid, packs it into a Copper Can, and ejects the filled can.",
-  "fluid.ponder.can_filler.text_5": "Copper Cans can be transported through your logistics line.",
-  "fluid.ponder.can_filler.text_6": "A second Can Filler can unpack the Copper Can and inject the stored fluid back into the tank behind it.",
-  "fluid.ponder.can_filler.text_7": "If the tank behind a Can Filler already contains fluid, it only accepts Copper Cans with the same fluid. When the Can Filler has an address, its output Copper Cans carry that address."
+  "fluid.ponder.can_filler.text_1": "Can Fillers are the core of the fluid logistics system. They draw fluid from the container behind them and seal it into Copper Cans.",
+  "fluid.ponder.can_filler.text_2": "Via Funnels or Package Frogports, Copper Cans can circulate through the logistics system and be received by another Can Filler.",
+  "fluid.ponder.can_filler.text_3": "The Fluid Tank behind the Can Filler supplies it with source fluid.",
+  "fluid.ponder.can_filler.text_4": "Activate the Can Filler with a redstone signal to pack fluid into a Copper Can.",
+  "fluid.ponder.can_filler.text_5": "Copper Cans can be transported to anywhere in the logistics network.",
+  "fluid.ponder.can_filler.text_6": "The receiving Can Filler consumes the Copper Can and injects the stored fluid back into the tank behind it.",
+  "fluid.ponder.can_filler.text_7": "If the tank behind a Can Filler already contains fluid, it will only accept incoming Copper Cans with the same fluid.",
+  "fluid.ponder.can_filler.text_8": "After setting an address on the Can Filler using a Sign, the output Copper Cans will carry that address.",
+  "fluid.ponder.can_filler.text_9": "To set a specific fluid in a Factory Gauge or Redstone Requester, you need to use a Fluid Manifest.",
+  "fluid.ponder.can_filler.text_10": "Once set, you can use these components to directly request fluid stock.",
+  "block.fluid.redstone_valve.tooltip": "A fluid valve that can be turned on and off with a redstone signal.",
+  "block.fluid.redstone_triple_valve.tooltip": "A fluid pipe whose turning direction can be controlled with a redstone signal."
 }
