@@ -324,7 +324,7 @@ public class FactoryPanelScreenMixin {
 		AbstractSimiScreenAccessor screen = (AbstractSimiScreenAccessor) this;
 		int x = screen.fluid$getGuiLeft();
 		int y = screen.fluid$getGuiTop();
-		int step = fluid$recipeStepAmountMb;
+		int step = fluid$recipeStepAmountMb * (Screen.hasShiftDown() ? 10 : 1);
 		int direction = (int) Math.signum(scrollY);
 
 		if (direction == 0) {

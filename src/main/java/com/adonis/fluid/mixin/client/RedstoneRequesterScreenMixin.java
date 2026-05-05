@@ -143,6 +143,10 @@ public abstract class RedstoneRequesterScreenMixin extends AbstractSimiContainer
 			CreateLang.translate("gui.factory_panel.scroll_to_change_amount")
 				.style(ChatFormatting.DARK_GRAY)
 				.style(ChatFormatting.ITALIC)
+				.component(),
+			CreateLang.translate("gui.scrollInput.shiftScrollsFaster")
+				.style(ChatFormatting.DARK_GRAY)
+				.style(ChatFormatting.ITALIC)
 				.component()));
 	}
 
@@ -170,7 +174,8 @@ public abstract class RedstoneRequesterScreenMixin extends AbstractSimiContainer
 			if (fluid.isEmpty())
 				return;
 
-			amounts.set(i, Math.clamp(amounts.get(i) + direction * fluid$requesterStepAmountMb,
+			int step = fluid$requesterStepAmountMb * (hasShiftDown() ? 10 : 1);
+			amounts.set(i, Math.clamp(amounts.get(i) + direction * step,
 				fluid$minRequesterAmountMb, fluid$maxRequesterAmountMb));
 			cir.setReturnValue(true);
 			return;

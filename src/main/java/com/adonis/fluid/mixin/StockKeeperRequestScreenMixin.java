@@ -2,7 +2,6 @@ package com.adonis.fluid.mixin;
 
 import com.adonis.fluid.client.FluidSlotAmountRenderer;
 import com.adonis.fluid.client.FluidSlotRenderer;
-import com.adonis.fluid.client.FluidTooltipHelper;
 import com.adonis.fluid.item.FluidManifestItem;
 import com.adonis.fluid.mixin.accessor.StockKeeperRequestScreenAccessor;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
@@ -29,8 +28,6 @@ public class StockKeeperRequestScreenMixin {
 	@Unique
 	private boolean fluid$isFluidManifest = false;
 	@Unique
-	private int fluid$fluidAmount = 0;
-	@Unique
 	private FluidStack fluid$cachedFluid = FluidStack.EMPTY;
 	@Unique
 	private GuiGraphics fluid$cachedGraphics = null;
@@ -42,7 +39,6 @@ public class StockKeeperRequestScreenMixin {
 	private void fluid$onRenderItemEntryHead(GuiGraphics graphics, float partialTicks, BigItemStack entry,
 			boolean isStackHovered, boolean isRenderingOrders, CallbackInfo ci) {
 		fluid$isFluidManifest = false;
-		fluid$fluidAmount = 0;
 		fluid$cachedFluid = FluidStack.EMPTY;
 		fluid$cachedGraphics = graphics;
 
@@ -50,7 +46,6 @@ public class StockKeeperRequestScreenMixin {
 			FluidStack fluid = FluidManifestItem.read(entry.stack);
 			if (!fluid.isEmpty()) {
 				fluid$isFluidManifest = true;
-				fluid$fluidAmount = entry.count;
 				fluid$cachedFluid = fluid;
 			}
 		}
@@ -84,8 +79,8 @@ public class StockKeeperRequestScreenMixin {
 	)
 	private void fluid$redirectDrawItemCount(StockKeeperRequestScreen instance, GuiGraphics graphics, int count, int customCount) {
 		if (fluid$isFluidManifest) {
-			if (fluid$fluidAmount > 1) {
-				FluidSlotAmountRenderer.renderInStockKeeper(graphics, fluid$fluidAmount);
+			if (customCount > 1) {
+				FluidSlotAmountRenderer.renderInStockKeeper(graphics, customCount);
 			}
 			return;
 		}
@@ -100,11 +95,12 @@ public class StockKeeperRequestScreenMixin {
 			remap = true
 		)
 	)
-	private void fluid$redirectTooltip(GuiGraphics graphics, Font font, ItemStack stack, int x, int y) {
-		if (stack.getItem() instanceof FluidManifestItem) {
-			FluidStack fluid = FluidManifestItem.read(stack);
+	private void fluid$redirectTooltip(GuiGraphics graphics, Font font, ItemStack stack, int x, int y,
+		@Local BigItemStack entry) {
+		if (entry.stack.getItem() instanceof FluidManifestItem) {
+			FluidStack fluid = FluidManifestItem.read(entry.stack);
 			if (!fluid.isEmpty()) {
-				FluidTooltipHelper.renderTooltip(graphics, font, fluid, fluid$fluidAmount, x, y);
+				graphics.renderComponentTooltip(font, java.util.List.of(fluid.getHoverName().copy()), x, y);
 				return;
 			}
 		}
@@ -118,7 +114,7 @@ public class StockKeeperRequestScreenMixin {
 	)
 	private int fluid$modifyTransferNormal(int original, @Local BigItemStack entry) {
 		if (entry != null && entry.stack.getItem() instanceof FluidManifestItem) {
-			return 1000;
+			return 100;
 		}
 		return original;
 	}
@@ -130,7 +126,7 @@ public class StockKeeperRequestScreenMixin {
 	)
 	private int fluid$modifyTransferCtrl(int original, @Local BigItemStack entry) {
 		if (entry != null && entry.stack.getItem() instanceof FluidManifestItem) {
-			return 10000;
+			return 1000;
 		}
 		return original;
 	}
@@ -154,7 +150,7 @@ public class StockKeeperRequestScreenMixin {
 	)
 	private int fluid$modifyScrollNormal(int original, @Local BigItemStack entry) {
 		if (entry != null && entry.stack.getItem() instanceof FluidManifestItem) {
-			return 1000;
+			return 100;
 		}
 		return original;
 	}
@@ -166,7 +162,7 @@ public class StockKeeperRequestScreenMixin {
 	)
 	private int fluid$modifyScrollCtrl(int original, @Local BigItemStack entry) {
 		if (entry != null && entry.stack.getItem() instanceof FluidManifestItem) {
-			return 10000;
+			return 1000;
 		}
 		return original;
 	}

@@ -231,6 +231,6 @@
   "fluid.ponder.can_filler.text_8": "Após definir um endereço no enchimento de latas usando um letreiro, as latas de cobre de saída transportam esse endereço.",
   "fluid.ponder.can_filler.text_9": "Para definir um fluido específico num Controlador de fábrica ou num Solicitador de redstone, precisas de usar um Manifesto de fluidos.",
   "fluid.ponder.can_filler.text_10": "Uma vez definido, podes usar estes componentes para pedir diretamente stock de fluido.",
-  "block.fluid.redstone_valve.tooltip": "Uma válvula de fluidos que pode ser ligada e desligada com um sinal de redstone.",
-  "block.fluid.redstone_triple_valve.tooltip": "Um tubo de fluidos cuja direção de curva pode ser controlada com um sinal de redstone."
+  "block.fluid.redstone_valve.tooltip.summary": "Uma válvula de fluidos que pode ser ligada e desligada com um sinal de redstone.",
+  "block.fluid.redstone_triple_valve.tooltip.summary": "Um tubo de fluidos cuja direção de curva pode ser controlada com um sinal de redstone."
 }

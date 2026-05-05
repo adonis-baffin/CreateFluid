@@ -231,6 +231,6 @@
   "fluid.ponder.can_filler.text_8": "Nachdem du mit einem Schild eine Adresse auf dem Dosenfüller gesetzt hast, tragen die ausgegebenen Kupferkannen diese Adresse.",
   "fluid.ponder.can_filler.text_9": "Um eine bestimmte Flüssigkeit in einer Fabrikanzeige oder einem Redstone-Anfrager festzulegen, benötigst du ein Flüssigkeitsmanifest.",
   "fluid.ponder.can_filler.text_10": "Nach der Einstellung kannst du diese Komponenten verwenden, um direkt Flüssigkeitsbestand anzufordern.",
-  "block.fluid.redstone_valve.tooltip": "Ein Flüssigkeitsventil, das mit einem Redstone-Signal ein- und ausgeschaltet werden kann.",
-  "block.fluid.redstone_triple_valve.tooltip": "Ein Flüssigkeitsrohr, dessen Richtung mit einem Redstone-Signal gesteuert werden kann."
+  "block.fluid.redstone_valve.tooltip.summary": "Ein Flüssigkeitsventil, das mit einem Redstone-Signal ein- und ausgeschaltet werden kann.",
+  "block.fluid.redstone_triple_valve.tooltip.summary": "Ein Flüssigkeitsrohr, dessen Richtung mit einem Redstone-Signal gesteuert werden kann."
 }

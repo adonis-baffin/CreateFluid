@@ -231,6 +231,6 @@
   "fluid.ponder.can_filler.text_8": "After setting an address on the Can Filler using a Sign, the output Copper Cans will carry that address.",
   "fluid.ponder.can_filler.text_9": "To set a specific fluid in a Factory Gauge or Redstone Requester, you need to use a Fluid Manifest.",
   "fluid.ponder.can_filler.text_10": "Once set, you can use these components to directly request fluid stock.",
-  "block.fluid.redstone_valve.tooltip": "A fluid valve that can be turned on and off with a redstone signal.",
-  "block.fluid.redstone_triple_valve.tooltip": "A fluid pipe whose turning direction can be controlled with a redstone signal."
+  "block.fluid.redstone_valve.tooltip.summary": "A fluid valve that can be turned on and off with a redstone signal.",
+  "block.fluid.redstone_triple_valve.tooltip.summary": "A fluid pipe whose turning direction can be controlled with a redstone signal."
 }

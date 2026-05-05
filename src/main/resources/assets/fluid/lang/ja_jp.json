@@ -231,6 +231,6 @@
   "fluid.ponder.can_filler.text_8": "看板を使って缶充填機にアドレスを設定すると、出力される銅缶はそのアドレスを保持します。",
   "fluid.ponder.can_filler.text_9": "ファクトリーゲージやレッドストーンリクエスターで特定の液体を設定するには、液体マニフェストを使用する必要があります。",
   "fluid.ponder.can_filler.text_10": "設定後、これらの部品を使用して液体在庫を直接リクエストできます。",
-  "block.fluid.redstone_valve.tooltip": "レッドストーン信号で開閉できる流体バルブ。",
-  "block.fluid.redstone_triple_valve.tooltip": "レッドストーン信号で曲がる方向を制御できる流体パイプ。"
+  "block.fluid.redstone_valve.tooltip.summary": "レッドストーン信号で開閉できる流体バルブ。",
+  "block.fluid.redstone_triple_valve.tooltip.summary": "レッドストーン信号で曲がる方向を制御できる流体パイプ。"
 }

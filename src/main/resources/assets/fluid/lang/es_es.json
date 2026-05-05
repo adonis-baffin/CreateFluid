@@ -231,6 +231,6 @@
   "fluid.ponder.can_filler.text_8": "Después de establecer una dirección en el empaquetador usando un cartel, las latas de cobre de salida llevarán esa dirección.",
   "fluid.ponder.can_filler.text_9": "Para establecer un fluido específico en un Medidor Industrial o un Solicitador de Redstone, necesitas usar un Manifiesto de fluidos.",
   "fluid.ponder.can_filler.text_10": "Una vez establecido, puedes usar estos componentes para solicitar directamente existencias de fluido.",
-  "block.fluid.redstone_valve.tooltip": "Una válvula de fluidos que puede encenderse y apagarse con una señal de redstone.",
-  "block.fluid.redstone_triple_valve.tooltip": "Una tubería de fluidos cuya dirección de giro puede controlarse con una señal de redstone."
+  "block.fluid.redstone_valve.tooltip.summary": "Una válvula de fluidos que puede encenderse y apagarse con una señal de redstone.",
+  "block.fluid.redstone_triple_valve.tooltip.summary": "Una tubería de fluidos cuya dirección de giro puede controlarse con una señal de redstone."
 }

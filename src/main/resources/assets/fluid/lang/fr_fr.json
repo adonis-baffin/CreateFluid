@@ -231,6 +231,6 @@
   "fluid.ponder.can_filler.text_8": "Après avoir défini une adresse sur la remplisseuse de canettes à l'aide d'un panneau, les canettes en cuivre de sortie porteront cette adresse.",
   "fluid.ponder.can_filler.text_9": "Pour définir un fluide spécifique dans une Jauge d'usine ou un Commandeur à redstone, vous devez utiliser un Manifeste de fluide.",
   "fluid.ponder.can_filler.text_10": "Une fois défini, vous pouvez utiliser ces composants pour demander directement du stock de fluide.",
-  "block.fluid.redstone_valve.tooltip": "Une valve à fluide qui peut être activée et désactivée avec un signal de redstone.",
-  "block.fluid.redstone_triple_valve.tooltip": "Un tuyau à fluide dont la direction de virage peut être contrôlée avec un signal de redstone."
+  "block.fluid.redstone_valve.tooltip.summary": "Une valve à fluide qui peut être activée et désactivée avec un signal de redstone.",
+  "block.fluid.redstone_triple_valve.tooltip.summary": "Un tuyau à fluide dont la direction de virage peut être contrôlée avec un signal de redstone."
 }
