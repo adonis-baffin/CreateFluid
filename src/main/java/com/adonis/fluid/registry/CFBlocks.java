@@ -18,6 +18,8 @@ import com.adonis.fluid.block.CommunicatingVessel.CommunicatingVesselBlock;
 import com.adonis.fluid.block.FluidAtomizer.FluidAtomizerBlock;
 import com.adonis.fluid.block.FluidAtomizer.FluidAtomizerMovementBehaviour;
 import com.adonis.fluid.block.QuicksandBlock;
+import com.adonis.fluid.block.SmartRepackager.SmartRepackagerBlock;
+import com.adonis.fluid.block.SmartUnpackager.SmartUnpackagerBlock;
 import com.simibubi.create.foundation.data.ModelGen;
 import com.simibubi.create.foundation.data.SharedProperties;
 import com.simibubi.create.foundation.data.TagGen;
@@ -336,6 +338,34 @@ public class CFBlocks {
             .register();
 
     // 流体连通器
+    public static final BlockEntry<SmartRepackagerBlock> SMART_REPACKAGER = REGISTRATE
+            .block("smart_repackager", SmartRepackagerBlock::new)
+            .initialProperties(SharedProperties::softMetal)
+            .properties(prop -> prop
+                    .mapColor(MapColor.TERRACOTTA_BLUE)
+                    .sound(SoundType.NETHERITE_BLOCK)
+                    .noOcclusion()
+                    .isRedstoneConductor(($1, $2, $3) -> false))
+            .transform(TagGen.pickaxeOnly())
+            .addLayer(() -> net.minecraft.client.renderer.RenderType::cutoutMipped)
+            .item()
+            .transform(ModelGen.customItemModel())
+            .register();
+
+    public static final BlockEntry<SmartUnpackagerBlock> SMART_UNPACKAGER = REGISTRATE
+            .block("smart_unpackager", SmartUnpackagerBlock::new)
+            .initialProperties(SharedProperties::softMetal)
+            .properties(prop -> prop
+                    .mapColor(MapColor.TERRACOTTA_BLUE)
+                    .sound(SoundType.NETHERITE_BLOCK)
+                    .noOcclusion()
+                    .isRedstoneConductor(($1, $2, $3) -> false))
+            .transform(TagGen.pickaxeOnly())
+            .addLayer(() -> net.minecraft.client.renderer.RenderType::cutoutMipped)
+            .item()
+            .transform(ModelGen.customItemModel())
+            .register();
+
     public static final BlockEntry<CommunicatingVesselBlock> COMMUNICATING_VESSEL = REGISTRATE
             .block("communicating_vessel", CommunicatingVesselBlock::new)
             .initialProperties(SharedProperties::softMetal)

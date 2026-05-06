@@ -2,9 +2,16 @@ package com.adonis.fluid.mixin;
 
 import com.adonis.fluid.block.CanFiller.CanFillerBlockEntity;
 import com.adonis.fluid.client.FluidAmountHelper;
+import com.adonis.fluid.datacomponent.BrassBoxRoutingData;
+import com.adonis.fluid.datacomponent.BrassBoxRoutingData.FluidRoute;
+import com.adonis.fluid.datacomponent.BrassBoxRoutingData.ItemRoute;
 import com.adonis.fluid.item.FluidManifestItem;
+import com.adonis.fluid.logistics.data.ContentRoute;
+import com.adonis.fluid.logistics.manager.MixedOrderRoutingManager;
 import com.simibubi.create.content.logistics.BigItemStack;
+import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelConnection;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelBehaviour;
+import com.simibubi.create.content.logistics.packager.IdentifiedInventory;
 import com.simibubi.create.content.logistics.packager.PackagerBlockEntity;
 import com.simibubi.create.content.logistics.packagerLink.LogisticsManager;
 import com.simibubi.create.content.logistics.packagerLink.RequestPromise;
@@ -25,8 +32,16 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+import com.google.common.collect.Multimap;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Mixin(FactoryPanelBehaviour.class)
 public class FactoryPanelBehaviourMixin {
@@ -231,5 +246,81 @@ public class FactoryPanelBehaviourMixin {
 
 		behaviour.restockerPromises.add(new RequestPromise(orderedItem));
 		ci.cancel();
+	}
+
+	@Redirect(method = "tickRequests",
+		at = @At(value = "INVOKE",
+			target = "Lcom/simibubi/create/content/logistics/packagerLink/LogisticsManager;findPackagersForRequest(Ljava/util/UUID;Lcom/simibubi/create/content/logistics/stockTicker/PackageOrderWithCrafts;Lcom/simibubi/create/content/logistics/packager/IdentifiedInventory;Ljava/lang/String;)Lcom/google/common/collect/Multimap;"))
+	private Multimap<PackagerBlockEntity, com.simibubi.create.content.logistics.packager.PackagingRequest> fluid$attachRoutingToOrder(
+		java.util.UUID network, PackageOrderWithCrafts order, IdentifiedInventory ignoredHandler, String address) {
+		FactoryPanelBehaviour behaviour = (FactoryPanelBehaviour) (Object) this;
+		BrassBoxRoutingData routing = fluid$buildRoutingData(behaviour, network, order);
+		if (!routing.isEmpty())
+			MixedOrderRoutingManager.attachToOrder(order, routing);
+		return LogisticsManager.findPackagersForRequest(network, order, ignoredHandler, address);
+	}
+
+	@Unique
+	private BrassBoxRoutingData fluid$buildRoutingData(FactoryPanelBehaviour behaviour, java.util.UUID network,
+		PackageOrderWithCrafts order) {
+		Map<String, ItemStack> itemKinds = new LinkedHashMap<>();
+		Map<String, net.minecraft.resources.ResourceLocation> fluidKinds = new LinkedHashMap<>();
+		Map<String, Integer> kindScores = new LinkedHashMap<>();
+		int maxScore = Integer.MIN_VALUE;
+		int minScore = Integer.MAX_VALUE;
+
+		for (FactoryPanelConnection connection : behaviour.targetedBy.values()) {
+			FactoryPanelBehaviour source = FactoryPanelBehaviour.at(behaviour.getWorld(), connection);
+			if (source == null || !network.equals(source.network))
+				continue;
+			ItemStack filter = fluid$normalizeManifest(source.getFilter());
+			if (filter.isEmpty())
+				continue;
+			int score = connection.from.pos().getY() * 2 + connection.from.slot().yOffset;
+			maxScore = Math.max(maxScore, score);
+			minScore = Math.min(minScore, score);
+
+			if (filter.getItem() instanceof FluidManifestItem) {
+				var key = FluidManifestItem.readKey(filter);
+				if (key == null)
+					continue;
+				String kind = key.fluidId().toString();
+				fluidKinds.putIfAbsent(kind, key.fluidId());
+				kindScores.merge(kind, score, Math::max);
+				continue;
+			}
+
+			String kind = filter.getItemHolder().unwrapKey().map(Object::toString).orElse(filter.getItem().toString()) + "#" + filter.getComponentsPatch();
+			itemKinds.putIfAbsent(kind, filter.copyWithCount(1));
+			kindScores.merge(kind, score, Math::max);
+		}
+
+		if (kindScores.isEmpty())
+			return BrassBoxRoutingData.EMPTY;
+
+		boolean allSameHeight = maxScore == minScore;
+		List<ItemRoute> itemRoutes = new ArrayList<>();
+		List<FluidRoute> fluidRoutes = new ArrayList<>();
+
+		for (BigItemStack entry : order.stacks()) {
+			ItemStack stack = fluid$normalizeManifest(entry.stack);
+			if (stack.isEmpty())
+				continue;
+			if (stack.getItem() instanceof FluidManifestItem) {
+				var key = FluidManifestItem.readKey(stack);
+				if (key == null)
+					continue;
+				ContentRoute route = allSameHeight ? ContentRoute.NONE
+					: kindScores.getOrDefault(key.fluidId().toString(), minScore) == maxScore ? ContentRoute.UP : ContentRoute.DOWN;
+				fluidRoutes.add(new FluidRoute(key.fluidId(), route));
+				continue;
+			}
+			String kind = stack.getItemHolder().unwrapKey().map(Object::toString).orElse(stack.getItem().toString()) + "#" + stack.getComponentsPatch();
+			ContentRoute route = allSameHeight ? ContentRoute.NONE
+				: kindScores.getOrDefault(kind, minScore) == maxScore ? ContentRoute.UP : ContentRoute.DOWN;
+			itemRoutes.add(new ItemRoute(stack.copyWithCount(1), route));
+		}
+
+		return new BrassBoxRoutingData(itemRoutes, fluidRoutes);
 	}
 }

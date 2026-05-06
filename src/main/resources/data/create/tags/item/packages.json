@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "fluid:copper_can"
+    "fluid:copper_can",
+    "fluid:brass_box"
   ]
 }

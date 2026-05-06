@@ -18,6 +18,7 @@
     "PackageEntityMixin",
     "NozzleBlockMixin",
     "FactoryPanelBehaviourMixin",
+    "PackagerBlockEntityMixin",
     "accessor.ArmBlockEntityAccessor",
     "accessor.ItemDrainBlockEntityAccessor",
     "accessor.ChainConveyorShapeAccessor",

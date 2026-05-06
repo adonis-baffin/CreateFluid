@@ -1,6 +1,7 @@
 package com.adonis.fluid.registry;
 
 import com.adonis.fluid.item.BatonItem;
+import com.adonis.fluid.item.BrassBoxItem;
 import com.adonis.fluid.item.CopperCanItem;
 import com.adonis.fluid.item.FluidManifestItem;
 import com.adonis.fluid.item.QuicksandBucketItem;
@@ -33,6 +34,11 @@ public class CFItems {
 
 	public static final ItemEntry<CopperCanItem> COPPER_CAN = REGISTRATE
 		.item("copper_can", CopperCanItem::new)
+		.properties(p -> p.stacksTo(1).fireResistant())
+		.register();
+
+	public static final ItemEntry<BrassBoxItem> BRASS_BOX = REGISTRATE
+		.item("brass_box", BrassBoxItem::new)
 		.properties(p -> p.stacksTo(1).fireResistant())
 		.register();
 

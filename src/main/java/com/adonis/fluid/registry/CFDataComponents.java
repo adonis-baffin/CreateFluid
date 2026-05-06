@@ -1,6 +1,8 @@
 package com.adonis.fluid.registry;
 
 import com.adonis.fluid.CreateFluid;
+import com.adonis.fluid.datacomponent.BrassBoxFluidContent;
+import com.adonis.fluid.datacomponent.BrassBoxRoutingData;
 import com.adonis.fluid.datacomponent.FluidManifestContent;
 import com.adonis.fluid.datacomponent.CopperCanContent;
 import net.minecraft.core.component.DataComponentType;
@@ -26,6 +28,22 @@ public class CFDataComponents {
 		() -> DataComponentType.<FluidManifestContent>builder()
 			.persistent(FluidManifestContent.CODEC)
 			.networkSynchronized(FluidManifestContent.STREAM_CODEC)
+			.build()
+	);
+
+	public static final Supplier<DataComponentType<BrassBoxFluidContent>> BRASS_BOX_FLUIDS = REGISTER.register(
+		"brass_box_fluids",
+		() -> DataComponentType.<BrassBoxFluidContent>builder()
+			.persistent(BrassBoxFluidContent.CODEC)
+			.networkSynchronized(BrassBoxFluidContent.STREAM_CODEC)
+			.build()
+	);
+
+	public static final Supplier<DataComponentType<BrassBoxRoutingData>> BRASS_BOX_ROUTING = REGISTER.register(
+		"brass_box_routing",
+		() -> DataComponentType.<BrassBoxRoutingData>builder()
+			.persistent(BrassBoxRoutingData.CODEC)
+			.networkSynchronized(BrassBoxRoutingData.STREAM_CODEC)
 			.build()
 	);
 

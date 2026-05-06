@@ -24,6 +24,8 @@ import com.adonis.fluid.block.Pipette.PipetteBlockEntity;
 import com.adonis.fluid.block.Pipette.PipetteRenderer;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlockEntity;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceRenderer;
+import com.adonis.fluid.block.SmartRepackager.SmartRepackagerBlockEntity;
+import com.adonis.fluid.block.SmartUnpackager.SmartUnpackagerBlockEntity;
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -118,6 +120,18 @@ public class CFBlockEntities {
             .register();
 
     // 流体连通器方块实体
+    public static final BlockEntityEntry<SmartRepackagerBlockEntity> SMART_REPACKAGER = REGISTRATE
+            .blockEntity("smart_repackager", SmartRepackagerBlockEntity::new)
+            .visual(() -> com.simibubi.create.content.logistics.packager.PackagerVisual::new, true)
+            .validBlocks(CFBlocks.SMART_REPACKAGER)
+            .renderer(() -> com.simibubi.create.content.logistics.packager.PackagerRenderer::new)
+            .register();
+
+    public static final BlockEntityEntry<SmartUnpackagerBlockEntity> SMART_UNPACKAGER = REGISTRATE
+            .blockEntity("smart_unpackager", SmartUnpackagerBlockEntity::new)
+            .validBlocks(CFBlocks.SMART_UNPACKAGER)
+            .register();
+
     public static final BlockEntityEntry<CommunicatingVesselBlockEntity> COMMUNICATING_VESSEL = REGISTRATE
             .blockEntity("communicating_vessel", CommunicatingVesselBlockEntity::new)
             .validBlocks(CFBlocks.COMMUNICATING_VESSEL)
@@ -169,6 +183,15 @@ public class CFBlockEntities {
         );
 
         // 注册红石三通阀门的流体能力
+        event.registerBlockEntity(
+                Capabilities.ItemHandler.BLOCK,
+                SMART_REPACKAGER.get(),
+                (be, side) -> be.inventory
+        );
+        @SuppressWarnings("unchecked")
+        BlockEntityType<SmartUnpackagerBlockEntity> smartUnpackagerType = (BlockEntityType<SmartUnpackagerBlockEntity>) SMART_UNPACKAGER.get();
+        SmartUnpackagerBlockEntity.registerCapabilities(event, smartUnpackagerType);
+
         @SuppressWarnings("unchecked")
         BlockEntityType<RedstoneTripleValveBlockEntity> tripleValveType = (BlockEntityType<RedstoneTripleValveBlockEntity>) REDSTONE_TRIPLE_VALVE.get();
         RedstoneTripleValveBlockEntity.registerCapabilities(event, tripleValveType);

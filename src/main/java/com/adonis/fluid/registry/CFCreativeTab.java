@@ -32,10 +32,13 @@ public class CFCreativeTab {
                         output.accept(CFBlocks.REDSTONE_VALVE);
                         output.accept(CFBlocks.REDSTONE_TRIPLE_VALVE);
                         output.accept(CFBlocks.CAN_FILLER);
+                        output.accept(CFBlocks.SMART_REPACKAGER);
+                        output.accept(CFBlocks.SMART_UNPACKAGER);
                         output.accept(CFBlocks.COMMUNICATING_VESSEL);
                         output.accept(CFBlocks.FLUID_ATOMIZER);
 
                         output.accept(CFItems.COPPER_CAN);
+                        output.accept(CFItems.BRASS_BOX);
                         output.accept(CFItems.FLUID_MANIFEST);
                         output.accept(CFItems.HONEYCOMB_MOLD);
 //                        output.accept(CFItems.CHOCOLATE_MOLD);

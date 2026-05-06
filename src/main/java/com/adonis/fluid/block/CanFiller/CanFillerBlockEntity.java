@@ -3,6 +3,7 @@ package com.adonis.fluid.block.CanFiller;
 import java.util.List;
 
 import com.adonis.fluid.config.CFCommonConfig;
+import com.adonis.fluid.item.BrassBoxItem;
 import com.adonis.fluid.item.CopperCanItem;
 import com.adonis.fluid.item.FluidManifestItem;
 import com.adonis.fluid.logistics.api.IFluidLogisticsPackager;
@@ -11,6 +12,7 @@ import com.adonis.fluid.logistics.data.FluidNetworkSummary;
 import com.adonis.fluid.logistics.data.FluidPackagingPlan;
 import com.adonis.fluid.logistics.data.FluidRequestKey;
 import com.adonis.fluid.logistics.manager.FluidLogisticsManager;
+import com.adonis.fluid.logistics.manager.MixedOrderRoutingManager;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.logistics.BigItemStack;
 import com.simibubi.create.content.logistics.box.PackageItem;
@@ -129,9 +131,13 @@ public class CanFillerBlockEntity extends PackagerBlockEntity implements IFluidL
 		if (address != null && !address.isBlank())
 			PackageItem.addAddress(fluidPackage, address);
 
+		boolean finalPackageAtLink = nextRequest.getCount() <= extracted.getAmount();
 		PackageItem.setOrder(fluidPackage, nextRequest.orderId(), nextRequest.linkIndex(),
 			nextRequest.finalLink().booleanValue(), nextRequest.packageCounter().getAndIncrement(),
-			nextRequest.isEmpty(), nextRequest.context());
+			finalPackageAtLink, nextRequest.context());
+		var routing = MixedOrderRoutingManager.resolveAndBind(nextRequest.orderId(), nextRequest.context());
+		if (!routing.isEmpty())
+			BrassBoxItem.setRoutingData(fluidPackage, routing);
 
 		nextRequest.subtract(extracted.getAmount());
 		if (nextRequest.isEmpty()) {
