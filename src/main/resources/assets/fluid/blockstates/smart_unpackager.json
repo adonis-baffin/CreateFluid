@@ -1,8 +1,0 @@
-{
-  "variants": {
-    "facing=north": {"model": "fluid:block/smart_unpackager/block", "y": 180},
-    "facing=east": {"model": "fluid:block/smart_unpackager/block", "y": 270},
-    "facing=south": {"model": "fluid:block/smart_unpackager/block"},
-    "facing=west": {"model": "fluid:block/smart_unpackager/block", "y": 90}
-  }
-}

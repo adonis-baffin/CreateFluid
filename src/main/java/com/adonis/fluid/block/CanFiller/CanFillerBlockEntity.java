@@ -6,6 +6,7 @@ import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.item.BrassBoxItem;
 import com.adonis.fluid.item.CopperCanItem;
 import com.adonis.fluid.item.FluidManifestItem;
+import com.adonis.fluid.item.PackageRoutingHelper;
 import com.adonis.fluid.logistics.api.IFluidLogisticsPackager;
 import com.adonis.fluid.logistics.data.FluidNetworkEntry;
 import com.adonis.fluid.logistics.data.FluidNetworkSummary;
@@ -137,7 +138,7 @@ public class CanFillerBlockEntity extends PackagerBlockEntity implements IFluidL
 			finalPackageAtLink, nextRequest.context());
 		var routing = MixedOrderRoutingManager.resolveAndBind(nextRequest.orderId(), nextRequest.context());
 		if (!routing.isEmpty())
-			BrassBoxItem.setRoutingData(fluidPackage, routing);
+			PackageRoutingHelper.setRoutingData(fluidPackage, routing);
 
 		nextRequest.subtract(extracted.getAmount());
 		if (nextRequest.isEmpty()) {

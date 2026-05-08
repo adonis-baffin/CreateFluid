@@ -57,8 +57,7 @@ public class BrassBoxItem extends PackageItem {
 			if (!validFluids.isEmpty())
 				stack.set(CFDataComponents.BRASS_BOX_FLUIDS.get(), new BrassBoxFluidContent(validFluids));
 		}
-		if (routing != null && !routing.isEmpty())
-			stack.set(CFDataComponents.BRASS_BOX_ROUTING.get(), routing);
+		PackageRoutingHelper.setRoutingData(stack, routing);
 		return stack;
 	}
 
@@ -67,13 +66,11 @@ public class BrassBoxItem extends PackageItem {
 	}
 
 	public static BrassBoxRoutingData getRoutingData(ItemStack stack) {
-		return stack.getOrDefault(CFDataComponents.BRASS_BOX_ROUTING.get(), BrassBoxRoutingData.EMPTY);
+		return PackageRoutingHelper.getRoutingData(stack);
 	}
 
 	public static void setRoutingData(ItemStack stack, BrassBoxRoutingData data) {
-		if (data == null || data.isEmpty())
-			return;
-		stack.set(CFDataComponents.BRASS_BOX_ROUTING.get(), data);
+		PackageRoutingHelper.setRoutingData(stack, data);
 	}
 
 	@Override
@@ -84,6 +81,7 @@ public class BrassBoxItem extends PackageItem {
 	@Override
 	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
 		super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+		PackageRoutingHelper.appendRoutingSummary(stack, tooltipComponents);
 		BrassBoxFluidContent fluidContent = getFluidContent(stack);
 		for (FluidEntry entry : fluidContent.fluids()) {
 			if (entry.isEmpty())

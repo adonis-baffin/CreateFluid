@@ -39,8 +39,8 @@ public class CFDataComponents {
 			.build()
 	);
 
-	public static final Supplier<DataComponentType<BrassBoxRoutingData>> BRASS_BOX_ROUTING = REGISTER.register(
-		"brass_box_routing",
+	public static final Supplier<DataComponentType<BrassBoxRoutingData>> PACKAGE_ROUTING = REGISTER.register(
+		"package_routing",
 		() -> DataComponentType.<BrassBoxRoutingData>builder()
 			.persistent(BrassBoxRoutingData.CODEC)
 			.networkSynchronized(BrassBoxRoutingData.STREAM_CODEC)

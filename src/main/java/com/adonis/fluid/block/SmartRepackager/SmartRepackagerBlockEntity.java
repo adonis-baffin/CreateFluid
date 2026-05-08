@@ -11,6 +11,7 @@ import com.adonis.fluid.datacomponent.BrassBoxFluidContent.FluidEntry;
 import com.adonis.fluid.datacomponent.BrassBoxRoutingData;
 import com.adonis.fluid.item.BrassBoxItem;
 import com.adonis.fluid.item.CopperCanItem;
+import com.adonis.fluid.item.PackageRoutingHelper;
 import com.adonis.fluid.logistics.data.ContentRoute;
 import com.simibubi.create.content.logistics.BigItemStack;
 import com.simibubi.create.content.logistics.box.PackageItem;
@@ -123,8 +124,8 @@ public class SmartRepackagerBlockEntity extends PackagerBlockEntity {
 
 		for (ItemStack fragment : fragments) {
 			address = PackageItem.getAddress(fragment);
-			if (fragment.has(com.adonis.fluid.registry.CFDataComponents.BRASS_BOX_ROUTING.get()))
-				routing = BrassBoxItem.getRoutingData(fragment);
+			if (PackageRoutingHelper.hasRoutingData(fragment))
+				routing = PackageRoutingHelper.getRoutingData(fragment);
 
 			if (CopperCanItem.isCopperCan(fragment)) {
 				FluidStack fluid = CopperCanItem.getFluid(fragment);

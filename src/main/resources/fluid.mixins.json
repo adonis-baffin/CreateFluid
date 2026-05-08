@@ -29,6 +29,7 @@
     "ArmBlockEntityWrenchUpdateMixin",
     "FactoryPanelScreenMixin",
     "client.FactoryPanelSetItemScreenMixin",
+    "client.PackageItemMixin",
     "FilteringRendererMixin",
     "client.RedstoneRequesterScreenMixin",
     "client.PackageRendererMixin",

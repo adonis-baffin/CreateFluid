@@ -1,14 +1,16 @@
-package com.adonis.fluid.block.SmartUnpackager;
+package com.adonis.fluid.block.LogisticsJunction;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import com.adonis.fluid.datacomponent.BrassBoxFluidContent.FluidEntry;
 import com.adonis.fluid.datacomponent.BrassBoxRoutingData;
-import com.adonis.fluid.logistics.data.ContentRoute;
 import com.adonis.fluid.item.BrassBoxItem;
-import com.simibubi.create.content.logistics.depot.DepotItemHandler;
+import com.adonis.fluid.item.CopperCanItem;
+import com.adonis.fluid.item.PackageRoutingHelper;
+import com.adonis.fluid.logistics.data.ContentRoute;
 import com.simibubi.create.content.logistics.box.PackageItem;
+import com.simibubi.create.content.logistics.depot.DepotItemHandler;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 
@@ -21,36 +23,29 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.ItemStackHandler;
 
-public class SmartUnpackagerBlockEntity extends SmartBlockEntity {
-	private static final double START_Y_OFFSET = 1 / 16d;
-	private static final double START_NORMAL_OFFSET = 3 / 16d;
-	private static final double END_NORMAL_OFFSET = 2 / 16d;
-	private static final double START_LIFT = 10 / 16d;
-	private static final double END_TANGENT = 6 / 16d;
-	private static final double FLEX_RENDER_RANGE = 32d;
-
+public class LogisticsJunctionBlockEntity extends SmartBlockEntity {
 	private BlockPos flexibleTargetPos;
 	private Direction flexibleTargetFace;
 
 	private final ItemStackHandler input = new ItemStackHandler(1) {
 		@Override
 		public boolean isItemValid(int slot, ItemStack stack) {
-			return BrassBoxItem.isBrassBox(stack);
+			return LogisticsJunctionBlock.acceptsPackage(stack);
 		}
 	};
 
-	public SmartUnpackagerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+	public LogisticsJunctionBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
 	}
 
-	public static void registerCapabilities(RegisterCapabilitiesEvent event, BlockEntityType<SmartUnpackagerBlockEntity> type) {
+	public static void registerCapabilities(RegisterCapabilitiesEvent event, BlockEntityType<LogisticsJunctionBlockEntity> type) {
 		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, type, (be, side) -> be.input);
 	}
 
@@ -87,6 +82,18 @@ public class SmartUnpackagerBlockEntity extends SmartBlockEntity {
 		return flexibleTargetPos != null && flexibleTargetFace != null;
 	}
 
+	public boolean hasValidFlexibleTarget() {
+		return hasFlexibleTarget() && level != null && level.isLoaded(flexibleTargetPos);
+	}
+
+	public boolean hasRenderableFlexibleTarget() {
+		if (!hasValidFlexibleTarget())
+			return false;
+		if (level.isClientSide)
+			return true;
+		return hasAnyTargetCapability(flexibleTargetPos, flexibleTargetFace);
+	}
+
 	public BlockPos getFlexibleTargetPos() {
 		return flexibleTargetPos;
 	}
@@ -96,6 +103,8 @@ public class SmartUnpackagerBlockEntity extends SmartBlockEntity {
 	}
 
 	public void tickServer() {
+		validateFlexibleTarget();
+
 		ItemStack stack = input.getStackInSlot(0);
 		if (stack.isEmpty())
 			return;
@@ -111,15 +120,12 @@ public class SmartUnpackagerBlockEntity extends SmartBlockEntity {
 
 	private UnpackPlan planUnpack(ItemStack stack) {
 		BlockState state = getBlockState();
-		Direction sideDirection = state.getValue(SmartUnpackagerBlock.FACING);
+		Direction sideDirection = state.getValue(LogisticsJunctionBlock.FACING);
 		IItemHandler sideItems = level.getCapability(Capabilities.ItemHandler.BLOCK, worldPosition.relative(sideDirection), sideDirection.getOpposite());
 		IFluidHandler sideFluids = level.getCapability(Capabilities.FluidHandler.BLOCK, worldPosition.relative(sideDirection), sideDirection.getOpposite());
 		IItemHandler upItems = getUpperItemHandler();
 		IFluidHandler upFluids = getUpperFluidHandler();
 
-		ItemStackHandler items = PackageItem.getContents(stack);
-		BrassBoxRoutingData routing = BrassBoxItem.getRoutingData(stack);
-		List<FluidEntry> fluids = BrassBoxItem.getFluidContent(stack).fluids();
 		HandlerAccess side = new HandlerAccess(sideItems, sideFluids);
 		HandlerAccess up = new HandlerAccess(upItems, upFluids);
 		ItemReservation sideItemReservation = new ItemReservation(sideItems);
@@ -128,31 +134,67 @@ public class SmartUnpackagerBlockEntity extends SmartBlockEntity {
 		FluidReservation upFluidReservation = new FluidReservation(upFluids);
 		UnpackPlan plan = new UnpackPlan();
 
-		for (int slot = 0; slot < items.getSlots(); slot++) {
-			ItemStack entry = items.getStackInSlot(slot);
-			if (entry.isEmpty())
-				continue;
-			OutputTarget target = chooseItemTarget(entry, routing.routeForItem(entry), side, up, sideItemReservation, upItemReservation);
-			if (target == null)
+		if (BrassBoxItem.isBrassBox(stack)) {
+			if (!planPackageItems(stack, PackageRoutingHelper.getRoutingData(stack), plan, side, up, sideItemReservation, upItemReservation))
 				return null;
-			plan.itemPlans.add(new ItemPlan(entry.copy(), target));
-		}
-
-		for (FluidEntry entry : fluids) {
-			if (entry.isEmpty())
-				continue;
-			OutputTarget target = chooseFluidTarget(entry, side, up, sideFluidReservation, upFluidReservation);
-			if (target == null)
+			if (!planBrassBoxFluids(stack, plan, side, up, sideFluidReservation, upFluidReservation))
 				return null;
-			plan.fluidPlans.add(new FluidPlan(entry.copy(), target));
+		} else if (CopperCanItem.isCopperCan(stack)) {
+			if (!planCopperCanFluid(stack, plan, side, up, sideFluidReservation, upFluidReservation))
+				return null;
+		} else if (LogisticsJunctionBlock.isCardboardPackage(stack)) {
+			if (!planPackageItems(stack, PackageRoutingHelper.getRoutingData(stack), plan, side, up, sideItemReservation, upItemReservation))
+				return null;
+		} else {
+			return null;
 		}
 
 		return plan;
 	}
 
+	private boolean planPackageItems(ItemStack stack, BrassBoxRoutingData routing, UnpackPlan plan, HandlerAccess side,
+		HandlerAccess up, ItemReservation sideReservation, ItemReservation upReservation) {
+		ItemStackHandler items = PackageItem.getContents(stack);
+		for (int slot = 0; slot < items.getSlots(); slot++) {
+			ItemStack entry = items.getStackInSlot(slot);
+			if (entry.isEmpty())
+				continue;
+			OutputTarget target = chooseItemTarget(entry, routing.routeForItem(entry), side, up, sideReservation, upReservation);
+			if (target == null)
+				return false;
+			plan.itemPlans.add(new ItemPlan(entry.copy(), target));
+		}
+		return true;
+	}
+
+	private boolean planBrassBoxFluids(ItemStack stack, UnpackPlan plan, HandlerAccess side, HandlerAccess up,
+		FluidReservation sideReservation, FluidReservation upReservation) {
+		for (FluidEntry entry : BrassBoxItem.getFluidContent(stack).fluids()) {
+			if (entry.isEmpty())
+				continue;
+			OutputTarget target = chooseFluidTarget(entry.fluid(), entry.route(), side, up, sideReservation, upReservation);
+			if (target == null)
+				return false;
+			plan.fluidPlans.add(new FluidPlan(entry.copy(), target));
+		}
+		return true;
+	}
+
+	private boolean planCopperCanFluid(ItemStack stack, UnpackPlan plan, HandlerAccess side, HandlerAccess up,
+		FluidReservation sideReservation, FluidReservation upReservation) {
+		FluidStack fluid = CopperCanItem.getFluid(stack);
+		if (fluid.isEmpty())
+			return true;
+		OutputTarget target = chooseFluidTarget(fluid, ContentRoute.NONE, side, up, sideReservation, upReservation);
+		if (target == null)
+			return false;
+		plan.fluidPlans.add(new FluidPlan(new FluidEntry(fluid.copy(), ContentRoute.NONE), target));
+		return true;
+	}
+
 	private boolean executeUnpack(UnpackPlan plan) {
 		BlockState state = getBlockState();
-		Direction sideDirection = state.getValue(SmartUnpackagerBlock.FACING);
+		Direction sideDirection = state.getValue(LogisticsJunctionBlock.FACING);
 		IItemHandler sideItems = level.getCapability(Capabilities.ItemHandler.BLOCK, worldPosition.relative(sideDirection), sideDirection.getOpposite());
 		IFluidHandler sideFluids = level.getCapability(Capabilities.FluidHandler.BLOCK, worldPosition.relative(sideDirection), sideDirection.getOpposite());
 		IItemHandler upItems = getUpperItemHandler();
@@ -178,13 +220,13 @@ public class SmartUnpackagerBlockEntity extends SmartBlockEntity {
 		return null;
 	}
 
-	private OutputTarget chooseFluidTarget(FluidEntry entry, HandlerAccess side, HandlerAccess up,
+	private OutputTarget chooseFluidTarget(FluidStack fluid, ContentRoute route, HandlerAccess side, HandlerAccess up,
 		FluidReservation sideReservation, FluidReservation upReservation) {
-		OutputTarget preferred = entry.route() == ContentRoute.UP ? OutputTarget.UP : OutputTarget.SIDE;
+		OutputTarget preferred = route == ContentRoute.UP ? OutputTarget.UP : OutputTarget.SIDE;
 		OutputTarget fallback = preferred == OutputTarget.UP ? OutputTarget.SIDE : OutputTarget.UP;
-		if (canReserveFluid(entry.fluid(), preferred, side, up, sideReservation, upReservation))
+		if (canReserveFluid(fluid, preferred, side, up, sideReservation, upReservation))
 			return preferred;
-		if (canReserveFluid(entry.fluid(), fallback, side, up, sideReservation, upReservation))
+		if (canReserveFluid(fluid, fallback, side, up, sideReservation, upReservation))
 			return fallback;
 		return null;
 	}
@@ -197,8 +239,8 @@ public class SmartUnpackagerBlockEntity extends SmartBlockEntity {
 		};
 	}
 
-	private boolean canReserveFluid(net.neoforged.neoforge.fluids.FluidStack fluid, OutputTarget target, HandlerAccess side,
-		HandlerAccess up, FluidReservation sideReservation, FluidReservation upReservation) {
+	private boolean canReserveFluid(FluidStack fluid, OutputTarget target, HandlerAccess side, HandlerAccess up,
+		FluidReservation sideReservation, FluidReservation upReservation) {
 		return switch (target) {
 			case SIDE -> side.fluids != null && sideReservation.reserve(fluid);
 			case UP -> up.fluids != null && upReservation.reserve(fluid);
@@ -213,8 +255,8 @@ public class SmartUnpackagerBlockEntity extends SmartBlockEntity {
 		};
 	}
 
-	private boolean insertFluidIntoTarget(net.neoforged.neoforge.fluids.FluidStack fluid, OutputTarget target,
-		IFluidHandler sideFluids, IFluidHandler upFluids, boolean simulate) {
+	private boolean insertFluidIntoTarget(FluidStack fluid, OutputTarget target, IFluidHandler sideFluids,
+		IFluidHandler upFluids, boolean simulate) {
 		return switch (target) {
 			case SIDE -> canInsertFluid(sideFluids, fluid, simulate);
 			case UP -> canInsertFluid(upFluids, fluid, simulate);
@@ -233,7 +275,7 @@ public class SmartUnpackagerBlockEntity extends SmartBlockEntity {
 		return remaining.isEmpty();
 	}
 
-	private boolean canInsertFluid(IFluidHandler handler, net.neoforged.neoforge.fluids.FluidStack fluid, boolean simulate) {
+	private boolean canInsertFluid(IFluidHandler handler, FluidStack fluid, boolean simulate) {
 		if (handler == null)
 			return false;
 		int filled = handler.fill(fluid.copy(), simulate ? IFluidHandler.FluidAction.SIMULATE : IFluidHandler.FluidAction.EXECUTE);
@@ -253,7 +295,7 @@ public class SmartUnpackagerBlockEntity extends SmartBlockEntity {
 	}
 
 	private BlockPos getUpperTargetPos() {
-		if (hasFlexibleTarget() && level.isLoaded(flexibleTargetPos))
+		if (hasValidFlexibleTarget())
 			return flexibleTargetPos;
 		return worldPosition.above();
 	}
@@ -264,17 +306,24 @@ public class SmartUnpackagerBlockEntity extends SmartBlockEntity {
 		return Direction.DOWN;
 	}
 
+	private void validateFlexibleTarget() {
+		if (!hasValidFlexibleTarget())
+			return;
+		if (!hasAnyTargetCapability(flexibleTargetPos, flexibleTargetFace))
+			clearFlexibleTarget();
+	}
+
+	private boolean hasAnyTargetCapability(BlockPos targetPos, Direction targetFace) {
+		return level.getCapability(Capabilities.ItemHandler.BLOCK, targetPos, targetFace) != null
+			|| level.getCapability(Capabilities.FluidHandler.BLOCK, targetPos, targetFace) != null;
+	}
+
 	@Override
 	protected AABB createRenderBoundingBox() {
 		AABB box = super.createRenderBoundingBox();
 		if (!hasFlexibleTarget())
 			return box;
-		Vec3 center = Vec3.atCenterOf(worldPosition);
-		AABB generousBounds = new AABB(
-			center.x - FLEX_RENDER_RANGE, center.y - FLEX_RENDER_RANGE, center.z - FLEX_RENDER_RANGE,
-			center.x + FLEX_RENDER_RANGE, center.y + FLEX_RENDER_RANGE, center.z + FLEX_RENDER_RANGE
-		);
-		return box.minmax(generousBounds);
+		return box.minmax(new AABB(flexibleTargetPos)).inflate(2);
 	}
 
 	@Override
@@ -383,7 +432,7 @@ public class SmartUnpackagerBlockEntity extends SmartBlockEntity {
 
 	private static class FluidReservation {
 		private final IFluidHandler handler;
-		private final List<net.neoforged.neoforge.fluids.FluidStack> virtualTanks;
+		private final List<FluidStack> virtualTanks;
 
 		private FluidReservation(IFluidHandler handler) {
 			this.handler = handler;
@@ -393,7 +442,7 @@ public class SmartUnpackagerBlockEntity extends SmartBlockEntity {
 					virtualTanks.add(handler.getFluidInTank(tank).copy());
 		}
 
-		private boolean reserve(net.neoforged.neoforge.fluids.FluidStack fluid) {
+		private boolean reserve(FluidStack fluid) {
 			if (handler == null || fluid.isEmpty() || fluid.getAmount() <= 0)
 				return false;
 			int remaining = fluid.getAmount();
@@ -405,12 +454,12 @@ public class SmartUnpackagerBlockEntity extends SmartBlockEntity {
 			return false;
 		}
 
-		private int reserveIntoTank(int tank, net.neoforged.neoforge.fluids.FluidStack fluid, int remaining) {
+		private int reserveIntoTank(int tank, FluidStack fluid, int remaining) {
 			if (remaining <= 0)
 				return 0;
 			if (!handler.isFluidValid(tank, fluid))
 				return 0;
-			net.neoforged.neoforge.fluids.FluidStack existing = virtualTanks.get(tank);
+			FluidStack existing = virtualTanks.get(tank);
 			int capacity = handler.getTankCapacity(tank);
 			if (capacity <= 0)
 				return 0;
@@ -419,7 +468,7 @@ public class SmartUnpackagerBlockEntity extends SmartBlockEntity {
 				virtualTanks.set(tank, fluid.copyWithAmount(moved));
 				return moved;
 			}
-			if (!net.neoforged.neoforge.fluids.FluidStack.isSameFluidSameComponents(existing, fluid))
+			if (!FluidStack.isSameFluidSameComponents(existing, fluid))
 				return 0;
 			int space = capacity - existing.getAmount();
 			if (space <= 0)

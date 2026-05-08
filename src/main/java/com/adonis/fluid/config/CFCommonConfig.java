@@ -27,6 +27,7 @@ public class CFCommonConfig {
 
 	// Can Filler 配置
 	public static final ModConfigSpec.IntValue FLUID_PER_PACKAGE;
+	public static final ModConfigSpec.IntValue LOGISTICS_JUNCTION_LINK_RANGE;
 
 	private static boolean isConfigLoaded = false;
 
@@ -116,6 +117,15 @@ public class CFCommonConfig {
 		FLUID_PER_PACKAGE = builder
 			.comment("Maximum mB of fluid one fluid package can hold. Packages can be created with less than this amount.")
 			.defineInRange("fluidPerPackage", 4000, 1000, 100000);
+
+		builder.pop();
+
+		builder.comment("Logistics Junction settings")
+			.push("logistics_junction");
+
+		LOGISTICS_JUNCTION_LINK_RANGE = builder
+			.comment("Maximum distance for a Logistics Junction flexible upper-output link.")
+			.defineInRange("linkRange", 16, 1, Integer.MAX_VALUE);
 
 		builder.pop();
 
@@ -265,6 +275,15 @@ public class CFCommonConfig {
 			return FLUID_PER_PACKAGE.get();
 		} catch (IllegalStateException e) {
 			return 4000;
+		}
+	}
+
+	public static int getLogisticsJunctionLinkRange() {
+		if (!isConfigLoaded) return 16;
+		try {
+			return LOGISTICS_JUNCTION_LINK_RANGE.get();
+		} catch (IllegalStateException e) {
+			return 16;
 		}
 	}
 }

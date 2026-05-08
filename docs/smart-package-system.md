@@ -4,7 +4,7 @@ This document records the current prototype architecture for the mixed logistics
 
 - `Smart Re-Packager`
 - `Brass Box`
-- `Smart Unpackager`
+- `Logistics Junction`
 
 The goal of this system is to make item-only, fluid-only, and mixed item+fluid logistics participate in a single repack/unpack flow, while preserving routing hints derived from Factory Gauge layout.
 
@@ -62,9 +62,9 @@ Relevant implementation:
 - `src/main/java/com/adonis/fluid/block/SmartRepackager/SmartRepackagerBlock.java`
 - `src/main/java/com/adonis/fluid/block/SmartRepackager/SmartRepackagerBlockEntity.java`
 
-### `Smart Unpackager`
+### `Logistics Junction`
 
-`Smart Unpackager` is an independent unpacking block. It does not inherit Create packager output semantics; it only accepts `Brass Box` and unpacks it according to routing rules.
+`Logistics Junction` is an independent unpacking block. It does not inherit Create packager output semantics; it accepts Create cardboard packages, `Copper Can`, and `Brass Box`, then unpacks them according to routing rules.
 
 Current prototype behavior:
 
@@ -76,9 +76,9 @@ Current prototype behavior:
 
 Relevant implementation:
 
-- `src/main/java/com/adonis/fluid/block/SmartUnpackager/SmartUnpackagerBlock.java`
-- `src/main/java/com/adonis/fluid/block/SmartUnpackager/SmartUnpackagerBlockEntity.java`
-- `src/main/java/com/adonis/fluid/handler/SmartUnpackagerLinkHandler.java`
+- `src/main/java/com/adonis/fluid/block/LogisticsJunction/LogisticsJunctionBlock.java`
+- `src/main/java/com/adonis/fluid/block/LogisticsJunction/LogisticsJunctionBlockEntity.java`
+- `src/main/java/com/adonis/fluid/handler/LogisticsJunctionLinkHandler.java`
 
 ## 3. Order Routing Semantics
 
@@ -139,7 +139,7 @@ The current mixed logistics flow is:
 5. `Smart Re-Packager` reads all fragments of one order.
 6. It merges item contents, fluid contents, and routing hints.
 7. It outputs one or more `Brass Box` items.
-8. `Smart Unpackager` reads one `Brass Box` and distributes its contents.
+8. `Logistics Junction` reads package carriers and distributes their contents.
 
 The current implementation uses:
 
@@ -214,7 +214,7 @@ This was a real bug during development and is now explicitly filtered out.
 
 ### Routing payload
 
-Routing is stored in `BrassBoxRoutingData`.
+Routing is serialized as the neutral `package_routing` data component, currently backed by `BrassBoxRoutingData`.
 
 It contains:
 
@@ -223,15 +223,27 @@ It contains:
 
 The granularity is by kind, not by partial quantity.
 
-## 8. Smart Unpackager Logic
+## 8. Logistics Junction Logic
 
 ### Acceptance model
 
-`Smart Unpackager` never partially accepts a `Brass Box`.
+`Logistics Junction` never partially accepts an input package.
 
-It first computes whether the entire box can be distributed successfully.
+It first computes whether the entire package can be distributed successfully.
 
-If not, it leaves the box untouched.
+If not, it leaves the package untouched.
+
+### Accepted inputs
+
+- cardboard packages:
+  - item contents only
+  - routing metadata is respected if present
+- `Copper Can`:
+  - single fluid only
+  - vertical routing metadata is ignored
+- `Brass Box`:
+  - mixed item + fluid contents
+  - routing metadata is respected
 
 ### Output preferences
 
@@ -296,11 +308,11 @@ The prototype now supports a functional flex-link for the upper output.
 
 Using the mod's `Baton`:
 
-1. right-click `Smart Unpackager`
+1. right-click `Logistics Junction`
 2. right-click target block
 3. target position and clicked face become the upper output target
 
-Sneak-right-clicking the same `Smart Unpackager` with the baton clears the link.
+Sneak-right-clicking the same `Logistics Junction` with the baton clears the link.
 
 ### Current storage
 
@@ -314,23 +326,18 @@ At runtime:
 - if a flex target exists, upper output uses that target and face
 - otherwise it falls back to the block directly above with `Direction.DOWN`
 
-### Current limitations
+### Current behavior
 
-This is functional only.
-
-Not yet implemented:
-
-- cable model
-- rendered connection line
-- highlight preview
-- dedicated max-range UX beyond status message
+- flexible link range is configurable
+- if the linked target block becomes invalid while loaded, the junction clears the link and falls back to its default upper output
+- the hose is rendered directly and only keeps collars at the endpoints
 
 ## 10. Known Prototype Constraints
 
 These are intentional or not yet polished:
 
-- no final visual cable model yet
-- no animation for Smart Unpackager
+- no dedicated placement/selection preview for the hose target
+- no animation for Logistics Junction
 - routing metadata currently focuses on Factory Gauge generated orders
 - zh-CN localization for the new prototype content is not fully cleaned up
 - unpack planning is conservative for safety, especially around unusual handlers like Depot
@@ -340,7 +347,7 @@ These are intentional or not yet polished:
 ### Main runtime files
 
 - `src/main/java/com/adonis/fluid/block/SmartRepackager/SmartRepackagerBlockEntity.java`
-- `src/main/java/com/adonis/fluid/block/SmartUnpackager/SmartUnpackagerBlockEntity.java`
+- `src/main/java/com/adonis/fluid/block/LogisticsJunction/LogisticsJunctionBlockEntity.java`
 - `src/main/java/com/adonis/fluid/item/BrassBoxItem.java`
 
 ### Routing and order injection
@@ -358,7 +365,7 @@ These are intentional or not yet polished:
 
 ### Link interaction
 
-- `src/main/java/com/adonis/fluid/handler/SmartUnpackagerLinkHandler.java`
+- `src/main/java/com/adonis/fluid/handler/LogisticsJunctionLinkHandler.java`
 
 ## 12. Current Status
 

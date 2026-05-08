@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": {"model": "fluid:block/logistics_junction/block", "y": 180},
+    "facing=east": {"model": "fluid:block/logistics_junction/block", "y": 270},
+    "facing=south": {"model": "fluid:block/logistics_junction/block"},
+    "facing=west": {"model": "fluid:block/logistics_junction/block", "y": 90}
+  }
+}

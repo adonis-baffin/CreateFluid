@@ -25,8 +25,8 @@ import com.adonis.fluid.block.Pipette.PipetteRenderer;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlockEntity;
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceRenderer;
 import com.adonis.fluid.block.SmartRepackager.SmartRepackagerBlockEntity;
-import com.adonis.fluid.block.SmartUnpackager.SmartUnpackagerBlockEntity;
-import com.adonis.fluid.block.SmartUnpackager.SmartUnpackagerRenderer;
+import com.adonis.fluid.block.LogisticsJunction.LogisticsJunctionBlockEntity;
+import com.adonis.fluid.block.LogisticsJunction.LogisticsJunctionRenderer;
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -128,10 +128,10 @@ public class CFBlockEntities {
             .renderer(() -> com.simibubi.create.content.logistics.packager.PackagerRenderer::new)
             .register();
 
-    public static final BlockEntityEntry<SmartUnpackagerBlockEntity> SMART_UNPACKAGER = REGISTRATE
-            .blockEntity("smart_unpackager", SmartUnpackagerBlockEntity::new)
-            .validBlocks(CFBlocks.SMART_UNPACKAGER)
-            .renderer(() -> SmartUnpackagerRenderer::new)
+    public static final BlockEntityEntry<LogisticsJunctionBlockEntity> LOGISTICS_JUNCTION = REGISTRATE
+            .blockEntity("logistics_junction", LogisticsJunctionBlockEntity::new)
+            .validBlocks(CFBlocks.LOGISTICS_JUNCTION)
+            .renderer(() -> LogisticsJunctionRenderer::new)
             .register();
 
     public static final BlockEntityEntry<CommunicatingVesselBlockEntity> COMMUNICATING_VESSEL = REGISTRATE
@@ -191,8 +191,8 @@ public class CFBlockEntities {
                 (be, side) -> be.inventory
         );
         @SuppressWarnings("unchecked")
-        BlockEntityType<SmartUnpackagerBlockEntity> smartUnpackagerType = (BlockEntityType<SmartUnpackagerBlockEntity>) SMART_UNPACKAGER.get();
-        SmartUnpackagerBlockEntity.registerCapabilities(event, smartUnpackagerType);
+        BlockEntityType<LogisticsJunctionBlockEntity> logisticsJunctionType = (BlockEntityType<LogisticsJunctionBlockEntity>) LOGISTICS_JUNCTION.get();
+        LogisticsJunctionBlockEntity.registerCapabilities(event, logisticsJunctionType);
 
         @SuppressWarnings("unchecked")
         BlockEntityType<RedstoneTripleValveBlockEntity> tripleValveType = (BlockEntityType<RedstoneTripleValveBlockEntity>) REDSTONE_TRIPLE_VALVE.get();

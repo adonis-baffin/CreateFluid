@@ -1,8 +1,8 @@
 {
   "credit": "Placeholder copied from Petrol's Parts hydraulic transmission segment",
   "textures": {
-    "0": "fluid:block/smart_unpackager_link",
-    "particle": "fluid:block/smart_unpackager_link"
+    "0": "fluid:block/logistics_junction_link",
+    "particle": "fluid:block/logistics_junction_link"
   },
   "elements": [
     {

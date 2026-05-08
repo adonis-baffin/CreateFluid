@@ -16,10 +16,10 @@ import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlock;
 import com.adonis.fluid.block.CanFiller.CanFillerBlock;
 import com.adonis.fluid.block.CommunicatingVessel.CommunicatingVesselBlock;
 import com.adonis.fluid.block.FluidAtomizer.FluidAtomizerBlock;
+import com.adonis.fluid.block.LogisticsJunction.LogisticsJunctionBlock;
 import com.adonis.fluid.block.FluidAtomizer.FluidAtomizerMovementBehaviour;
 import com.adonis.fluid.block.QuicksandBlock;
 import com.adonis.fluid.block.SmartRepackager.SmartRepackagerBlock;
-import com.adonis.fluid.block.SmartUnpackager.SmartUnpackagerBlock;
 import com.simibubi.create.foundation.data.ModelGen;
 import com.simibubi.create.foundation.data.SharedProperties;
 import com.simibubi.create.foundation.data.TagGen;
@@ -352,8 +352,8 @@ public class CFBlocks {
             .transform(ModelGen.customItemModel())
             .register();
 
-    public static final BlockEntry<SmartUnpackagerBlock> SMART_UNPACKAGER = REGISTRATE
-            .block("smart_unpackager", SmartUnpackagerBlock::new)
+    public static final BlockEntry<LogisticsJunctionBlock> LOGISTICS_JUNCTION = REGISTRATE
+            .block("logistics_junction", LogisticsJunctionBlock::new)
             .initialProperties(SharedProperties::softMetal)
             .properties(prop -> prop
                     .mapColor(MapColor.TERRACOTTA_BLUE)

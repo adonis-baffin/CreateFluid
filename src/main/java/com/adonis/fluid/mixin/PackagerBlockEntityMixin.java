@@ -1,6 +1,7 @@
 package com.adonis.fluid.mixin;
 
 import com.adonis.fluid.item.BrassBoxItem;
+import com.adonis.fluid.item.PackageRoutingHelper;
 import com.adonis.fluid.logistics.manager.MixedOrderRoutingManager;
 import com.simibubi.create.content.logistics.box.PackageItem;
 import com.simibubi.create.content.logistics.packager.PackagerBlockEntity;
@@ -21,6 +22,6 @@ public class PackagerBlockEntityMixin {
 		PackageItem.setOrder(box, orderId, linkIndex, isFinalLink, fragmentIndex, isFinal, orderContext);
 		var routing = MixedOrderRoutingManager.resolveAndBind(orderId, orderContext);
 		if (!routing.isEmpty())
-			BrassBoxItem.setRoutingData(box, routing);
+			PackageRoutingHelper.setRoutingData(box, routing);
 	}
 }

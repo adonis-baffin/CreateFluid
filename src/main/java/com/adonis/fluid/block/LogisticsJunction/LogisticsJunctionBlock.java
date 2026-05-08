@@ -1,8 +1,10 @@
-package com.adonis.fluid.block.SmartUnpackager;
+package com.adonis.fluid.block.LogisticsJunction;
 
 import com.adonis.fluid.item.BrassBoxItem;
+import com.adonis.fluid.item.CopperCanItem;
 import com.adonis.fluid.registry.CFBlockEntities;
 import com.mojang.serialization.MapCodec;
+import com.simibubi.create.content.logistics.box.PackageItem;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -11,7 +13,6 @@ import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
@@ -26,13 +27,21 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.neoforged.neoforge.capabilities.Capabilities;
 
-public class SmartUnpackagerBlock extends BaseEntityBlock {
-	public static final MapCodec<SmartUnpackagerBlock> CODEC = simpleCodec(SmartUnpackagerBlock::new);
+public class LogisticsJunctionBlock extends BaseEntityBlock {
+	public static final MapCodec<LogisticsJunctionBlock> CODEC = simpleCodec(LogisticsJunctionBlock::new);
 	public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
-	public SmartUnpackagerBlock(Properties properties) {
+	public LogisticsJunctionBlock(Properties properties) {
 		super(properties);
 		registerDefaultState(defaultBlockState().setValue(FACING, Direction.NORTH));
+	}
+
+	public static boolean isCardboardPackage(ItemStack stack) {
+		return PackageItem.isPackage(stack) && !BrassBoxItem.isBrassBox(stack) && !CopperCanItem.isCopperCan(stack);
+	}
+
+	public static boolean acceptsPackage(ItemStack stack) {
+		return BrassBoxItem.isBrassBox(stack) || CopperCanItem.isCopperCan(stack) || isCardboardPackage(stack);
 	}
 
 	@Override
@@ -61,11 +70,11 @@ public class SmartUnpackagerBlock extends BaseEntityBlock {
 	@Override
 	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
 		InteractionHand hand, BlockHitResult hitResult) {
-		if (!BrassBoxItem.isBrassBox(stack))
+		if (!acceptsPackage(stack))
 			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-		if (!(level.getBlockEntity(pos) instanceof SmartUnpackagerBlockEntity unpackager))
+		if (!(level.getBlockEntity(pos) instanceof LogisticsJunctionBlockEntity junction))
 			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-		if (!unpackager.tryInsert(stack, player))
+		if (!junction.tryInsert(stack, player))
 			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 		return ItemInteractionResult.SUCCESS;
 	}
@@ -77,7 +86,7 @@ public class SmartUnpackagerBlock extends BaseEntityBlock {
 
 	@Override
 	public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-		return new SmartUnpackagerBlockEntity(CFBlockEntities.SMART_UNPACKAGER.get(), pos, state);
+		return new LogisticsJunctionBlockEntity(CFBlockEntities.LOGISTICS_JUNCTION.get(), pos, state);
 	}
 
 	@Override
@@ -88,8 +97,8 @@ public class SmartUnpackagerBlock extends BaseEntityBlock {
 	@Override
 	public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
 		return (l, p, s, be) -> {
-			if (be instanceof SmartUnpackagerBlockEntity unpackager)
-				unpackager.tickServer();
+			if (be instanceof LogisticsJunctionBlockEntity junction)
+				junction.tickServer();
 		};
 	}
 }
