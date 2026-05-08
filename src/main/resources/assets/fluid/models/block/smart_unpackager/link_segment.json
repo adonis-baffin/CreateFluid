@@ -1,0 +1,74 @@
+{
+  "credit": "Placeholder copied from Petrol's Parts hydraulic transmission segment",
+  "textures": {
+    "0": "fluid:block/smart_unpackager_link",
+    "particle": "fluid:block/smart_unpackager_link"
+  },
+  "elements": [
+    {
+      "from": [0.5, -0.5, -2.5],
+      "to": [2.5, 2.5, -0.5],
+      "rotation": {"angle": 0, "axis": "y", "origin": [0, 0, -3]},
+      "faces": {
+        "north": {"uv": [4, 0, 4.5, 0.75], "texture": "#0"},
+        "east": {"uv": [5.25, 0, 4.75, 0.75], "texture": "#0"},
+        "south": {"uv": [4.75, 0, 5.25, 0.75], "texture": "#0"},
+        "west": {"uv": [4, 0, 4.5, 0.75], "texture": "#0"},
+        "up": {"uv": [4, 0, 4.5, 0.5], "texture": "#0"},
+        "down": {"uv": [4, 0, 4.5, 0.5], "texture": "#0"}
+      }
+    },
+    {
+      "from": [-2.5, -0.5, -2.5],
+      "to": [-0.5, 2.5, -0.5],
+      "rotation": {"angle": 0, "axis": "y", "origin": [-3, 0, 1]},
+      "faces": {
+        "north": {"uv": [4.75, 0, 5.25, 0.75], "texture": "#0"},
+        "east": {"uv": [4.75, 0, 5.25, 0.75], "texture": "#0"},
+        "south": {"uv": [4, 0, 4.5, 0.75], "texture": "#0"},
+        "west": {"uv": [4.5, 0, 4, 0.75], "texture": "#0"},
+        "up": {"uv": [4, 0, 4.5, 0.5], "rotation": 270, "texture": "#0"},
+        "down": {"uv": [4, 0, 4.5, 0.5], "rotation": 90, "texture": "#0"}
+      }
+    },
+    {
+      "from": [-2.5, -0.5, 0.5],
+      "to": [-0.5, 2.5, 2.5],
+      "rotation": {"angle": 0, "axis": "y", "origin": [1, 0, 4]},
+      "faces": {
+        "north": {"uv": [4.75, 0, 5.25, 0.75], "texture": "#0"},
+        "east": {"uv": [4, 0, 4.5, 0.75], "texture": "#0"},
+        "south": {"uv": [4, 0, 4.5, 0.75], "texture": "#0"},
+        "west": {"uv": [5.25, 0, 4.75, 0.75], "texture": "#0"},
+        "up": {"uv": [4, 0, 4.5, 0.5], "rotation": 180, "texture": "#0"},
+        "down": {"uv": [4, 0, 4.5, 0.5], "rotation": 180, "texture": "#0"}
+      }
+    },
+    {
+      "from": [0.5, -0.5, 0.5],
+      "to": [2.5, 2.5, 2.5],
+      "rotation": {"angle": 0, "axis": "y", "origin": [4, 0, 0]},
+      "faces": {
+        "north": {"uv": [4, 0, 4.5, 0.75], "texture": "#0"},
+        "east": {"uv": [4.5, 0, 4, 0.75], "texture": "#0"},
+        "south": {"uv": [4.75, 0, 5.25, 0.75], "texture": "#0"},
+        "west": {"uv": [4.75, 0, 5.25, 0.75], "texture": "#0"},
+        "up": {"uv": [4, 0, 4.5, 0.5], "rotation": 90, "texture": "#0"},
+        "down": {"uv": [4, 0, 4.5, 0.5], "rotation": 270, "texture": "#0"}
+      }
+    },
+    {
+      "from": [-3.5, -2.5, -3.5],
+      "to": [3.5, -0.5, 3.5],
+      "rotation": {"angle": 0, "axis": "y", "origin": [-3, -4, -3]},
+      "faces": {
+        "north": {"uv": [3.75, 0.75, 5.5, 1.25], "texture": "#0"},
+        "east": {"uv": [3.75, 0.75, 5.5, 1.25], "texture": "#0"},
+        "south": {"uv": [3.75, 0.75, 5.5, 1.25], "texture": "#0"},
+        "west": {"uv": [3.75, 0.75, 5.5, 1.25], "texture": "#0"},
+        "up": {"uv": [3.75, 1.25, 5.5, 3], "texture": "#0"},
+        "down": {"uv": [3.75, 1.25, 5.5, 3], "texture": "#0"}
+      }
+    }
+  ]
+}

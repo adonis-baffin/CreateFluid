@@ -26,6 +26,7 @@ import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceBlockEntity
 import com.adonis.fluid.block.SmartFluidInterface.SmartFluidInterfaceRenderer;
 import com.adonis.fluid.block.SmartRepackager.SmartRepackagerBlockEntity;
 import com.adonis.fluid.block.SmartUnpackager.SmartUnpackagerBlockEntity;
+import com.adonis.fluid.block.SmartUnpackager.SmartUnpackagerRenderer;
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -130,6 +131,7 @@ public class CFBlockEntities {
     public static final BlockEntityEntry<SmartUnpackagerBlockEntity> SMART_UNPACKAGER = REGISTRATE
             .blockEntity("smart_unpackager", SmartUnpackagerBlockEntity::new)
             .validBlocks(CFBlocks.SMART_UNPACKAGER)
+            .renderer(() -> SmartUnpackagerRenderer::new)
             .register();
 
     public static final BlockEntityEntry<CommunicatingVesselBlockEntity> COMMUNICATING_VESSEL = REGISTRATE

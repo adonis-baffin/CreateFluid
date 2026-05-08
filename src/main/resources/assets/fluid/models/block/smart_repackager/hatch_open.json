@@ -1,0 +1,6 @@
+{
+  "parent": "fluid:block/smart_repackager/hatch_closed",
+  "textures": {
+    "3": "fluid:block/smart_repackager_iris_open"
+  }
+}

@@ -20,6 +20,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
@@ -27,6 +29,13 @@ import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.ItemStackHandler;
 
 public class SmartUnpackagerBlockEntity extends SmartBlockEntity {
+	private static final double START_Y_OFFSET = 1 / 16d;
+	private static final double START_NORMAL_OFFSET = 3 / 16d;
+	private static final double END_NORMAL_OFFSET = 2 / 16d;
+	private static final double START_LIFT = 10 / 16d;
+	private static final double END_TANGENT = 6 / 16d;
+	private static final double FLEX_RENDER_RANGE = 32d;
+
 	private BlockPos flexibleTargetPos;
 	private Direction flexibleTargetFace;
 
@@ -76,6 +85,14 @@ public class SmartUnpackagerBlockEntity extends SmartBlockEntity {
 
 	public boolean hasFlexibleTarget() {
 		return flexibleTargetPos != null && flexibleTargetFace != null;
+	}
+
+	public BlockPos getFlexibleTargetPos() {
+		return flexibleTargetPos;
+	}
+
+	public Direction getFlexibleTargetFace() {
+		return flexibleTargetFace;
 	}
 
 	public void tickServer() {
@@ -245,6 +262,19 @@ public class SmartUnpackagerBlockEntity extends SmartBlockEntity {
 		if (hasFlexibleTarget())
 			return flexibleTargetFace;
 		return Direction.DOWN;
+	}
+
+	@Override
+	protected AABB createRenderBoundingBox() {
+		AABB box = super.createRenderBoundingBox();
+		if (!hasFlexibleTarget())
+			return box;
+		Vec3 center = Vec3.atCenterOf(worldPosition);
+		AABB generousBounds = new AABB(
+			center.x - FLEX_RENDER_RANGE, center.y - FLEX_RENDER_RANGE, center.z - FLEX_RENDER_RANGE,
+			center.x + FLEX_RENDER_RANGE, center.y + FLEX_RENDER_RANGE, center.z + FLEX_RENDER_RANGE
+		);
+		return box.minmax(generousBounds);
 	}
 
 	@Override

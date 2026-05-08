@@ -24,12 +24,16 @@ public class CFPartialModels {
     public static PartialModel CAN_FILLER_TRAY;
     public static PartialModel CAN_FILLER_HATCH_OPEN;
     public static PartialModel CAN_FILLER_HATCH_CLOSED;
+    public static PartialModel SMART_REPACKAGER_TRAY;
+    public static PartialModel SMART_REPACKAGER_HATCH_OPEN;
+    public static PartialModel SMART_REPACKAGER_HATCH_CLOSED;
 
     public static PartialModel FLUID_ATOMIZER_SHAFT;
     public static PartialModel FLUID_ATOMIZER_FAN;
 
     // Only the protruding nozzle; the interface body already contains the base.
     public static PartialModel FLUID_INTERFACE_DRAIN;
+    public static PartialModel SMART_UNPACKAGER_LINK_SEGMENT;
 
     public static void register() {
         // Trigger static initialization during mod construction.
@@ -55,16 +59,20 @@ public class CFPartialModels {
                 initFallbackModels();
             }
 
-            registerCopperCanModels();
+            registerCustomPackageModels();
 
             CAN_FILLER_TRAY = createPartialModel("can_filler/tray");
             CAN_FILLER_HATCH_OPEN = createPartialModel("can_filler/hatch_open");
             CAN_FILLER_HATCH_CLOSED = createPartialModel("can_filler/hatch_closed");
+            SMART_REPACKAGER_TRAY = createPartialModel("smart_repackager/tray");
+            SMART_REPACKAGER_HATCH_OPEN = createPartialModel("smart_repackager/hatch_open");
+            SMART_REPACKAGER_HATCH_CLOSED = createPartialModel("smart_repackager/hatch_closed");
 
             FLUID_ATOMIZER_SHAFT = createPartialModel("fluid_atomizer/shaft");
             FLUID_ATOMIZER_FAN = createPartialModel("fluid_atomizer/fan");
 
             FLUID_INTERFACE_DRAIN = createPartialModel("fluid_interface_drain");
+            SMART_UNPACKAGER_LINK_SEGMENT = createPartialModel("smart_unpackager/link_segment");
 
             initialized = true;
         } catch (Exception e) {
@@ -72,22 +80,26 @@ public class CFPartialModels {
         }
     }
 
-    private static void registerCopperCanModels() {
+    private static void registerCustomPackageModels() {
         try {
-            ResourceLocation fluidPackageId = ResourceLocation.fromNamespaceAndPath(CreateFluid.MOD_ID, "copper_can");
-            ResourceLocation copperCanModelLocation = ResourceLocation.fromNamespaceAndPath(CreateFluid.MOD_ID, "item/copper_can");
-
-            PartialModel copperCanModel = PartialModel.of(copperCanModelLocation);
             PartialModel creeperRigging = AllPartialModels.PACKAGE_RIGGING.get(Create.asResource("rare_creeper_package"));
 
-            if (copperCanModel != null) {
-                AllPartialModels.PACKAGES.put(fluidPackageId, copperCanModel);
-            }
-            if (creeperRigging != null) {
-                AllPartialModels.PACKAGE_RIGGING.put(fluidPackageId, creeperRigging);
-            }
+            registerPackageModel("copper_can", "item/copper_can", creeperRigging);
+            registerPackageModel("brass_box", "item/brass_box", creeperRigging);
         } catch (Exception e) {
             // Ignore; package visuals can fail independently.
+        }
+    }
+
+    private static void registerPackageModel(String itemName, String modelPath, PartialModel rigging) {
+        ResourceLocation packageId = ResourceLocation.fromNamespaceAndPath(CreateFluid.MOD_ID, itemName);
+        PartialModel model = PartialModel.of(ResourceLocation.fromNamespaceAndPath(CreateFluid.MOD_ID, modelPath));
+
+        if (model != null) {
+            AllPartialModels.PACKAGES.put(packageId, model);
+        }
+        if (rigging != null) {
+            AllPartialModels.PACKAGE_RIGGING.put(packageId, rigging);
         }
     }
 

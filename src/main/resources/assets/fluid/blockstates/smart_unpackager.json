@@ -1,8 +1,8 @@
 {
   "variants": {
-    "facing=north": {"model": "fluid:block/can_filler/block", "y": 180},
-    "facing=east": {"model": "fluid:block/can_filler/block", "y": 270},
-    "facing=south": {"model": "fluid:block/can_filler/block"},
-    "facing=west": {"model": "fluid:block/can_filler/block", "y": 90}
+    "facing=north": {"model": "fluid:block/smart_unpackager/block", "y": 180},
+    "facing=east": {"model": "fluid:block/smart_unpackager/block", "y": 270},
+    "facing=south": {"model": "fluid:block/smart_unpackager/block"},
+    "facing=west": {"model": "fluid:block/smart_unpackager/block", "y": 90}
   }
 }

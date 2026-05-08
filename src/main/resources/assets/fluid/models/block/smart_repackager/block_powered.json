@@ -1,0 +1,6 @@
+{
+  "parent": "fluid:block/smart_repackager/block",
+  "textures": {
+    "2": "fluid:block/smart_repackager_horizontal_powered"
+  }
+}
