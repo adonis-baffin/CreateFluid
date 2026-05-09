@@ -1,8 +1,8 @@
 {
   "variants": {
-    "facing=north": {"model": "fluid:block/logistics_junction/block", "y": 180},
-    "facing=east": {"model": "fluid:block/logistics_junction/block", "y": 270},
-    "facing=south": {"model": "fluid:block/logistics_junction/block"},
-    "facing=west": {"model": "fluid:block/logistics_junction/block", "y": 90}
+    "facing=north": {"model": "fluid:block/logistics_junction", "y": 180},
+    "facing=east": {"model": "fluid:block/logistics_junction", "y": 270},
+    "facing=south": {"model": "fluid:block/logistics_junction"},
+    "facing=west": {"model": "fluid:block/logistics_junction", "y": 90}
   }
 }

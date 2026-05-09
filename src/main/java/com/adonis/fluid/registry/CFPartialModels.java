@@ -33,7 +33,6 @@ public class CFPartialModels {
 
     // Only the protruding nozzle; the interface body already contains the base.
     public static PartialModel FLUID_INTERFACE_DRAIN;
-    public static PartialModel LOGISTICS_JUNCTION_LINK_SEGMENT;
 
     public static void register() {
         // Trigger static initialization during mod construction.
@@ -72,8 +71,6 @@ public class CFPartialModels {
             FLUID_ATOMIZER_FAN = createPartialModel("fluid_atomizer/fan");
 
             FLUID_INTERFACE_DRAIN = createPartialModel("fluid_interface_drain");
-            LOGISTICS_JUNCTION_LINK_SEGMENT = createPartialModel("logistics_junction/link_segment");
-
             initialized = true;
         } catch (Exception e) {
             initFallbackModels();
