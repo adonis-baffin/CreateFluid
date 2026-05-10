@@ -361,6 +361,7 @@ public class CFBlocks {
                     .noOcclusion()
                     .isRedstoneConductor(($1, $2, $3) -> false))
             .transform(TagGen.pickaxeOnly())
+            .transform(CreateFluid.STRESS_CONFIG.setImpact(8.0))
             .addLayer(() -> net.minecraft.client.renderer.RenderType::cutoutMipped)
             .item()
             .transform(ModelGen.customItemModel())

@@ -52,9 +52,9 @@ public class SandblastingFanProcessingType implements FanProcessingType {
 		var input = new SingleRecipeInput(stack);
 		var recipeManager = level.getRecipeManager();
 		return recipeManager.getRecipeFor(CFRecipeTypes.SANDBLASTING.getType(), input, level)
-			.map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe))
+			.map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe.value(), true))
 			.or(() -> recipeManager.getRecipeFor(AllRecipeTypes.SANDPAPER_POLISHING.getType(), input, level)
-				.map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe)))
+				.map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe.value(), true)))
 			.orElse(null);
 	}
 

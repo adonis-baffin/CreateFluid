@@ -7,8 +7,11 @@ import java.util.List;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.simibubi.create.foundation.blockEntity.renderer.SmartBlockEntityRenderer;
+import com.simibubi.create.AllPartialModels;
+import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 
+import net.createmod.catnip.render.CachedBuffers;
+import net.createmod.catnip.render.SuperByteBuffer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -17,26 +20,30 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
-public class LogisticsJunctionRenderer extends SmartBlockEntityRenderer<LogisticsJunctionBlockEntity> {
+public class LogisticsJunctionRenderer extends KineticBlockEntityRenderer<LogisticsJunctionBlockEntity> {
 	private static final ResourceLocation LINK_TEXTURE =
 		ResourceLocation.fromNamespaceAndPath(MOD_ID, "textures/block/logistics_junction_link.png");
 	private static final ResourceLocation COLLAR_TEXTURE =
 		ResourceLocation.fromNamespaceAndPath(MOD_ID, "textures/block/logistics_junction_collar.png");
+	private static final ResourceLocation ATTACH_TEXTURE =
+		ResourceLocation.fromNamespaceAndPath(MOD_ID, "textures/block/junction_upper.png");
+	private static final double THICKNESS_SCALE = 1.6d;
 	private static final float START_Y_OFFSET = 1f / 16f;
 	private static final int TUBE_SIDES = 4;
-	private static final double WIRE_RADIUS = 2.05 / 16d;
-	private static final double COLLAR_INNER_RADIUS = 1.8 / 16d;
-	private static final double COLLAR_RADIUS = 2.7 / 16d;
+	private static final double WIRE_RADIUS = (2.05 / 16d) * THICKNESS_SCALE;
+	private static final double COLLAR_INNER_RADIUS = (1.8 / 16d) * THICKNESS_SCALE;
+	private static final double COLLAR_RADIUS = (2.7 / 16d) * THICKNESS_SCALE;
 	private static final double COLLAR_HALF_LENGTH = 1.25 / 16d;
 	private static final double START_NORMAL_OFFSET = 3 / 16d;
-	private static final double END_NORMAL_OFFSET = 2 / 16d;
+	private static final double END_NORMAL_OFFSET = 3 / 16d;
 	private static final double START_LIFT = 10 / 16d;
 	private static final double END_TANGENT = 6 / 16d;
-	private static final double HOSE_UNIT_LENGTH = 4 / 16d;
-	private static final double COLLAR_SPACING = 4 / 16d;
-	private static final int MIN_RENDER_SEGMENTS = 6;
+	private static final double CURVE_SAMPLE_LENGTH = 2 / 16d;
+	private static final double COLLAR_TARGET_SPACING = 4 / 16d;
+	private static final int MIN_RENDER_SEGMENTS = 8;
 	private static final double CROSS_SECTION_ROTATION = Math.PI / 4d;
 	private static final float HOSE_U0 = 12f / 16f;
 	private static final float HOSE_U1 = 16f / 16f;
@@ -46,9 +53,40 @@ public class LogisticsJunctionRenderer extends SmartBlockEntityRenderer<Logistic
 	private static final float COLLAR_U1 = 5.5f / 16f;
 	private static final float COLLAR_V0 = 0.75f / 16f;
 	private static final float COLLAR_V1 = 1.25f / 16f;
+	private static final float ATTACH_X0 = 1.95f / 16f;
+	private static final float ATTACH_X1 = 14.05f / 16f;
+	private static final float ATTACH_Y0 = -0.1f / 16f;
+	private static final float ATTACH_Y1 = 2.95f / 16f;
+	private static final float ATTACH_Z0 = 1.95f / 16f;
+	private static final float ATTACH_Z1 = 14.05f / 16f;
+	private static final float ATTACH_SIDE_U0 = 0f / 16f;
+	private static final float ATTACH_SIDE_U1 = 6f / 16f;
+	private static final float ATTACH_SIDE_V0 = 6.5f / 16f;
+	private static final float ATTACH_SIDE_V1 = 8f / 16f;
+	private static final float ATTACH_TOP_U0 = 6f / 16f;
+	private static final float ATTACH_TOP_U1 = 0f / 16f;
+	private static final float ATTACH_TOP_V0 = 6f / 16f;
+	private static final float ATTACH_TOP_V1 = 0f / 16f;
+	private static final float ATTACH_BOTTOM_U0 = 9f / 16f;
+	private static final float ATTACH_BOTTOM_U1 = 15f / 16f;
+	private static final float ATTACH_BOTTOM_V0 = 1f / 16f;
+	private static final float ATTACH_BOTTOM_V1 = 7f / 16f;
+	private static final double ATTACH_HALF_WIDTH_X = (ATTACH_X1 - ATTACH_X0) / 2d;
+	private static final double ATTACH_HALF_WIDTH_Z = (ATTACH_Z1 - ATTACH_Z0) / 2d;
+	private static final double ATTACH_SURFACE_INSET = 3.1 / 16d;
 
 	public LogisticsJunctionRenderer(BlockEntityRendererProvider.Context context) {
 		super(context);
+	}
+
+	@Override
+	protected SuperByteBuffer getRotatedModel(LogisticsJunctionBlockEntity be, BlockState state) {
+		return CachedBuffers.partialFacing(AllPartialModels.SHAFT_HALF, be.getBlockState(), Direction.DOWN);
+	}
+
+	@Override
+	protected BlockState getRenderedBlockState(LogisticsJunctionBlockEntity be) {
+		return KineticBlockEntityRenderer.shaft(KineticBlockEntityRenderer.getRotationAxisOf(be));
 	}
 
 	@Override
@@ -72,12 +110,14 @@ public class LogisticsJunctionRenderer extends SmartBlockEntityRenderer<Logistic
 			return;
 
 		CurveData curve = makeCurveData(start, end, startNormal, endNormal);
+		CollarLayout collarLayout = computeCollarLayout(curve);
 		ms.pushPose();
 		ms.translate(-be.getBlockPos().getX(), -be.getBlockPos().getY(), -be.getBlockPos().getZ());
+		renderAttachModel(end, endNormal.normalize(), ms, buffer, light);
 		VertexConsumer hose = buffer.getBuffer(RenderType.entityCutoutNoCull(LINK_TEXTURE));
-		renderTubeBody(hose, ms, curve, light);
+		renderTubeBody(hose, ms, curve, light, collarLayout.spacing());
 		VertexConsumer collar = buffer.getBuffer(RenderType.entityCutoutNoCull(COLLAR_TEXTURE));
-		renderAllCollars(collar, ms, curve, light);
+		renderAllCollars(collar, ms, curve, light, collarLayout);
 		ms.popPose();
 	}
 
@@ -86,8 +126,72 @@ public class LogisticsJunctionRenderer extends SmartBlockEntityRenderer<Logistic
 		return blockEntity.hasFlexibleTarget();
 	}
 
-	private static void renderTubeBody(VertexConsumer out, PoseStack transform, CurveData curve, int light) {
+	private static void renderAttachModel(Vec3 end, Vec3 normal, PoseStack ms, MultiBufferSource buffer, int light) {
+		VertexConsumer attach = buffer.getBuffer(RenderType.entityCutoutNoCull(ATTACH_TEXTURE));
+		Vec3 reference = Math.abs(normal.y) > 0.95 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
+		Vec3 right = reference.cross(normal).normalize();
+		if (right.lengthSqr() < 1.0e-6)
+			right = new Vec3(1, 0, 0);
+		Vec3 forward = normal.cross(right).normalize();
+		Vec3 center = end.subtract(normal.scale(ATTACH_SURFACE_INSET));
+
+		Vec3 topOffset = normal.scale(ATTACH_Y1);
+		Vec3 bottomOffset = normal.scale(ATTACH_Y0);
+		Vec3 rightOffset = right.scale(ATTACH_HALF_WIDTH_X);
+		Vec3 forwardOffset = forward.scale(ATTACH_HALF_WIDTH_Z);
+
+		Vec3 topA = center.add(topOffset).subtract(rightOffset).subtract(forwardOffset);
+		Vec3 topB = center.add(topOffset).add(rightOffset).subtract(forwardOffset);
+		Vec3 topC = center.add(topOffset).add(rightOffset).add(forwardOffset);
+		Vec3 topD = center.add(topOffset).subtract(rightOffset).add(forwardOffset);
+
+		Vec3 bottomA = center.add(bottomOffset).subtract(rightOffset).subtract(forwardOffset);
+		Vec3 bottomB = center.add(bottomOffset).add(rightOffset).subtract(forwardOffset);
+		Vec3 bottomC = center.add(bottomOffset).add(rightOffset).add(forwardOffset);
+		Vec3 bottomD = center.add(bottomOffset).subtract(rightOffset).add(forwardOffset);
+
+		renderQuadCustomUv(attach, ms, topA, topB, topC, topD,
+			ATTACH_TOP_U0, ATTACH_TOP_V0,
+			ATTACH_TOP_U1, ATTACH_TOP_V0,
+			ATTACH_TOP_U1, ATTACH_TOP_V1,
+			ATTACH_TOP_U0, ATTACH_TOP_V1,
+			normal, light);
+		renderQuadCustomUv(attach, ms, bottomA, bottomB, bottomC, bottomD,
+			ATTACH_BOTTOM_U0, ATTACH_BOTTOM_V0,
+			ATTACH_BOTTOM_U1, ATTACH_BOTTOM_V0,
+			ATTACH_BOTTOM_U1, ATTACH_BOTTOM_V1,
+			ATTACH_BOTTOM_U0, ATTACH_BOTTOM_V1,
+			normal.scale(-1), light);
+		renderQuadCustomUv(attach, ms, bottomD, topD, topA, bottomA,
+			ATTACH_SIDE_U0, ATTACH_SIDE_V0,
+			ATTACH_SIDE_U0, ATTACH_SIDE_V1,
+			ATTACH_SIDE_U1, ATTACH_SIDE_V1,
+			ATTACH_SIDE_U1, ATTACH_SIDE_V0,
+			right.scale(-1), light);
+		renderQuadCustomUv(attach, ms, bottomA, topA, topB, bottomB,
+			ATTACH_SIDE_U0, ATTACH_SIDE_V0,
+			ATTACH_SIDE_U0, ATTACH_SIDE_V1,
+			ATTACH_SIDE_U1, ATTACH_SIDE_V1,
+			ATTACH_SIDE_U1, ATTACH_SIDE_V0,
+			forward.scale(-1), light);
+		renderQuadCustomUv(attach, ms, bottomB, topB, topC, bottomC,
+			ATTACH_SIDE_U0, ATTACH_SIDE_V0,
+			ATTACH_SIDE_U0, ATTACH_SIDE_V1,
+			ATTACH_SIDE_U1, ATTACH_SIDE_V1,
+			ATTACH_SIDE_U1, ATTACH_SIDE_V0,
+			right, light);
+		renderQuadCustomUv(attach, ms, bottomC, topC, topD, bottomD,
+			ATTACH_SIDE_U0, ATTACH_SIDE_V0,
+			ATTACH_SIDE_U0, ATTACH_SIDE_V1,
+			ATTACH_SIDE_U1, ATTACH_SIDE_V1,
+			ATTACH_SIDE_U1, ATTACH_SIDE_V0,
+			forward, light);
+	}
+
+	private static void renderTubeBody(VertexConsumer out, PoseStack transform, CurveData curve, int light,
+		double hoseRepeatLength) {
 		double accumulatedLength = 0;
+		double hosePhaseOffset = hoseRepeatLength * 0.5d;
 		for (int i = 0; i < curve.segmentCount(); ++i) {
 			Vec3 start = curve.getRenderPoint(i);
 			Vec3 end = curve.getRenderPoint(i + 1);
@@ -110,29 +214,38 @@ public class LogisticsJunctionRenderer extends SmartBlockEntityRenderer<Logistic
 				Vec3 radius1 = radialOffset(basisA, basisB, angle1, WIRE_RADIUS);
 				Vec3 normal = radius0.add(radius1).scale(0.5).normalize();
 				renderTubeQuad(out, transform, start, end, radius0, radius1, normal, light, false,
-					getHoseU(accumulatedLength), getHoseU(accumulatedLength + segmentLength));
+					getHoseU(accumulatedLength + hosePhaseOffset, hoseRepeatLength),
+					getHoseU(accumulatedLength + segmentLength + hosePhaseOffset, hoseRepeatLength));
 			}
 
 			accumulatedLength += segmentLength;
 		}
 	}
 
-	private static void renderAllCollars(VertexConsumer out, PoseStack transform, CurveData curve, int light) {
-		renderCollarAtPoint(out, transform, curve.getRenderPoint(0), curve.getTangent(0), light);
-
-		double distanceSinceLastCollar = 0;
-		for (int i = 1; i < curve.segmentCount(); i++) {
-			Vec3 previous = curve.getRenderPoint(i - 1);
-			Vec3 current = curve.getRenderPoint(i);
-			distanceSinceLastCollar += current.distanceTo(previous);
-			if (distanceSinceLastCollar + 1.0e-6 < COLLAR_SPACING)
-				continue;
-			renderCollarAtPoint(out, transform, current, curve.getTangent(i), light);
-			distanceSinceLastCollar = 0;
+	private static CollarLayout computeCollarLayout(CurveData curve) {
+		double totalLength = curve.totalLength();
+		if (totalLength <= 1.0e-6) {
+			return new CollarLayout(1, 0);
 		}
 
-		renderCollarAtPoint(out, transform, curve.getRenderPoint(curve.segmentCount()),
-			curve.getTangent(curve.segmentCount() - 1), light);
+		int collarCount = Math.max(2, Mth.floor(totalLength / COLLAR_TARGET_SPACING) + 1);
+		double actualSpacing = totalLength / (collarCount - 1);
+		return new CollarLayout(collarCount, actualSpacing);
+	}
+
+	private static void renderAllCollars(VertexConsumer out, PoseStack transform, CurveData curve, int light,
+		CollarLayout collarLayout) {
+		if (collarLayout.count() <= 1) {
+			renderCollarAtPoint(out, transform, curve.getRenderPoint(0), curve.getTangent(0), light);
+			return;
+		}
+
+		double totalLength = curve.totalLength();
+		double actualSpacing = collarLayout.spacing();
+		for (int i = 0; i < collarLayout.count(); i++) {
+			double distance = i == collarLayout.count() - 1 ? totalLength : actualSpacing * i;
+			renderCollarAtPoint(out, transform, curve.samplePoint(distance), curve.sampleTangent(distance), light);
+		}
 	}
 
 	private static void renderCollarAtPoint(VertexConsumer out, PoseStack transform, Vec3 center, Vec3 tangent, int light) {
@@ -179,7 +292,7 @@ public class LogisticsJunctionRenderer extends SmartBlockEntityRenderer<Logistic
 			length += point.distanceTo(previous);
 			previous = point;
 		}
-		return Math.max(MIN_RENDER_SEGMENTS, Mth.ceil(length / HOSE_UNIT_LENGTH));
+		return Math.max(MIN_RENDER_SEGMENTS, Mth.ceil(length / CURVE_SAMPLE_LENGTH));
 	}
 
 	private static Vec3 interpolateBezier(Vec3 p0, Vec3 p1, Vec3 p2, Vec3 p3, double t) {
@@ -234,6 +347,22 @@ public class LogisticsJunctionRenderer extends SmartBlockEntityRenderer<Logistic
 			putVertex(out, transform, vertices[i], uvs[i][0], uvs[i][1], normal, light);
 	}
 
+	private static void renderQuad(VertexConsumer out, PoseStack transform, Vec3 v0, Vec3 v1, Vec3 v2, Vec3 v3,
+		float u0, float vMin, float u1, float vMax, Vec3 normal, int light) {
+		putVertex(out, transform, v0, u0, vMin, normal, light);
+		putVertex(out, transform, v1, u0, vMax, normal, light);
+		putVertex(out, transform, v2, u1, vMax, normal, light);
+		putVertex(out, transform, v3, u1, vMin, normal, light);
+	}
+
+	private static void renderQuadCustomUv(VertexConsumer out, PoseStack transform, Vec3 p0, Vec3 p1, Vec3 p2, Vec3 p3,
+		float u0, float vv0, float u1, float vv1, float u2, float vv2, float u3, float vv3, Vec3 normal, int light) {
+		putVertex(out, transform, p0, u0, vv0, normal, light);
+		putVertex(out, transform, p1, u1, vv1, normal, light);
+		putVertex(out, transform, p2, u2, vv2, normal, light);
+		putVertex(out, transform, p3, u3, vv3, normal, light);
+	}
+
 	private static void renderTubeQuad(VertexConsumer out, PoseStack transform, Vec3 start, Vec3 end, Vec3 radius0,
 		Vec3 radius1, Vec3 normal, int light, boolean collar, float u0, float u1) {
 		float v0 = collar ? COLLAR_V0 : HOSE_V0;
@@ -254,8 +383,9 @@ public class LogisticsJunctionRenderer extends SmartBlockEntityRenderer<Logistic
 			putVertex(out, transform, vertices[i], uvs[i][0], uvs[i][1], normal, light);
 	}
 
-	private static float getHoseU(double length) {
-		double repeats = length / HOSE_UNIT_LENGTH;
+	private static float getHoseU(double length, double hoseRepeatLength) {
+		double repeatLength = hoseRepeatLength <= 1.0e-6 ? COLLAR_TARGET_SPACING : hoseRepeatLength;
+		double repeats = length / repeatLength;
 		return HOSE_U0 + (float) repeats * (HOSE_U1 - HOSE_U0);
 	}
 
@@ -269,7 +399,11 @@ public class LogisticsJunctionRenderer extends SmartBlockEntityRenderer<Logistic
 			.setNormal(transform.last(), (float) normal.x, (float) normal.y, (float) normal.z);
 	}
 
-	private record CurveData(List<Vec3> points) {
+	private record CurveData(List<Vec3> points, double[] cumulativeLengths, double totalLength) {
+		private CurveData(List<Vec3> points) {
+			this(points, buildCumulativeLengths(points), computeTotalLength(points));
+		}
+
 		public int segmentCount() {
 			return points.size() - 1;
 		}
@@ -285,5 +419,61 @@ public class LogisticsJunctionRenderer extends SmartBlockEntityRenderer<Logistic
 			Vec3 tangent = to.subtract(from);
 			return tangent.lengthSqr() > 1.0e-6 ? tangent.normalize() : new Vec3(0, 1, 0);
 		}
+
+		public Vec3 samplePoint(double distance) {
+			if (distance <= 0 || segmentCount() <= 0)
+				return points.get(0);
+			if (distance >= totalLength)
+				return points.get(points.size() - 1);
+
+			int segment = findSegment(distance);
+			double startLength = cumulativeLengths[segment];
+			double segmentLength = cumulativeLengths[segment + 1] - startLength;
+			if (segmentLength <= 1.0e-6)
+				return points.get(segment);
+
+			double localT = (distance - startLength) / segmentLength;
+			return points.get(segment).lerp(points.get(segment + 1), localT);
+		}
+
+		public Vec3 sampleTangent(double distance) {
+			if (segmentCount() <= 0)
+				return new Vec3(0, 1, 0);
+			if (distance <= 0)
+				return getTangent(0);
+			if (distance >= totalLength)
+				return getTangent(segmentCount() - 1);
+			return getTangent(findSegment(distance));
+		}
+
+		private int findSegment(double distance) {
+			for (int i = 0; i < segmentCount(); i++)
+				if (distance <= cumulativeLengths[i + 1] + 1.0e-6)
+					return i;
+			return segmentCount() - 1;
+		}
+
+		private static double[] buildCumulativeLengths(List<Vec3> points) {
+			double[] lengths = new double[points.size()];
+			double accumulated = 0;
+			lengths[0] = 0;
+			for (int i = 1; i < points.size(); i++) {
+				accumulated += points.get(i).distanceTo(points.get(i - 1));
+				lengths[i] = accumulated;
+			}
+			return lengths;
+		}
+
+		private static double computeTotalLength(List<Vec3> points) {
+			if (points.size() < 2)
+				return 0;
+			double total = 0;
+			for (int i = 1; i < points.size(); i++)
+				total += points.get(i).distanceTo(points.get(i - 1));
+			return total;
+		}
+	}
+
+	private record CollarLayout(int count, double spacing) {
 	}
 }

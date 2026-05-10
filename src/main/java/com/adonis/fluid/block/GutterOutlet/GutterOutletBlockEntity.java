@@ -534,38 +534,7 @@ public class GutterOutletBlockEntity extends SmartBlockEntity implements IHaveGo
 
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
-        CreateLang.translate("gui.goggles.fluid_container")
-                .forGoggles(tooltip);
-
-        FluidStack fluid = getFluid();
-        if (fluid.isEmpty()) {
-            CreateLang.translate("gui.goggles.fluid_container.capacity")
-                    .add(CreateLang.number(CAPACITY)
-                            .add(CreateLang.translate("generic.unit.millibuckets"))
-                            .style(ChatFormatting.DARK_GREEN))
-                    .style(ChatFormatting.DARK_GRAY)
-                    .forGoggles(tooltip, 1);
-
-            addCollectionStatusInfo(tooltip);
-            return true;
-        }
-
-        LangBuilder mb = CreateLang.translate("generic.unit.millibuckets");
-        CreateLang.text("")
-                .add(CreateLang.fluidName(fluid)
-                        .add(CreateLang.text(" "))
-                        .style(ChatFormatting.GRAY)
-                        .add(CreateLang.number(fluid.getAmount())
-                                .add(mb)
-                                .style(ChatFormatting.BLUE)))
-                .forGoggles(tooltip, 1);
-
-        CreateLang.translate("gui.goggles.fluid_container.capacity")
-                .add(CreateLang.number(CAPACITY)
-                        .add(mb)
-                        .style(ChatFormatting.DARK_GREEN))
-                .style(ChatFormatting.DARK_GRAY)
-                .forGoggles(tooltip, 1);
+        containedFluidTooltip(tooltip, isPlayerSneaking, getFluidHandler());
 
         addCollectionStatusInfo(tooltip);
 

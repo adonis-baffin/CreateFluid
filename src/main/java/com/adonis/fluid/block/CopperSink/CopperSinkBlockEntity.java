@@ -227,26 +227,7 @@ public class CopperSinkBlockEntity extends SmartBlockEntity implements IHaveGogg
 
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
-        CreateLang.translate("gui.goggles.fluid_container")
-                .forGoggles(tooltip);
-
-        int displayedAmount = CFCommonConfig.isCopperSinkInfinite() ? CAPACITY : tank.getFluidAmount();
-
-        CreateLang.text("")
-                .add(CreateLang.fluidName(new FluidStack(Fluids.WATER, 1))
-                        .add(CreateLang.text(" "))
-                        .style(ChatFormatting.GRAY)
-                        .add(CreateLang.number(displayedAmount)
-                                .add(CreateLang.translate("generic.unit.millibuckets"))
-                                .style(ChatFormatting.BLUE)))
-                .forGoggles(tooltip, 1);
-
-        CreateLang.translate("gui.goggles.fluid_container.capacity")
-                .add(CreateLang.number(CAPACITY)
-                        .add(CreateLang.translate("generic.unit.millibuckets"))
-                        .style(ChatFormatting.DARK_GREEN))
-                .style(ChatFormatting.DARK_GRAY)
-                .forGoggles(tooltip, 1);
+        containedFluidTooltip(tooltip, isPlayerSneaking, getTank());
 
         if (CFCommonConfig.isCopperSinkInfinite()) {
             CreateLang.text("∞ ")

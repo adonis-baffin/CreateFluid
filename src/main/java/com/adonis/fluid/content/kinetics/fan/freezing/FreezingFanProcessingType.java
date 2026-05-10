@@ -46,7 +46,7 @@ public class FreezingFanProcessingType implements FanProcessingType {
 	public @Nullable List<ItemStack> process(ItemStack stack, Level level) {
 		return level.getRecipeManager()
 			.getRecipeFor(CFRecipeTypes.FREEZING.getType(), new SingleRecipeInput(stack), level)
-			.map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe))
+			.map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe.value(), true))
 			.orElse(null);
 	}
 

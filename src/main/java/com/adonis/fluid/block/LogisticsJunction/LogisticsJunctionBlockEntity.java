@@ -3,65 +3,128 @@ package com.adonis.fluid.block.LogisticsJunction;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jetbrains.annotations.Nullable;
+
 import com.adonis.fluid.datacomponent.BrassBoxFluidContent.FluidEntry;
 import com.adonis.fluid.datacomponent.BrassBoxRoutingData;
 import com.adonis.fluid.item.BrassBoxItem;
 import com.adonis.fluid.item.CopperCanItem;
 import com.adonis.fluid.item.PackageRoutingHelper;
 import com.adonis.fluid.logistics.data.ContentRoute;
+import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
+import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import com.simibubi.create.content.kinetics.belt.behaviour.DirectBeltInputBehaviour;
 import com.simibubi.create.content.logistics.box.PackageItem;
 import com.simibubi.create.content.logistics.depot.DepotItemHandler;
-import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
+import com.simibubi.create.foundation.blockEntity.behaviour.CenteredSideValueBoxTransform;
+import com.simibubi.create.foundation.blockEntity.behaviour.fluid.SmartFluidTankBehaviour;
+import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.INamedIconOptions;
+import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollOptionBehaviour;
+import com.simibubi.create.foundation.gui.AllIcons;
+import com.simibubi.create.foundation.item.ItemHelper;
+import com.simibubi.create.foundation.item.SmartInventory;
+import com.simibubi.create.foundation.utility.CreateLang;
 
+import net.createmod.catnip.lang.Lang;
+import net.createmod.catnip.math.AngleHelper;
+import net.createmod.catnip.math.VecHelper;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.ItemStackHandler;
 
-public class LogisticsJunctionBlockEntity extends SmartBlockEntity {
+public class LogisticsJunctionBlockEntity extends KineticBlockEntity implements IHaveGoggleInformation {
+	private static final int INVENTORY_SLOTS = 9;
+	private static final int FLUID_CAPACITY = 4000;
+	private static final int FLUID_TRANSFER_PER_TICK = 1000;
+
 	private BlockPos flexibleTargetPos;
 	private Direction flexibleTargetFace;
 
-	private final ItemStackHandler input = new ItemStackHandler(1) {
-		@Override
-		public boolean isItemValid(int slot, ItemStack stack) {
-			return LogisticsJunctionBlock.acceptsPackage(stack);
-		}
-	};
+	private final SmartInventory inventory;
+	private SmartFluidTankBehaviour tankBehaviour;
+	private ScrollOptionBehaviour<IOMode> ioMode;
 
 	public LogisticsJunctionBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
+		inventory = new SmartInventory(INVENTORY_SLOTS, this).whenContentsChanged($ -> onInventoryChanged());
 	}
 
 	public static void registerCapabilities(RegisterCapabilitiesEvent event, BlockEntityType<LogisticsJunctionBlockEntity> type) {
-		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, type, (be, side) -> be.input);
+		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, type, LogisticsJunctionBlockEntity::getItemCapability);
+		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, type, LogisticsJunctionBlockEntity::getFluidCapability);
 	}
 
 	@Override
 	public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
+		super.addBehaviours(behaviours);
+
+		ioMode = new ScrollOptionBehaviour<>(IOMode.class,
+			Component.translatable("create.fluid.logistics_junction.io_mode"), this, new IOModeValueBox());
+		ioMode.withCallback(mode -> {
+			setChanged();
+			sendData();
+		});
+		behaviours.add(ioMode);
+
+		tankBehaviour = new SmartFluidTankBehaviour(SmartFluidTankBehaviour.INPUT, this, 1, FLUID_CAPACITY, false)
+			.whenFluidUpdates(this::onFluidChanged);
+		behaviours.add(tankBehaviour);
+		behaviours.add(new DirectBeltInputBehaviour(this).allowingBeltFunnels());
+	}
+
+	@Override
+	public void tick() {
+		super.tick();
+		if (level == null || level.isClientSide)
+			return;
+
+		validateFlexibleTarget();
+		if (getSpeed() == 0 || isOverStressed())
+			return;
+
+		collectIncomingContents();
+
+		int packageSlot = findQueuedPackageSlot();
+		if (packageSlot != -1)
+			tryProcessPackage(packageSlot);
+		dispatchStoredContents();
 	}
 
 	public boolean tryInsert(ItemStack stack, Player player) {
-		if (!input.getStackInSlot(0).isEmpty())
+		ItemStack remainder = insertOneItem(stack.copyWithCount(1));
+		if (!remainder.isEmpty())
 			return false;
-		input.setStackInSlot(0, stack.copyWithCount(1));
 		if (!player.getAbilities().instabuild)
 			stack.shrink(1);
-		setChanged();
-		sendData();
 		return true;
+	}
+
+	public IFluidHandler getFluidHandler() {
+		if (tankBehaviour == null)
+			return new FluidTank(0);
+		IFluidHandler handler = tankBehaviour.getCapability();
+		return handler != null ? handler : new FluidTank(0);
+	}
+
+	public IOMode getIOMode() {
+		return ioMode == null ? IOMode.INPUT : ioMode.get();
 	}
 
 	public void setFlexibleTarget(BlockPos targetPos, Direction targetFace) {
@@ -102,48 +165,190 @@ public class LogisticsJunctionBlockEntity extends SmartBlockEntity {
 		return flexibleTargetFace;
 	}
 
-	public void tickServer() {
-		validateFlexibleTarget();
+	private static IItemHandler getItemCapability(LogisticsJunctionBlockEntity be, @Nullable Direction side) {
+		if (side == null)
+			return be.inventory;
+		if (be.canInputFrom(side))
+			return be.new ItemInputHandler();
+		if (be.canOutputTo(side))
+			return be.new ItemOutputHandler();
+		return null;
+	}
 
-		ItemStack stack = input.getStackInSlot(0);
-		if (stack.isEmpty())
+	private static IFluidHandler getFluidCapability(LogisticsJunctionBlockEntity be, @Nullable Direction side) {
+		if (side == null)
+			return be.getFluidHandler();
+		if (be.canInputFrom(side))
+			return be.new FluidInputHandler();
+		if (be.canOutputTo(side))
+			return be.new FluidOutputHandler();
+		return null;
+	}
+
+	private void onInventoryChanged() {
+		if (level != null && !level.isClientSide) {
+			setChanged();
+			sendData();
+		}
+	}
+
+	private void onFluidChanged() {
+		if (level != null && !level.isClientSide) {
+			setChanged();
+			sendData();
+		}
+	}
+
+	private ItemStack insertOneItem(ItemStack stack) {
+		ItemStack remainder = stack;
+		for (int slot = 0; slot < inventory.getSlots(); slot++) {
+			remainder = inventory.insertItem(slot, remainder, false);
+			if (remainder.isEmpty())
+				return ItemStack.EMPTY;
+		}
+		return remainder;
+	}
+
+	private int findQueuedPackageSlot() {
+		for (int slot = 0; slot < inventory.getSlots(); slot++) {
+			ItemStack stack = inventory.getStackInSlot(slot);
+			if (!stack.isEmpty() && LogisticsJunctionBlock.acceptsPackage(stack))
+				return slot;
+		}
+		return -1;
+	}
+
+	private void tryProcessPackage(int packageSlot) {
+		ItemStack stack = inventory.getStackInSlot(packageSlot);
+		UnpackPlan plan = planUnpack(stack.copyWithCount(1));
+		if (plan == null || !executeUnpack(plan))
 			return;
-		UnpackPlan plan = planUnpack(stack);
-		if (plan == null)
+
+		if (stack.getCount() <= 1)
+			inventory.setStackInSlot(packageSlot, ItemStack.EMPTY);
+		else
+			inventory.setStackInSlot(packageSlot, stack.copyWithCount(stack.getCount() - 1));
+	}
+
+	private void collectIncomingContents() {
+		collectIncomingItems();
+		collectIncomingFluid();
+	}
+
+	private void collectIncomingItems() {
+		for (InputTarget target : getInputTargets()) {
+			IItemHandler handler = target.items();
+			if (handler == null)
+				continue;
+			for (int slot = 0; slot < handler.getSlots(); slot++) {
+				ItemStack extracted = handler.extractItem(slot, 64, true);
+				if (extracted.isEmpty())
+					continue;
+				ItemStack remainder = insertOneItem(extracted.copy());
+				if (remainder.getCount() == extracted.getCount())
+					continue;
+				int moved = extracted.getCount() - remainder.getCount();
+				handler.extractItem(slot, moved, false);
+				if (!remainder.isEmpty())
+					insertOneItem(remainder);
+				return;
+			}
+		}
+	}
+
+	private void collectIncomingFluid() {
+		IFluidHandler localTank = getFluidHandler();
+		for (InputTarget target : getInputTargets()) {
+			IFluidHandler handler = target.fluids();
+			if (handler == null)
+				continue;
+
+			FluidStack drained = handler.drain(FLUID_TRANSFER_PER_TICK, IFluidHandler.FluidAction.SIMULATE);
+			if (drained.isEmpty())
+				continue;
+
+			int accepted = localTank.fill(drained.copy(), IFluidHandler.FluidAction.SIMULATE);
+			if (accepted <= 0)
+				continue;
+
+			FluidStack executedDrain = handler.drain(Math.min(accepted, drained.getAmount()), IFluidHandler.FluidAction.EXECUTE);
+			if (executedDrain.isEmpty())
+				continue;
+
+			localTank.fill(executedDrain, IFluidHandler.FluidAction.EXECUTE);
 			return;
-		if (!executeUnpack(plan))
+		}
+	}
+
+	private void dispatchStoredContents() {
+		dispatchStoredItems();
+		dispatchStoredFluid();
+	}
+
+	private void dispatchStoredItems() {
+		for (int slot = 0; slot < inventory.getSlots(); slot++) {
+			ItemStack stack = inventory.getStackInSlot(slot);
+			if (stack.isEmpty() || LogisticsJunctionBlock.acceptsPackage(stack))
+				continue;
+
+			ItemStack remainder = moveItemToOutputs(stack.copy());
+			if (remainder.getCount() == stack.getCount())
+				continue;
+
+			inventory.setStackInSlot(slot, remainder);
 			return;
-		input.setStackInSlot(0, ItemStack.EMPTY);
-		setChanged();
-		sendData();
+		}
+	}
+
+	private void dispatchStoredFluid() {
+		IFluidHandler tank = getFluidHandler();
+		if (tank.getTanks() <= 0)
+			return;
+
+		FluidStack stored = tank.getFluidInTank(0);
+		if (stored.isEmpty())
+			return;
+
+		int limit = Math.min(FLUID_TRANSFER_PER_TICK, stored.getAmount());
+		int moved = 0;
+		for (OutputTarget target : getOutputTargets()) {
+			if (target.fluids() == null || moved >= limit)
+				continue;
+			FluidStack attempt = stored.copyWithAmount(limit - moved);
+			int filled = target.fluids().fill(attempt, IFluidHandler.FluidAction.EXECUTE);
+			if (filled > 0)
+				moved += filled;
+		}
+
+		if (moved > 0)
+			tank.drain(moved, IFluidHandler.FluidAction.EXECUTE);
 	}
 
 	private UnpackPlan planUnpack(ItemStack stack) {
-		BlockState state = getBlockState();
-		Direction sideDirection = state.getValue(LogisticsJunctionBlock.FACING);
-		IItemHandler sideItems = level.getCapability(Capabilities.ItemHandler.BLOCK, worldPosition.relative(sideDirection), sideDirection.getOpposite());
-		IFluidHandler sideFluids = level.getCapability(Capabilities.FluidHandler.BLOCK, worldPosition.relative(sideDirection), sideDirection.getOpposite());
-		IItemHandler upItems = getUpperItemHandler();
-		IFluidHandler upFluids = getUpperFluidHandler();
+		List<OutputTarget> outputs = getOutputTargets();
+		if (outputs.isEmpty())
+			return null;
 
-		HandlerAccess side = new HandlerAccess(sideItems, sideFluids);
-		HandlerAccess up = new HandlerAccess(upItems, upFluids);
-		ItemReservation sideItemReservation = new ItemReservation(sideItems);
-		ItemReservation upItemReservation = new ItemReservation(upItems);
-		FluidReservation sideFluidReservation = new FluidReservation(sideFluids);
-		FluidReservation upFluidReservation = new FluidReservation(upFluids);
+		List<ItemReservation> itemReservations = new ArrayList<>();
+		List<FluidReservation> fluidReservations = new ArrayList<>();
+		for (OutputTarget target : outputs) {
+			itemReservations.add(new ItemReservation(target.items()));
+			fluidReservations.add(new FluidReservation(target.fluids()));
+		}
+
 		UnpackPlan plan = new UnpackPlan();
-
 		if (BrassBoxItem.isBrassBox(stack)) {
-			if (!planPackageItems(stack, PackageRoutingHelper.getRoutingData(stack), plan, side, up, sideItemReservation, upItemReservation))
+			BrassBoxRoutingData routing = PackageRoutingHelper.getRoutingData(stack);
+			if (!planPackageItems(stack, routing, plan, outputs, itemReservations))
 				return null;
-			if (!planBrassBoxFluids(stack, plan, side, up, sideFluidReservation, upFluidReservation))
+			if (!planBrassBoxFluids(stack, plan, outputs, fluidReservations))
 				return null;
 		} else if (CopperCanItem.isCopperCan(stack)) {
-			if (!planCopperCanFluid(stack, plan, side, up, sideFluidReservation, upFluidReservation))
+			if (!planCopperCanFluid(stack, plan, outputs, fluidReservations))
 				return null;
 		} else if (LogisticsJunctionBlock.isCardboardPackage(stack)) {
-			if (!planPackageItems(stack, PackageRoutingHelper.getRoutingData(stack), plan, side, up, sideItemReservation, upItemReservation))
+			BrassBoxRoutingData routing = PackageRoutingHelper.getRoutingData(stack);
+			if (!planPackageItems(stack, routing, plan, outputs, itemReservations))
 				return null;
 		} else {
 			return null;
@@ -152,118 +357,100 @@ public class LogisticsJunctionBlockEntity extends SmartBlockEntity {
 		return plan;
 	}
 
-	private boolean planPackageItems(ItemStack stack, BrassBoxRoutingData routing, UnpackPlan plan, HandlerAccess side,
-		HandlerAccess up, ItemReservation sideReservation, ItemReservation upReservation) {
-		ItemStackHandler items = PackageItem.getContents(stack);
+	private boolean planPackageItems(ItemStack stack, @Nullable BrassBoxRoutingData routing, UnpackPlan plan,
+		List<OutputTarget> outputs, List<ItemReservation> reservations) {
+		var items = PackageItem.getContents(stack);
 		for (int slot = 0; slot < items.getSlots(); slot++) {
 			ItemStack entry = items.getStackInSlot(slot);
 			if (entry.isEmpty())
 				continue;
-			OutputTarget target = chooseItemTarget(entry, routing.routeForItem(entry), side, up, sideReservation, upReservation);
-			if (target == null)
+			ContentRoute route = routing == null ? ContentRoute.NONE : routing.routeForItem(entry);
+			Integer targetIndex = chooseItemTarget(entry, route, outputs, reservations);
+			if (targetIndex == null)
 				return false;
-			plan.itemPlans.add(new ItemPlan(entry.copy(), target));
+			plan.itemPlans.add(new ItemPlan(entry.copy(), targetIndex));
 		}
 		return true;
 	}
 
-	private boolean planBrassBoxFluids(ItemStack stack, UnpackPlan plan, HandlerAccess side, HandlerAccess up,
-		FluidReservation sideReservation, FluidReservation upReservation) {
+	private boolean planBrassBoxFluids(ItemStack stack, UnpackPlan plan, List<OutputTarget> outputs,
+		List<FluidReservation> reservations) {
 		for (FluidEntry entry : BrassBoxItem.getFluidContent(stack).fluids()) {
 			if (entry.isEmpty())
 				continue;
-			OutputTarget target = chooseFluidTarget(entry.fluid(), entry.route(), side, up, sideReservation, upReservation);
-			if (target == null)
+			Integer targetIndex = chooseFluidTarget(entry.fluid(), entry.route(), outputs, reservations);
+			if (targetIndex == null)
 				return false;
-			plan.fluidPlans.add(new FluidPlan(entry.copy(), target));
+			plan.fluidPlans.add(new FluidPlan(entry.copy(), targetIndex));
 		}
 		return true;
 	}
 
-	private boolean planCopperCanFluid(ItemStack stack, UnpackPlan plan, HandlerAccess side, HandlerAccess up,
-		FluidReservation sideReservation, FluidReservation upReservation) {
+	private boolean planCopperCanFluid(ItemStack stack, UnpackPlan plan, List<OutputTarget> outputs,
+		List<FluidReservation> reservations) {
 		FluidStack fluid = CopperCanItem.getFluid(stack);
 		if (fluid.isEmpty())
 			return true;
-		OutputTarget target = chooseFluidTarget(fluid, ContentRoute.NONE, side, up, sideReservation, upReservation);
-		if (target == null)
+		Integer targetIndex = chooseFluidTarget(fluid, ContentRoute.NONE, outputs, reservations);
+		if (targetIndex == null)
 			return false;
-		plan.fluidPlans.add(new FluidPlan(new FluidEntry(fluid.copy(), ContentRoute.NONE), target));
+		plan.fluidPlans.add(new FluidPlan(new FluidEntry(fluid.copy(), ContentRoute.NONE), targetIndex));
 		return true;
 	}
 
 	private boolean executeUnpack(UnpackPlan plan) {
-		BlockState state = getBlockState();
-		Direction sideDirection = state.getValue(LogisticsJunctionBlock.FACING);
-		IItemHandler sideItems = level.getCapability(Capabilities.ItemHandler.BLOCK, worldPosition.relative(sideDirection), sideDirection.getOpposite());
-		IFluidHandler sideFluids = level.getCapability(Capabilities.FluidHandler.BLOCK, worldPosition.relative(sideDirection), sideDirection.getOpposite());
-		IItemHandler upItems = getUpperItemHandler();
-		IFluidHandler upFluids = getUpperFluidHandler();
-
-		for (ItemPlan itemPlan : plan.itemPlans)
-			if (!insertItemIntoTarget(itemPlan.stack, itemPlan.target, sideItems, upItems, false))
+		List<OutputTarget> outputs = getOutputTargets();
+		for (ItemPlan itemPlan : plan.itemPlans) {
+			if (itemPlan.targetIndex() < 0 || itemPlan.targetIndex() >= outputs.size())
 				return false;
-		for (FluidPlan fluidPlan : plan.fluidPlans)
-			if (!insertFluidIntoTarget(fluidPlan.entry.fluid(), fluidPlan.target, sideFluids, upFluids, false))
+			if (!canInsertItem(outputs.get(itemPlan.targetIndex()).items(), itemPlan.stack(), false))
 				return false;
+		}
+		for (FluidPlan fluidPlan : plan.fluidPlans) {
+			if (fluidPlan.targetIndex() < 0 || fluidPlan.targetIndex() >= outputs.size())
+				return false;
+			if (!canInsertFluid(outputs.get(fluidPlan.targetIndex()).fluids(), fluidPlan.entry().fluid(), false))
+				return false;
+		}
 		return true;
 	}
 
-	private OutputTarget chooseItemTarget(ItemStack stack, ContentRoute route, HandlerAccess side, HandlerAccess up,
-		ItemReservation sideReservation, ItemReservation upReservation) {
-		OutputTarget preferred = route == ContentRoute.UP ? OutputTarget.UP : OutputTarget.SIDE;
-		OutputTarget fallback = preferred == OutputTarget.UP ? OutputTarget.SIDE : OutputTarget.UP;
-		if (canReserveItem(stack, preferred, side, up, sideReservation, upReservation))
-			return preferred;
-		if (canReserveItem(stack, fallback, side, up, sideReservation, upReservation))
-			return fallback;
+	private @Nullable Integer chooseItemTarget(ItemStack stack, ContentRoute route, List<OutputTarget> outputs,
+		List<ItemReservation> reservations) {
+		for (int index : getTargetOrder(route, outputs)) {
+			if (reservations.get(index).reserve(stack))
+				return index;
+		}
 		return null;
 	}
 
-	private OutputTarget chooseFluidTarget(FluidStack fluid, ContentRoute route, HandlerAccess side, HandlerAccess up,
-		FluidReservation sideReservation, FluidReservation upReservation) {
-		OutputTarget preferred = route == ContentRoute.UP ? OutputTarget.UP : OutputTarget.SIDE;
-		OutputTarget fallback = preferred == OutputTarget.UP ? OutputTarget.SIDE : OutputTarget.UP;
-		if (canReserveFluid(fluid, preferred, side, up, sideReservation, upReservation))
-			return preferred;
-		if (canReserveFluid(fluid, fallback, side, up, sideReservation, upReservation))
-			return fallback;
+	private @Nullable Integer chooseFluidTarget(FluidStack fluid, ContentRoute route, List<OutputTarget> outputs,
+		List<FluidReservation> reservations) {
+		for (int index : getTargetOrder(route, outputs)) {
+			if (reservations.get(index).reserve(fluid))
+				return index;
+		}
 		return null;
 	}
 
-	private boolean canReserveItem(ItemStack stack, OutputTarget target, HandlerAccess side, HandlerAccess up,
-		ItemReservation sideReservation, ItemReservation upReservation) {
-		return switch (target) {
-			case SIDE -> side.items != null && sideReservation.reserve(stack);
-			case UP -> up.items != null && upReservation.reserve(stack);
-		};
+	private List<Integer> getTargetOrder(ContentRoute route, List<OutputTarget> outputs) {
+		List<Integer> order = new ArrayList<>();
+		if (route == ContentRoute.UP) {
+			for (int i = 0; i < outputs.size(); i++) {
+				if (outputs.get(i).upper()) {
+					order.add(i);
+					break;
+				}
+			}
+		}
+		for (int i = 0; i < outputs.size(); i++) {
+			if (!order.contains(i))
+				order.add(i);
+		}
+		return order;
 	}
 
-	private boolean canReserveFluid(FluidStack fluid, OutputTarget target, HandlerAccess side, HandlerAccess up,
-		FluidReservation sideReservation, FluidReservation upReservation) {
-		return switch (target) {
-			case SIDE -> side.fluids != null && sideReservation.reserve(fluid);
-			case UP -> up.fluids != null && upReservation.reserve(fluid);
-		};
-	}
-
-	private boolean insertItemIntoTarget(ItemStack stack, OutputTarget target, IItemHandler sideItems, IItemHandler upItems,
-		boolean simulate) {
-		return switch (target) {
-			case SIDE -> canInsertItem(sideItems, stack, simulate);
-			case UP -> canInsertItem(upItems, stack, simulate);
-		};
-	}
-
-	private boolean insertFluidIntoTarget(FluidStack fluid, OutputTarget target, IFluidHandler sideFluids,
-		IFluidHandler upFluids, boolean simulate) {
-		return switch (target) {
-			case SIDE -> canInsertFluid(sideFluids, fluid, simulate);
-			case UP -> canInsertFluid(upFluids, fluid, simulate);
-		};
-	}
-
-	private boolean canInsertItem(IItemHandler handler, ItemStack stack, boolean simulate) {
+	private boolean canInsertItem(@Nullable IItemHandler handler, ItemStack stack, boolean simulate) {
 		if (handler == null)
 			return false;
 		ItemStack remaining = stack.copy();
@@ -275,23 +462,107 @@ public class LogisticsJunctionBlockEntity extends SmartBlockEntity {
 		return remaining.isEmpty();
 	}
 
-	private boolean canInsertFluid(IFluidHandler handler, FluidStack fluid, boolean simulate) {
+	private boolean canInsertFluid(@Nullable IFluidHandler handler, FluidStack fluid, boolean simulate) {
 		if (handler == null)
 			return false;
 		int filled = handler.fill(fluid.copy(), simulate ? IFluidHandler.FluidAction.SIMULATE : IFluidHandler.FluidAction.EXECUTE);
 		return filled >= fluid.getAmount();
 	}
 
-	private IItemHandler getUpperItemHandler() {
-		Direction face = getUpperTargetFace();
-		BlockPos targetPos = getUpperTargetPos();
-		return targetPos == null || face == null ? null : level.getCapability(Capabilities.ItemHandler.BLOCK, targetPos, face);
+	private ItemStack moveItemToOutputs(ItemStack stack) {
+		ItemStack remainder = stack;
+		for (OutputTarget target : getOutputTargets()) {
+			if (target.items() == null)
+				continue;
+			remainder = insertIntoHandler(target.items(), remainder);
+			if (remainder.isEmpty())
+				return ItemStack.EMPTY;
+		}
+		return remainder;
 	}
 
-	private IFluidHandler getUpperFluidHandler() {
-		Direction face = getUpperTargetFace();
+	private ItemStack insertIntoHandler(IItemHandler handler, ItemStack stack) {
+		ItemStack remainder = stack;
+		for (int slot = 0; slot < handler.getSlots(); slot++) {
+			remainder = handler.insertItem(slot, remainder, false);
+			if (remainder.isEmpty())
+				return ItemStack.EMPTY;
+		}
+		return remainder;
+	}
+
+	private List<OutputTarget> getOutputTargets() {
+		List<OutputTarget> outputs = new ArrayList<>();
+		Direction facing = getBlockState().getValue(LogisticsJunctionBlock.FACING);
+
+		if (getIOMode() == IOMode.INPUT) {
+			outputs.add(buildSideTarget(facing));
+			OutputTarget upper = buildUpperTarget();
+			if (upper.items() != null || upper.fluids() != null)
+				outputs.add(upper);
+		} else {
+			for (Direction direction : new Direction[] { Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST }) {
+				if (direction == facing)
+					continue;
+				outputs.add(buildSideTarget(direction));
+			}
+		}
+
+		outputs.removeIf(target -> target.items() == null && target.fluids() == null);
+		return outputs;
+	}
+
+	private List<InputTarget> getInputTargets() {
+		List<InputTarget> inputs = new ArrayList<>();
+		Direction facing = getBlockState().getValue(LogisticsJunctionBlock.FACING);
+
+		if (getIOMode() == IOMode.INPUT) {
+			for (Direction direction : new Direction[] { Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST }) {
+				if (direction == facing)
+					continue;
+				inputs.add(buildSideInputTarget(direction));
+			}
+		} else {
+			inputs.add(buildSideInputTarget(facing));
+			InputTarget upper = buildUpperInputTarget();
+			if (upper.items() != null || upper.fluids() != null)
+				inputs.add(upper);
+		}
+
+		inputs.removeIf(target -> target.items() == null && target.fluids() == null);
+		return inputs;
+	}
+
+	private OutputTarget buildSideTarget(Direction direction) {
+		BlockPos pos = worldPosition.relative(direction);
+		Direction face = direction.getOpposite();
+		return new OutputTarget(level.getCapability(Capabilities.ItemHandler.BLOCK, pos, face),
+			level.getCapability(Capabilities.FluidHandler.BLOCK, pos, face), false);
+	}
+
+	private InputTarget buildSideInputTarget(Direction direction) {
+		BlockPos pos = worldPosition.relative(direction);
+		Direction face = direction.getOpposite();
+		return new InputTarget(level.getCapability(Capabilities.ItemHandler.BLOCK, pos, face),
+			level.getCapability(Capabilities.FluidHandler.BLOCK, pos, face));
+	}
+
+	private OutputTarget buildUpperTarget() {
 		BlockPos targetPos = getUpperTargetPos();
-		return targetPos == null || face == null ? null : level.getCapability(Capabilities.FluidHandler.BLOCK, targetPos, face);
+		Direction face = getUpperTargetFace();
+		if (targetPos == null || face == null)
+			return new OutputTarget(null, null, true);
+		return new OutputTarget(level.getCapability(Capabilities.ItemHandler.BLOCK, targetPos, face),
+			level.getCapability(Capabilities.FluidHandler.BLOCK, targetPos, face), true);
+	}
+
+	private InputTarget buildUpperInputTarget() {
+		BlockPos targetPos = getUpperTargetPos();
+		Direction face = getUpperTargetFace();
+		if (targetPos == null || face == null)
+			return new InputTarget(null, null);
+		return new InputTarget(level.getCapability(Capabilities.ItemHandler.BLOCK, targetPos, face),
+			level.getCapability(Capabilities.FluidHandler.BLOCK, targetPos, face));
 	}
 
 	private BlockPos getUpperTargetPos() {
@@ -318,6 +589,30 @@ public class LogisticsJunctionBlockEntity extends SmartBlockEntity {
 			|| level.getCapability(Capabilities.FluidHandler.BLOCK, targetPos, targetFace) != null;
 	}
 
+	private boolean canInputFrom(Direction side) {
+		if (side == Direction.DOWN)
+			return false;
+		Direction facing = getBlockState().getValue(LogisticsJunctionBlock.FACING);
+		if (getIOMode() == IOMode.INPUT)
+			return side.getAxis().isHorizontal() && side != facing;
+		return side == Direction.UP || side == facing;
+	}
+
+	private boolean canOutputTo(Direction side) {
+		if (side == Direction.DOWN)
+			return false;
+		Direction facing = getBlockState().getValue(LogisticsJunctionBlock.FACING);
+		if (getIOMode() == IOMode.INPUT)
+			return side == Direction.UP || side == facing;
+		return side.getAxis().isHorizontal() && side != facing;
+	}
+
+	@Override
+	public void destroy() {
+		ItemHelper.dropContents(level, worldPosition, inventory);
+		super.destroy();
+	}
+
 	@Override
 	protected AABB createRenderBoundingBox() {
 		AABB box = super.createRenderBoundingBox();
@@ -329,7 +624,7 @@ public class LogisticsJunctionBlockEntity extends SmartBlockEntity {
 	@Override
 	protected void write(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
 		super.write(compound, registries, clientPacket);
-		compound.put("Input", input.serializeNBT(registries));
+		compound.put("Inventory", inventory.serializeNBT(registries));
 		if (flexibleTargetPos != null)
 			compound.putLong("FlexibleTargetPos", flexibleTargetPos.asLong());
 		if (flexibleTargetFace != null)
@@ -339,17 +634,80 @@ public class LogisticsJunctionBlockEntity extends SmartBlockEntity {
 	@Override
 	protected void read(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
 		super.read(compound, registries, clientPacket);
-		input.deserializeNBT(registries, compound.getCompound("Input"));
+		inventory.deserializeNBT(registries, compound.getCompound("Inventory"));
 		flexibleTargetPos = compound.contains("FlexibleTargetPos") ? BlockPos.of(compound.getLong("FlexibleTargetPos")) : null;
 		flexibleTargetFace = compound.contains("FlexibleTargetFace") ? Direction.from3DDataValue(compound.getByte("FlexibleTargetFace")) : null;
 	}
 
-	private enum OutputTarget {
-		SIDE,
-		UP
+	@Override
+	public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
+		boolean added = super.addToGoggleTooltip(tooltip, isPlayerSneaking);
+
+		CreateLang.builder()
+			.add(Component.translatable("fluid.logistics_junction.goggles.io_mode"))
+			.forGoggles(tooltip);
+		CreateLang.builder()
+			.add(Component.translatable(getIOMode().getTranslationKey()).withStyle(ChatFormatting.GRAY))
+			.forGoggles(tooltip, 1);
+
+		boolean hasItemContents = false;
+		for (int slot = 0; slot < inventory.getSlots(); slot++) {
+			ItemStack stack = inventory.getStackInSlot(slot);
+			if (stack.isEmpty())
+				continue;
+			hasItemContents = true;
+		}
+
+		FluidStack fluid = tankBehaviour == null ? FluidStack.EMPTY : tankBehaviour.getPrimaryHandler().getFluid();
+
+		if (hasItemContents) {
+			CreateLang.builder()
+				.add(Component.translatable("fluid.logistics_junction.goggles.contents"))
+				.forGoggles(tooltip);
+		}
+
+		for (int slot = 0; slot < inventory.getSlots(); slot++) {
+			ItemStack stack = inventory.getStackInSlot(slot);
+			if (stack.isEmpty())
+				continue;
+			CreateLang.text("")
+				.add(stack.getHoverName().copy().withStyle(ChatFormatting.GRAY))
+				.add(CreateLang.text(" x" + stack.getCount()).style(ChatFormatting.GREEN))
+				.forGoggles(tooltip, 1);
+		}
+
+		containedFluidTooltip(tooltip, isPlayerSneaking, getFluidHandler());
+
+		return added || true;
 	}
 
-	private record HandlerAccess(IItemHandler items, IFluidHandler fluids) {
+	public enum IOMode implements INamedIconOptions {
+		INPUT(AllIcons.I_REFRESH),
+		OUTPUT(AllIcons.I_ROTATE_CCW);
+
+		private final String translationKey;
+		private final AllIcons icon;
+
+		IOMode(AllIcons icon) {
+			this.icon = icon;
+			this.translationKey = "create.fluid.logistics_junction.io_mode." + Lang.asId(name());
+		}
+
+		@Override
+		public AllIcons getIcon() {
+			return icon;
+		}
+
+		@Override
+		public String getTranslationKey() {
+			return translationKey;
+		}
+	}
+
+	private record OutputTarget(@Nullable IItemHandler items, @Nullable IFluidHandler fluids, boolean upper) {
+	}
+
+	private record InputTarget(@Nullable IItemHandler items, @Nullable IFluidHandler fluids) {
 	}
 
 	private static class UnpackPlan {
@@ -357,10 +715,161 @@ public class LogisticsJunctionBlockEntity extends SmartBlockEntity {
 		private final List<FluidPlan> fluidPlans = new ArrayList<>();
 	}
 
-	private record ItemPlan(ItemStack stack, OutputTarget target) {
+	private record ItemPlan(ItemStack stack, int targetIndex) {
 	}
 
-	private record FluidPlan(FluidEntry entry, OutputTarget target) {
+	private record FluidPlan(FluidEntry entry, int targetIndex) {
+	}
+
+	private class IOModeValueBox extends CenteredSideValueBoxTransform {
+		private IOModeValueBox() {
+			super((state, direction) -> direction.getAxis().isHorizontal()
+				&& direction != state.getValue(LogisticsJunctionBlock.FACING));
+		}
+
+		@Override
+		public Vec3 getLocalOffset(LevelAccessor level, BlockPos pos, BlockState state) {
+			Vec3 location = VecHelper.voxelSpace(8, 13, 15.5);
+			return VecHelper.rotateCentered(location, AngleHelper.horizontalAngle(this.getSide()), Direction.Axis.Y);
+		}
+	}
+
+	private class ItemInputHandler implements IItemHandler {
+		@Override
+		public int getSlots() {
+			return inventory.getSlots();
+		}
+
+		@Override
+		public ItemStack getStackInSlot(int slot) {
+			return ItemStack.EMPTY;
+		}
+
+		@Override
+		public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+			return inventory.insertItem(slot, stack, simulate);
+		}
+
+		@Override
+		public ItemStack extractItem(int slot, int amount, boolean simulate) {
+			return ItemStack.EMPTY;
+		}
+
+		@Override
+		public int getSlotLimit(int slot) {
+			return inventory.getSlotLimit(slot);
+		}
+
+		@Override
+		public boolean isItemValid(int slot, ItemStack stack) {
+			return inventory.isItemValid(slot, stack);
+		}
+	}
+
+	private class ItemOutputHandler implements IItemHandler {
+		@Override
+		public int getSlots() {
+			return inventory.getSlots();
+		}
+
+		@Override
+		public ItemStack getStackInSlot(int slot) {
+			return inventory.getStackInSlot(slot);
+		}
+
+		@Override
+		public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+			return stack;
+		}
+
+		@Override
+		public ItemStack extractItem(int slot, int amount, boolean simulate) {
+			return inventory.extractItem(slot, amount, simulate);
+		}
+
+		@Override
+		public int getSlotLimit(int slot) {
+			return inventory.getSlotLimit(slot);
+		}
+
+		@Override
+		public boolean isItemValid(int slot, ItemStack stack) {
+			return false;
+		}
+	}
+
+	private class FluidInputHandler implements IFluidHandler {
+		@Override
+		public int getTanks() {
+			return getFluidHandler().getTanks();
+		}
+
+		@Override
+		public FluidStack getFluidInTank(int tank) {
+			return FluidStack.EMPTY;
+		}
+
+		@Override
+		public int getTankCapacity(int tank) {
+			return getFluidHandler().getTankCapacity(tank);
+		}
+
+		@Override
+		public boolean isFluidValid(int tank, FluidStack stack) {
+			return getFluidHandler().isFluidValid(tank, stack);
+		}
+
+		@Override
+		public int fill(FluidStack resource, FluidAction action) {
+			return getFluidHandler().fill(resource, action);
+		}
+
+		@Override
+		public FluidStack drain(FluidStack resource, FluidAction action) {
+			return FluidStack.EMPTY;
+		}
+
+		@Override
+		public FluidStack drain(int maxDrain, FluidAction action) {
+			return FluidStack.EMPTY;
+		}
+	}
+
+	private class FluidOutputHandler implements IFluidHandler {
+		@Override
+		public int getTanks() {
+			return getFluidHandler().getTanks();
+		}
+
+		@Override
+		public FluidStack getFluidInTank(int tank) {
+			return getFluidHandler().getFluidInTank(tank);
+		}
+
+		@Override
+		public int getTankCapacity(int tank) {
+			return getFluidHandler().getTankCapacity(tank);
+		}
+
+		@Override
+		public boolean isFluidValid(int tank, FluidStack stack) {
+			return false;
+		}
+
+		@Override
+		public int fill(FluidStack resource, FluidAction action) {
+			return 0;
+		}
+
+		@Override
+		public FluidStack drain(FluidStack resource, FluidAction action) {
+			return getFluidHandler().drain(resource, action);
+		}
+
+		@Override
+		public FluidStack drain(int maxDrain, FluidAction action) {
+			return getFluidHandler().drain(maxDrain, action);
+		}
 	}
 
 	private static class ItemReservation {
@@ -368,7 +877,7 @@ public class LogisticsJunctionBlockEntity extends SmartBlockEntity {
 		private final List<ItemStack> virtualSlots;
 		private boolean depotOccupied;
 
-		private ItemReservation(IItemHandler handler) {
+		private ItemReservation(@Nullable IItemHandler handler) {
 			this.handler = handler;
 			this.virtualSlots = new ArrayList<>();
 			if (handler != null) {
@@ -434,12 +943,13 @@ public class LogisticsJunctionBlockEntity extends SmartBlockEntity {
 		private final IFluidHandler handler;
 		private final List<FluidStack> virtualTanks;
 
-		private FluidReservation(IFluidHandler handler) {
+		private FluidReservation(@Nullable IFluidHandler handler) {
 			this.handler = handler;
 			this.virtualTanks = new ArrayList<>();
-			if (handler != null)
+			if (handler != null) {
 				for (int tank = 0; tank < handler.getTanks(); tank++)
 					virtualTanks.add(handler.getFluidInTank(tank).copy());
+			}
 		}
 
 		private boolean reserve(FluidStack fluid) {

@@ -9,3 +9,13 @@ pluginManagement {
 plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
 }
+
+def localCreatePath = file('D:/Geography/Dev/111Reference/Create-mc1.21.1-6.0.11')
+if (localCreatePath.exists()) {
+    includeBuild(localCreatePath) {
+        dependencySubstitution {
+            substitute(module("com.simibubi.create:create-${providers.gradleProperty('minecraft_version').get()}"))
+                .using(project(':'))
+        }
+    }
+}

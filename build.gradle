@@ -95,7 +95,7 @@ dependencies {
     runtimeOnly("dev.engine-room.flywheel:flywheel-neoforge-${flywheel_minecraft_version}:${flywheel_version}")
     runtimeOnly("dev.engine-room.vanillin:vanillin-neoforge-${flywheel_minecraft_version}:${vanillin_version}")
     implementation("com.tterrag.registrate:Registrate:${registrate_version}")
-    implementation("net.createmod.ponder:Ponder-NeoForge-${minecraft_version}:${ponder_version}")
+    implementation("net.createmod.ponder:ponder-neoforge:${ponder_version}+mc${minecraft_version}")
     implementation("com.simibubi.create:create-${minecraft_version}:${create_version}") { transitive false }
 
     compileOnly("mezz.jei:jei-${jei_minecraft_version}-common-api:${jei_version}")
