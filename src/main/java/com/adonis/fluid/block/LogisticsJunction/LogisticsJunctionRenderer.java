@@ -5,8 +5,10 @@ import static com.adonis.fluid.CreateFluid.MOD_ID;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.adonis.fluid.registry.CFPartialModels;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import com.simibubi.create.AllPartialModels;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 
@@ -26,8 +28,6 @@ import net.minecraft.world.phys.Vec3;
 public class LogisticsJunctionRenderer extends KineticBlockEntityRenderer<LogisticsJunctionBlockEntity> {
 	private static final ResourceLocation LINK_TEXTURE =
 		ResourceLocation.fromNamespaceAndPath(MOD_ID, "textures/block/logistics_junction_link.png");
-	private static final ResourceLocation COLLAR_TEXTURE =
-		ResourceLocation.fromNamespaceAndPath(MOD_ID, "textures/block/logistics_junction_collar.png");
 	private static final ResourceLocation ATTACH_TEXTURE =
 		ResourceLocation.fromNamespaceAndPath(MOD_ID, "textures/block/junction_upper.png");
 	private static final double THICKNESS_SCALE = 1.6d;
@@ -41,9 +41,10 @@ public class LogisticsJunctionRenderer extends KineticBlockEntityRenderer<Logist
 	private static final double END_NORMAL_OFFSET = 3 / 16d;
 	private static final double START_LIFT = 10 / 16d;
 	private static final double END_TANGENT = 6 / 16d;
-	private static final double CURVE_SAMPLE_LENGTH = 2 / 16d;
+	private static final double CURVE_SAMPLE_LENGTH = 7 / 16d;
 	private static final double COLLAR_TARGET_SPACING = 4 / 16d;
-	private static final int MIN_RENDER_SEGMENTS = 8;
+	private static final int MIN_RENDER_SEGMENTS = 3;
+	private static final double END_FILL_OVERLAP = 2 / 16d;
 	private static final double CROSS_SECTION_ROTATION = Math.PI / 4d;
 	private static final float HOSE_U0 = 12f / 16f;
 	private static final float HOSE_U1 = 16f / 16f;
@@ -116,8 +117,7 @@ public class LogisticsJunctionRenderer extends KineticBlockEntityRenderer<Logist
 		renderAttachModel(end, endNormal.normalize(), ms, buffer, light);
 		VertexConsumer hose = buffer.getBuffer(RenderType.entityCutoutNoCull(LINK_TEXTURE));
 		renderTubeBody(hose, ms, curve, light, collarLayout.spacing());
-		VertexConsumer collar = buffer.getBuffer(RenderType.entityCutoutNoCull(COLLAR_TEXTURE));
-		renderAllCollars(collar, ms, curve, light, collarLayout);
+		renderAllCollars(be, ms, buffer, curve, light, collarLayout);
 		ms.popPose();
 	}
 
@@ -191,10 +191,16 @@ public class LogisticsJunctionRenderer extends KineticBlockEntityRenderer<Logist
 	private static void renderTubeBody(VertexConsumer out, PoseStack transform, CurveData curve, int light,
 		double hoseRepeatLength) {
 		double accumulatedLength = 0;
-		double hosePhaseOffset = hoseRepeatLength * 0.5d;
+		// Align the hose texture seam with collar centers so the brass rings cover the wrap.
+		double hosePhaseOffset = -hoseRepeatLength * 0.5d;
+		int lastSegment = curve.segmentCount() - 1;
 		for (int i = 0; i < curve.segmentCount(); ++i) {
 			Vec3 start = curve.getRenderPoint(i);
 			Vec3 end = curve.getRenderPoint(i + 1);
+			if (i == 0)
+				start = start.subtract(curve.getTangent(0).scale(END_FILL_OVERLAP));
+			if (i == lastSegment)
+				end = end.add(curve.getTangent(lastSegment).scale(END_FILL_OVERLAP));
 			Vec3 axis = end.subtract(start);
 			if (axis.lengthSqr() < 1.0e-6)
 				continue;
@@ -233,10 +239,11 @@ public class LogisticsJunctionRenderer extends KineticBlockEntityRenderer<Logist
 		return new CollarLayout(collarCount, actualSpacing);
 	}
 
-	private static void renderAllCollars(VertexConsumer out, PoseStack transform, CurveData curve, int light,
+	private static void renderAllCollars(LogisticsJunctionBlockEntity be, PoseStack transform, MultiBufferSource buffer,
+		CurveData curve, int light,
 		CollarLayout collarLayout) {
 		if (collarLayout.count() <= 1) {
-			renderCollarAtPoint(out, transform, curve.getRenderPoint(0), curve.getTangent(0), light);
+			renderCollarAtPoint(be, transform, buffer, curve.getRenderPoint(0), curve.getTangent(0), light);
 			return;
 		}
 
@@ -244,25 +251,28 @@ public class LogisticsJunctionRenderer extends KineticBlockEntityRenderer<Logist
 		double actualSpacing = collarLayout.spacing();
 		for (int i = 0; i < collarLayout.count(); i++) {
 			double distance = i == collarLayout.count() - 1 ? totalLength : actualSpacing * i;
-			renderCollarAtPoint(out, transform, curve.samplePoint(distance), curve.sampleTangent(distance), light);
+			renderCollarAtPoint(be, transform, buffer, curve.samplePoint(distance), curve.sampleTangent(distance), light);
 		}
 	}
 
-	private static void renderCollarAtPoint(VertexConsumer out, PoseStack transform, Vec3 center, Vec3 tangent, int light) {
-		Vec3 start = center.subtract(tangent.scale(COLLAR_HALF_LENGTH));
-		Vec3 end = center.add(tangent.scale(COLLAR_HALF_LENGTH));
-		Vec3 forward = end.subtract(start).normalize();
-		Vec3 reference = Math.abs(forward.y) > 0.95 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
-		Vec3 basisA = forward.cross(reference).normalize();
-		if (basisA.lengthSqr() < 1.0e-6)
-			basisA = new Vec3(1, 0, 0);
-		Vec3 basisB = forward.cross(basisA).normalize();
+	private static void renderCollarAtPoint(LogisticsJunctionBlockEntity be, PoseStack transform, MultiBufferSource buffer,
+		Vec3 center, Vec3 tangent, int light) {
+		Vec3 direction = tangent.normalize();
+		if (direction.lengthSqr() < 1.0e-6)
+			return;
 
-		for (int side = 0; side < TUBE_SIDES; side++) {
-			double angle0 = CROSS_SECTION_ROTATION + (Math.PI * 2 * side) / TUBE_SIDES;
-			double angle1 = CROSS_SECTION_ROTATION + (Math.PI * 2 * (side + 1)) / TUBE_SIDES;
-			renderCollarSegment(out, transform, start, end, basisA, basisB, angle0, angle1, light);
-		}
+		float yaw = (float) Math.atan2(direction.x, direction.z);
+		float pitch = (float) -Math.asin(Mth.clamp(direction.y, -1, 1));
+
+		transform.pushPose();
+		transform.translate(center.x, center.y, center.z);
+		transform.mulPose(Axis.YP.rotation(yaw));
+		transform.mulPose(Axis.XP.rotation(pitch));
+
+		CachedBuffers.partial(CFPartialModels.LOGISTICS_JUNCTION_COLLAR, be.getBlockState())
+			.light(light)
+			.renderInto(transform, buffer.getBuffer(RenderType.cutoutMipped()));
+		transform.popPose();
 	}
 
 	private static CurveData makeCurveData(Vec3 start, Vec3 end, Vec3 startNormal, Vec3 endNormal) {
