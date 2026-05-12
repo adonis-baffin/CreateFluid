@@ -436,12 +436,17 @@ public class FluidInteractionPoint {
 
         @Override
         public boolean isFluidValid(int tank, @Nonnull FluidStack stack) {
-            return stack.getFluid() == Fluids.LAVA;
+            return BlazeBurnerFuelRegistry.find(stack).isPresent();
         }
 
         @Override
         public int fill(FluidStack resource, FluidAction action) {
             if (!isFluidValid(0, resource)) {
+                return 0;
+            }
+
+            BlazeBurnerFuelRegistry.Entry fuelEntry = BlazeBurnerFuelRegistry.find(resource).orElse(null);
+            if (fuelEntry == null) {
                 return 0;
             }
 
@@ -458,34 +463,36 @@ public class FluidInteractionPoint {
             com.simibubi.create.content.processing.burner.BlazeBurnerBlockEntity.FuelType activeFuel =
                     accessor.getActiveFuel();
             int remainingBurnTime = accessor.getRemainingBurnTime();
+            com.simibubi.create.content.processing.burner.BlazeBurnerBlockEntity.FuelType newFuel =
+                    fuelEntry.superHeat()
+                            ? com.simibubi.create.content.processing.burner.BlazeBurnerBlockEntity.FuelType.SPECIAL
+                            : com.simibubi.create.content.processing.burner.BlazeBurnerBlockEntity.FuelType.NORMAL;
 
-            if (activeFuel == com.simibubi.create.content.processing.burner.BlazeBurnerBlockEntity.FuelType.SPECIAL) {
+            if (newFuel.ordinal() < activeFuel.ordinal()) {
                 return 0;
             }
 
-            if (activeFuel != com.simibubi.create.content.processing.burner.BlazeBurnerBlockEntity.FuelType.NONE
-                    && remainingBurnTime > com.simibubi.create.content.processing.burner.BlazeBurnerBlockEntity.INSERTION_THRESHOLD) {
-                return 0;
+            int newTime = fuelEntry.getBurnTimeForAmount(amount);
+            if (newTime <= 0) return 0;
+
+            if (newFuel == activeFuel) {
+                if (remainingBurnTime <= com.simibubi.create.content.processing.burner.BlazeBurnerBlockEntity.INSERTION_THRESHOLD) {
+                    newTime += remainingBurnTime;
+                } else {
+                    return 0;
+                }
             }
+
+            newTime = Math.min(newTime,
+                    com.simibubi.create.content.processing.burner.BlazeBurnerBlockEntity.MAX_HEAT_CAPACITY);
 
             // 计算每 mB 岩浆的燃烧时间（岩浆桶 = 1000mB）
-            net.minecraft.world.item.ItemStack lavaBucket = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.LAVA_BUCKET);
-            int burnTimePerBucket = lavaBucket.getBurnTime(null);
-            if (burnTimePerBucket <= 0) burnTimePerBucket = 20000;
-
-            int addedTime = amount * burnTimePerBucket / 1000;
-            if (addedTime <= 0) return 0;
-
             if (action.execute()) {
 
                 // 确保燃料类型至少为 NORMAL
-                if (activeFuel == com.simibubi.create.content.processing.burner.BlazeBurnerBlockEntity.FuelType.NONE) {
-                    accessor.setActiveFuel(com.simibubi.create.content.processing.burner.BlazeBurnerBlockEntity.FuelType.NORMAL);
-                }
+                accessor.setActiveFuel(newFuel);
 
                 // 按比例增加燃烧时间（上限 MAX_HEAT_CAPACITY）
-                int newTime = Math.min(remainingBurnTime + addedTime,
-                        com.simibubi.create.content.processing.burner.BlazeBurnerBlockEntity.MAX_HEAT_CAPACITY);
                 accessor.setRemainingBurnTime(newTime);
 
                 // 更新方块状态和音效

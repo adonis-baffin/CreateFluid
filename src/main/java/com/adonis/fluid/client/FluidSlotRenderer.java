@@ -38,7 +38,7 @@ public class FluidSlotRenderer {
 		if (a == 0) a = 1.0f;
 
 		RenderSystem.enableBlend();
-		graphics.blit(x + 1, y + 1, 2, 14, 14, sprite, r, g, b, a);
+		graphics.blit(x + 1, y + 1, 0, 14, 14, sprite, r, g, b, a);
 		RenderSystem.disableBlend();
 	}
 }

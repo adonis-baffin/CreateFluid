@@ -3,6 +3,7 @@ package com.adonis.fluid.block.LogisticsJunction;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.adonis.fluid.config.CFCommonConfig;
 import org.jetbrains.annotations.Nullable;
 
 import com.adonis.fluid.datacomponent.BrassBoxFluidContent.FluidEntry;
@@ -16,6 +17,7 @@ import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.belt.behaviour.DirectBeltInputBehaviour;
 import com.simibubi.create.content.logistics.box.PackageItem;
 import com.simibubi.create.content.logistics.depot.DepotItemHandler;
+import com.simibubi.create.content.fluids.FluidFX;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.CenteredSideValueBoxTransform;
 import com.simibubi.create.foundation.blockEntity.behaviour.fluid.SmartFluidTankBehaviour;
@@ -35,13 +37,16 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.server.level.ServerLevel;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -165,6 +170,15 @@ public class LogisticsJunctionBlockEntity extends KineticBlockEntity implements 
 		return flexibleTargetFace;
 	}
 
+	public static boolean isTargetInRange(BlockPos junctionPos, BlockPos targetPos) {
+		return junctionPos.closerThan(targetPos, CFCommonConfig.getLogisticsJunctionLinkRange() + 0.5);
+	}
+
+	public static boolean isValidTarget(Level level, BlockPos targetPos, Direction targetFace) {
+		return level.getCapability(Capabilities.ItemHandler.BLOCK, targetPos, targetFace) != null
+			|| level.getCapability(Capabilities.FluidHandler.BLOCK, targetPos, targetFace) != null;
+	}
+
 	private static IItemHandler getItemCapability(LogisticsJunctionBlockEntity be, @Nullable Direction side) {
 		if (side == null)
 			return be.inventory;
@@ -276,6 +290,8 @@ public class LogisticsJunctionBlockEntity extends KineticBlockEntity implements 
 				continue;
 
 			localTank.fill(executedDrain, IFluidHandler.FluidAction.EXECUTE);
+			if (target.upper())
+				spawnUpperTransferParticles(executedDrain, true);
 			return;
 		}
 	}
@@ -316,8 +332,11 @@ public class LogisticsJunctionBlockEntity extends KineticBlockEntity implements 
 				continue;
 			FluidStack attempt = stored.copyWithAmount(limit - moved);
 			int filled = target.fluids().fill(attempt, IFluidHandler.FluidAction.EXECUTE);
-			if (filled > 0)
+			if (filled > 0) {
 				moved += filled;
+				if (target.upper())
+					spawnUpperTransferParticles(stored.copyWithAmount(filled), false);
+			}
 		}
 
 		if (moved > 0)
@@ -544,7 +563,7 @@ public class LogisticsJunctionBlockEntity extends KineticBlockEntity implements 
 		BlockPos pos = worldPosition.relative(direction);
 		Direction face = direction.getOpposite();
 		return new InputTarget(level.getCapability(Capabilities.ItemHandler.BLOCK, pos, face),
-			level.getCapability(Capabilities.FluidHandler.BLOCK, pos, face));
+			level.getCapability(Capabilities.FluidHandler.BLOCK, pos, face), false);
 	}
 
 	private OutputTarget buildUpperTarget() {
@@ -560,9 +579,9 @@ public class LogisticsJunctionBlockEntity extends KineticBlockEntity implements 
 		BlockPos targetPos = getUpperTargetPos();
 		Direction face = getUpperTargetFace();
 		if (targetPos == null || face == null)
-			return new InputTarget(null, null);
+			return new InputTarget(null, null, true);
 		return new InputTarget(level.getCapability(Capabilities.ItemHandler.BLOCK, targetPos, face),
-			level.getCapability(Capabilities.FluidHandler.BLOCK, targetPos, face));
+			level.getCapability(Capabilities.FluidHandler.BLOCK, targetPos, face), true);
 	}
 
 	private BlockPos getUpperTargetPos() {
@@ -585,8 +604,47 @@ public class LogisticsJunctionBlockEntity extends KineticBlockEntity implements 
 	}
 
 	private boolean hasAnyTargetCapability(BlockPos targetPos, Direction targetFace) {
-		return level.getCapability(Capabilities.ItemHandler.BLOCK, targetPos, targetFace) != null
-			|| level.getCapability(Capabilities.FluidHandler.BLOCK, targetPos, targetFace) != null;
+		return isValidTarget(level, targetPos, targetFace);
+	}
+
+	private void spawnUpperTransferParticles(FluidStack fluid, boolean inbound) {
+		if (!(level instanceof ServerLevel serverLevel) || fluid.isEmpty())
+			return;
+
+		BlockPos targetPos = getUpperTargetPos();
+		Direction targetFace = getUpperTargetFace();
+		if (targetPos == null || targetFace == null)
+			return;
+
+		ParticleOptions particle = FluidFX.getFluidParticle(fluid);
+		Vec3 startNormal = new Vec3(0, 1, 0);
+		Vec3 endNormal = Vec3.atLowerCornerOf(targetFace.getNormal());
+		Vec3 start = Vec3.atBottomCenterOf(worldPosition).add(0, 1 + 1f / 16f, 0).add(startNormal.scale(3f / 16f));
+		Vec3 end = Vec3.atCenterOf(targetPos).add(endNormal.scale(0.5 + 3f / 16f));
+		if (inbound) {
+			Vec3 swap = start;
+			start = end;
+			end = swap;
+		}
+
+		Vec3 controlA = start.add(startNormal.scale(10f / 16f));
+		Vec3 controlB = end.subtract(endNormal.scale(6f / 16f));
+		Vec3 previous = start;
+		for (int i = 1; i <= 8; i++) {
+			double t = i / 8d;
+			Vec3 point = cubicBezier(start, controlA, controlB, end, t);
+			Vec3 motion = point.subtract(previous).scale(0.2);
+			serverLevel.sendParticles(particle, point.x, point.y, point.z, 1, motion.x, motion.y, motion.z, 0);
+			previous = point;
+		}
+	}
+
+	private static Vec3 cubicBezier(Vec3 p0, Vec3 p1, Vec3 p2, Vec3 p3, double t) {
+		double u = 1 - t;
+		return p0.scale(u * u * u)
+			.add(p1.scale(3 * u * u * t))
+			.add(p2.scale(3 * u * t * t))
+			.add(p3.scale(t * t * t));
 	}
 
 	private boolean canInputFrom(Direction side) {
@@ -707,7 +765,7 @@ public class LogisticsJunctionBlockEntity extends KineticBlockEntity implements 
 	private record OutputTarget(@Nullable IItemHandler items, @Nullable IFluidHandler fluids, boolean upper) {
 	}
 
-	private record InputTarget(@Nullable IItemHandler items, @Nullable IFluidHandler fluids) {
+	private record InputTarget(@Nullable IItemHandler items, @Nullable IFluidHandler fluids, boolean upper) {
 	}
 
 	private static class UnpackPlan {

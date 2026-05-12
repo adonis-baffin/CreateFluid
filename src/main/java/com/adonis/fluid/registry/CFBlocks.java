@@ -26,6 +26,7 @@ import com.simibubi.create.foundation.data.TagGen;
 import com.tterrag.registrate.util.entry.BlockEntry;
 import net.minecraft.core.Direction;
 import com.adonis.fluid.item.PipetteItem;
+import com.adonis.fluid.item.LogisticsJunctionItem;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.properties.AttachFace;
@@ -363,7 +364,7 @@ public class CFBlocks {
             .transform(TagGen.pickaxeOnly())
             .transform(CreateFluid.STRESS_CONFIG.setImpact(8.0))
             .addLayer(() -> net.minecraft.client.renderer.RenderType::cutoutMipped)
-            .item()
+            .item(LogisticsJunctionItem::new)
             .transform(ModelGen.customItemModel())
             .register();
 

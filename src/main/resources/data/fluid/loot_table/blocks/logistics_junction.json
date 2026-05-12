@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:block",
+  "random_sequence": "fluid:blocks/logistics_junction",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "fluid:logistics_junction"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ]
+}

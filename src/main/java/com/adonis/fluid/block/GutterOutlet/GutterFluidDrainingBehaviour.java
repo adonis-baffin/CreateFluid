@@ -270,6 +270,9 @@ public class GutterFluidDrainingBehaviour extends BlockEntityBehaviour {
                 emptied = Blocks.AIR.defaultBlockState();
             }
 
+            if (fluid instanceof net.minecraft.world.level.material.FlowingFluid flowingFluid)
+                fluid = flowingFluid.getSource();
+
             if (this.fluid == null)
                 this.fluid = fluid;
 

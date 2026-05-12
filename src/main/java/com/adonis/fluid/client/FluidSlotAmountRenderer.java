@@ -35,6 +35,9 @@ public class FluidSlotAmountRenderer {
 	}
 
 	private static void renderAmount(GuiGraphics graphics, String text, int startX, int startY) {
+		graphics.pose().pushPose();
+		graphics.pose().translate(0, 0, 200);
+
 		int x = 0;
 		for (int i = 0; i < text.length(); i++) {
 			char c = Character.toLowerCase(text.charAt(i));
@@ -75,5 +78,7 @@ public class FluidSlotAmountRenderer {
 					spriteWidth, AllGuiTextures.NUMBERS.getHeight(), 256, 256);
 			x += spriteWidth - 1;
 		}
+
+		graphics.pose().popPose();
 	}
 }

@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:block",
+  "random_sequence": "fluid:blocks/smart_repackager",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "fluid:smart_repackager"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ]
+}

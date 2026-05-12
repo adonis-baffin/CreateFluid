@@ -1,6 +1,8 @@
 package com.adonis.fluid.block.SmartFluidInterface;
 
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
+import dev.engine_room.flywheel.lib.transform.TransformStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.createmod.catnip.math.VecHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -38,5 +40,15 @@ public class SmartFluidInterfaceFilterSlot extends ValueBoxTransform.Sided {
     @Override
     protected Vec3 getSouthLocation() {
         return VecHelper.voxelSpace(8, 8, 1);
+    }
+
+    @Override
+    public void rotate(LevelAccessor level, BlockPos pos, BlockState state, PoseStack ms) {
+        super.rotate(level, pos, state, ms);
+
+        Direction facing = state.getValue(SmartFluidInterfaceBlock.FACING);
+        if (facing == Direction.UP || facing == Direction.DOWN) {
+            TransformStack.of(ms).rotateZDegrees(180);
+        }
     }
 }

@@ -4,6 +4,7 @@
   "package": "com.adonis.fluid.mixin",
   "compatibilityLevel": "JAVA_21",
   "refmap": "fluid.refmap.json",
+  "plugin": "com.adonis.fluid.mixin.FluidMixinPlugin",
   "mixins": [
     "BeltInventoryMixin",
     "ArmPlacementPacketMixin",
@@ -12,6 +13,7 @@
     "FluidUtilMixin",
     "VanillaFluidTargetsMixin",
     "FluidPipeBlockMixin",
+    "FilterItemStackMixin",
     "CanFillerBlockEntityMixin",
     "FactoryPanelBlockEntityMixin",
     "InventorySummaryMixin",
@@ -34,6 +36,7 @@
     "client.RedstoneRequesterScreenMixin",
     "client.PackageRendererMixin",
     "StockKeeperRequestScreenMixin",
+    "compat.cmpc.PortableStockTickerScreenMixin",
     "accessor.AbstractSimiScreenAccessor",
     "accessor.StockKeeperRequestScreenAccessor",
     "CanFillerRendererMixin",

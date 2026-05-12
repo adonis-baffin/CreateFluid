@@ -72,6 +72,12 @@ public class CFNetworking {
                 PipetteInteractionPointSyncPacket::handle
         );
 
+        registrar.playToClient(
+                LogisticsJunctionPlacementPacket.ClientBoundRequest.TYPE,
+                LogisticsJunctionPlacementPacket.ClientBoundRequest.STREAM_CODEC,
+                LogisticsJunctionPlacementPacket.ClientBoundRequest::handle
+        );
+
         // ========== 服务端接收的数据包 ==========
 
         // 移液器放置配置包（客户端发送交互点配置到服务端）
@@ -79,6 +85,12 @@ public class CFNetworking {
                 PipetteFluidPlacementPacket.TYPE,
                 PipetteFluidPlacementPacket.STREAM_CODEC,
                 PipetteFluidPlacementPacket::handle
+        );
+
+        registrar.playToServer(
+                LogisticsJunctionPlacementPacket.TYPE,
+                LogisticsJunctionPlacementPacket.STREAM_CODEC,
+                LogisticsJunctionPlacementPacket::handle
         );
 
         // 石英灯切换包（客户端请求切换石英灯状态）

@@ -23,6 +23,7 @@ public class PackageItemMixin {
 		List<Component> tooltipComponents, TooltipFlag tooltipFlag, CallbackInfo ci) {
 		if (BrassBoxItem.isBrassBox(stack) || CopperCanItem.isCopperCan(stack))
 			return;
+		PackageRoutingHelper.highlightVisibleItemRoutes(stack, tooltipComponents);
 		PackageRoutingHelper.appendRoutingSummary(stack, tooltipComponents);
 	}
 }

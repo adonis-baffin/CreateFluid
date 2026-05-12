@@ -21,12 +21,16 @@ import net.createmod.catnip.lang.FontHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 @Mod(CreateFluid.MOD_ID)
@@ -43,10 +47,17 @@ public class CreateFluid {
 		);
 
 	public static final CFStressConfig STRESS_CONFIG = new CFStressConfig(MOD_ID);
+	private static final Map<String, String> INCOMPATIBLE_LOGISTICS_MODS = Map.of(
+		"create_factory_logistics", "Create Factory Logistics",
+		"fluidlogistics", "Create Fluid Logistic",
+		"repackaged", "Repackaged"
+	);
 
 	private static ModConfigSpec stressConfigSpec;
 
-	public CreateFluid(IEventBus modEventBus, ModContainer modContainer) {
+		public CreateFluid(IEventBus modEventBus, ModContainer modContainer) {
+			checkIncompatibleLogisticsMods();
+
 		// 注册 Registrate
 		REGISTRATE.registerEventListeners(modEventBus);
 
@@ -133,5 +144,28 @@ public class CreateFluid {
 
 	public static ResourceLocation asResource(String path) {
 		return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
+	}
+
+	private static void checkIncompatibleLogisticsMods() {
+		List<String> detected = new ArrayList<>();
+		for (Map.Entry<String, String> entry : INCOMPATIBLE_LOGISTICS_MODS.entrySet()) {
+			if (ModList.get().isLoaded(entry.getKey()))
+				detected.add(entry.getValue() + " (" + entry.getKey() + ")");
+		}
+
+		if (detected.isEmpty())
+			return;
+
+		String message = """
+			Create Fluid 2.0+ is incompatible with the following installed mod(s):
+			%s
+
+			Please remove one of the conflicting mods, or downgrade Create Fluid to a 1.x version.
+			""".formatted(String.join("\n", detected.stream()
+			.map(mod -> "- " + mod)
+			.toList()));
+
+		LOGGER.error(message);
+		throw new IllegalStateException(message);
 	}
 }

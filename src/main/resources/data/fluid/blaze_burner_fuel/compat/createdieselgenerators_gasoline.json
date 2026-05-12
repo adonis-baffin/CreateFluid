@@ -1,0 +1,5 @@
+{
+  "required_mod": "createdieselgenerators",
+  "fluid": "createdieselgenerators:gasoline",
+  "burnTime": 22
+}

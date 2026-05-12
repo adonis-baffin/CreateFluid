@@ -27,6 +27,7 @@ public class CFCommonConfig {
 
 	// Can Filler 配置
 	public static final ModConfigSpec.IntValue FLUID_PER_PACKAGE;
+	public static final ModConfigSpec.IntValue PIPETTE_RANGE;
 	public static final ModConfigSpec.IntValue LOGISTICS_JUNCTION_LINK_RANGE;
 
 	private static boolean isConfigLoaded = false;
@@ -120,12 +121,21 @@ public class CFCommonConfig {
 
 		builder.pop();
 
+		builder.comment("Pipette settings")
+			.push("pipette");
+
+		PIPETTE_RANGE = builder
+			.comment("Maximum distance in blocks a Pipette can reach across.")
+			.defineInRange("range", 5, 1, Integer.MAX_VALUE);
+
+		builder.pop();
+
 		builder.comment("Logistics Junction settings")
 			.push("logistics_junction");
 
 		LOGISTICS_JUNCTION_LINK_RANGE = builder
 			.comment("Maximum distance for a Logistics Junction flexible upper-output link.")
-			.defineInRange("linkRange", 16, 1, Integer.MAX_VALUE);
+			.defineInRange("linkRange", 5, 1, Integer.MAX_VALUE);
 
 		builder.pop();
 
@@ -279,11 +289,20 @@ public class CFCommonConfig {
 	}
 
 	public static int getLogisticsJunctionLinkRange() {
-		if (!isConfigLoaded) return 16;
+		if (!isConfigLoaded) return 5;
 		try {
 			return LOGISTICS_JUNCTION_LINK_RANGE.get();
 		} catch (IllegalStateException e) {
-			return 16;
+			return 5;
+		}
+	}
+
+	public static int getPipetteRange() {
+		if (!isConfigLoaded) return 5;
+		try {
+			return PIPETTE_RANGE.get();
+		} catch (IllegalStateException e) {
+			return 5;
 		}
 	}
 }

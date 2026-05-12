@@ -81,17 +81,17 @@ public class BrassBoxItem extends PackageItem {
 	@Override
 	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
 		super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+		PackageRoutingHelper.highlightVisibleItemRoutes(stack, tooltipComponents);
 		PackageRoutingHelper.appendRoutingSummary(stack, tooltipComponents);
 		BrassBoxFluidContent fluidContent = getFluidContent(stack);
 		for (FluidEntry entry : fluidContent.fluids()) {
 			if (entry.isEmpty())
 				continue;
-			tooltipComponents.add(entry.fluid().getHoverName()
-				.copy()
-				.append(" x")
-				.append(com.adonis.fluid.client.FluidAmountHelper.format(entry.fluid().getAmount()))
-				.append("B")
-				.withStyle(ChatFormatting.GRAY));
+			Component fluidLine = entry.fluid().getHoverName()
+				.copy();
+			tooltipComponents.add(entry.route() == com.adonis.fluid.logistics.data.ContentRoute.UP
+				? PackageRoutingHelper.formatUpstreamEntry(fluidLine)
+				: fluidLine.copy().withStyle(ChatFormatting.GRAY));
 		}
 	}
 }

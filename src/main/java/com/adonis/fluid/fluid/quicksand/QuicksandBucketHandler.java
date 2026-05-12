@@ -3,6 +3,7 @@ package com.adonis.fluid.fluid.quicksand;
 import com.adonis.fluid.registry.CFFluids;
 import com.adonis.fluid.registry.CFItems;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -34,7 +35,7 @@ public class QuicksandBucketHandler {
 
         @Override
         public @NotNull ItemStack getContainer() {
-            return container.copy();
+            return new ItemStack(Items.BUCKET);
         }
 
         @Override

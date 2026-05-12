@@ -1,11 +1,13 @@
 package com.adonis.fluid.handler;
 
 import com.adonis.fluid.CreateFluid;
+import com.adonis.fluid.block.LogisticsJunction.LogisticsJunctionBlockEntity;
 import com.adonis.fluid.block.Pipette.PipetteBlockEntity;
 import com.adonis.fluid.content.pipette.FluidInteractionPoint;
 import com.adonis.fluid.handler.frogport.FrogportInteractionHandler;
 import com.adonis.fluid.item.BatonItem;
 import com.adonis.fluid.mixin.accessor.ArmBlockEntityAccessor;
+import com.adonis.fluid.packet.LogisticsJunctionPlacementPacket;
 import com.adonis.fluid.packet.CentrifugalPumpModeTogglePacket;
 import com.adonis.fluid.packet.QuartzLampTogglePacket;
 import com.simibubi.create.content.logistics.packager.PackagerBlock;
@@ -70,9 +72,11 @@ public class BatonInteractionHandler {
     private static BlockPos selectedEjectorPos = null;
     private static BlockPos ejectorTargetPos = null;
     private static EntityLauncher launcher = null;
+    private static BlockPos selectedJunctionTargetPos = null;
+    private static Direction selectedJunctionTargetFace = null;
 
     public enum SelectionType {
-        NONE, ARM, PIPETTE, EJECTOR
+        NONE, ARM, PIPETTE, EJECTOR, JUNCTION
     }
     private static SelectionType selectionType = SelectionType.NONE;
 
@@ -109,6 +113,8 @@ public class BatonInteractionHandler {
                 drawArmOutlines(currentArmSelection);
             } else if (selectionType == SelectionType.PIPETTE) {
                 drawPipetteOutlines(currentPipetteSelection);
+            } else if (selectionType == SelectionType.JUNCTION) {
+                drawJunctionOutline();
             } else if (selectionType == SelectionType.EJECTOR) {
                 drawEjectorOutlines();
                 drawEjectorArc();
@@ -133,6 +139,7 @@ public class BatonInteractionHandler {
         Level level = event.getLevel();
         BlockPos pos = event.getPos();
         BlockState state = level.getBlockState(pos);
+        Direction clickedFace = event.getFace();
         boolean sneaking = player.isShiftKeyDown();
 
         // 后续的处理仍然只在客户端
@@ -142,6 +149,7 @@ public class BatonInteractionHandler {
             // 这些方块在服务端也要取消事件
             if (be instanceof ArmBlockEntity ||
                     be instanceof PipetteBlockEntity ||
+                    be instanceof LogisticsJunctionBlockEntity ||
                     be instanceof EjectorBlockEntity ||
                     state.getBlock() instanceof RoseQuartzLampBlock ||
                     state.getBlock() instanceof PackagerBlock ||
@@ -152,7 +160,7 @@ public class BatonInteractionHandler {
             }
 
             // 检查是否可以作为交互点，服务端也要阻止
-            if (canBeInteractionPoint(level, pos, state)) {
+            if (canBeInteractionPoint(level, pos, state) || canBeJunctionTarget(level, pos, clickedFace)) {
                 event.setCanceled(true);
                 event.setCancellationResult(InteractionResult.SUCCESS);
             }
@@ -247,6 +255,23 @@ public class BatonInteractionHandler {
         }
 
         // 处理弹射置物台
+        if (be instanceof LogisticsJunctionBlockEntity junction) {
+            if (sneaking) {
+                PacketDistributor.sendToServer(LogisticsJunctionPlacementPacket.clear(pos));
+                junction.clearFlexibleTarget();
+                CreateLang.builder()
+                        .translate("create.fluid.logistics_junction.link_cleared")
+                        .style(ChatFormatting.GRAY)
+                        .sendStatus(player);
+                createSelectionSuccessParticles(level, pos);
+            } else {
+                handleJunctionTargetClick(junction, pos, player, level);
+            }
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.SUCCESS);
+            return;
+        }
+
         if (be instanceof EjectorBlockEntity) {
             // 关键修改：在ARM或PIPETTE模式下，弹射置物台作为交互点
             if (selectionType == SelectionType.ARM || selectionType == SelectionType.PIPETTE) {
@@ -278,6 +303,8 @@ public class BatonInteractionHandler {
                     handleArmPointInteraction(level, pos, state, player);
                 } else if (selectionType == SelectionType.PIPETTE) {
                     handlePipettePointInteraction(level, pos, state, player);
+                } else if (selectionType == SelectionType.JUNCTION && canBeJunctionTarget(level, pos, clickedFace)) {
+                    handleJunctionPointInteraction(level, pos, clickedFace, state, player);
                 }
                 event.setCanceled(true);
                 event.setCancellationResult(InteractionResult.SUCCESS);
@@ -295,6 +322,10 @@ public class BatonInteractionHandler {
             return true;
         }
         return false;
+    }
+
+    private static boolean canBeJunctionTarget(Level level, BlockPos pos, Direction face) {
+        return face != null && LogisticsJunctionBlockEntity.isValidTarget(level, pos, face);
     }
 
     private static void handleArmDanceToggle(ArmBlockEntity arm, Player player, Level level) {
@@ -645,6 +676,42 @@ public class BatonInteractionHandler {
                 .sendStatus(player);
     }
 
+    private static void handleJunctionTargetClick(LogisticsJunctionBlockEntity junction, BlockPos pos, Player player,
+                                                  Level level) {
+        if (selectedTarget == junction && selectedTargetPos.equals(pos)) {
+            createSelectionSuccessParticles(level, pos);
+            flushJunctionSettings(pos);
+            return;
+        }
+
+        cancelSelection();
+
+        selectedTarget = junction;
+        selectedTargetPos = pos;
+        selectionType = SelectionType.JUNCTION;
+        selectedJunctionTargetPos = junction.getFlexibleTargetPos();
+        selectedJunctionTargetFace = junction.getFlexibleTargetFace();
+
+        level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 0.5f, 1.0f, false);
+
+        createSelectionSuccessParticles(level, pos);
+
+        if (selectedJunctionTargetPos == null) {
+            CreateLang.builder()
+                    .translate("create.fluid.logistics_junction.no_target")
+                    .style(ChatFormatting.GRAY)
+                    .sendStatus(player);
+            return;
+        }
+
+        CreateLang.builder()
+                .translate("create.fluid.logistics_junction.summary",
+                        CreateLang.blockName(level.getBlockState(selectedJunctionTargetPos)).style(ChatFormatting.WHITE))
+                .style(ChatFormatting.WHITE)
+                .sendStatus(player);
+    }
+
     private static void handleArmPointInteraction(Level level, BlockPos pos, BlockState state, Player player) {
         ArmInteractionPoint selected = getSelectedArm(pos);
         if (selected == null) {
@@ -758,6 +825,64 @@ public class BatonInteractionHandler {
         cancelSelection();
     }
 
+    private static void flushJunctionSettings(BlockPos junctionPos) {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (selectedJunctionTargetPos == null || selectedJunctionTargetFace == null) {
+            if (player != null) {
+                CreateLang.builder()
+                        .translate("create.fluid.logistics_junction.no_target")
+                        .style(ChatFormatting.GRAY)
+                        .sendStatus(player);
+            }
+            cancelSelection();
+            return;
+        }
+
+        Level level = Minecraft.getInstance().level;
+        if (level == null) {
+            cancelSelection();
+            return;
+        }
+
+        if (!LogisticsJunctionBlockEntity.isTargetInRange(junctionPos, selectedJunctionTargetPos)) {
+            if (player != null) {
+                CreateLang.builder()
+                        .translate("create.fluid.logistics_junction.link_too_far")
+                        .style(ChatFormatting.RED)
+                        .sendStatus(player);
+            }
+            cancelSelection();
+            return;
+        }
+
+        if (!LogisticsJunctionBlockEntity.isValidTarget(level, selectedJunctionTargetPos, selectedJunctionTargetFace)) {
+            if (player != null) {
+                CreateLang.builder()
+                        .translate("create.fluid.logistics_junction.link_invalid_target")
+                        .style(ChatFormatting.RED)
+                        .sendStatus(player);
+            }
+            cancelSelection();
+            return;
+        }
+
+        PacketDistributor.sendToServer(LogisticsJunctionPlacementPacket.set(junctionPos, selectedJunctionTargetPos,
+                selectedJunctionTargetFace));
+
+        if (player != null) {
+            CreateLang.builder()
+                    .translate("create.fluid.logistics_junction.summary",
+                            CreateLang.blockName(level.getBlockState(selectedJunctionTargetPos)).style(ChatFormatting.WHITE))
+                    .style(ChatFormatting.WHITE)
+                    .sendStatus(player);
+        }
+
+        level.playLocalSound(junctionPos.getX() + 0.5, junctionPos.getY() + 0.5, junctionPos.getZ() + 0.5,
+                SoundEvents.NOTE_BLOCK_CHIME.value(), SoundSource.BLOCKS, 0.8f, 1.0f, false);
+
+        cancelSelection();
+    }
+
     private static void handlePipettePointInteraction(Level level, BlockPos pos, BlockState state, Player player) {
         FluidInteractionPoint selected = getSelectedPipette(pos);
 
@@ -778,6 +903,22 @@ public class BatonInteractionHandler {
                 .translate(mode.getTranslationKey(),
                         CreateLang.blockName(state).style(ChatFormatting.WHITE))
                 .color(mode.getColor())
+                .sendStatus(player);
+
+        level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                SoundEvents.LEVER_CLICK, SoundSource.BLOCKS, 0.3f, 2.0f, false);
+    }
+
+    private static void handleJunctionPointInteraction(Level level, BlockPos pos, Direction face, BlockState state,
+                                                       Player player) {
+        selectedJunctionTargetPos = pos;
+        selectedJunctionTargetFace = face;
+        playSelectionEffects(level, pos, true);
+
+        CreateLang.builder()
+                .translate("create.fluid.logistics_junction.target_set",
+                        CreateLang.blockName(state).style(ChatFormatting.WHITE))
+                .style(ChatFormatting.WHITE)
                 .sendStatus(player);
 
         level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
@@ -919,6 +1060,8 @@ public class BatonInteractionHandler {
         selectedEjectorPos = null;
         ejectorTargetPos = null;
         launcher = null;
+        selectedJunctionTargetPos = null;
+        selectedJunctionTargetFace = null;
         selectionType = SelectionType.NONE;
         currentArmSelection.clear();
         currentPipetteSelection.clear();
@@ -1011,5 +1154,24 @@ public class BatonInteractionHandler {
                         .lineWidth(0.0625F);
             }
         }
+    }
+
+    private static void drawJunctionOutline() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || selectedJunctionTargetPos == null || selectedJunctionTargetFace == null)
+            return;
+
+        if (!LogisticsJunctionBlockEntity.isValidTarget(mc.level, selectedJunctionTargetPos, selectedJunctionTargetFace))
+            return;
+
+        BlockState state = mc.level.getBlockState(selectedJunctionTargetPos);
+        VoxelShape shape = state.getShape(mc.level, selectedJunctionTargetPos);
+        if (shape.isEmpty())
+            return;
+
+        Outliner.getInstance()
+                .showAABB("junction_target", shape.bounds().move(selectedJunctionTargetPos))
+                .colored(0xDDBB66)
+                .lineWidth(0.0625F);
     }
 }

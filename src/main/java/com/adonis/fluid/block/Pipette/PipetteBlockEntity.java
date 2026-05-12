@@ -1,6 +1,7 @@
 package com.adonis.fluid.block.Pipette;
 
 import com.adonis.fluid.CreateFluid;
+import com.adonis.fluid.config.CFCommonConfig;
 import com.adonis.fluid.content.pipette.DepotFluidInteractionPoint;
 import com.adonis.fluid.content.pipette.FluidInteractionPoint;
 import com.adonis.fluid.content.pipette.IRemoteFluidProcessor;
@@ -21,7 +22,6 @@ import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollOp
 import com.simibubi.create.foundation.gui.AllIcons;
 import com.simibubi.create.foundation.item.TooltipHelper;
 import com.simibubi.create.foundation.utility.CreateLang;
-import com.simibubi.create.infrastructure.config.AllConfigs;
 import dev.engine_room.flywheel.lib.visualization.VisualizationHelper;
 import net.createmod.catnip.animation.LerpedFloat;
 import net.createmod.catnip.lang.Lang;
@@ -1459,7 +1459,7 @@ public class PipetteBlockEntity extends KineticBlockEntity
     }
 
     public static int getRange() {
-        return AllConfigs.server().logistics.mechanicalArmRange.get();
+        return CFCommonConfig.getPipetteRange();
     }
 
     @Override

@@ -69,6 +69,9 @@ public class CFPonderPlugin implements PonderPlugin {
         // 注册连通器的场景
         helper.forComponents(CFBlocks.COMMUNICATING_VESSEL.getId())
                 .addStoryBoard("communicating_vessel", CommunicatingVesselScenes::balancing);
+        helper.forComponents(CFBlocks.LOGISTICS_JUNCTION.getId())
+                .addStoryBoard("logistics_junction_item", LogisticsJunctionScenes::item)
+                .addStoryBoard("logistics_junction_fluid", LogisticsJunctionScenes::fluid);
 
         // 注册指挥棒高级功能的场景
         helper.forComponents(CFItems.BATON.getId())
@@ -90,7 +93,8 @@ public class CFPonderPlugin implements PonderPlugin {
                 .add(CFBlocks.CENTRIFUGAL_PUMP.getId())
                 .add(CFBlocks.COPPER_TAP.getId())
                 .add(CFBlocks.SMART_GUTTER_OUTLET.getId())
-                .add(CFBlocks.GUTTER_OUTLET.getId());
+                .add(CFBlocks.GUTTER_OUTLET.getId())
+                .add(CFBlocks.LOGISTICS_JUNCTION.getId());
 
         // ARM_TARGETS: 指挥棒
         helper.addToTag(ARM_TARGETS)

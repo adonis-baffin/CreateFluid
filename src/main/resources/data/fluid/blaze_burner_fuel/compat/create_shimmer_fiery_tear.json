@@ -1,0 +1,5 @@
+{
+  "required_mod": "create_shimmer",
+  "fluid": "create_shimmer:fiery_tear",
+  "superHeat": true
+}
