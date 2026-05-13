@@ -58,6 +58,9 @@ public class LogisticsJunctionBlockEntity extends KineticBlockEntity implements 
 	private static final int INVENTORY_SLOTS = 9;
 	private static final int FLUID_CAPACITY = 4000;
 	private static final int FLUID_TRANSFER_PER_TICK = 1000;
+	private static final String FLEXIBLE_TARGET_OFFSET_KEY = "FlexibleTargetOffset";
+	private static final String LEGACY_FLEXIBLE_TARGET_POS_KEY = "FlexibleTargetPos";
+	private static final String FLEXIBLE_TARGET_FACE_KEY = "FlexibleTargetFace";
 
 	private BlockPos flexibleTargetPos;
 	private Direction flexibleTargetFace;
@@ -683,18 +686,45 @@ public class LogisticsJunctionBlockEntity extends KineticBlockEntity implements 
 	protected void write(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
 		super.write(compound, registries, clientPacket);
 		compound.put("Inventory", inventory.serializeNBT(registries));
-		if (flexibleTargetPos != null)
-			compound.putLong("FlexibleTargetPos", flexibleTargetPos.asLong());
-		if (flexibleTargetFace != null)
-			compound.putByte("FlexibleTargetFace", (byte) flexibleTargetFace.ordinal());
+		writeFlexibleTarget(compound);
 	}
 
 	@Override
 	protected void read(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
 		super.read(compound, registries, clientPacket);
 		inventory.deserializeNBT(registries, compound.getCompound("Inventory"));
-		flexibleTargetPos = compound.contains("FlexibleTargetPos") ? BlockPos.of(compound.getLong("FlexibleTargetPos")) : null;
-		flexibleTargetFace = compound.contains("FlexibleTargetFace") ? Direction.from3DDataValue(compound.getByte("FlexibleTargetFace")) : null;
+		readFlexibleTarget(compound);
+	}
+
+	private void writeFlexibleTarget(CompoundTag compound) {
+		if (flexibleTargetPos == null || flexibleTargetFace == null)
+			return;
+
+		compound.putLong(FLEXIBLE_TARGET_OFFSET_KEY, flexibleTargetPos.subtract(worldPosition).asLong());
+		compound.putByte(FLEXIBLE_TARGET_FACE_KEY, (byte) flexibleTargetFace.get3DDataValue());
+	}
+
+	private void readFlexibleTarget(CompoundTag compound) {
+		flexibleTargetPos = null;
+		flexibleTargetFace = null;
+
+		if (!compound.contains(FLEXIBLE_TARGET_FACE_KEY))
+			return;
+
+		BlockPos targetPos = null;
+		if (compound.contains(FLEXIBLE_TARGET_OFFSET_KEY)) {
+			targetPos = BlockPos.of(compound.getLong(FLEXIBLE_TARGET_OFFSET_KEY)).offset(worldPosition);
+		} else if (compound.contains(LEGACY_FLEXIBLE_TARGET_POS_KEY)) {
+			BlockPos legacyTarget = BlockPos.of(compound.getLong(LEGACY_FLEXIBLE_TARGET_POS_KEY));
+			if (isTargetInRange(worldPosition, legacyTarget))
+				targetPos = legacyTarget;
+		}
+
+		if (targetPos == null)
+			return;
+
+		flexibleTargetPos = targetPos;
+		flexibleTargetFace = Direction.from3DDataValue(compound.getByte(FLEXIBLE_TARGET_FACE_KEY));
 	}
 
 	@Override

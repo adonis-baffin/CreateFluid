@@ -15,6 +15,7 @@ public class FluidInteractionPointCompat {
     public static final String YOUKAIS_FEASTS = "youkaisfeasts";
     public static final String EMBERS = "embers";
     public static final String YOUKAIS_HOMECOMING = "youkaishomecoming";
+    public static final String CREATE_MORE_RECIPES = "cmr";
 
     public static void init() {
         registerExistingBlocks();
@@ -124,6 +125,13 @@ public class FluidInteractionPointCompat {
         if (isModLoaded(YOUKAIS_HOMECOMING)) {
             FluidInteractionPointTypes.registerDeferred(YOUKAIS_HOMECOMING, "fermentation_tank", GenericFluidInteractionPoint::new);
             FluidInteractionPointTypes.registerDeferred(YOUKAIS_HOMECOMING, "wood_basin", GenericFluidInteractionPoint::new);
+        }
+
+        if (isModLoaded(CREATE_MORE_RECIPES)) {
+            FluidInteractionPointTypes.registerDeferred(
+                    CREATE_MORE_RECIPES, "snowman_cooler",
+                    SnowmanCoolerFluidInteractionPoint::new
+            );
         }
     }
 

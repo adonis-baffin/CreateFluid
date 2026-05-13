@@ -255,5 +255,21 @@
   "fluid.ponder.can_filler.text_7": "装罐机背后的储罐若已有流体，只有输入铜罐中的流体与其相同才会接受注入。",
   "fluid.ponder.can_filler.text_8": "在装罐机上用告示牌设置地址后，输出的铜罐会携带该地址。",
   "fluid.ponder.can_filler.text_9": "要在工厂仪表或红石请求器中设定某种流体，需要用到流体清单",
-  "fluid.ponder.can_filler.text_10": "设定后，可以用这些元件直接请求流体库存"
+  "fluid.ponder.can_filler.text_10": "设定后，可以用这些元件直接请求流体库存",
+  "fluid.ponder.logistics_junction_item.header": "使用物流枢纽机分拣物品",
+  "fluid.ponder.logistics_junction_item.text_1": "物流枢纽机可以接收普通物品流，并按照输出端过滤器进行分流。",
+  "fluid.ponder.logistics_junction_item.text_2": "默认模式下，底面用于接入应力，除了朝向面以外的三个水平面都是物品输入端。",
+  "fluid.ponder.logistics_junction_item.text_3": "物流枢纽机朝向的面是本地输出端。这个场景中，它正对一个设置了过滤的智能溜槽。",
+  "fluid.ponder.logistics_junction_item.text_4": "上端连接可以绑定到另一个处理方块。这里它连接到第二个设置了过滤的智能溜槽。",
+  "fluid.ponder.logistics_junction_item.text_5": "旋转力从下方输入；底面不参与物品转运。",
+  "fluid.ponder.logistics_junction_item.text_6": "传送带和漏斗可以把不同物品送入输入端，例如安山合金和黄铜锭。",
+  "fluid.ponder.logistics_junction_item.text_7": "物流枢纽机会尝试向输出端转运，两个智能溜槽的过滤器决定各自接收哪一种物品。",
+  "fluid.ponder.logistics_junction_fluid.header": "使用物流枢纽机分拣流体",
+  "fluid.ponder.logistics_junction_fluid.text_1": "物流枢纽机可以接收普通流体流，并按照输出端过滤器进行分流。",
+  "fluid.ponder.logistics_junction_fluid.text_2": "默认模式下，除了朝向面以外的三个水平面都是流体输入端。",
+  "fluid.ponder.logistics_junction_fluid.text_3": "朝向面是本地输出端。这个场景中，它连接到一个设置了过滤的智能集水器。",
+  "fluid.ponder.logistics_junction_fluid.text_4": "上端连接被绑定到场景中的第二个智能集水器，它也可以设置自己的过滤。",
+  "fluid.ponder.logistics_junction_fluid.text_5": "旋转力从下方输入；底面只用于接应力，不参与流体转运。",
+  "fluid.ponder.logistics_junction_fluid.text_6": "流体管道可以把不同流体送入输入端，例如水和岩浆。",
+  "fluid.ponder.logistics_junction_fluid.text_7": "物流枢纽机会把流体推向输出端，两个智能集水器只接收符合各自过滤器的流体。"
 }
