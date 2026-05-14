@@ -35,3 +35,16 @@ tools/sync_*.py
 tools/generate_ponder_structures.ps1
 CREATE_TRANSLATION_REFERENCE.md
 FLUID_TRANSLATION_REFERENCE.md
+
+# temporary data files
+term_search.json
+tooltip_check.json
+tooltip_verify.json
+can_filler_langs.json
+create_terms.json
+create_terms2.json
+
+# temporary tools
+tools/mc_texture_iter/
+tools/shrinktool_rework/
+tools/proper-pixel-art/
