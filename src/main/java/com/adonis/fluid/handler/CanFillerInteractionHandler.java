@@ -1,7 +1,6 @@
 package com.adonis.fluid.handler;
 
 import com.adonis.fluid.item.BatonItem;
-import com.adonis.fluid.packet.CanFillerClearAddressPacket;
 import com.adonis.fluid.packet.CanFillerTogglePacket;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.logistics.packager.PackagerBlock;
@@ -38,7 +37,6 @@ public class CanFillerInteractionHandler {
             return;
         }
 
-        // 避免与ARM模式冲突
         if (BatonInteractionHandler.isInSelectionMode() && BatonInteractionHandler.getSelectionType() == BatonInteractionHandler.SelectionType.ARM) {
             return;
         }
@@ -48,7 +46,7 @@ public class CanFillerInteractionHandler {
         BlockState state = level.getBlockState(pos);
         boolean sneaking = player.isShiftKeyDown();
 
-        if (AllBlocks.PACKAGER.has(state) || AllBlocks.REPACKAGER.has(state)) {
+        if ((AllBlocks.PACKAGER.has(state) || AllBlocks.REPACKAGER.has(state)) && !sneaking) {
             event.setCanceled(true);
             event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide));
 
@@ -60,13 +58,8 @@ public class CanFillerInteractionHandler {
 
     private static void handlePackagerClick(BlockState state, BlockPos pos, Player player, Level level, boolean sneaking) {
         if (sneaking) {
-            // Shift+右键：清除地址
-            PacketDistributor.sendToServer(new CanFillerClearAddressPacket(pos));
-            level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                    SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 0.5F, 1.0F, false);
-            createPackagerToggleParticles(level, pos);
+            return;
         } else {
-            // 普通右键：切换红石状态
             PacketDistributor.sendToServer(new CanFillerTogglePacket(pos));
             level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
                     SoundEvents.LEVER_CLICK, SoundSource.BLOCKS, 0.3F, 1.0F, false);

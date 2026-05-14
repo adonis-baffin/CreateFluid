@@ -3,13 +3,10 @@ package com.adonis.fluid.mixin;
 import com.adonis.fluid.block.CanFiller.CanFillerBlockEntity;
 import com.adonis.fluid.goggle.CanFillerGoggleInfo;
 import com.adonis.fluid.item.CopperCanItem;
-import com.adonis.fluid.util.ICanFillerData;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.content.logistics.packager.PackagerBlockEntity;
 import com.simibubi.create.content.logistics.packager.repackager.RepackagerBlockEntity;
 import net.minecraft.core.Direction;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
@@ -24,31 +21,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.List;
 
 @Mixin(PackagerBlockEntity.class)
-public class CanFillerBlockEntityMixin implements ICanFillerData, IHaveGoggleInformation {
-    @Unique
-    private String fluid$clipboardAddress = "";
+public class CanFillerBlockEntityMixin implements IHaveGoggleInformation {
     @Unique
     private static final Direction[] DIRECTIONS = Direction.values();
-
-    @Inject(method = "write", at = @At("RETURN"))
-    private void onWrite(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket, CallbackInfo ci) {
-        compound.putString("FluidClipboardAddress", this.fluid$clipboardAddress);
-    }
-
-    @Inject(method = "read", at = @At("RETURN"))
-    private void onRead(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket, CallbackInfo ci) {
-        this.fluid$clipboardAddress = compound.getString("FluidClipboardAddress");
-    }
-
-    @Override
-    public String getClipboardAddress() {
-        return this.fluid$clipboardAddress;
-    }
-
-    @Override
-    public void setClipboardAddress(String address) {
-        this.fluid$clipboardAddress = address;
-    }
 
     @Unique
     private String fluid$readSignAddress(Direction side) {
@@ -111,8 +86,6 @@ public class CanFillerBlockEntityMixin implements ICanFillerData, IHaveGoggleInf
 
         if (!packager.signBasedAddress.isBlank()) {
             address = packager.signBasedAddress;
-        } else {
-            address = this.getClipboardAddress();
         }
 
         boolean isRepackager = packager instanceof RepackagerBlockEntity;

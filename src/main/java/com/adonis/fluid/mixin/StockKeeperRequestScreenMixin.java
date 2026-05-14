@@ -3,8 +3,9 @@ package com.adonis.fluid.mixin;
 import com.adonis.fluid.client.FluidSlotAmountRenderer;
 import com.adonis.fluid.client.FluidSlotRenderer;
 import com.adonis.fluid.item.FluidManifestItem;
-import com.adonis.fluid.mixin.accessor.StockKeeperRequestScreenAccessor;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.simibubi.create.content.logistics.BigItemStack;
 import com.simibubi.create.content.logistics.stockTicker.StockKeeperRequestScreen;
@@ -68,7 +69,7 @@ public class StockKeeperRequestScreenMixin {
 		return GuiGameElement.of(itemStack);
 	}
 
-	@Redirect(
+	@WrapOperation(
 		method = "renderItemEntry",
 		at = @At(
 			value = "INVOKE",
@@ -77,14 +78,15 @@ public class StockKeeperRequestScreenMixin {
 		),
 		remap = false
 	)
-	private void fluid$redirectDrawItemCount(StockKeeperRequestScreen instance, GuiGraphics graphics, int count, int customCount) {
+	private void fluid$renderManifestCount(StockKeeperRequestScreen instance, GuiGraphics graphics, int count,
+			int customCount, Operation<Void> original) {
 		if (fluid$isFluidManifest) {
 			if (customCount > 1) {
 				FluidSlotAmountRenderer.renderInStockKeeper(graphics, customCount);
 			}
 			return;
 		}
-		((StockKeeperRequestScreenAccessor) instance).callDrawItemCount(graphics, count, customCount);
+		original.call(instance, graphics, count, customCount);
 	}
 
 	@Redirect(

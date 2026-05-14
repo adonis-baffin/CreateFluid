@@ -1,84 +1,68 @@
 package com.adonis.fluid.client;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.simibubi.create.foundation.gui.AllGuiTextures;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 
 public class FluidSlotAmountRenderer {
 
-	private static final int STOCK_KEEPER_COUNT_X = 14;
-	private static final int STOCK_KEEPER_COUNT_Y = 10;
+	private static final int STOCK_KEEPER_AMOUNT_CENTER_X = 14;
+	private static final int STOCK_KEEPER_AMOUNT_BASELINE_Y = 12;
+	private static final int SLOT_DECORATION_RIGHT_X = 17;
+	private static final int SLOT_DECORATION_DOWN_SHIFT = 2;
+	private static final int AMOUNT_TEXT_COLOR = 0xFFFFFF;
+	private static final float AMOUNT_TEXT_SCALE = 0.65f;
 
 	public static void renderInStockKeeper(GuiGraphics graphics, int amount) {
-		String text = FluidAmountHelper.format(amount);
-		if (text.isBlank()) {
-			return;
-		}
-
-		int visibleLength = 0;
-		for (int i = 0; i < text.length(); i++) {
-			if (text.charAt(i) != ',') {
-				visibleLength++;
-			}
-		}
-
-		int renderX = STOCK_KEEPER_COUNT_X + (int) Math.floor(-visibleLength * 2.5);
-		renderAmount(graphics, text, renderX, STOCK_KEEPER_COUNT_Y);
+		renderCentered(graphics, FluidAmountHelper.format(amount), STOCK_KEEPER_AMOUNT_CENTER_X,
+			STOCK_KEEPER_AMOUNT_BASELINE_Y);
 	}
 
 	public static void renderAt(GuiGraphics graphics, int amount, int x, int y) {
-		String text = FluidAmountHelper.format(amount);
-		if (text.isBlank()) {
-			return;
-		}
-		renderAmount(graphics, text, x, y);
+		renderRightAligned(graphics, FluidAmountHelper.format(amount), x + SLOT_DECORATION_RIGHT_X,
+			y + SLOT_DECORATION_DOWN_SHIFT);
 	}
 
-	private static void renderAmount(GuiGraphics graphics, String text, int startX, int startY) {
+	public static void renderCentered(GuiGraphics graphics, String text, int centerX, int y) {
+		TextLayout layout = TextLayout.of(text);
+		if (layout.isEmpty())
+			return;
+
+		draw(graphics, layout, centerX - layout.width() / 2, y);
+	}
+
+	public static void renderRightAligned(GuiGraphics graphics, String text, int rightX, int y) {
+		TextLayout layout = TextLayout.of(text);
+		if (layout.isEmpty())
+			return;
+
+		draw(graphics, layout, rightX - layout.width(), y);
+	}
+
+	private static void draw(GuiGraphics graphics, TextLayout layout, int x, int y) {
 		graphics.pose().pushPose();
 		graphics.pose().translate(0, 0, 200);
+		graphics.pose().scale(AMOUNT_TEXT_SCALE, AMOUNT_TEXT_SCALE, 1);
+		graphics.drawString(layout.font(), layout.text(), Math.round(x / AMOUNT_TEXT_SCALE),
+			Math.round(y / AMOUNT_TEXT_SCALE), AMOUNT_TEXT_COLOR, true);
+		graphics.pose().popPose();
+	}
 
-		int x = 0;
-		for (int i = 0; i < text.length(); i++) {
-			char c = Character.toLowerCase(text.charAt(i));
-
-			if (c == ',') continue;
-
-			int index = c - '0';
-			int xOffset = index * 6;
-			int spriteWidth = AllGuiTextures.NUMBERS.getWidth();
-
-			switch (c) {
-				case ' ':
-					x += 4;
-					continue;
-				case '.':
-					spriteWidth = 3;
-					xOffset = 60;
-					break;
-				case 'k':
-					xOffset = 64;
-					break;
-				case 'm':
-					spriteWidth = 7;
-					xOffset = 70;
-					break;
-				case 'b':
-					xOffset = 78;
-					break;
-				case '+':
-					spriteWidth = 9;
-					xOffset = 84;
-					break;
-			}
-
-			RenderSystem.enableBlend();
-			graphics.blit(AllGuiTextures.NUMBERS.location, startX + x, startY, 0,
-					AllGuiTextures.NUMBERS.getStartX() + xOffset, AllGuiTextures.NUMBERS.getStartY(),
-					spriteWidth, AllGuiTextures.NUMBERS.getHeight(), 256, 256);
-			x += spriteWidth - 1;
+	private record TextLayout(Font font, String text, int width) {
+		private static TextLayout of(String text) {
+			Font font = Minecraft.getInstance().font;
+			String compact = sanitize(text);
+			return new TextLayout(font, compact, Math.round(font.width(compact) * AMOUNT_TEXT_SCALE));
 		}
 
-		graphics.pose().popPose();
+		private static String sanitize(String text) {
+			if (text == null)
+				return "";
+			return text.replace(",", "").trim();
+		}
+
+		private boolean isEmpty() {
+			return text.isBlank();
+		}
 	}
 }

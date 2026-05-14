@@ -11,6 +11,9 @@
     "fluid:redstone_valve",
     "fluid:redstone_triple_valve",
     "fluid:communicating_vessel",
-    "fluid:fluid_atomizer"
+    "fluid:fluid_atomizer",
+    "fluid:can_filler",
+    "fluid:logistics_junction",
+    "fluid:smart_repackager"
   ]
 }
