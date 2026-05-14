@@ -95,7 +95,7 @@ public final class PackageRoutingHelper {
 		if (routing == null || routing.isEmpty() || !stack.has(AllDataComponents.PACKAGE_CONTENTS))
 			return;
 
-		int lineIndex = stack.has(AllDataComponents.PACKAGE_ADDRESS) ? 1 : 0;
+		int searchStart = 0;
 		int visibleNames = 0;
 		ItemStackHandler contents = PackageItem.getContents(stack);
 		for (int i = 0; i < contents.getSlots(); i++) {
@@ -107,17 +107,36 @@ public final class PackageRoutingHelper {
 			if (visibleNames > 2)
 				continue;
 
-			if (routing.routeForItem(itemstack) == ContentRoute.UP && lineIndex < tooltip.size()) {
-				tooltip.set(lineIndex, formatUpstreamEntry(itemstack.getHoverName()));
+			ContentRoute route = routing.routeForItem(itemstack);
+			if (route == ContentRoute.UP || route == ContentRoute.DOWN) {
+				int lineIndex = findContentLine(tooltip, itemstack, searchStart);
+				if (lineIndex >= 0) {
+					tooltip.add(lineIndex, formatRouteEntry(itemstack.getHoverName(), route));
+					searchStart = lineIndex + 2;
+				}
 			}
 
 			visibleNames++;
-			lineIndex++;
 		}
 	}
 
 	public static Component formatUpstreamEntry(Component base) {
-		return Component.literal("\u2191 ").withStyle(ChatFormatting.GOLD)
-			.append(base.copy().withStyle(ChatFormatting.GOLD));
+		return formatRouteEntry(base, ContentRoute.UP);
+	}
+
+	public static Component formatRouteEntry(Component base, ContentRoute route) {
+		ChatFormatting color = route == ContentRoute.UP ? ChatFormatting.GOLD : ChatFormatting.AQUA;
+		String arrow = route == ContentRoute.UP ? "\u2191 " : "\u2193 ";
+		return Component.literal(arrow).withStyle(color)
+			.append(base.copy().withStyle(color));
+	}
+
+	private static int findContentLine(List<Component> tooltip, ItemStack itemstack, int startIndex) {
+		String expected = itemstack.getHoverName().getString() + " x" + itemstack.getCount();
+		for (int i = Math.max(0, startIndex); i < tooltip.size(); i++) {
+			if (tooltip.get(i).getString().equals(expected))
+				return i;
+		}
+		return -1;
 	}
 }

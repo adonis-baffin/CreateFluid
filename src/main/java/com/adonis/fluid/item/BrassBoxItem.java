@@ -8,6 +8,7 @@ import com.adonis.fluid.datacomponent.BrassBoxFluidContent.FluidEntry;
 import com.adonis.fluid.datacomponent.BrassBoxRoutingData;
 import com.adonis.fluid.registry.CFDataComponents;
 import com.adonis.fluid.registry.CFItems;
+import com.simibubi.create.AllDataComponents;
 import com.simibubi.create.content.logistics.box.PackageItem;
 import com.simibubi.create.content.logistics.box.PackageStyles;
 import com.simibubi.create.content.logistics.box.PackageStyles.PackageStyle;
@@ -19,6 +20,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.items.ItemStackHandler;
@@ -80,8 +82,33 @@ public class BrassBoxItem extends PackageItem {
 
 	@Override
 	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-		super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
-		PackageRoutingHelper.highlightVisibleItemRoutes(stack, tooltipComponents);
+		String address = PackageItem.getAddress(stack);
+		if (!address.isBlank())
+			tooltipComponents.add(Component.literal("\u2192 " + address)
+				.withStyle(ChatFormatting.GOLD));
+
+		if (stack.has(AllDataComponents.PACKAGE_CONTENTS)) {
+			ItemStackHandler contents = PackageItem.getContents(stack);
+			BrassBoxRoutingData routing = getRoutingData(stack);
+			for (int i = 0; i < contents.getSlots(); i++) {
+				ItemStack itemstack = contents.getStackInSlot(i);
+				if (itemstack.isEmpty())
+					continue;
+				if (itemstack.getItem() instanceof SpawnEggItem)
+					continue;
+
+				var route = routing.routeForItem(itemstack);
+				if (route == com.adonis.fluid.logistics.data.ContentRoute.UP
+					|| route == com.adonis.fluid.logistics.data.ContentRoute.DOWN)
+					tooltipComponents.add(PackageRoutingHelper.formatRouteEntry(itemstack.getHoverName(), route));
+				tooltipComponents.add(itemstack.getHoverName()
+					.copy()
+					.append(" x")
+					.append(String.valueOf(itemstack.getCount()))
+					.withStyle(ChatFormatting.GRAY));
+			}
+		}
+
 		PackageRoutingHelper.appendRoutingSummary(stack, tooltipComponents);
 		BrassBoxFluidContent fluidContent = getFluidContent(stack);
 		for (FluidEntry entry : fluidContent.fluids()) {
@@ -89,9 +116,11 @@ public class BrassBoxItem extends PackageItem {
 				continue;
 			Component fluidLine = entry.fluid().getHoverName()
 				.copy();
-			tooltipComponents.add(entry.route() == com.adonis.fluid.logistics.data.ContentRoute.UP
-				? PackageRoutingHelper.formatUpstreamEntry(fluidLine)
-				: fluidLine.copy().withStyle(ChatFormatting.GRAY));
+			if (entry.route() == com.adonis.fluid.logistics.data.ContentRoute.UP
+				|| entry.route() == com.adonis.fluid.logistics.data.ContentRoute.DOWN)
+				tooltipComponents.add(PackageRoutingHelper.formatRouteEntry(fluidLine, entry.route()));
+			else
+				tooltipComponents.add(fluidLine.copy().withStyle(ChatFormatting.GRAY));
 		}
 	}
 }

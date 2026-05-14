@@ -127,6 +127,7 @@
   "fluid.gui.stockpile_switch.unit.bucket": "桶",
   "create.create.goggles.can_filler_title": "装罐机",
   "block.fluid.smart_repackager": "智能理包机",
+  "block.fluid.smart_repackager.tooltip.summary": "可将_纸壳包裹_、_铜罐_等物流载体整理为_黄铜匣子_，并标注_上下分流_信息。_黄铜匣子_只能由_物流枢纽机_解包；_工厂仪表_在墙面上的垂直排列会影响物流枢纽机对包裹内容物的上下分流。",
   "block.fluid.logistics_junction": "物流枢纽机",
   "create.fluid.logistics_junction.io_mode": "输入/输出模式",
   "create.fluid.logistics_junction.io_mode.input": "输入节点",
@@ -271,5 +272,15 @@
   "fluid.ponder.logistics_junction_fluid.text_4": "上端连接被绑定到场景中的第二个智能集水器，它也可以设置自己的过滤。",
   "fluid.ponder.logistics_junction_fluid.text_5": "旋转力从下方输入；底面只用于接应力，不参与流体转运。",
   "fluid.ponder.logistics_junction_fluid.text_6": "流体管道可以把不同流体送入输入端，例如水和岩浆。",
-  "fluid.ponder.logistics_junction_fluid.text_7": "物流枢纽机会把流体推向输出端，两个智能集水器只接收符合各自过滤器的流体。"
+  "fluid.ponder.logistics_junction_fluid.text_7": "物流枢纽机会把流体推向输出端，两个智能集水器只接收符合各自过滤器的流体。",
+  "fluid.ponder.smart_repackager.header": "使用智能理包机处理包裹",
+  "fluid.ponder.smart_repackager.text_1": "工厂仪表在墙面上的垂直排列，会影响物流枢纽机对包裹内容物的上下分流。",
+  "fluid.ponder.smart_repackager.text_2": "指定的地址会把包裹送往处理线，而不是直接送回仓库。",
+  "fluid.ponder.smart_repackager.text_3": "智能理包机可以接收输入包裹，并将其中内容重新整理，输出为一个带标记的黄铜匣子。",
+  "fluid.ponder.smart_repackager.text_4": "装罐机输出的铜罐也可以被智能理包机处理，在输出的黄铜匣子中可同时包含物品和流体。",
+  "fluid.ponder.smart_repackager.text_5": "当库存不足时，物流网络会准备一个包裹并释放到传送带上。",
+  "fluid.ponder.smart_repackager.text_6": "智能理包机会拆开包裹碎片、汇总内容，并重新输出整理后的包裹。",
+  "fluid.ponder.smart_repackager.text_7": "接下来，物流枢纽机接收这条物流流，并在本地输出端和上方输出端之间选择路线。",
+  "fluid.ponder.smart_repackager.text_8": "流体货物也能以装罐机制造的铜罐形式进入同一条路线。",
+  "fluid.ponder.smart_repackager.text_9": "接收端的过滤器决定每个包裹继续从侧面输出，还是被提升到上方路线。"
 }
