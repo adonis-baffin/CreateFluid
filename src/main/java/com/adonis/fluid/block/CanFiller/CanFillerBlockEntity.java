@@ -15,6 +15,7 @@ import com.adonis.fluid.logistics.data.FluidRequestKey;
 import com.adonis.fluid.logistics.manager.FluidLogisticsManager;
 import com.adonis.fluid.logistics.manager.MixedOrderRoutingManager;
 import com.simibubi.create.AllBlocks;
+import com.simibubi.create.Create;
 import com.simibubi.create.content.logistics.BigItemStack;
 import com.simibubi.create.content.logistics.box.PackageItem;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelBehaviour;
@@ -23,6 +24,8 @@ import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelBlockEntit
 import com.simibubi.create.content.logistics.packager.InventorySummary;
 import com.simibubi.create.content.logistics.packager.PackagerBlockEntity;
 import com.simibubi.create.content.logistics.packager.PackagingRequest;
+import com.simibubi.create.content.logistics.packagerLink.PackagerLinkBlock;
+import com.simibubi.create.content.logistics.packagerLink.PackagerLinkBlockEntity;
 import com.simibubi.create.content.logistics.packagerLink.RequestPromiseQueue;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.inventory.CapManipulationBehaviourBase.InterfaceProvider;
@@ -197,23 +200,32 @@ public class CanFillerBlockEntity extends PackagerBlockEntity implements IFluidL
 
 		java.util.Set<RequestPromiseQueue> promiseQueues = new java.util.HashSet<>();
 		for (Direction d : Iterate.directions) {
-			if (!level.isLoaded(worldPosition.relative(d)))
+			BlockPos adjacentPos = worldPosition.relative(d);
+			if (!level.isLoaded(adjacentPos))
 				continue;
 
-			BlockState adjacentState = level.getBlockState(worldPosition.relative(d));
-			if (!AllBlocks.FACTORY_GAUGE.has(adjacentState))
-				continue;
-			if (FactoryPanelBlock.connectedDirection(adjacentState) != d)
-				continue;
-			if (!(level.getBlockEntity(worldPosition.relative(d)) instanceof FactoryPanelBlockEntity fpbe))
-				continue;
-			if (!fpbe.restocker)
-				continue;
+			BlockState adjacentState = level.getBlockState(adjacentPos);
 
-			for (FactoryPanelBehaviour behaviour : fpbe.panels.values()) {
-				if (!behaviour.isActive())
-					continue;
-				promiseQueues.add(behaviour.restockerPromises);
+			// Restocker factory gauges keep their target amount stocked via a per-panel promise queue.
+			if (AllBlocks.FACTORY_GAUGE.has(adjacentState)
+				&& FactoryPanelBlock.connectedDirection(adjacentState) == d
+				&& level.getBlockEntity(adjacentPos) instanceof FactoryPanelBlockEntity fpbe
+				&& fpbe.restocker) {
+				for (FactoryPanelBehaviour behaviour : fpbe.panels.values()) {
+					if (behaviour.isActive())
+						promiseQueues.add(behaviour.restockerPromises);
+				}
+			}
+
+			// Stock links carry the network-level queued promises used by autocrafting. Create's own
+			// PackagerBlockEntity settles these when a package enters; the can filler must do the same
+			// for fluids, otherwise crafting promises for fluid outputs are never cleared.
+			if (AllBlocks.STOCK_LINK.has(adjacentState)
+				&& PackagerLinkBlock.getConnectedDirection(adjacentState) == d
+				&& level.getBlockEntity(adjacentPos) instanceof PackagerLinkBlockEntity plbe) {
+				java.util.UUID freqId = plbe.behaviour.freqId;
+				if (Create.LOGISTICS.hasQueuedPromises(freqId))
+					promiseQueues.add(Create.LOGISTICS.getQueuedPromises(freqId));
 			}
 		}
 
