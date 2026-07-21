@@ -420,21 +420,78 @@ public class LogisticsJunctionBlockEntity extends KineticBlockEntity implements 
 		return true;
 	}
 
+	/**
+	 * Unpacks a package atomically: either all of its contents are inserted into the outputs, or
+	 * nothing is. This is what prevents item/fluid duplication.
+	 *
+	 * <p>Phase 1 simulates every insertion against the real handlers ({@code simulate = true}); if
+	 * anything would not fully fit, we abort without having mutated the world. Phase 2 commits for
+	 * real, and if a commit unexpectedly falls short (a handler whose simulate/execute behaviour
+	 * disagrees), every insertion made so far is rolled back so the surviving package cannot be
+	 * duplicated. Returns {@code true} only when the whole package was committed, at which point the
+	 * caller consumes the source package.
+	 */
 	private boolean executeUnpack(UnpackPlan plan) {
 		List<OutputTarget> outputs = getOutputTargets();
+
+		// Phase 1: validate indices and simulate every insertion. No world state is changed here.
 		for (ItemPlan itemPlan : plan.itemPlans) {
 			if (itemPlan.targetIndex() < 0 || itemPlan.targetIndex() >= outputs.size())
 				return false;
-			if (!canInsertItem(outputs.get(itemPlan.targetIndex()).items(), itemPlan.stack(), false))
+			if (!canFullyInsertItem(outputs.get(itemPlan.targetIndex()).items(), itemPlan.stack()))
 				return false;
 		}
 		for (FluidPlan fluidPlan : plan.fluidPlans) {
 			if (fluidPlan.targetIndex() < 0 || fluidPlan.targetIndex() >= outputs.size())
 				return false;
-			if (!canInsertFluid(outputs.get(fluidPlan.targetIndex()).fluids(), fluidPlan.entry().fluid(), false))
+			if (!canFullyInsertFluid(outputs.get(fluidPlan.targetIndex()).fluids(), fluidPlan.entry().fluid()))
 				return false;
 		}
+
+		// Phase 2: commit for real, tracking what was inserted so we can undo it if a later step fails.
+		List<CommittedItem> committedItems = new ArrayList<>();
+		List<CommittedFluid> committedFluids = new ArrayList<>();
+
+		for (ItemPlan itemPlan : plan.itemPlans) {
+			IItemHandler handler = outputs.get(itemPlan.targetIndex()).items();
+			ItemStack stack = itemPlan.stack();
+			int inserted = insertItemForReal(handler, stack);
+			if (inserted > 0)
+				committedItems.add(new CommittedItem(handler, stack.copyWithCount(inserted)));
+			if (inserted < stack.getCount()) {
+				rollbackUnpack(committedItems, committedFluids);
+				return false;
+			}
+		}
+		for (FluidPlan fluidPlan : plan.fluidPlans) {
+			IFluidHandler handler = outputs.get(fluidPlan.targetIndex()).fluids();
+			FluidStack fluid = fluidPlan.entry().fluid();
+			int filled = fillFluidForReal(handler, fluid);
+			if (filled > 0)
+				committedFluids.add(new CommittedFluid(handler, fluid.copyWithAmount(filled)));
+			if (filled < fluid.getAmount()) {
+				rollbackUnpack(committedItems, committedFluids);
+				return false;
+			}
+		}
 		return true;
+	}
+
+	private void rollbackUnpack(List<CommittedItem> committedItems, List<CommittedFluid> committedFluids) {
+		for (CommittedFluid committed : committedFluids)
+			committed.handler().drain(committed.stack(), IFluidHandler.FluidAction.EXECUTE);
+		for (CommittedItem committed : committedItems)
+			extractExact(committed.handler(), committed.stack());
+	}
+
+	private void extractExact(IItemHandler handler, ItemStack template) {
+		int remaining = template.getCount();
+		for (int slot = 0; slot < handler.getSlots() && remaining > 0; slot++) {
+			ItemStack inSlot = handler.getStackInSlot(slot);
+			if (inSlot.isEmpty() || !ItemStack.isSameItemSameComponents(inSlot, template))
+				continue;
+			remaining -= handler.extractItem(slot, remaining, false).getCount();
+		}
 	}
 
 	private @Nullable Integer chooseItemTarget(ItemStack stack, ContentRoute route, List<OutputTarget> outputs,
@@ -472,23 +529,44 @@ public class LogisticsJunctionBlockEntity extends KineticBlockEntity implements 
 		return order;
 	}
 
-	private boolean canInsertItem(@Nullable IItemHandler handler, ItemStack stack, boolean simulate) {
+	/** Simulates inserting the whole stack; returns true only if all of it would fit. Mutates nothing. */
+	private boolean canFullyInsertItem(@Nullable IItemHandler handler, ItemStack stack) {
 		if (handler == null)
 			return false;
 		ItemStack remaining = stack.copy();
 		for (int slot = 0; slot < handler.getSlots(); slot++) {
-			remaining = handler.insertItem(slot, remaining, simulate);
+			remaining = handler.insertItem(slot, remaining, true);
 			if (remaining.isEmpty())
 				return true;
 		}
 		return remaining.isEmpty();
 	}
 
-	private boolean canInsertFluid(@Nullable IFluidHandler handler, FluidStack fluid, boolean simulate) {
+	/** Simulates filling the whole amount; returns true only if all of it would fit. Mutates nothing. */
+	private boolean canFullyInsertFluid(@Nullable IFluidHandler handler, FluidStack fluid) {
 		if (handler == null)
 			return false;
-		int filled = handler.fill(fluid.copy(), simulate ? IFluidHandler.FluidAction.SIMULATE : IFluidHandler.FluidAction.EXECUTE);
-		return filled >= fluid.getAmount();
+		return handler.fill(fluid.copy(), IFluidHandler.FluidAction.SIMULATE) >= fluid.getAmount();
+	}
+
+	/** Inserts as much of the stack as fits, for real, and returns how many items were actually inserted. */
+	private int insertItemForReal(@Nullable IItemHandler handler, ItemStack stack) {
+		if (handler == null)
+			return 0;
+		ItemStack remaining = stack.copy();
+		for (int slot = 0; slot < handler.getSlots(); slot++) {
+			remaining = handler.insertItem(slot, remaining, false);
+			if (remaining.isEmpty())
+				return stack.getCount();
+		}
+		return stack.getCount() - remaining.getCount();
+	}
+
+	/** Fills as much of the fluid as fits, for real, and returns how much was actually accepted. */
+	private int fillFluidForReal(@Nullable IFluidHandler handler, FluidStack fluid) {
+		if (handler == null)
+			return 0;
+		return handler.fill(fluid.copy(), IFluidHandler.FluidAction.EXECUTE);
 	}
 
 	private ItemStack moveItemToOutputs(ItemStack stack) {
@@ -807,6 +885,14 @@ public class LogisticsJunctionBlockEntity extends KineticBlockEntity implements 
 	}
 
 	private record FluidPlan(FluidEntry entry, int targetIndex) {
+	}
+
+	/** A real item insertion made during commit, kept so it can be extracted back out on rollback. */
+	private record CommittedItem(IItemHandler handler, ItemStack stack) {
+	}
+
+	/** A real fluid fill made during commit, kept so it can be drained back out on rollback. */
+	private record CommittedFluid(IFluidHandler handler, FluidStack stack) {
 	}
 
 	private class IOModeValueBox extends CenteredSideValueBoxTransform {
