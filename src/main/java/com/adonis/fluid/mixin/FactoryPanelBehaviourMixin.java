@@ -215,11 +215,16 @@ public class FactoryPanelBehaviourMixin {
 		}
 
 		PackagerBlockEntity packager = behaviour.panelBE().getRestockedPackager();
-		if (!(packager instanceof CanFillerBlockEntity)) {
+		if (!(packager instanceof CanFillerBlockEntity canFiller)) {
 			return;
 		}
 
-		int availableOnNetwork = LogisticsManager.getStockOf(behaviour.network, item, null);
+		// Exclude the can filler's own fluid stock, mirroring how Create's tryRestock passes
+		// packager.targetInventory.getIdentifiedInventory(). Without this the can filler counts
+		// itself as network supply and fulfills its own restock, addressing packages to itself.
+		IdentifiedInventory ignoredInventory = canFiller.getIdentifiedFluidInventory();
+
+		int availableOnNetwork = LogisticsManager.getStockOf(behaviour.network, item, ignoredInventory);
 		if (availableOnNetwork == 0) {
 			ci.cancel();
 			return;
@@ -239,7 +244,7 @@ public class FactoryPanelBehaviourMixin {
 
 		if (!LogisticsManager.broadcastPackageRequest(behaviour.network,
 			com.simibubi.create.content.logistics.packagerLink.LogisticallyLinkedBehaviour.RequestType.RESTOCK, order,
-			null, behaviour.recipeAddress)) {
+			ignoredInventory, behaviour.recipeAddress)) {
 			ci.cancel();
 			return;
 		}
