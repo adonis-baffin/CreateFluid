@@ -1173,13 +1173,27 @@ public class PipetteBlockEntity extends KineticBlockEntity
     }
 
     private void rebuildClientInteractionPoints() {
-        this.inputs.clear();
-        this.outputs.clear();
-
         if (this.interactionPointTag == null || this.level == null) {
-            this.updateInteractionPoints = false;
+            // Nothing to rebuild from yet; keep updateInteractionPoints set so a later
+            // tick (initInteractionPoints) retries once the data is available.
             return;
         }
+
+        // On a fresh chunk/world load (i.e. after rejoining) the blocks this pipette
+        // targets often live in chunks that aren't loaded on the client yet. Rebuilding
+        // now would deserialize against air (getBlockState returns air for unloaded
+        // positions), drop every target, and — because this used to clear
+        // updateInteractionPoints unconditionally — leave the client stuck on "No Targets"
+        // with no animation forever, even though the server keeps transferring fluid.
+        // Defer instead and let tick()/initInteractionPoints() retry once the surrounding
+        // area is loaded, exactly like the server does.
+        if (!this.isAreaActuallyLoaded(this.worldPosition, getRange() + 1)) {
+            this.updateInteractionPoints = true;
+            return;
+        }
+
+        this.inputs.clear();
+        this.outputs.clear();
 
         for (Tag tag : this.interactionPointTag) {
             FluidInteractionPoint point = FluidInteractionPoint.deserialize((CompoundTag) tag, this.level, this.worldPosition);
